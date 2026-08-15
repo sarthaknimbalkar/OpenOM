@@ -1,0 +1,126 @@
+# OpenOM — repo rules (auto-loaded)
+
+> Claude Code reads this every session. It is the short, load-bearing contract for this repo.
+> Full context lives in the handoff doc (`om-standard-handoff-*.md`) and `/spec`.
+
+## What this repo is
+An open (MIT) **standard + toolchain** that embeds a machine-readable, broker-asserted data
+payload inside commercial-real-estate offering-memorandum PDFs (Factur-X mechanism), and exposes
+the same payload as JSON-LD on the web. One extraction at the source, infinite cheap consumption
+downstream. Published under **Vervelio** (neutral steward), not Fortis.
+
+**The spec is the product; the tool is a commodity.** What compounds is the versioned schema,
+validator, vocabulary, and governance — ship those with the code.
+
+## The one rule that governs everything
+**Deterministic core, inference at the edges.** The engine, MCP server, and consumer mode contain
+**zero LLM/inference calls, ever** — no keys, no per-call cost, fully testable. LLM mapping runs
+client-side or on-device (author mode / process layer only). Hosted inference extraction, if it
+ever exists, is a separate commercial service — never the open server. If you find yourself adding
+a model call to `/core`, `/mcp`, or consumer-mode `/js`, stop — you're in the wrong layer.
+
+## 🚨 HARD ENFORCEMENT RULES
+
+**These are not suggestions. Violations block progress.**
+
+### Rule 1: Production Standard Only
+- This is a **published standard + sellable tool**, not a learning project. Senior production
+  engineer perspective only. Zero deferrals, zero tolerated tech debt.
+- A shipped spec is forever — a bad field name or a silent round-trip bug outlives every excuse.
+  Get the spec and the PDF mechanics right before anything cosmetic.
+
+### Rule 2: The spec and process layer ARE product — commit them; planning docs are not
+- `/spec` (JSON Schema, sample payloads, `@context`, changelog) and `/process` (`SKILL.md`,
+  agent instructions) are **first-class product — always committed.**
+- Design specs, brainstorms, and plans → `docs/superpowers/` and `.planning/` (git-ignored).
+- The root handoff doc (`om-standard-handoff-*.md`) and `CLAUDE.md` are committed.
+- `git status` before every commit; never stage planning scratch or the `.htm` marketing mock.
+
+### Rule 3: Workflow Discipline — SKILLS BEFORE CODE
+- Before any implementation, invoke the appropriate superpowers skill:
+  - `superpowers:brainstorming` — design, architecture, planning
+  - `superpowers:writing-plans` — multi-step tasks
+  - `superpowers:systematic-debugging` — bugs
+  - `superpowers:verification-before-completion` — before claiming work is done
+- No flow-driven chaos. No random refactoring. No scope creep.
+- **Plans = pseudocode, never full code.** Interfaces, algorithm-in-prose, exact file paths +
+  verification commands — NOT complete implementations. This OVERRIDES the writing-plans skill's
+  "show full code" instruction. Execute from the plan; never rewrite an over-coded one.
+
+### Rule 4: Code Quality (Non-Negotiable)
+- **Python core:** type-hinted throughout, `mypy`-clean, `ruff`-clean. Deterministic, pure functions
+  where possible. Libraries: pikepdf, PyMuPDF, jsonschema, typer, FastMCP. No LLM deps in `/core`.
+- **TS subset (`/js`):** strict TypeScript, no `any` unless unavoidable. Libraries: pdf-lib, ajv,
+  pdf.js. Powers the extension and web/Node consumers.
+- **No legacy patterns.** Replace with the best modern solution, even outside the current task.
+- **Compact tool outputs.** MCP tools paginate text and return image manifests + links — never
+  dump raw bytes into context.
+
+### Rule 5: Testing — real fixtures, no mocks
+- OpenOM is a deterministic library: **tests against real OM PDFs ARE the proof**, not mocks.
+- **`/fixtures`** holds 10–15 real OMs across producers (InDesign, Word-to-PDF, Buildout, scans) —
+  producer diversity is where PDF tooling breaks. Fixtures land **before** extraction logic.
+- **Named, non-negotiable tests:** (a) round-trip embed→read on native/hybrid/scanned OMs;
+  (b) idempotent re-embed with `supersedes` hash (never stacks); (c) non-destructive embed
+  (visually identical, bookmarks/links preserved); (d) survival through download/re-upload;
+  (e) **cross-implementation round-trip** — pdf-lib output readable by pikepdf and vice versa,
+  byte-for-byte payload fidelity. This last one silently kills standards; it exists from day one.
+- No mocked inference, no happy-path-only. Attack messy rent schedules, CMYK/SMask images,
+  flattened scans, empty payloads, hash mismatches.
+
+### Rule 6: Spec & payload integrity
+- **Assertions, not facts.** Every payload is an identified party's opinion as of a date:
+  `assertedBy` + `assertedDate` required; `noiType` (in-place|pro-forma) + `noiAsOfDate` required.
+- **Never invent facts.** Tooling checks internal consistency (NOI÷price vs cap rate, schedule
+  sums, date/term math) — never market truth. Warnings never block; schema errors always block.
+- **Every payload change bumps `assertedDate`.** Re-embed replaces (never stacks) and records
+  `supersedes` = prior payload hash.
+- **Never modify visual content** without an explicit flag. The output PDF looks identical.
+- Payloads SHOULD be human-reviewed before embed (the extension review panel is the assertion gate).
+
+### Rule 7: Hard rules that never bend
+- No inference in the open server or consumer mode — ever.
+- No chat-UI puppeteering: never inject into or scrape logged-in ChatGPT/Claude sessions
+  (ToS, fragility, account risk). Use MCP connectors / on-device / hosted paths instead.
+- Detection re-fetches PDF bytes; it never scrapes the browser's PDF viewer internals.
+- Rehost the embedded file itself — never re-export (re-export destroys the attachment).
+
+### Rule 8: Commit Discipline
+- Small, conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`, `spec:`).
+- Message explains **WHY**, not what.
+- **Commit and push ONLY when the user asks.** Do not add Co-Authored-By trailers.
+
+### Rule 9: When in Doubt, Ask
+- Do not guess or rationalize. Clarify with the user before proceeding.
+
+---
+
+## Structure (target repo layout — non-negotiable boundaries)
+Monorepo, one repo, layered so surfaces attach at boundaries without touching the deterministic core.
+
+- `/core` — Python lib. Deterministic PDF/data verbs (embed, read, inspect, extract, validate).
+  Zero LLM deps. The heart of the standard.
+- `/cli` — `om` command / watch-folder over `/core`. Zero UI. Also the server-side path.
+- `/mcp` — thin FastMCP wrapper, dual transport (stdio + hosted Streamable HTTP). Deterministic.
+- `/spec` — JSON Schema 0.1, sample payloads, `@context` / vocabulary, webhook envelope, changelog.
+  **The product.**
+- `/process` — `SKILL.md` (Claude) + generic agent-instructions (all other clients). The
+  extraction/mapping playbook. No code.
+- `/js` — TS subset: embed/read/validate. Powers the extension + web/Node consumers. npm package.
+- `/extension` — MV3 Chrome extension, two personas: consumer mode (detect/view/verify/publish,
+  ships first) + author mode (capture/review/embed, ships second).
+- `/fixtures` — real OMs across producers. Committed (or LFS/pointer if large).
+
+**Cardinal boundary:** `/core`, `/mcp`, and consumer-mode `/js` never import an inference client.
+
+## MCP tool surface (all deterministic)
+`om_inspect` · `om_extract_text` · `om_extract_images` · `om_read` · `om_validate` · `om_embed`.
+Two-tier validation: schema errors block; consistency warnings never block; market truth is out of
+scope forever.
+
+## Current state (2026-08)
+**Pre-implementation.** Scoping is complete enough to begin Milestone 1 (see the handoff doc §14).
+Nothing is built yet. Repo just initialized. Open blockers: name lock + org/PyPI/npm/domain
+reservation (gates `@context` and imports), free/paid boundary (decide before M3). First code is
+M1 — the `/core` round-trip on 3 real OMs — with the cross-implementation test wired in from the
+start. "OpenOM" is a working title until the name sweep is done.
