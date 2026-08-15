@@ -1,0 +1,39 @@
+# --- OpenOM repo hygiene (see CLAUDE.md Rule 2) ---
+
+# Marketing mock — NEVER committed
+OpenOM — Make your deal legible to the buy-side's AI.htm
+OpenOM — Make your deal legible to the buy-side's AI_files/
+
+# Planning scratch — git-ignored by rule
+docs/superpowers/
+.planning/
+
+# Eval / tooling scratch
+.deepeval/
+
+# --- Python (/core, /cli, /mcp) ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Node / TS (/js, /extension) ---
+node_modules/
+*.tsbuildinfo
+.npm/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
