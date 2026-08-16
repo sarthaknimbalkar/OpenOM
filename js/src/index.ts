@@ -8,7 +8,8 @@
  * `/spec/om-0.1.schema.json`, `/spec/samples/`, and `/spec/vectors/`.
  */
 export { canonicalize } from "./canonicalize.js";
-export { payloadHash } from "./hash.js";
+export { payloadHash, preimageBytes } from "./hash.js";
+export { embedPayload } from "./embed.js";
 export { integrityHashOfBytes, verifyIntegrity, type IntegrityResult } from "./verify.js";
 export {
   parsePayload,
@@ -22,4 +23,9 @@ export {
   type ReadState,
   type ReadVerification,
 } from "./read.js";
+export {
+  validatePayload,
+  type Finding,
+  type ValidationReport,
+} from "./validate.js";
 export { OmIoError, type OmIoCode } from "./errors.js";
