@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Error/finding types and stable codes (spec §H, §I [OM-MCP-004])."""
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ IO_DUPKEY = "OM-IO-DUPKEY"
 IO_BADUTF8 = "OM-IO-BADUTF8"
 IO_NUMRANGE = "OM-IO-NUMRANGE"
 IO_BOMB = "OM-IO-BOMB"
+IO_TOPLEVEL = "OM-IO-TOPLEVEL"
 
 
 class CanonicalizationError(Exception):

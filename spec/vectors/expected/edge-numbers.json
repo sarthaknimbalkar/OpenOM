@@ -1,0 +1,5 @@
+{
+  "jcs_b64": "eyJmcmFjdGlvbiI6MC4wNjI1LCJtYXhTYWZlSW50Ijo5MDA3MTk5MjU0NzQwOTkxLCJuZWdaZXJvIjowLCJzbWFsbEV4cG9uZW50IjoxZS03LCJ0aW55RGVub3JtYWwiOjVlLTMyNCwidHJhaWxpbmdaZXJvcyI6MTIuN30=",
+  "jcs_sha256": "sha256:e673f01c0324d423a6be35efdd121929e071fecced8d60b82724eed67671ec59",
+  "payload": "payloads/edge-numbers.json"
+}

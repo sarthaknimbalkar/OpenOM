@@ -1,0 +1,5 @@
+{
+  "jcs_b64": "eyJhc3RyYWxFbW9qaSI6IvCfj6IiLCJjamsiOiLkuI3li5XnlKMiLCJjb21iaW5pbmdBY3V0ZSI6ImNhZsOpIiwicnRsT3ZlcnJpZGUiOiLigK5hYmMifQ==",
+  "jcs_sha256": "sha256:4de5adb63f2ccbf7a2400b8916fb23e4f5acd58c6db9287ed19414bbe658324d",
+  "payload": "payloads/edge-unicode.json"
+}
