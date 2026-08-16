@@ -19,6 +19,12 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
   generally), `OMW-W050` (self-supersede), `OMW-W060` (`source: verified` without corroborating
   metadata), and info `OMI-I001` (currency defaulted), `OMI-I002` (source tag absent → asserted),
   `OMI-I003` (a cross-check skipped for absent inputs).
+- **Published JSON-LD `@context` / vocabulary** (`spec/context/openom-0.1.jsonld`) — the term→IRI
+  mappings that make an openOM payload valid JSON-LD: schema.org terms (address, geo, name) map to
+  schema.org IRIs; openOM terms map to `https://verveliolabs.com/openom/ns/0.1#`; date fields carry
+  `xsd:date` coercion and `rentSchedule`/`options` are ordered `@list` containers. Vocabulary
+  completeness is drift-locked to the schema by `spec/tests/test_context.py` (every schema property
+  and every conformant-sample term must have a mapping).
 - Conformance sample matrix (`spec/samples/manifest.json`) with expected schema-tier outcomes,
   reproduced by both implementations.
 - Edge canonicalization vectors: `edge-numbers` (denormals, negative zero, max-safe-int) and
