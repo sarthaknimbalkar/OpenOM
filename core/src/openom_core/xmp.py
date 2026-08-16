@@ -99,10 +99,13 @@ def write_marker(
 
 
 def _parse_marker(raw: bytes) -> dict[str, str] | None:
-    text = raw.decode("utf-8", "replace").lstrip("﻿")
+    # Parse from bytes so ElementTree honors any <?xml encoding?> declaration a PDF writer
+    # may prepend; a str with an encoding declaration would raise ValueError. Strip a leading
+    # UTF-8 BOM which would otherwise make the document ill-formed.
+    raw = raw.lstrip(b"\xef\xbb\xbf")
     try:
-        root = ET.fromstring(text)
-    except ET.ParseError:
+        root = ET.fromstring(raw)
+    except (ET.ParseError, ValueError):
         return None
     out: dict[str, str] = {}
     prefix = "{" + OMSPEC_NS + "}"

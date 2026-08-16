@@ -12,7 +12,6 @@ import io
 import json
 from pathlib import Path
 
-import jsonschema
 import pikepdf
 import pytest
 
@@ -46,23 +45,7 @@ def test_cafe_anchored_to_spec() -> None:
     assert hash_bytes(canonicalize(payload)) == SPEC_CAFE_HASH
 
 
-def _load(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def test_schema_accepts_valid_sample() -> None:
-    schema = _load(SPEC / "om-0.1.schema.json")
-    jsonschema.validate(_load(SPEC / "samples" / "valid-stnl.json"), schema)
-
-
-@pytest.mark.parametrize(
-    "bad",
-    ["invalid-missing-noitype", "invalid-populated-signature", "invalid-caprate-percentage"],
-)
-def test_schema_rejects_invalid_samples(bad: str) -> None:
-    schema = _load(SPEC / "om-0.1.schema.json")
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate(_load(SPEC / "samples" / f"{bad}.json"), schema)
+# Schema-tier sample validation moved to test_samples.py (manifest-driven, format-asserting).
 
 
 @pytest.mark.parametrize("name", _payload_names())

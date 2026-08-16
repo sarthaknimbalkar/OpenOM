@@ -1,0 +1,16 @@
+{
+  "specVersion": "0.1",
+  "description": "Conformance sample matrix: schema-tier validation outcomes both implementations MUST reproduce (spec §B [OM-VEC-004]). errorCodes are the codes that MUST be present for invalid samples.",
+  "samples": [
+    { "name": "valid-stnl", "valid": true, "errorCodes": [] },
+    { "name": "valid-proforma", "valid": true, "errorCodes": [] },
+    { "name": "valid-forwardcompat", "valid": true, "errorCodes": [] },
+    { "name": "invalid-missing-noitype", "valid": false, "errorCodes": ["OMV-E002"] },
+    { "name": "invalid-populated-signature", "valid": false, "errorCodes": ["OMV-E003"] },
+    { "name": "invalid-caprate-percentage", "valid": false, "errorCodes": ["OMV-E001"] },
+    { "name": "invalid-bad-date", "valid": false, "errorCodes": ["OMV-E001"] },
+    { "name": "invalid-bad-currency", "valid": false, "errorCodes": ["OMV-E001"] },
+    { "name": "invalid-supersedes-hash", "valid": false, "errorCodes": ["OMV-E010"] },
+    { "name": "invalid-missing-context", "valid": false, "errorCodes": ["OMV-E001"] }
+  ]
+}
