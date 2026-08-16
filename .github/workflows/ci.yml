@@ -47,9 +47,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e "core[dev]" -e "cli[dev]" -e "mcp[dev]"
       - name: ruff
-        run: |
-          ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests \
-            spec/matrix.py spec/__init__.py spec/tests
+        run: ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests spec/matrix.py spec/__init__.py spec/tests
       - name: mypy
         run: |
           mypy core/src
