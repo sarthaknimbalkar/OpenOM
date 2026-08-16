@@ -33,6 +33,8 @@ def write_marker(
         meta["omspec:assertedDate"] = asserted_date
         if supersedes is not None:
             meta["omspec:supersedes"] = supersedes
+        elif "omspec:supersedes" in meta:
+            del meta["omspec:supersedes"]
 
 
 def read_marker(pdf: pikepdf.Pdf) -> dict[str, str] | None:
