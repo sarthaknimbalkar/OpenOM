@@ -22,5 +22,5 @@
     ],
     "options": [{ "count": 4, "lengthYears": 5, "escalation": "10% per option" }]
   },
-  "meta": { "sourceDocHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "supersedes": null, "signature": null }
+  "meta": { "sourceDocHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "supersedes": null }
 }

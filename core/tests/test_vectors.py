@@ -8,13 +8,17 @@ in *both* implementations cannot pass silently.
 from __future__ import annotations
 
 import base64
+import io
 import json
 from pathlib import Path
 
 import jsonschema
+import pikepdf
 import pytest
 
 from openom_core.canonical import canonicalize, hash_bytes
+from openom_core.embed import read
+from openom_core.xmp import read_marker
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = ROOT / "spec"
@@ -59,3 +63,18 @@ def test_schema_rejects_invalid_samples(bad: str) -> None:
     schema = _load(SPEC / "om-0.1.schema.json")
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(_load(SPEC / "samples" / f"{bad}.json"), schema)
+
+
+@pytest.mark.parametrize("name", _payload_names())
+def test_golden_pdf_readback(name: str) -> None:
+    """Task 12: Track-A golden PDFs read back correctly (the cross-impl gate, Track-A side)."""
+    pdf_bytes = (VECTORS / "pdfs" / f"{name}.pdf").read_bytes()
+    sidecar = json.loads((VECTORS / "pdfs" / f"{name}.expected.json").read_text(encoding="utf-8"))
+    result = read(pdf_bytes)
+    assert result.present is True
+    assert result.hash_valid is True
+    with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+        assert list(pdf.attachments).count("om.json") == 1
+        marker = read_marker(pdf)
+        assert marker is not None
+        assert marker["payloadHash"] == sidecar["payloadHash"]
