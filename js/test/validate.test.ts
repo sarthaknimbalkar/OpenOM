@@ -63,12 +63,13 @@ interface SampleEntry {
   name: string;
   valid: boolean;
   errorCodes: string[];
+  warningCodes?: string[];
 }
 const sampleManifest = JSON.parse(
   readFileSync(join(specDir, "samples", "manifest.json"), "utf8"),
 ) as { samples: SampleEntry[] };
 
-describe("conformance sample matrix (shared with Track A)", () => {
+describe("conformance sample matrix (shared with the Python core)", () => {
   for (const entry of sampleManifest.samples) {
     test(`${entry.name}: ${entry.valid ? "valid" : entry.errorCodes.join(",")}`, () => {
       const r = validatePayload(sample(entry.name), schema);
@@ -80,6 +81,9 @@ describe("conformance sample matrix (shared with Track A)", () => {
         expect(r.blocked).toBe(true);
         for (const code of entry.errorCodes) expect(codes).toContain(code);
       }
+      // Consistency-tier parity: warning codes both implementations must reproduce.
+      const warnCodes = r.warnings.map((w) => w.code);
+      for (const code of entry.warningCodes ?? []) expect(warnCodes).toContain(code);
     });
   }
 });
