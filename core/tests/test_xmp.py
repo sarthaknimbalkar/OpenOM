@@ -22,6 +22,47 @@ def _roundtrip(pdf: pikepdf.Pdf) -> pikepdf.Pdf:
     return pikepdf.open(io.BytesIO(buf.getvalue()))
 
 
+_PDFA_EXT_NS = "http://www.aiim.org/pdfa/ns/extension/"
+_PDFA_SCHEMA_NS = "http://www.aiim.org/pdfa/ns/schema#"
+_PDFA_PROP_NS = "http://www.aiim.org/pdfa/ns/property#"
+
+
+def _metadata_xml(pdf: pikepdf.Pdf) -> bytes:
+    return bytes(pdf.Root.Metadata.read_bytes())
+
+
+def test_pdfa_extension_schema_describes_omspec() -> None:
+    """#2: the omspec namespace carries a PDF/A Extension Schema Description (well-formed,
+    correct namespaceURI/prefix, one property entry per marker field)."""
+    pdf = _blank_pdf()
+    write_marker(
+        pdf, spec_version="0.1", payload_filename="om.json",
+        payload_hash="sha256:" + "b" * 64, asserted_date="2026-08-15",
+        supersedes="sha256:" + "c" * 64,
+    )
+    xml = _metadata_xml(_roundtrip(pdf))
+    root = ET.fromstring(xml)  # must be well-formed
+    schemas = root.iter(f"{{{_PDFA_SCHEMA_NS}}}namespaceURI")
+    assert any((e.text or "") == OMSPEC_NS for e in schemas), "omspec namespace not described"
+    prefixes = [e.text for e in root.iter(f"{{{_PDFA_SCHEMA_NS}}}prefix")]
+    assert "omspec" in prefixes
+    names = {e.text for e in root.iter(f"{{{_PDFA_PROP_NS}}}name")}
+    assert {"specName", "specVersion", "payloadFilename", "payloadHash", "assertedDate",
+            "supersedes"} <= names
+
+
+def test_pdfa_extension_schema_is_idempotent() -> None:
+    """Re-writing the marker MUST NOT stack a second extension-schema block."""
+    pdf = _blank_pdf()
+    for date in ("2026-08-15", "2026-08-16", "2026-08-17"):
+        write_marker(pdf, spec_version="0.1", payload_filename="om.json",
+                     payload_hash="sha256:" + "d" * 64, asserted_date=date)
+        pdf = _roundtrip(pdf)
+    xml = _metadata_xml(pdf).decode("utf-8")
+    assert xml.count("xmlns:pdfaExtension") == 1
+    assert xml.count("xmlns:omspec") == 1
+
+
 def test_write_then_read() -> None:
     pdf = _blank_pdf()
     write_marker(

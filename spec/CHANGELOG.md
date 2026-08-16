@@ -36,6 +36,13 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
   `edge-unicode` (NFD, astral surrogate pairs, RTL override).
 
 ### Changed
+- **PDF/A Extension Schema for the `omspec` namespace** (#2): both embedders now write the PDF/A
+  Extension Schema Description (`pdfaExtension`/`pdfaSchema`/`pdfaProperty`) that describes the six
+  `omspec` marker properties, so a PDF/A validator no longer flags the namespace as undescribed —
+  a prerequisite for any PDF/A-3 conformance claim. Written idempotently (no stacking on re-embed)
+  and identically by both engines, so the claim is producer-independent. Full veraPDF PDF/A-3
+  conformance validation in CI remains tied to the **strict-PDF/A-3** parked item (§13); 0.1 ships
+  relaxed PDF/A-3 per §8a.
 - **Consistency-code corrections** (both implementations): `OMW-W014` now fires on non-positive
   `askingPrice`/`noi`/`buildingSF` (its §H.3 meaning), not on a zero rent-schedule `annualRent`
   (which has no allocated code and is usually legitimate free rent — the ad-hoc check is removed);

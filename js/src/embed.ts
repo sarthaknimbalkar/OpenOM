@@ -68,6 +68,48 @@ interface OmspecProps {
   supersedes: string | null;
 }
 
+// PDF/A requires every custom XMP namespace to be described by an embedded Extension Schema
+// (PDF/A-3 §6.6.2.3, #2). Static — describes the fixed 0.1 marker properties. MUST match the
+// Python writer (core/src/openom_core/xmp.py) so the PDF/A claim is producer-independent.
+const PDFA_EXTENSION_SCHEMA = [
+  ["specName", "name of the embedded data standard"],
+  ["specVersion", "version of the embedded data standard"],
+  ["payloadFilename", "filename of the embedded om.json attachment"],
+  ["payloadHash", "sha256 integrity hash of the canonical payload"],
+  ["assertedDate", "assertion date of the embedded payload"],
+  ["supersedes", "prior payload hash this payload replaces"],
+]
+  .map(
+    ([name, desc]) =>
+      `        <rdf:li rdf:parseType="Resource">
+         <pdfaProperty:name>${name}</pdfaProperty:name>
+         <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+         <pdfaProperty:category>internal</pdfaProperty:category>
+         <pdfaProperty:description>${desc}</pdfaProperty:description>
+        </rdf:li>`,
+  )
+  .join("\n");
+
+const _PDFA_BLOCK = `  <rdf:Description rdf:about=""
+      xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/"
+      xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#"
+      xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#">
+   <pdfaExtension:schemas>
+    <rdf:Bag>
+     <rdf:li rdf:parseType="Resource">
+      <pdfaSchema:schema>openOM offering-memorandum payload marker</pdfaSchema:schema>
+      <pdfaSchema:namespaceURI>https://verveliolabs.com/openom/ns/0.1#</pdfaSchema:namespaceURI>
+      <pdfaSchema:prefix>omspec</pdfaSchema:prefix>
+      <pdfaSchema:property>
+       <rdf:Seq>
+${PDFA_EXTENSION_SCHEMA}
+       </rdf:Seq>
+      </pdfaSchema:property>
+     </rdf:li>
+    </rdf:Bag>
+   </pdfaExtension:schemas>
+  </rdf:Description>`;
+
 /**
  * Write the catalog `/Metadata` XMP packet carrying the `omspec:*` marker
  * (§D.2.1). Content MUST be handed to pdf-lib as UTF-8 BYTES (a JS string is
@@ -88,6 +130,7 @@ function injectOmspecXmp(doc: PDFDocument, props: OmspecProps): void {
   const xml = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+${_PDFA_BLOCK}
   <rdf:Description rdf:about="" xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#">
 ${body}
   </rdf:Description>
