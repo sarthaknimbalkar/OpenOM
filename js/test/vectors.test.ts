@@ -42,9 +42,10 @@ describe("cross-impl vector pin (spec/vectors @ contract freeze)", () => {
 
   for (const entry of manifest.vectors) {
     describe(`vector: ${entry.name}`, () => {
-      const payload = JSON.parse(
-        readFileSync(join(vectorsDir, entry.payload), "utf8"),
-      ) as Record<string, unknown>;
+      const payload = JSON.parse(readFileSync(join(vectorsDir, entry.payload), "utf8")) as Record<
+        string,
+        unknown
+      >;
       const expected = JSON.parse(
         readFileSync(join(vectorsDir, entry.expected), "utf8"),
       ) as Expected;

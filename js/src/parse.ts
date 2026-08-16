@@ -16,8 +16,7 @@ export interface ParseOptions {
 }
 
 /** Lone (unpaired) UTF-16 surrogate — high without low, or low without high. */
-const LONE_SURROGATE =
-  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
 /**
  * Parse a payload from raw JSON text or UTF-8 bytes with the §C/§J hardening
@@ -211,7 +210,10 @@ function scanStringToken(text: string, start: number): number {
 
 function skipWhitespace(text: string, start: number): number {
   let i = start;
-  while (i < text.length && (text[i] === " " || text[i] === "\t" || text[i] === "\n" || text[i] === "\r")) {
+  while (
+    i < text.length &&
+    (text[i] === " " || text[i] === "\t" || text[i] === "\n" || text[i] === "\r")
+  ) {
     i++;
   }
   return i;

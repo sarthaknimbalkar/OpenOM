@@ -12,13 +12,11 @@ describe("[OM-CANON-016] integrity hash — §C.5 Example 4", () => {
     assertedDate: "2026-08-15",
     deal: { askingPrice: 1850000, capRate: 0.0625, noi: 115625, noiType: "in-place" },
     meta: {
-      sourceDocHash:
-        "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      sourceDocHash: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       supersedes: null,
     },
   };
-  const expected =
-    "sha256:aa631ed617b85ac226ef4f6ae97e5387a60fdc51c6e49f42c35034c113ca16f7";
+  const expected = "sha256:aa631ed617b85ac226ef4f6ae97e5387a60fdc51c6e49f42c35034c113ca16f7";
 
   test("hashes a payload with meta.signature absent", () => {
     expect(payloadHash(base)).toBe(expected);

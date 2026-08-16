@@ -1,7 +1,7 @@
 {
   "name": "openom-js",
   "version": "0.1.0",
-  "description": "OpenOM TypeScript reference implementation (/js) — canonicalization, embed/read, validate. Deterministic; zero inference.",
+  "description": "openOM TypeScript reference implementation (/js) — canonicalization, embed/read, validate. Deterministic; zero inference.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -11,8 +11,10 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "tsc -p tsconfig.json --noEmit"
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",
@@ -23,8 +25,13 @@
     "pdfjs-dist": "^4.10.38"
   },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.0",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0",
     "vitest": "^2.1.0"
   }
 }
