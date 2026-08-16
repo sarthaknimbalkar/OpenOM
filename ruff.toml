@@ -1,0 +1,6 @@
+# Root ruff config for repo files outside a package (spec/ tooling). The core/cli/mcp packages
+# carry their own [tool.ruff] in their pyproject.toml (ruff uses the nearest config per file).
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "B", "UP", "W"]
