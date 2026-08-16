@@ -48,7 +48,7 @@ def test_sample_matrix(entry: dict[str, Any]) -> None:
     # Consistency-tier parity: warning codes both implementations must reproduce.
     warn_codes = [f.code for f in report.warnings]
     for expected in entry.get("warningCodes", []):
-        assert expected in warn_codes, f"{entry['name']} missing warning {expected}; got {warn_codes}"
+        assert expected in warn_codes, f"{entry['name']}: missing {expected} in {warn_codes}"
 
 
 def test_forward_compatibility_unknown_member_accepted() -> None:
