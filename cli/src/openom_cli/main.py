@@ -15,6 +15,7 @@ from typing import Annotated, Any, cast
 import typer
 from openom_core.embed import embed as _embed
 from openom_core.embed import read as _read
+from openom_core.embed import reembed_warnings as _reembed_warnings
 from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
@@ -37,7 +38,11 @@ def embed(
     out: Annotated[Path, typer.Option(help="Output PDF path")],
     asserted_date: Annotated[str, typer.Option(help="ISO 8601 assertion date")],
 ) -> None:
-    out.write_bytes(_embed(pdf.read_bytes(), _load_json(payload), asserted_date=asserted_date))
+    src = pdf.read_bytes()
+    data = _load_json(payload)
+    for w in _reembed_warnings(src, data, asserted_date=asserted_date):
+        typer.echo(f"warning {w.code} {w.path}: {w.message}", err=True)
+    out.write_bytes(_embed(src, data, asserted_date=asserted_date))
     typer.echo(f"embedded om.json -> {out}")
 
 

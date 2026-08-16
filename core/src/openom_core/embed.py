@@ -11,13 +11,14 @@ from __future__ import annotations
 
 import io
 import json
+import zlib
 from dataclasses import dataclass
 from typing import Any
 
 import pikepdf
 
 from .canonical import canonicalize, hash_bytes, strip_signature
-from .errors import PayloadTooLargeError
+from .errors import Finding, PayloadTooLargeError
 from .xmp import read_marker, write_marker
 
 #: Decompressed-payload cap (§J [OM-SEC-002]).
@@ -83,11 +84,21 @@ def embed(
     spec_version = str(payload.get("specVersion", "0.1"))
 
     with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
-        # §D.4 idempotent re-embed: a *different* prior payload is superseded; an identical
-        # re-embed is a no-op (no self-supersede, cf. OMW-W050).
+        # §D.4 re-embed semantics:
+        #  - a *different* prior payload is superseded (supersedes = prior hash);
+        #  - an *identical* re-embed is a true no-op that PRESERVES the existing lineage
+        #    (carry the prior supersedes forward) rather than wiping it — re-running the tool
+        #    on an unchanged payload must not erase provenance;
+        #  - a first embed has no predecessor (supersedes = None). No self-supersede.
         prior = read_marker(pdf)
         prior_hash = prior.get("payloadHash") if prior else None
-        supersedes = prior_hash if (prior_hash and prior_hash != payload_hash) else None
+        prior_supersedes = prior.get("supersedes") if prior else None
+        if prior_hash and prior_hash != payload_hash:
+            supersedes: str | None = prior_hash
+        elif prior_hash == payload_hash:
+            supersedes = prior_supersedes
+        else:
+            supersedes = None
 
         _remove_existing(pdf)
         # pikepdf's stub marks description/filename/dates as required; runtime defaults them.
@@ -111,15 +122,108 @@ def embed(
         return out.getvalue()
 
 
+def reembed_warnings(
+    pdf_bytes: bytes, payload: dict[str, Any], *, asserted_date: str
+) -> list[Finding]:
+    """Non-blocking re-embed warnings against an existing PDF (§H). Pure; ``embed`` stays
+    bytes→bytes, so callers (CLI/MCP) compose this to surface provenance issues.
+
+    OMW-W051: the new assertedDate precedes the payload it would supersede (time going
+    backwards on a reprice). Warnings never block.
+    """
+    with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+        prior = read_marker(pdf)
+    if not prior:
+        return []
+    payload_hash = hash_bytes(canonicalize(strip_signature(payload)))
+    prior_hash = prior.get("payloadHash")
+    prior_date = prior.get("assertedDate")
+    out: list[Finding] = []
+    if prior_hash and prior_hash != payload_hash and prior_date and asserted_date < prior_date:
+        out.append(
+            Finding(
+                "OMW-W051",
+                "warning",
+                "/assertedDate",
+                "assertedDate precedes the superseded payload's assertedDate",
+                expected=prior_date,
+                actual=asserted_date,
+            )
+        )
+    return out
+
+
+def _find_ef_stream(pdf: pikepdf.Pdf) -> pikepdf.Object | None:
+    """Locate the om.json embedded-file stream in spec detection order ([OM-XMP-003]).
+
+    Authoritative path: catalog ``/AF`` → Filespec (``/UF`` or ``/F`` == om.json) → ``/EF``.
+    Falls back to the ``/EmbeddedFiles`` name tree for producers that populate only that.
+    """
+
+    def _ef_of(spec: pikepdf.Object) -> pikepdf.Object | None:
+        if "/EF" not in spec:
+            return None
+        ef = spec.EF
+        for key in ("/UF", "/F"):
+            if key in ef:
+                return ef[key]
+        return None
+
+    if "/AF" in pdf.Root:
+        for spec in pdf.Root.AF:
+            names = {str(spec[k]) for k in ("/UF", "/F") if k in spec}
+            if PAYLOAD_NAME in names:
+                stream = _ef_of(spec)
+                if stream is not None:
+                    return stream
+    if PAYLOAD_NAME in pdf.attachments:  # fallback: EmbeddedFiles name tree
+        return _ef_of(pdf.attachments[PAYLOAD_NAME].obj)
+    return None
+
+
+def _decoded_payload_bytes(stream: pikepdf.Object) -> bytes:
+    """Decode the EF stream to raw payload bytes, bounding size *before* full materialization.
+
+    A malicious PDF can hide a decompression bomb in a tiny compressed stream. We read the
+    stored (compressed) bytes — always bounded by the file itself — reject if already over the
+    cap, then inflate with a hard ceiling rather than decompressing unbounded into memory.
+    """
+    raw = bytes(stream.read_raw_bytes())
+    if len(raw) > MAX_PAYLOAD_BYTES:
+        raise PayloadTooLargeError(len(raw), MAX_PAYLOAD_BYTES)
+
+    filt = stream.get("/Filter")
+    names = [str(filt)] if isinstance(filt, pikepdf.Name) else [str(n) for n in (filt or [])]
+    # Plain FlateDecode (no predictor) — the common case for our writes and pdf-lib — can be
+    # inflated with a bounded zlib object. Anything exotic (predictors, other filters) defers
+    # to pikepdf's decoder, still guarded by the compressed-size cap above and a post-check.
+    if names == ["/FlateDecode"] and "/DecodeParms" not in stream and "/DP" not in stream:
+        data = _bounded_inflate(raw)
+    elif not names:
+        data = raw  # stored uncompressed
+    else:
+        data = bytes(stream.read_bytes())
+    if len(data) > MAX_PAYLOAD_BYTES:
+        raise PayloadTooLargeError(len(data), MAX_PAYLOAD_BYTES)
+    return data
+
+
+def _bounded_inflate(raw: bytes) -> bytes:
+    obj = zlib.decompressobj()
+    out = obj.decompress(raw, MAX_PAYLOAD_BYTES + 1)
+    if obj.unconsumed_tail:  # hit the ceiling before the input was exhausted
+        raise PayloadTooLargeError(MAX_PAYLOAD_BYTES + 1, MAX_PAYLOAD_BYTES)
+    return out + obj.flush()
+
+
 def read(pdf_bytes: bytes) -> ReadResult:
     """Read + integrity-verify the om.json payload (detection order [OM-XMP-003])."""
     with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
         marker = read_marker(pdf)
-        if PAYLOAD_NAME not in pdf.attachments:
+        stream = _find_ef_stream(pdf)
+        if stream is None:
             return ReadResult(present=False, payload=None, hash_valid=None)
-        raw = pdf.attachments[PAYLOAD_NAME].get_file().read_bytes()
-        if len(raw) > MAX_PAYLOAD_BYTES:
-            raise PayloadTooLargeError(len(raw), MAX_PAYLOAD_BYTES)
+        raw = _decoded_payload_bytes(stream)
         payload = json.loads(raw)
         xmp_hash = marker.get("payloadHash") if marker else None
         hash_valid = (hash_bytes(raw) == xmp_hash) if xmp_hash else None
