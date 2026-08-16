@@ -6,6 +6,7 @@
     { "name": "valid-proforma", "valid": true, "errorCodes": [], "warningCodes": [] },
     { "name": "valid-forwardcompat", "valid": true, "errorCodes": [], "warningCodes": [] },
     { "name": "warn-caprate", "valid": true, "errorCodes": [], "warningCodes": ["OMW-W010"] },
+    { "name": "warn-realworld", "valid": true, "errorCodes": [], "warningCodes": ["OMW-W010", "OMW-W025"] },
     { "name": "invalid-missing-noitype", "valid": false, "errorCodes": ["OMV-E002"], "warningCodes": [] },
     { "name": "invalid-populated-signature", "valid": false, "errorCodes": ["OMV-E003"], "warningCodes": [] },
     { "name": "invalid-caprate-percentage", "valid": false, "errorCodes": ["OMV-E001"], "warningCodes": [] },
