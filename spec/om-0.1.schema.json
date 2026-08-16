@@ -161,7 +161,10 @@
         "rentPSF": { "type": "number", "minimum": 0 },
         "escalationFromPrior": { "type": "number" },
         "abatement": { "oneOf": [{ "type": "null" }, { "type": "number" }] },
-        "source": { "enum": ["asserted", "extracted", "verified"] }
+        "source": {
+          "enum": ["asserted", "extracted", "verified"],
+          "description": "Per-field provenance ([OM-DD-004]). In 0.1 `source` is carried ONLY here on rentPeriod objects; scalar-field and options[] provenance is deferred to a future provenance-side-map minor (#44). Absent → assume `asserted`."
+        }
       }
     }
   }
