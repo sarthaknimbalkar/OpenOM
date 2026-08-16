@@ -34,7 +34,7 @@ def test_write_then_read() -> None:
     )
     got = read_marker(_roundtrip(pdf))
     assert got is not None
-    assert got["specName"] == "OpenOM"
+    assert got["specName"] == "openOM"
     assert got["specVersion"] == "0.1"
     assert got["payloadFilename"] == "om.json"
     assert got["payloadHash"] == "sha256:" + "a" * 64

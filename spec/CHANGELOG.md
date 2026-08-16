@@ -1,6 +1,6 @@
-# OpenOM Spec Changelog
+# openOM Spec Changelog
 
-All notable changes to the OpenOM payload schema, `@context`, and conformance vectors are
+All notable changes to the openOM payload schema, `@context`, and conformance vectors are
 recorded here. The spec is the product; every payload-shape change is a versioned contract
 change ([OM-VER]). Format: [Keep a Changelog](https://keepachangelog.com/); the schema follows
 its own `specVersion` (currently `0.1`), independent of tool package versions.
@@ -23,8 +23,10 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
 ### Notes
 - `additionalProperties` is intentionally left open across the schema: unknown OPTIONAL members
   are permitted for forward compatibility ([OM-VER-003]).
-- The `@context` / `$id` namespace remains the `SPEC-DOMAIN-TBD` placeholder pending the name
-  lock (Q1). Locking it will trigger a single vector regeneration and a version note here.
+- **Name lock (Q1):** the standard is **openOM**, published by Vervelio Labs. The `@context`,
+  XMP namespace, and schema `$id` are now anchored at `https://verveliolabs.com/openom/...`
+  (was the `SPEC-DOMAIN-TBD` placeholder). Vectors + golden PDFs were regenerated once against
+  the real namespace; cross-implementation byte-identity re-verified.
 
 ## [0.1] — seed
 

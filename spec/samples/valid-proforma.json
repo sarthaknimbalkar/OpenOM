@@ -1,5 +1,5 @@
 {
-  "@context": ["https://schema.org", "https://SPEC-DOMAIN-TBD/ns/0.1"],
+  "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
   "@type": "RealEstateListing",
   "specVersion": "0.1",
   "assertedBy": { "broker": "Ann Broker", "brokerage": "Sample Advisors", "license": "TX 000001" },

@@ -6,7 +6,7 @@
     "assertedDate": "2026-08-15",
     "payloadFilename": "om.json",
     "payloadHash": "sha256:4de5adb63f2ccbf7a2400b8916fb23e4f5acd58c6db9287ed19414bbe658324d",
-    "specName": "OpenOM",
+    "specName": "openOM",
     "specVersion": "0.1"
   }
 }

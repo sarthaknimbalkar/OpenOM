@@ -27,7 +27,7 @@ const UNVERIFIED: ReadVerification = {
 };
 
 /**
- * Read and verify an OpenOM payload from PDF bytes — the deterministic read
+ * Read and verify an openOM payload from PDF bytes — the deterministic read
  * orchestration seam (§D.2.2 [OM-XMP-005]): detect (XMP `omspec:payloadHash`)
  * → extract (`om.json` via `/AF`→`/Filespec`→`/EF`) → decompress → recompute
  * the §C hash and compare. Parses via pdf.js, which handles compressed object

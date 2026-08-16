@@ -1,4 +1,4 @@
-# Contributing to OpenOM
+# Contributing to openOM
 
 Thanks for helping build the standard. A few rules keep it trustworthy.
 
@@ -38,7 +38,7 @@ python core/scripts/gen_vectors.py            # then: git diff --exit-code spec/
 
 ## Testing philosophy
 
-OpenOM is a deterministic library, so **tests run against real OM PDFs, not mocks.** Prefer
+openOM is a deterministic library, so **tests run against real OM PDFs, not mocks.** Prefer
 adding a fixture and a real round-trip over a mocked unit. Attack the messy cases: CMYK/SMask
 images, flattened scans, empty payloads, hash mismatches, hostile rent schedules.
 

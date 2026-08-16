@@ -7,7 +7,7 @@ for security-sensitive reports. We aim to acknowledge within 3 business days.
 
 ## Threat model
 
-OpenOM's core processes **untrusted PDF input** and produces deterministic output. The design
+openOM's core processes **untrusted PDF input** and produces deterministic output. The design
 constraints below are security properties, not just style:
 
 - **No inference, no network, no telemetry in the core.** `core/`, `cli`, and `mcp` make zero
@@ -27,7 +27,7 @@ constraints below are security properties, not just style:
 
 ## What is explicitly out of scope
 
-- **Market truth.** OpenOM never asserts a claim is *correct*, only internally consistent. A
+- **Market truth.** openOM never asserts a claim is *correct*, only internally consistent. A
   payload is an identified party's opinion as of a date.
 - **Extraction correctness of third-party authoring tools.** The standard defines the payload
   and its verification, not the accuracy of any particular producer's mapping.
