@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "canonicalize": "^2.1.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38"
