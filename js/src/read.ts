@@ -1,5 +1,6 @@
 import { verifyIntegrity } from "./verify.js";
-import { parsePayload } from "./parse.js";
+import { parsePayload, DEFAULT_MAX_PAYLOAD_BYTES } from "./parse.js";
+import { OmIoError } from "./errors.js";
 
 /** Detection outcome ([OM-XMP-005]); `ambiguous` is reserved for a later pass. */
 export type ReadState = "absent" | "present" | "hash-mismatch";
@@ -43,7 +44,10 @@ export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadRe
   const pdf = await pdfjs.getDocument({ data: pdfBytes.slice(), verbosity: 0 }).promise;
   try {
     const expectedHash = await readXmpPayloadHash(pdf);
-    const bytes = await readOmJsonBytes(pdf);
+    // Prefer the bounded (pre-decompression) extractor on Node — parity with the Python core's
+    // zlib-capped inflate (no memory spike on a flate bomb). Falls back to pdf.js elsewhere,
+    // where the post-decompression size cap in parsePayload still applies.
+    const bytes = (await boundedExtractOmJson(pdfBytes)) ?? (await readOmJsonBytes(pdf));
 
     if (bytes === null) {
       // No payload file. Nothing to surface, regardless of a dangling marker.
@@ -73,6 +77,70 @@ export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadRe
   } finally {
     await pdf.destroy();
   }
+}
+
+/**
+ * Node-only bounded extraction of `om.json`: read the RAW (compressed) stream via pdf-lib and
+ * inflate with a hard output ceiling, so a decompression bomb is rejected (OM-IO-BOMB) BEFORE it
+ * is fully materialized — parity with the Python core (Task 5). Returns null (→ pdf.js fallback)
+ * on any environment/shape it can't confidently handle; only throws OM-IO-BOMB on an over-cap
+ * inflate. Browser consumers use the pdf.js path + the post-decompression cap in parsePayload.
+ */
+async function boundedExtractOmJson(
+  pdfBytes: Uint8Array,
+  maxBytes: number = DEFAULT_MAX_PAYLOAD_BYTES,
+): Promise<Uint8Array | null> {
+  let zlib: typeof import("node:zlib");
+  try {
+    zlib = await import("node:zlib");
+  } catch {
+    return null; // not Node — let pdf.js handle it
+  }
+  const { PDFDocument, PDFName, PDFArray, PDFDict, PDFRawStream, PDFString, PDFHexString } =
+    await import("pdf-lib");
+  let doc;
+  try {
+    doc = await PDFDocument.load(pdfBytes, { throwOnInvalidObject: false, updateMetadata: false });
+  } catch {
+    return null;
+  }
+  const af = doc.catalog.lookup(PDFName.of("AF")); // untyped: absent -> undefined, not a throw
+  if (!(af instanceof PDFArray)) return null;
+  for (let i = 0; i < af.size(); i++) {
+    const filespec = doc.context.lookup(af.get(i));
+    if (!(filespec instanceof PDFDict)) continue;
+    const nameObj = filespec.lookup(PDFName.of("UF")) ?? filespec.lookup(PDFName.of("F"));
+    const name =
+      nameObj instanceof PDFString || nameObj instanceof PDFHexString
+        ? nameObj.decodeText()
+        : null;
+    if (name !== "om.json") continue;
+    const ef = filespec.lookup(PDFName.of("EF"));
+    if (!(ef instanceof PDFDict)) return null;
+    const streamRef = ef.get(PDFName.of("F")) ?? ef.get(PDFName.of("UF"));
+    const stream = streamRef ? doc.context.lookup(streamRef) : undefined;
+    if (!(stream instanceof PDFRawStream)) return null;
+    const raw = Buffer.from(stream.contents);
+    const filter = stream.dict.lookup(PDFName.of("Filter"));
+    if (filter instanceof PDFName && filter.decodeText() === "FlateDecode") {
+      try {
+        return new Uint8Array(zlib.inflateSync(raw, { maxOutputLength: maxBytes }));
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code === "ERR_BUFFER_TOO_LARGE") {
+          throw new OmIoError("OM-IO-BOMB", `embedded payload exceeds the ${maxBytes}-byte cap`);
+        }
+        return null; // corrupt/other filter chain — defer to pdf.js
+      }
+    }
+    if (!filter) {
+      if (raw.length > maxBytes) {
+        throw new OmIoError("OM-IO-BOMB", `embedded payload exceeds the ${maxBytes}-byte cap`);
+      }
+      return new Uint8Array(raw);
+    }
+    return null; // unknown filter — defer to pdf.js
+  }
+  return null;
 }
 
 /** Parse the payload, returning null if the bytes are not a valid payload. */
