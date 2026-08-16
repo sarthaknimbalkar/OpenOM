@@ -48,18 +48,24 @@ jobs:
           pip install -e "core[dev]" -e "cli[dev]" -e "mcp[dev]"
       - name: ruff
         run: |
-          ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests
+          ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests \
+            spec/matrix.py spec/__init__.py spec/tests
       - name: mypy
         run: |
           mypy core/src
           mypy cli/src
           mypy mcp/src
+          mypy spec/matrix.py
       - name: pytest (core, coverage gate)
         run: pytest core -q --cov=openom_core --cov-report=term-missing --cov-fail-under=90
       - name: pytest (cli, coverage gate)
         run: pytest cli -q --cov=openom_cli --cov-report=term-missing --cov-fail-under=90
       - name: pytest (mcp, coverage gate)
         run: pytest mcp -q --cov=openom_mcp --cov-report=term-missing --cov-fail-under=85
+      - name: pytest (spec matrix)
+        run: python -m pytest spec/tests -q
+      - name: fixture matrix — pathology axis (§B.3, [OM-DoD-001](e))
+        run: python -m spec.matrix --assert-synthetic
 
   boundary:
     # Cardinal rule: NO inference anywhere in core/cli/mcp. core+cli are additionally
