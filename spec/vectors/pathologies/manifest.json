@@ -1,0 +1,23 @@
+{
+  "specVersion": "0.1",
+  "description": "Pathology golden PDFs (#11): both implementations MUST extract the embedded payload. Python producer; pikepdf + pdf-lib consumers.",
+  "cases": [
+    {
+      "name": "empty-payload",
+      "pdf": "empty-payload.pdf",
+      "expected": "empty-payload.expected.json"
+    },
+    {
+      "name": "scanned",
+      "pdf": "scanned.pdf",
+      "expected": "scanned.expected.json",
+      "class": "scanned"
+    },
+    {
+      "name": "encrypted",
+      "pdf": "encrypted.pdf",
+      "expected": "encrypted.expected.json",
+      "encrypted": true
+    }
+  ]
+}
