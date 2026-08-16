@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openom-core"
+version = "0.1.0.dev0"
+description = "OpenOM deterministic core — embed/read/inspect/validate CRE offering-memorandum payloads. Zero inference, ever."
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+  "pikepdf>=9",
+  "PyMuPDF>=1.24",
+  "rfc8785>=0.1.4",
+  "jsonschema>=4.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5", "numpy>=1.26", "pillow>=10"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openom_core"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
