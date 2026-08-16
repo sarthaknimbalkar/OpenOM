@@ -1,4 +1,4 @@
-"""M1 /mcp server wiring — all six tools registered + delegating to the pure bodies."""
+"""M1 /mcp server wiring — all seven tools registered + delegating to the pure bodies."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ EXPECTED = [
     "om_extract_text",
     "om_inspect",
     "om_read",
+    "om_request_upload",
     "om_validate",
 ]
 
@@ -45,7 +46,7 @@ def _text(path: Path) -> Path:
     return path
 
 
-def test_all_six_tools_registered() -> None:
+def test_all_seven_tools_registered() -> None:
     tools = asyncio.run(server.mcp.list_tools())
     assert sorted(t.name for t in tools) == EXPECTED
 
