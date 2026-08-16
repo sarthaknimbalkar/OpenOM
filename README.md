@@ -39,7 +39,7 @@ never do.
 | [`core/`](core/) | Python library — deterministic PDF/data verbs (embed, read, inspect, extract, validate). The heart of the standard. Zero inference deps. |
 | [`cli/`](cli/) | The `om` command over `core`. |
 | [`spec/`](spec/) | JSON Schema, sample payloads, `@context`/vocabulary, and the conformance **vectors** (JCS oracles + golden PDFs). **The product.** |
-| `mcp/` | Thin FastMCP wrapper (stdio + hosted HTTP). Deterministic. _(next milestone)_ |
+| [`mcp/`](mcp/) | Deterministic MCP server — the 6-tool surface (`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`) over `core`. stdio (M1); hosted HTTP is M3. |
 | `js/` | TypeScript reference implementation (embed/read/validate) powering the extension + web/Node consumers. |
 | `process/` | Extraction/mapping playbook for authoring clients. No code. _(planned)_ |
 | `fixtures/` | Real OMs across producers (confidential; not committed). |
