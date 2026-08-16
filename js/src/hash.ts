@@ -12,8 +12,18 @@ import { sha256Hex } from "./crypto.js";
  * @returns `"sha256:" + lowercase_hex(SHA-256(JCS(preimage)))` ([OM-CANON-003]).
  */
 export function payloadHash(payload: unknown): string {
-  const preimage = stripSignature(payload);
-  return `sha256:${sha256Hex(canonicalize(preimage))}`;
+  return `sha256:${sha256Hex(preimageBytes(payload))}`;
+}
+
+/**
+ * The exact bytes a Producer embeds as `om.json`: the JCS of the payload with
+ * `meta.signature` removed ([OM-CANON-016]). These are hashed to produce
+ * `payloadHash`, so storing them means a Consumer's byte-recompute of the
+ * stored stream equals `omspec:payloadHash` directly ([OM-CANON-008]) — the
+ * single source of truth shared by embed and hashing.
+ */
+export function preimageBytes(payload: unknown): Uint8Array {
+  return canonicalize(stripSignature(payload));
 }
 
 /**
