@@ -1,0 +1,7 @@
+{
+  "@type": "RealEstateListing",
+  "specVersion": "0.1",
+  "assertedBy": { "broker": "A", "brokerage": "B", "license": "C" },
+  "assertedDate": "2026-08-16",
+  "meta": { "supersedes": null }
+}

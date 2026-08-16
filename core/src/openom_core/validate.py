@@ -62,10 +62,40 @@ def _error_tier(
     payload: Mapping[str, Any], schema: Mapping[str, Any] | None, report: Report
 ) -> None:
     if schema is not None:
-        validator = jsonschema.Draft202012Validator(dict(schema))
+        # format_checker makes `format: date` etc. ASSERTED, not annotation-only — parity with
+        # Track B's ajv-formats (mode: full). Without it, a malformed assertedDate passes here
+        # but fails in JS: a silent cross-impl fork ([OM-VAL-002]).
+        validator = jsonschema.Draft202012Validator(
+            dict(schema), format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER
+        )
         for err in sorted(validator.iter_errors(dict(payload)), key=str):
-            path = "/" + "/".join(str(p) for p in err.absolute_path)
-            report.errors.append(Finding("OMV-E001", "error", path, err.message))
+            report.errors.append(_map_schema_error(err))
+    else:
+        _schema_free_checks(payload, report)
+
+
+def _map_schema_error(err: jsonschema.ValidationError) -> Finding:
+    """Map one jsonschema error to a stable §H code — path-based, matching Track B's mapError."""
+    path = "/" + "/".join(str(p) for p in err.absolute_path)
+    if path == "/meta/signature":
+        return Finding(
+            "OMV-E003", "error", "/meta/signature", "signature reserved in 0.1 (null/absent)"
+        )
+    if err.validator == "required" and path == "/deal":
+        missing = err.message.split("'")[1] if "'" in err.message else ""
+        if missing in ("noiType", "noiAsOfDate"):
+            return Finding(
+                "OMV-E002", "error", f"/deal/{missing}", "noiType/noiAsOfDate required with noi"
+            )
+    if path == "/meta/supersedes":
+        return Finding(
+            "OMV-E010", "error", "/meta/supersedes", "meta.supersedes must be sha256:<64hex>/null"
+        )
+    return Finding("OMV-E001", "error", path, err.message)
+
+
+def _schema_free_checks(payload: Mapping[str, Any], report: Report) -> None:
+    """The subset of error checks reproducible without a schema (schema=None path)."""
     deal = payload.get("deal") or {}
     if "noi" in deal and (deal.get("noiType") is None or deal.get("noiAsOfDate") is None):
         report.errors.append(
