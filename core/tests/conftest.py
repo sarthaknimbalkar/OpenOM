@@ -12,6 +12,23 @@ from pathlib import Path
 import pytest
 
 OMS_DIR = Path(__file__).resolve().parents[2] / "OMs"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """--corpus <dir> selects the seeded-defect corpus for the [OM-DoD-002] gate."""
+    parser.addoption(
+        "--corpus",
+        action="store",
+        default="fixtures/seeded_defects",
+        help="Path to the seeded-defect corpus (dir containing manifest.json) for the M1.x gate.",
+    )
+
+
+@pytest.fixture
+def corpus_dir(request: pytest.FixtureRequest) -> Path:
+    raw = Path(request.config.getoption("--corpus"))
+    return raw if raw.is_absolute() else REPO_ROOT / raw
 
 # The M1 fixture matrix (2026-08-16 corpus characterization).
 NATIVE_OM = "O'Reilly Auto Parts/O'Reilly Auto Parts - Statesboro, GA - 15 Yr NN with 6% Inc.pdf"
