@@ -108,19 +108,96 @@ def test_warning_net_lease_but_landlord_pays() -> None:
     assert "OMW-W040" in _codes(report.warnings)
 
 
-def test_warning_non_positive_rent() -> None:
+def test_warning_non_positive_noi() -> None:
     bad = copy.deepcopy(_sample())
-    bad["lease"]["rentSchedule"][0]["annualRent"] = 0  # no abatement flag
+    bad["deal"]["noi"] = -5000  # §H.3 W014: non-positive noi
     report = validate(bad)
     assert "OMW-W014" in _codes(report.warnings)
+    assert report.ok is True  # warnings never block
 
 
-def test_info_proforma_noi() -> None:
-    pro = copy.deepcopy(_sample())
-    pro["deal"]["noiType"] = "pro-forma"
-    report = validate(pro)
+def test_info_currency_defaulted() -> None:
+    # valid-stnl omits currency -> assumed USD (OMI-I001, OM-DD-002).
+    report = validate(_sample())
     assert "OMI-I001" in _codes(report.info)
-    assert report.ok is True  # info never blocks
+    with_ccy = copy.deepcopy(_sample())
+    with_ccy["currency"] = "USD"
+    assert "OMI-I001" not in _codes(validate(with_ccy).info)
+
+
+def test_warning_cap_rate_outside_band() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["deal"]["capRate"] = 0.30  # NOI/price still ~matches but 0.30 > band max 0.20
+    bad["deal"]["noi"] = 555000  # keep W010 quiet: 555000/1850000 = 0.30
+    assert "OMW-W013" in _codes(validate(bad).warnings)
+
+
+def test_warning_proforma_without_asof() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["deal"]["noiType"] = "pro-forma"
+    del bad["deal"]["noiAsOfDate"]
+    assert "OMW-W012" in _codes(validate(bad).warnings)
+
+
+def test_warning_asserted_date_in_future() -> None:
+    p = copy.deepcopy(_sample())  # assertedDate 2026-08-15
+    assert "OMW-W032" in _codes(validate(p, as_of="2020-01-01").warnings)
+    assert "OMW-W032" not in _codes(validate(p).warnings)  # silent without a processing date
+
+
+def test_warning_noi_asof_after_asserted() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["deal"]["noiAsOfDate"] = "2027-01-01"  # after assertedDate 2026-08-15
+    assert "OMW-W033" in _codes(validate(bad).warnings)
+
+
+def test_warning_expiration_before_commencement() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["lease"]["expiration"] = "2010-01-01"  # <= commencement 2019-05-01
+    assert "OMW-W034" in _codes(validate(bad).warnings)
+
+
+def test_warning_gross_lease_no_responsibilities() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["lease"]["leaseTypeAsserted"] = "gross"  # all flags false -> contradiction
+    assert "OMW-W041" in _codes(validate(bad).warnings)
+
+
+def test_warning_absolute_net_landlord_structural() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["lease"]["leaseTypeAsserted"] = "absolute-net"
+    bad["lease"]["landlordResponsibilities"]["roof"] = True
+    assert "OMW-W041" in _codes(validate(bad).warnings)
+
+
+def test_warning_self_supersede() -> None:
+    from openom_core.canonical import payload_hash
+
+    bad = copy.deepcopy(_sample())
+    stripped = copy.deepcopy(bad)
+    stripped["meta"].pop("supersedes", None)
+    bad["meta"]["supersedes"] = payload_hash(stripped)  # points at itself minus the pointer
+    assert "OMW-W050" in _codes(validate(bad).warnings)
+
+
+def test_warning_source_verified() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["lease"]["rentSchedule"][0]["source"] = "verified"
+    assert "OMW-W060" in _codes(validate(bad).warnings)
+
+
+def test_info_source_absent() -> None:
+    p = copy.deepcopy(_sample())
+    del p["lease"]["rentSchedule"][0]["source"]
+    assert "OMI-I002" in _codes(validate(p).info)
+
+
+def test_info_skipped_check() -> None:
+    p = copy.deepcopy(_sample())
+    del p["deal"]["noi"]  # capRate present but noi absent -> W010 can't run
+    del p["deal"]["noiType"]
+    del p["deal"]["noiAsOfDate"]
+    assert "OMI-I003" in _codes(validate(p).info)
 
 
 def test_findings_carry_requirement_and_are_ordered() -> None:

@@ -18,6 +18,7 @@ from typing import Any
 
 import jsonschema
 
+from .canonical import payload_hash
 from .errors import Finding, Severity
 
 # Requirement back-references (§H.1) keyed by finding code.
@@ -28,6 +29,8 @@ _REQUIREMENT = {
     "OMV-E010": "OM-ERR-013",
     "OMW-W010": "OM-CONS-010",
     "OMW-W011": "OM-CONS-011",
+    "OMW-W012": "OM-CONS-012",
+    "OMW-W013": "OM-CONS-013",
     "OMW-W014": "OM-CONS-014",
     "OMW-W020": "OM-CONS-020",
     "OMW-W021": "OM-CONS-021",
@@ -38,12 +41,23 @@ _REQUIREMENT = {
     "OMW-W026": "OM-CONS-026",
     "OMW-W030": "OM-CONS-030",
     "OMW-W031": "OM-CONS-031",
+    "OMW-W032": "OM-CONS-032",
+    "OMW-W033": "OM-CONS-033",
+    "OMW-W034": "OM-CONS-034",
     "OMW-W040": "OM-CONS-040",
-    "OMI-I001": "OM-DD-030",
+    "OMW-W041": "OM-CONS-041",
+    "OMW-W050": "OM-CONS-050",
+    "OMW-W060": "OM-CONS-060",
+    "OMI-I001": "OM-DD-002",
+    "OMI-I002": "OM-DD-004",
+    "OMI-I003": "OM-ERR-014",
 }
 _DAYS_PER_MONTH = 30.4375  # 365.25 / 12, for month↔day term arithmetic
 _SEVERITY: dict[str, Severity] = {"E": "error", "W": "warning", "I": "info"}
 _NET_LEASE_TYPES = {"NN", "NNN", "absolute-net"}
+_GROSS_LEASE_TYPES = {"gross", "modified-gross"}
+_ALL_RESP = ("roof", "structure", "parking", "hvac", "taxes", "insurance", "cam")
+_STRUCTURAL_RESP = ("roof", "structure", "parking", "hvac")
 
 
 @dataclass
@@ -55,6 +69,7 @@ class Tolerances:
     rate_abs: float = 0.005  # absolute, for escalation-rate checks
     remaining_term_days: float = 31.0  # §H.4 tol.remainingTermDays (OMW-W030)
     lease_term_days: float = 31.0  # §H.4 tol.leaseTermDays (OMW-W031)
+    cap_rate_band: tuple[float, float] = (0.02, 0.20)  # §H.4 tol.capRateBand (OMW-W013)
 
 
 @dataclass
@@ -107,9 +122,12 @@ def validate(
     tol = tolerances or Tolerances()
     # Reference date for term checks (OMW-W030): explicit as_of, else the payload's assertedDate,
     # so the check is internal-consistency (§H.6) and deterministic rather than wall-clock.
-    as_of_date = _date(as_of) if as_of else _date(payload.get("assertedDate"))
+    # processing_date is the wall-clock-free "now" for OMW-W032 — set ONLY when a caller passes
+    # as_of; a validator never reads the system clock, so W032 is silent on the default path.
+    processing_date = _date(as_of) if as_of else None
+    as_of_date = processing_date if processing_date else _date(payload.get("assertedDate"))
     _error_tier(payload, schema, report)
-    _warning_tier(payload, report, tol, as_of_date)
+    _warning_tier(payload, report, tol, as_of_date, processing_date)
     _info_tier(payload, report)
     # Deterministic ordering (§H.1): stable across runs and implementations.
     report.errors.sort(key=lambda f: (f.code, f.path))
@@ -160,13 +178,16 @@ def _schema_free_checks(payload: Mapping[str, Any], report: Report) -> None:
 
 
 def _warning_tier(
-    payload: Mapping[str, Any], report: Report, tol: Tolerances, as_of_date: dt.date | None = None
+    payload: Mapping[str, Any], report: Report, tol: Tolerances,
+    as_of_date: dt.date | None = None, processing_date: dt.date | None = None,
 ) -> None:
     deal = payload.get("deal") or {}
     prop = payload.get("property") or {}
     lease = payload.get("lease") or {}
     warn = report.warnings.append
     _date_term_checks(lease, as_of_date, tol, warn)
+    _date_sanity_checks(payload, deal, lease, processing_date, warn)
+    _self_supersede_check(payload, warn)
 
     cap = _num(deal.get("capRate"))
     noi = _num(deal.get("noi"))
@@ -189,12 +210,41 @@ def _warning_tier(
                      "price/SF disagrees with askingPrice / buildingSF",
                      expected=round(implied, 2), actual=pps))
 
+    # OMW-W013: cap rate outside the plausibility band (§H.4 tol.capRateBand).
+    if cap is not None:
+        lo, hi = tol.cap_rate_band
+        if not lo <= cap <= hi:
+            warn(_mk("OMW-W013", "/deal/capRate",
+                     f"capRate outside the plausibility band [{lo}, {hi}]", actual=cap))
+
+    # OMW-W014: askingPrice, noi, or buildingSF is non-positive (§H.3).
+    for value, path, label in (
+        (price, "/deal/askingPrice", "askingPrice"),
+        (noi, "/deal/noi", "noi"),
+        (building_sf, "/property/buildingSF", "buildingSF"),
+    ):
+        if value is not None and value <= 0:
+            warn(_mk("OMW-W014", path, f"{label} is non-positive", actual=value))
+
+    # OMW-W012: pro-forma NOI presented without noiAsOfDate context.
+    if deal.get("noiType") == "pro-forma" and not deal.get("noiAsOfDate"):
+        warn(_mk("OMW-W012", "/deal/noiAsOfDate",
+                 "pro-forma NOI presented without noiAsOfDate context"))
+
     # OMW-W040: net lease asserted but landlord bears pass-through costs (tenant should).
     lease_type = lease.get("leaseTypeAsserted")
     resp = lease.get("landlordResponsibilities") or {}
     if lease_type in _NET_LEASE_TYPES and any(resp.get(k) for k in ("taxes", "insurance", "cam")):
         warn(_mk("OMW-W040", "/lease/landlordResponsibilities",
                  f"{lease_type} lease but landlord bears taxes/insurance/cam"))
+
+    # OMW-W041: leaseTypeAsserted contradicts the responsibility set generally (§H.3).
+    if lease_type in _GROSS_LEASE_TYPES and resp and not any(resp.get(k) for k in _ALL_RESP):
+        warn(_mk("OMW-W041", "/lease/landlordResponsibilities",
+                 f"{lease_type} lease but landlord bears no responsibilities"))
+    elif lease_type == "absolute-net" and any(resp.get(k) for k in _STRUCTURAL_RESP):
+        warn(_mk("OMW-W041", "/lease/landlordResponsibilities",
+                 "absolute-net lease but landlord bears structural/HVAC responsibilities"))
 
     schedule = lease.get("rentSchedule") or []
     if isinstance(schedule, list) and schedule:
@@ -234,6 +284,56 @@ def _date_term_checks(
                      expected=round(actual_days / _DAYS_PER_MONTH, 1), actual=remaining_months))
 
 
+def _date_sanity_checks(
+    payload: Mapping[str, Any], deal: Mapping[str, Any], lease: Mapping[str, Any],
+    processing_date: dt.date | None, warn: Any,
+) -> None:
+    """OMW-W032/W033/W034: date-ordering sanity (§H.3)."""
+    asserted = _date(payload.get("assertedDate"))
+    noi_as_of = _date(deal.get("noiAsOfDate"))
+    commencement = _date(lease.get("commencement"))
+    expiration = _date(lease.get("expiration"))
+
+    # OMW-W032: assertedDate in the future relative to the processing date (caller-supplied only).
+    if processing_date and asserted and asserted > processing_date:
+        warn(_mk("OMW-W032", "/assertedDate",
+                 "assertedDate is in the future relative to the processing date",
+                 expected=processing_date.isoformat(), actual=asserted.isoformat()))
+
+    # OMW-W033: noiAsOfDate after assertedDate (an as-of newer than the assertion itself).
+    if noi_as_of and asserted and noi_as_of > asserted:
+        warn(_mk("OMW-W033", "/deal/noiAsOfDate", "noiAsOfDate is after assertedDate",
+                 expected=asserted.isoformat(), actual=noi_as_of.isoformat()))
+
+    # OMW-W034: lease expiration on or before commencement.
+    if commencement and expiration and expiration <= commencement:
+        warn(_mk("OMW-W034", "/lease/expiration",
+                 "lease expiration is on or before commencement", actual=expiration.isoformat()))
+
+
+def _self_supersede_check(payload: Mapping[str, Any], warn: Any) -> None:
+    """OMW-W050: self-supersede (§H.3).
+
+    The integrity hash covers ``meta.supersedes`` itself, so ``supersedes == hash(full payload)``
+    is an unreachable fixpoint. The meaningful, deterministic reading is: ``supersedes`` equals
+    the hash of *this* payload with the ``supersedes`` pointer removed — i.e. the payload
+    supersedes content byte-identical to itself (a no-op re-embed).
+    """
+    meta = payload.get("meta") or {}
+    supersedes = meta.get("supersedes")
+    if not isinstance(supersedes, str):
+        return
+    stripped = {k: (dict(v) if k == "meta" else v) for k, v in payload.items()}
+    stripped["meta"] = {k: v for k, v in meta.items() if k != "supersedes"}
+    try:
+        own = payload_hash(stripped)
+    except (ValueError, TypeError):  # hashing must never break validation
+        return
+    if supersedes == own:
+        warn(_mk("OMW-W050", "/meta/supersedes",
+                 "meta.supersedes equals this payload's own hash minus the pointer"))
+
+
 def _rent_schedule_checks(
     schedule: list[Any], building_sf: float | None, lease: Mapping[str, Any],
     tol: Tolerances, warn: Any,
@@ -262,10 +362,10 @@ def _rent_schedule_checks(
                          "monthlyRent disagrees with annualRent / 12",
                          expected=round(annual / 12, 2), actual=monthly))
 
-        # OMW-W014: non-positive rent with no abatement flag.
-        if annual is not None and annual <= 0 and period.get("abatement") is None:
-            warn(_mk("OMW-W014", f"{base}/annualRent",
-                     "non-positive annualRent without an abatement", actual=annual))
+        # OMW-W060: source asserted as 'verified' but 0.1 carries no corroborating metadata.
+        if period.get("source") == "verified":
+            warn(_mk("OMW-W060", f"{base}/source",
+                     "source is 'verified' but no corroborating verification metadata is present"))
 
         # OMW-W026: rent period falls outside the lease term.
         p_start, p_end = _date(period.get("periodStart")), _date(period.get("periodEnd"))
@@ -304,8 +404,33 @@ def _rent_schedule_checks(
 
 def _info_tier(payload: Mapping[str, Any], report: Report) -> None:
     deal = payload.get("deal") or {}
-    # OMI-I001: pro-forma NOI is forward-looking context, not an in-place figure.
-    if deal.get("noiType") == "pro-forma":
-        report.info.append(
-            _mk("OMI-I001", "/deal/noiType", "NOI is pro-forma (forward-looking), not in-place")
-        )
+    prop = payload.get("property") or {}
+    lease = payload.get("lease") or {}
+    info = report.info.append
+    schedule = lease.get("rentSchedule") or []
+    periods = [p for p in schedule if isinstance(p, Mapping)] if isinstance(schedule, list) else []
+
+    # OMI-I001: currency absent -> assumed USD (OM-DD-002 default).
+    if payload.get("currency") is None:
+        info(_mk("OMI-I001", "/currency", "currency absent; assumed USD (OM-DD-002 default)"))
+
+    # OMI-I002: a rentPeriod source tag was absent -> assumed 'asserted' (OM-DD-004).
+    if any(p.get("source") is None for p in periods):
+        info(_mk("OMI-I002", "/lease/rentSchedule",
+                 "a rentPeriod source tag was absent; assumed 'asserted' (OM-DD-004)"))
+
+    # OMI-I003: a cross-check was skipped because required inputs were absent (§H.4).
+    building_sf = _num(prop.get("buildingSF"))
+    if _num(deal.get("capRate")) is not None and (
+        _num(deal.get("noi")) is None or _num(deal.get("askingPrice")) is None
+    ):
+        info(_mk("OMI-I003", "/deal/capRate",
+                 "cap-rate cross-check (OMW-W010) skipped: noi or askingPrice absent"))
+    if _num(deal.get("pricePerSF")) is not None and (
+        _num(deal.get("askingPrice")) is None or building_sf is None
+    ):
+        info(_mk("OMI-I003", "/deal/pricePerSF",
+                 "price/SF cross-check (OMW-W011) skipped: askingPrice or buildingSF absent"))
+    if building_sf is None and any(_num(p.get("rentPSF")) is not None for p in periods):
+        info(_mk("OMI-I003", "/lease/rentSchedule",
+                 "rentPSF cross-check (OMW-W024) skipped: buildingSF absent"))
