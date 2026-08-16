@@ -1,0 +1,67 @@
+{
+  "specVersion": "0.1",
+  "suite": "openom-vectors",
+  "vectors": [
+    {
+      "dimensions": {
+        "level": [
+          "L1"
+        ],
+        "pathology": [],
+        "role": [
+          "producer",
+          "consumer"
+        ]
+      },
+      "expected": "expected/cafe.json",
+      "name": "cafe",
+      "payload": "payloads/cafe.json"
+    },
+    {
+      "dimensions": {
+        "level": [
+          "L1"
+        ],
+        "pathology": [],
+        "role": [
+          "producer",
+          "consumer"
+        ]
+      },
+      "expected": "expected/numbers.json",
+      "name": "numbers",
+      "payload": "payloads/numbers.json"
+    },
+    {
+      "dimensions": {
+        "level": [
+          "L1"
+        ],
+        "pathology": [],
+        "role": [
+          "producer",
+          "consumer",
+          "validator"
+        ]
+      },
+      "expected": "expected/sample-stnl.json",
+      "name": "sample-stnl",
+      "payload": "payloads/sample-stnl.json"
+    },
+    {
+      "dimensions": {
+        "level": [
+          "L1"
+        ],
+        "pathology": [],
+        "role": [
+          "producer",
+          "consumer"
+        ]
+      },
+      "expected": "expected/unicode.json",
+      "name": "unicode",
+      "payload": "payloads/unicode.json"
+    }
+  ]
+}
