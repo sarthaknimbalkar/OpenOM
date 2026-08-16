@@ -23,9 +23,9 @@ function xmpPacket(props: Record<string, string>): Uint8Array {
     .map(([k, v]) => `   <omspec:${k}>${v}</omspec:${k}>`)
     .join("\n");
   const xml = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="OpenOM 0.1">
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-  <rdf:Description rdf:about="" xmlns:omspec="https://SPEC-DOMAIN-TBD/ns/0.1#">
+  <rdf:Description rdf:about="" xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#">
 ${lines}
   </rdf:Description>
  </rdf:RDF>
@@ -47,7 +47,7 @@ export async function buildEmbeddedPdf(
   });
 
   const props: Record<string, string> = {
-    specName: "OpenOM",
+    specName: "openOM",
     specVersion: "0.1",
     payloadFilename: "om.json",
     assertedDate: String((payload as { assertedDate?: unknown }).assertedDate ?? ""),

@@ -31,7 +31,7 @@ function assertFiniteNumbers(value: unknown): void {
  * Recursively NFC-normalize every JSON string value and object member name.
  *
  * Spec: §C.1 [OM-CANON-008]. RFC 8785 performs no Unicode normalization, so
- * OpenOM mandates NFC as a preprocessing step on the Producer (authoring)
+ * openOM mandates NFC as a preprocessing step on the Producer (authoring)
  * path. This is intentionally NOT applied on the Consumer verification path,
  * which hashes bytes exactly as received ([OM-CANON-008]).
  */

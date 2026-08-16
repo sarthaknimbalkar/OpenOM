@@ -4,7 +4,7 @@
  * Shape follows §7e / §E; values are invented.
  */
 export const SAMPLE_STNL = {
-  "@context": ["https://schema.org", "https://SPEC-DOMAIN-TBD/ns/0.1"],
+  "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
   "@type": "RealEstateListing",
   specVersion: "0.1",
   currency: "USD",

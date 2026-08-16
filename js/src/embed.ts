@@ -2,7 +2,7 @@ import { PDFDocument, AFRelationship, PDFName, PDFDict, PDFArray, PDFRef } from 
 import { preimageBytes, payloadHash } from "./hash.js";
 
 /**
- * Embed an OpenOM payload into a PDF as the associated file `om.json`, with the
+ * Embed an openOM payload into a PDF as the associated file `om.json`, with the
  * `omspec:` XMP integrity marker (§D). Deterministic; zero inference.
  *
  * Assumption A (confirmed with Track A): the stored `om.json` stream is the
@@ -34,7 +34,7 @@ export async function embedPayload(
 
   ensureEfUf(doc);
   injectOmspecXmp(doc, {
-    specName: "OpenOM",
+    specName: "openOM",
     specVersion: "0.1",
     payloadFilename: "om.json",
     payloadHash: hash,
@@ -88,9 +88,9 @@ function injectOmspecXmp(doc: PDFDocument, props: OmspecProps): void {
     .map(([k, v]) => `   <omspec:${k}>${xmlEscape(v)}</omspec:${k}>`)
     .join("\n");
   const xml = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="OpenOM 0.1">
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-  <rdf:Description rdf:about="" xmlns:omspec="https://SPEC-DOMAIN-TBD/ns/0.1#">
+  <rdf:Description rdf:about="" xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#">
 ${body}
   </rdf:Description>
  </rdf:RDF>

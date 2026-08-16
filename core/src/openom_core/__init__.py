@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""OpenOM deterministic core.
+"""openOM deterministic core.
 
 Embed / read / inspect / validate machine-readable, broker-asserted payloads in
 commercial-real-estate offering-memorandum PDFs. Zero inference, ever (CLAUDE.md Rule 1).
