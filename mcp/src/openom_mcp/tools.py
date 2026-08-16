@@ -12,13 +12,17 @@ No network, no inference (the cardinal boundary; §V, [OM-MCP-007]).
 
 from __future__ import annotations
 
+import contextvars
 import dataclasses
 import json
 import tempfile
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .resolve import PdfResolver
 
 import pikepdf
 from openom_core.canonical import payload_hash
@@ -66,11 +70,18 @@ def _envelope(exc: ToolError) -> dict[str, Any]:
 
 
 def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
-    """Map expected failures to the error envelope; never raise out of a tool (OM-MCP-004)."""
+    """Map expected failures to the error envelope; never raise out of a tool (OM-MCP-004).
+
+    Also enforces blob delete-on-completion (§K): any input blob consumed via ``_load_pdf`` during
+    the call is deleted in ``finally`` (success or failure), never lingering past the request.
+    """
 
     @wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        token = _consumed_blobs.set([])
         try:
+            if _LIMITER is not None:
+                _LIMITER.check(_current_principal.get() or "")
             return fn(*args, **kwargs)
         except ToolError as exc:
             return _envelope(exc)
@@ -84,23 +95,62 @@ def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
             return _envelope(ToolError(exc.code, str(exc)))
         except pikepdf.PdfError as exc:
             return _envelope(ToolError("OM-IO-010", f"malformed PDF: {exc}"))
+        finally:
+            _delete_consumed_blobs()
+            _consumed_blobs.reset(token)
 
     return wrapper
 
 
+def _delete_consumed_blobs() -> None:
+    blobstore = getattr(_resolver(), "blobstore", None)
+    if blobstore is not None:
+        for blob_id in _consumed_blobs.get() or []:
+            blobstore.delete(blob_id)
+
+
+# The active PDF resolver + calling principal. Defaults to a stdio resolver so direct/stdio use and
+# existing tests need no wiring; server.py's http entry injects an http resolver via set_resolver().
+_RESOLVER: PdfResolver | None = None
+_LIMITER: Any = None
+_current_principal: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "openom_principal", default=None
+)
+# Input blobs consumed during the current tool call; deleted on completion by _guard.
+_consumed_blobs: contextvars.ContextVar[list[str] | None] = contextvars.ContextVar(
+    "openom_consumed_blobs", default=None
+)
+
+
+def set_resolver(resolver: PdfResolver | None) -> None:
+    """Install the active PdfResolver (http wires this; None restores the stdio default)."""
+    global _RESOLVER
+    _RESOLVER = resolver
+
+
+def set_rate_limiter(limiter: Any) -> None:
+    """Install the per-principal rate limiter (http wires this; None disables — stdio default)."""
+    global _LIMITER
+    _LIMITER = limiter
+
+
+def _resolver() -> PdfResolver:
+    global _RESOLVER
+    if _RESOLVER is None:
+        from .resolve import PdfResolver  # lazy: avoids a tools<->resolve import cycle
+
+        _RESOLVER = PdfResolver(transport="stdio")
+    return _RESOLVER
+
+
 def _load_pdf(ref: Any) -> bytes:
-    if not isinstance(ref, dict):
-        raise ToolError("OM-IO-008", "pdf must be a PdfRef object (one of path/url/blobId)")
-    if "path" in ref:
-        try:
-            return Path(ref["path"]).read_bytes()
-        except (FileNotFoundError, IsADirectoryError, PermissionError) as exc:
-            raise ToolError("OM-IO-010", f"cannot read PDF at path: {exc}") from exc
-    if "url" in ref or "blobId" in ref:
-        raise ToolError(
-            "OM-IO-008", "url/blobId need the hosted transport (M3); stdio accepts 'path' only"
-        )
-    raise ToolError("OM-IO-008", "PdfRef must have exactly one of path/url/blobId")
+    resolver = _resolver()
+    data = resolver.resolve(ref, _current_principal.get())
+    if resolver.transport == "http" and isinstance(ref, dict) and "blobId" in ref:
+        consumed = _consumed_blobs.get()
+        if consumed is not None:
+            consumed.append(str(ref["blobId"]))  # deleted on completion (§K)
+    return data
 
 
 def _load_schema() -> dict[str, Any]:
@@ -218,15 +268,23 @@ def om_embed(
         )
     asserted_date = str(payload.get("assertedDate", ""))
     out_bytes = _embed(_load_pdf(pdf), payload, asserted_date=asserted_date, badge=badge)
-    dest = Path(out_path) if out_path else Path(tempfile.mkstemp(suffix=".pdf")[1])
-    dest.write_bytes(out_bytes)
+
+    resolver = _resolver()
+    if resolver.transport == "http" and resolver.blobstore is not None:
+        # No client filesystem on the hosted transport — return the result as a TTL blob.
+        stored = resolver.blobstore.put_result(out_bytes, _current_principal.get() or "")
+        pdf_out = {"blobId": stored["blobId"], "presignedGet": stored["presignedGet"]}
+    else:
+        dest = Path(out_path) if out_path else Path(tempfile.mkstemp(suffix=".pdf")[1])
+        dest.write_bytes(out_bytes)
+        pdf_out = {"path": str(dest)}
 
     import io
 
     with pikepdf.open(io.BytesIO(out_bytes)) as doc:
         marker = read_marker(doc) or {}
     return {
-        "pdf": {"path": str(dest)},
+        "pdf": pdf_out,
         "payloadHash": marker.get("payloadHash"),
         "supersedes": marker.get("supersedes"),
         "xmp": {
@@ -236,3 +294,16 @@ def om_embed(
             "payloadHash": marker.get("payloadHash"),
         },
     }
+
+
+@_guard
+def om_request_upload() -> dict[str, Any]:
+    """Hosted-only: reserve a single-use presigned upload target for a PDF (§I, [OM-SEC-006]).
+
+    Returns ``{blobId, presignedPut, expiresAt}``; the client PUTs bytes to ``presignedPut`` then
+    passes ``{blobId}`` to any tool. On stdio there is no blob store → OM-IO-008.
+    """
+    resolver = _resolver()
+    if resolver.transport != "http" or resolver.blobstore is None:
+        raise ToolError("OM-IO-008", "om_request_upload requires the hosted transport")
+    return dict(resolver.blobstore.create_upload(_current_principal.get() or ""))
