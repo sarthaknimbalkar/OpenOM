@@ -15,7 +15,8 @@
       },
       "expected": "expected/cafe.json",
       "name": "cafe",
-      "payload": "payloads/cafe.json"
+      "payload": "payloads/cafe.json",
+      "pdf": "pdfs/cafe.pdf"
     },
     {
       "dimensions": {
@@ -30,7 +31,8 @@
       },
       "expected": "expected/numbers.json",
       "name": "numbers",
-      "payload": "payloads/numbers.json"
+      "payload": "payloads/numbers.json",
+      "pdf": "pdfs/numbers.pdf"
     },
     {
       "dimensions": {
@@ -46,7 +48,8 @@
       },
       "expected": "expected/sample-stnl.json",
       "name": "sample-stnl",
-      "payload": "payloads/sample-stnl.json"
+      "payload": "payloads/sample-stnl.json",
+      "pdf": "pdfs/sample-stnl.pdf"
     },
     {
       "dimensions": {
@@ -61,7 +64,8 @@
       },
       "expected": "expected/unicode.json",
       "name": "unicode",
-      "payload": "payloads/unicode.json"
+      "payload": "payloads/unicode.json",
+      "pdf": "pdfs/unicode.pdf"
     }
   ]
 }
