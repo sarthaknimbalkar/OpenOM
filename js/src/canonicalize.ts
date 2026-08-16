@@ -5,8 +5,7 @@ import { OmIoError } from "./errors.js";
 const MAX_DEPTH = 64;
 
 /** Lone (unpaired) UTF-16 surrogate — high without low, or low without high. */
-const LONE_SURROGATE =
-  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
 /**
  * Recursively NFC-normalize and enforce the §C rejection contract — identical to the Python

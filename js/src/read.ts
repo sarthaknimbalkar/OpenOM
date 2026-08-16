@@ -51,7 +51,12 @@ export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadRe
 
     if (bytes === null) {
       // No payload file. Nothing to surface, regardless of a dangling marker.
-      return { state: "absent", payload: null, payloadHash: expectedHash, verification: UNVERIFIED };
+      return {
+        state: "absent",
+        payload: null,
+        payloadHash: expectedHash,
+        verification: UNVERIFIED,
+      };
     }
 
     const payload = safeParse(bytes);
@@ -111,9 +116,7 @@ async function boundedExtractOmJson(
     if (!(filespec instanceof PDFDict)) continue;
     const nameObj = filespec.lookup(PDFName.of("UF")) ?? filespec.lookup(PDFName.of("F"));
     const name =
-      nameObj instanceof PDFString || nameObj instanceof PDFHexString
-        ? nameObj.decodeText()
-        : null;
+      nameObj instanceof PDFString || nameObj instanceof PDFHexString ? nameObj.decodeText() : null;
     if (name !== "om.json") continue;
     const ef = filespec.lookup(PDFName.of("EF"));
     if (!(ef instanceof PDFDict)) return null;
