@@ -38,6 +38,21 @@ def _marker(pdf_bytes: bytes) -> dict[str, str]:
         return m
 
 
+def test_idempotent_nth_embed_hash_equals_single_direct(base_pdf: bytes) -> None:
+    """[OM-DoD-001](b): N>=3 successive embeds of the same payload yield exactly one om.json
+    and an Nth-output payload hash EQUAL to a single direct embed's hash ([OM-XMP-004])."""
+    payload = _sample()
+    direct = _marker(embed(base_pdf, payload, asserted_date="2026-08-15"))["payloadHash"]
+
+    nth_bytes = base_pdf
+    for _ in range(3):  # N = 3 successive embeds
+        nth_bytes = embed(nth_bytes, payload, asserted_date="2026-08-15")
+
+    assert _marker(nth_bytes)["payloadHash"] == direct
+    with pikepdf.open(io.BytesIO(nth_bytes)) as pdf:
+        assert list(pdf.attachments).count("om.json") == 1  # never stacks
+
+
 def test_reprice_sets_supersedes(base_pdf: bytes) -> None:
     v1 = _sample()
     v2 = copy.deepcopy(v1)
