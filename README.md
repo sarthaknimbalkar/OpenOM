@@ -1,4 +1,4 @@
-# OpenOM
+# openOM
 
 [![ci](https://github.com/sarthaknimbalkar/OpenOM/actions/workflows/ci.yml/badge.svg)](https://github.com/sarthaknimbalkar/OpenOM/actions/workflows/ci.yml)
 
@@ -6,13 +6,12 @@
 > inside commercial-real-estate offering-memorandum (OM) PDFs, and exposes the same payload as
 > JSON-LD on the web. **Extract once at the source; consume infinitely, cheaply, downstream.**
 
-Published under **[Vervelio](https://vervelio.com)** (neutral steward). MIT-licensed.
-_"OpenOM" is a working title pending the name sweep._
+Published by **[Vervelio Labs](https://verveliolabs.com)** (neutral steward). MIT-licensed.
 
 ## Why
 
 Every downstream consumer of an OM — CRM, underwriting model, portal, LLM agent — re-extracts
-the same facts from the same PDF, badly and repeatedly. OpenOM moves the extraction to the
+the same facts from the same PDF, badly and repeatedly. openOM moves the extraction to the
 **source**: the broker (or their tool) embeds a signed, versioned payload once, using the
 [Factur-X](https://en.wikipedia.org/wiki/Factur-X) / PDF/A-3 attachment mechanism. The PDF
 still looks byte-for-byte identical; a machine can now read the deal in milliseconds with zero
@@ -41,7 +40,7 @@ never do.
 | [`cli/`](cli/) | The `om` command over `core`. |
 | [`spec/`](spec/) | JSON Schema, sample payloads, `@context`/vocabulary, and the conformance **vectors** (JCS oracles + golden PDFs). **The product.** |
 | `mcp/` | Thin FastMCP wrapper (stdio + hosted HTTP). Deterministic. _(next milestone)_ |
-| `js/` | TypeScript subset (embed/read/validate) powering the extension + web/Node consumers. _(Track B)_ |
+| `js/` | TypeScript reference implementation (embed/read/validate) powering the extension + web/Node consumers. |
 | `process/` | Extraction/mapping playbook for authoring clients. No code. _(planned)_ |
 | `fixtures/` | Real OMs across producers (confidential; not committed). |
 

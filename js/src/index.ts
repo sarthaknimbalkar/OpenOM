@@ -1,5 +1,5 @@
 /**
- * OpenOM `/js` — TypeScript reference implementation.
+ * openOM `/js` — TypeScript reference implementation.
  *
  * Deterministic; zero inference (consumer-mode + shared engine). Public API
  * for canonicalization, integrity hashing, verification, hardened parsing, and

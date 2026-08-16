@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://SPEC-DOMAIN-TBD/spec/om-0.1.schema.json",
-  "title": "OpenOM payload 0.1",
-  "description": "JSON Schema (2020-12) for the OpenOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]).",
+  "$id": "https://verveliolabs.com/openom/spec/om-0.1.schema.json",
+  "title": "openOM payload 0.1",
+  "description": "JSON Schema (2020-12) for the openOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]).",
   "type": "object",
   "required": ["@context", "@type", "specVersion", "assertedBy", "assertedDate", "meta"],
   "properties": {
@@ -10,7 +10,7 @@
       "type": "array",
       "minItems": 1,
       "items": { "type": "string" },
-      "description": "schema.org + the OpenOM namespace (SPEC-DOMAIN-TBD placeholder until Q1)."
+      "description": "schema.org + the openOM namespace (verveliolabs.com/openom placeholder until Q1)."
     },
     "@type": { "const": "RealEstateListing" },
     "specVersion": { "const": "0.1" },

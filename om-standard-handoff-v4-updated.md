@@ -11,7 +11,7 @@
 > **Document structure.** **Part I (§1–§16)** is the narrative handoff — the why, the strategy, the plan. **Part II** inlines only the **M1-essential normative core** (§A–§E, §H–§J; RFC 2119 keywords). The remaining normative appendices are drafted but **deferred until adoption** in [`om-normative-spec-draft-v0.1.md`](om-normative-spec-draft-v0.1.md) (see the scope note at the head of Part II). Where Part I and any normative section disagree, **the normative section wins.**
 
 
-> **Name note:** "OpenOM" is a **working title, not locked.** The name sweep (§15 Q1) is P0 — it gates `@context`, PyPI/npm imports, and the org/domain reservation. Everything below uses "OpenOM"/`SPEC-DOMAIN-TBD` as placeholders.
+> **Name note:** "OpenOM" is a **working title, not locked.** The name sweep (§15 Q1) is P0 — it gates `@context`, PyPI/npm imports, and the org/domain reservation. Everything below uses "OpenOM"/`verveliolabs.com/openom` as placeholders.
 
 ---
 
@@ -275,7 +275,7 @@ MV3. Shared foundation: `/js` subset (pdf-lib embed/read, ajv validate, pdf.js t
       "specVersion": "0.1",
       "payloadHash": "sha256:9f2b…c4",
       "verification": { "hashValid": true, "originVerified": null, "signatureValid": null },
-      "payload": { "@context": ["https://schema.org", "https://SPEC-DOMAIN-TBD/ns/0.1"], "…the om.json…": "…" }
+      "payload": { "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"], "…the om.json…": "…" }
     }
     ```
     Security summary (exact rules in §Y):
@@ -398,7 +398,7 @@ Rules: periods are contiguous and non-overlapping (a consistency warning fires o
 ### 7e. Sample payload (illustrative — fictional deal)
 ```json
 {
-  "@context": ["https://schema.org", "https://SPEC-DOMAIN-TBD/ns/0.1"],
+  "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
   "@type": "RealEstateListing",
   "specVersion": "0.1",
   "assertedBy": { "broker": "Jane Example", "brokerage": "Example Net Lease Advisors", "license": "MI 6501-000000" },
@@ -662,7 +662,7 @@ Each gate below is the *machine-checkable* form of the corresponding Technical D
 
 | # | Question | Priority | Blocks | Decide by | Default if unresolved by deadline | Owner |
 |---|---|---|---|---|---|---|
-| Q1 | **Name sweep** — GitHub org + PyPI + npm + Chrome Web Store + domain as a set. Candidates: OpenOM, omspec, ListingLD. | **P0** | `@context`, all imports, org reservation | **Before first `@context` publish or first import** (M1 scaffolding) | Keep working title "OpenOM" + `SPEC-DOMAIN-TBD`; do **not** publish `@context` or reserve packages until locked (blocking is correct here — no risky default). | Scott |
+| Q1 | **Name sweep** — GitHub org + PyPI + npm + Chrome Web Store + domain as a set. Candidates: OpenOM, omspec, ListingLD. | **P0** | `@context`, all imports, org reservation | **Before first `@context` publish or first import** (M1 scaffolding) | Keep working title "OpenOM" + `verveliolabs.com/openom`; do **not** publish `@context` or reserve packages until locked (blocking is correct here — no risky default). | Scott |
 | Q2 | **Free/paid boundary** — engine/MCP/extension local+consumer = free MIT; hosted inference extraction = commercial? | P0 | M3 (ideally settle at M1) | **Before M3 opens** | Ship everything deterministic as free MIT; leave the hosted extraction endpoint unbuilt (stub only) so no boundary is crossed prematurely. | Scott |
 | Q3 | **Fixture matrix** — which producers × which pathologies, concretely. | P1 | M1 exit | **Before M1 exit gate** ([OM-DoD-001]) | Use the §14 baseline matrix (InDesign/Word/Buildout/scanned × messy-schedule/CMYK-SMask/flattened/empty/hash-mismatch); expand as real OMs arrive. | Scott + dev |
 | Q4 | **Blob storage + retention** (R2) — expiry for unreleased OMs. | P1 | M3 | **With M3 remote gate** ([OM-DoD-004]) | Apply [OM-PRIV-002] conservative default: ≤24h TTL + delete-on-completion, single-use presigned URLs. | Dev |
@@ -769,7 +769,7 @@ Each gate below is the *machine-checkable* form of the corresponding Technical D
 
 ```jsonc
 {
-  "$schema": "https://SPEC-DOMAIN-TBD/schema/conformance-claim-0.1.schema.json",
+  "$schema": "https://verveliolabs.com/openom/schema/conformance-claim-0.1.schema.json",
   "claimVersion": "1",                       // this claim format's version (independent of specVersion)
   "implementation": {
     "name": "om-cli", "version": "0.4.2",
@@ -1079,7 +1079,7 @@ Grounded in the actual libraries: pikepdf `AttachedFileSpec`/`Pdf.attachments`, 
 - **[OM-EMB-005]** `/Params` SHOULD include `/Size` (decompressed byte length) and `/ModDate`. The PDF `/Params /CheckSum` is defined by ISO 32000 as an **MD5** digest of the uncompressed bytes; it is legacy and **MUST NOT** be treated as the integrity mechanism. Integrity is the SHA-256 in XMP (§D.2, §C). Producers MAY write `/CheckSum` for reader compatibility; Consumers MUST ignore it for trust decisions.
 
 ### §D.2 XMP marker (detection + integrity)
-- **[OM-XMP-001]** The document catalog `/Metadata` XMP stream MUST carry an OpenOM RDF description under namespace URI `https://SPEC-DOMAIN-TBD/ns/0.1#` (placeholder until §15 Q1), RECOMMENDED prefix `omspec`.
+- **[OM-XMP-001]** The document catalog `/Metadata` XMP stream MUST carry an OpenOM RDF description under namespace URI `https://verveliolabs.com/openom/ns/0.1#` (placeholder until §15 Q1), RECOMMENDED prefix `omspec`.
 - **[OM-XMP-002]** Required XMP properties: `omspec:specName` (string, `"OpenOM"`), `omspec:specVersion` (`"0.1"`), `omspec:payloadFilename` (`"om.json"`), `omspec:payloadHash` (the §C integrity hash), `omspec:assertedDate` (ISO 8601 date). OPTIONAL: `omspec:supersedes` (prior `payloadHash`).
 - **[OM-XMP-003]** Detection order for a Consumer: (1) parse XMP for `omspec:payloadHash`; (2) locate `om.json` via `/AF`→`/Filespec`→`/EF`; (3) decompress, recompute the §C hash, compare to `omspec:payloadHash`; (4) schema-validate (§E). A Consumer MUST report `hash-mismatch` if step 3 disagrees and MUST NOT treat a mismatched payload as trusted.
 - **[OM-XMP-004]** Re-embed (§4 idempotency): a Producer MUST replace the existing `om.json` stream and `/AF` entry in place, update all XMP properties, set `omspec:supersedes` to the prior `omspec:payloadHash`, and MUST NOT leave a second `om.json` in `/EmbeddedFiles`.
@@ -1214,14 +1214,14 @@ PDF name objects (`/Subtype`, `/AFRelationship`, `/Type`) are subject to ISO 320
 
 #### §D.2.1 Serialized XMP template (normative)
 
-- **[OM-XMP-010]** The `omspec` RDF description MUST be serialized as RDF/XML inside the catalog `/Metadata` XMP packet, using namespace URI `https://SPEC-DOMAIN-TBD/ns/0.1#` (placeholder until §15 Q1) bound to the RECOMMENDED prefix `omspec`. All `omspec:*` values are **XMP simple (text) properties** — no arrays, no structs, no language alternatives. The canonical serialization is:
+- **[OM-XMP-010]** The `omspec` RDF description MUST be serialized as RDF/XML inside the catalog `/Metadata` XMP packet, using namespace URI `https://verveliolabs.com/openom/ns/0.1#` (placeholder until §15 Q1) bound to the RECOMMENDED prefix `omspec`. All `omspec:*` values are **XMP simple (text) properties** — no arrays, no structs, no language alternatives. The canonical serialization is:
 
 ```xml
 <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="OpenOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
   <rdf:Description rdf:about=""
-      xmlns:omspec="https://SPEC-DOMAIN-TBD/ns/0.1#">
+      xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#">
    <omspec:specName>OpenOM</omspec:specName>
    <omspec:specVersion>0.1</omspec:specVersion>
    <omspec:payloadFilename>om.json</omspec:payloadFilename>
@@ -1405,7 +1405,7 @@ These rules apply to **every** field in the dictionary unless a field's row over
 - **[OM-DD-011] Enumerations.** Enum values are matched **case-sensitively** against the registry in §E.6 ([OM-DD-040]); literals are lowercase and hyphenated except where the registry states otherwise (e.g. `N`/`NN`/`NNN`). A Consumer encountering an unknown enum member MUST treat the field as present-but-uninterpreted and MUST NOT reject the payload for it (§F [OM-VER-003]).
 - **[OM-DD-012] Dates & term arithmetic.** All date-typed fields (`assertedDate`, `deal.noiAsOfDate`, `lease.commencement`, `lease.expiration`, `RentPeriod.periodStart`/`periodEnd`) MUST be ISO 8601 `YYYY-MM-DD` calendar dates with no time or zone component and MUST be valid on the proleptic Gregorian calendar. Timestamps (e.g. the webhook `publishedAt`, §5b) MUST be RFC 3339 UTC with a `Z` designator ([OM-DD-002]). A lease/rent interval `[start, end]` is **inclusive of both endpoints**; two intervals are **contiguous** iff the later interval's `periodStart` equals the earlier interval's `periodEnd` plus one calendar day. Unless a check names another reference, the "as-of" instant for term arithmetic (e.g. remaining term) is `assertedDate` (consistent with §H `OMW-W030`).
 - **[OM-DD-013] Geospatial values.** `property.geo.latitude` and `property.geo.longitude` are WGS84 decimal degrees with `latitude ∈ [-90, 90]` and `longitude ∈ [-180, 180]`, RECOMMENDED to ≤ 6 decimal places. `latitude` and `longitude` MUST both be present or both absent.
-- **[OM-DD-014] JSON-LD envelope.** `@context` MUST be a JSON array whose members include exactly `"https://schema.org"` and the versioned OpenOM namespace URL for this `specVersion` (`https://SPEC-DOMAIN-TBD/ns/0.1` in 0.1; §D.2 [OM-XMP-001], §15 Q1). `@type` MUST be the string `"RealEstateListing"`. The namespace URL pinned in `@context` MUST correspond to `specVersion`; published context URLs are immutable (§F [OM-VER-002]).
+- **[OM-DD-014] JSON-LD envelope.** `@context` MUST be a JSON array whose members include exactly `"https://schema.org"` and the versioned OpenOM namespace URL for this `specVersion` (`https://verveliolabs.com/openom/ns/0.1` in 0.1; §D.2 [OM-XMP-001], §15 Q1). `@type` MUST be the string `"RealEstateListing"`. The namespace URL pinned in `@context` MUST correspond to `specVersion`; published context URLs are immutable (§F [OM-VER-002]).
 
 ### §E.3 Identifier-shaped field grammars
 

@@ -2,7 +2,7 @@ import { canonicalize } from "./canonicalize.js";
 import { sha256Hex } from "./crypto.js";
 
 /**
- * Compute the OpenOM integrity hash of a payload.
+ * Compute the openOM integrity hash of a payload.
  *
  * Spec: §C.3 [OM-CANON-016]. The preimage is the payload with `meta.signature`
  * REMOVED (absent, not null) so a signature can be added later without
