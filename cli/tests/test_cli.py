@@ -41,6 +41,26 @@ def test_embed_then_read(tmp_path: Path) -> None:
     assert parsed["verification"]["hashValid"] is True
 
 
+def test_embed_warns_on_backwards_asserted_date(tmp_path: Path) -> None:
+    base = _base_pdf(tmp_path / "base.pdf")
+    stnl = SPEC / "samples" / "valid-stnl.json"
+    proforma = SPEC / "samples" / "valid-proforma.json"  # a different payload
+    out1 = tmp_path / "out1.pdf"
+    out2 = tmp_path / "out2.pdf"
+    runner.invoke(
+        app,
+        ["embed", str(base), "--payload", str(stnl), "--out", str(out1),
+         "--asserted-date", "2026-08-15"],
+    )
+    r = runner.invoke(
+        app,
+        ["embed", str(out1), "--payload", str(proforma), "--out", str(out2),
+         "--asserted-date", "2026-07-01"],  # earlier than the prior marker
+    )
+    assert r.exit_code == 0, r.output
+    assert "OMW-W051" in r.output
+
+
 def test_validate_valid_exits_zero(tmp_path: Path) -> None:
     r = runner.invoke(
         app,
