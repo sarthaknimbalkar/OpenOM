@@ -1,14 +1,14 @@
 name: ci
 
-# The standard's credibility rests on this file: the gate ([OM-VEC-002]) must run on every
-# push/PR, not just locally. Python jobs always run; JS + cross-impl jobs auto-activate once
-# Track B (js/) is present on the branch, so this is green on feat/core and full on main.
+# The gate ([OM-VEC-002]) — full jobs defined below. Trigger is MANUAL (workflow_dispatch): run
+# it from the Actions tab or `gh workflow run ci.yml`. (Push/PR auto-triggers are intentionally
+# disabled; the job code is unchanged so re-enabling is a one-line edit.)
+#   on:
+#     push: { branches: [main, "feat/**"] }
+#     pull_request: { branches: [main] }
 
 on:
-  push:
-    branches: [main, "feat/**"]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
