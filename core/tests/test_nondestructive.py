@@ -16,7 +16,7 @@ import pikepdf
 import pymupdf
 
 from _make_rich import make_rich_pdf
-from _render import pages_pixel_identical, render_pages, tiled_ssim_min
+from _render import pages_pixel_identical
 from openom_core.embed import embed
 
 SPEC = Path(__file__).resolve().parents[2] / "spec"
@@ -63,44 +63,50 @@ def _annot_count(pdf_bytes: bytes) -> int:
     return total
 
 
+DPI = 300  # [OM-DoD-001](a) renders per-page rasters at 300 DPI
+
+
+def _assert_nondestructive(original: bytes, embedded: bytes) -> None:
+    """Full [OM-DoD-001](a) check: identical pixels (300 DPI, exact), page count, outline tree,
+    link count + destinations, and text content + positions."""
+    assert pages_pixel_identical(original, embedded, dpi=DPI), "300 DPI rasters differ"
+    with pikepdf.open(io.BytesIO(original)) as a, pikepdf.open(io.BytesIO(embedded)) as b:
+        assert len(a.pages) == len(b.pages)
+    assert _toc(original) == _toc(embedded)  # identical bookmark/outline tree
+    assert _words(original) == _words(embedded)  # text content + coordinates
+    assert _links(original) == _links(embedded)  # link count + destinations
+    assert _annot_count(original) == _annot_count(embedded)
+
+
 # --- synthetic, CI-runnable ------------------------------------------------------------
 
-def test_synthetic_pixels_byte_identical() -> None:
+def test_nondestructive_synthetic() -> None:
     rich = make_rich_pdf()
-    embedded = embed(rich, _sample(), asserted_date=FIXED_DATE)
-    assert pages_pixel_identical(rich, embedded, dpi=150)  # exact: any visual change fails
+    _assert_nondestructive(rich, embed(rich, _sample(), asserted_date=FIXED_DATE))
 
 
-def test_synthetic_text_and_positions_preserved() -> None:
-    rich = make_rich_pdf()
-    embedded = embed(rich, _sample(), asserted_date=FIXED_DATE)
-    assert _words(rich) == _words(embedded)  # content AND coordinates identical
+def test_nondestructive_opens_without_repair_two_viewers() -> None:
+    """[OM-DoD-001](a): the output opens without repair in >=2 independent parsers."""
+    embedded = embed(make_rich_pdf(), _sample(), asserted_date=FIXED_DATE)
+    with pikepdf.open(io.BytesIO(embedded)) as pdf:  # viewer 1: qpdf
+        assert len(pdf.pages) >= 1
+    doc = pymupdf.open(stream=embedded, filetype="pdf")  # viewer 2: mupdf
+    try:
+        assert doc.page_count >= 1
+        assert doc.is_repaired is False  # mupdf did NOT have to rebuild the xref
+    finally:
+        doc.close()
 
 
-def test_synthetic_links_and_bookmarks_preserved() -> None:
-    rich = make_rich_pdf()
-    embedded = embed(rich, _sample(), asserted_date=FIXED_DATE)
-    assert _links(rich) == _links(embedded)  # internal GoTo + external URI destinations
-    assert _toc(rich) == _toc(embedded)  # bookmarks
-    assert _annot_count(rich) == _annot_count(embedded)
+# --- all 3 real classes (local; skipped without the corpus) ----------------------------
+
+def test_nondestructive_native(native_om: bytes) -> None:
+    _assert_nondestructive(native_om, embed(native_om, _sample(), asserted_date=FIXED_DATE))
 
 
-# --- real hybrid OM (local; skipped without the corpus) --------------------------------
-
-def test_visually_identical_hybrid(hybrid_om: bytes) -> None:
-    embedded = embed(hybrid_om, _sample(), asserted_date=FIXED_DATE)
-    before = render_pages(hybrid_om, dpi=150)
-    after = render_pages(embedded, dpi=150)
-    assert len(before) == len(after)
-    for pa, pb in zip(before, after, strict=True):
-        assert tiled_ssim_min(pa, pb) >= 0.9999  # worst tile, not a masking global average
+def test_nondestructive_hybrid(hybrid_om: bytes) -> None:
+    _assert_nondestructive(hybrid_om, embed(hybrid_om, _sample(), asserted_date=FIXED_DATE))
 
 
-def test_structure_preserved_hybrid(hybrid_om: bytes) -> None:
-    embedded = embed(hybrid_om, _sample(), asserted_date=FIXED_DATE)
-    with pikepdf.open(io.BytesIO(hybrid_om)) as p1, pikepdf.open(io.BytesIO(embedded)) as p2:
-        assert len(p1.pages) == len(p2.pages)
-        assert ("/Outlines" in p1.Root) == ("/Outlines" in p2.Root)
-    assert _words(hybrid_om) == _words(embedded)  # text layer intact
-    assert _links(hybrid_om) == _links(embedded)  # link destinations intact
-    assert _annot_count(hybrid_om) == _annot_count(embedded)
+def test_nondestructive_scanned(scanned_om: bytes) -> None:
+    _assert_nondestructive(scanned_om, embed(scanned_om, _sample(), asserted_date=FIXED_DATE))
