@@ -11,12 +11,30 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
 - Optional lease fields `lease.termMonths` (stated total term) and `lease.remainingTermMonths`
   (stated remaining term as of assertedDate) — inputs for the date/term consistency checks
   OMW-W031 and OMW-W030. Additive/minor (§F); older payloads remain valid.
+- Consistency tier now implements the full §H.3 warning/info band, in both implementations:
+  `OMW-W012` (pro-forma NOI without noiAsOfDate), `OMW-W013` (capRate outside the [0.02, 0.20]
+  plausibility band; new tolerance `tol.capRateBand`), `OMW-W032` (assertedDate in the future
+  vs a caller-supplied processing date), `OMW-W033` (noiAsOfDate after assertedDate), `OMW-W034`
+  (expiration on/before commencement), `OMW-W041` (leaseType contradicts the responsibility set
+  generally), `OMW-W050` (self-supersede), `OMW-W060` (`source: verified` without corroborating
+  metadata), and info `OMI-I001` (currency defaulted), `OMI-I002` (source tag absent → asserted),
+  `OMI-I003` (a cross-check skipped for absent inputs).
 - Conformance sample matrix (`spec/samples/manifest.json`) with expected schema-tier outcomes,
   reproduced by both implementations.
 - Edge canonicalization vectors: `edge-numbers` (denormals, negative zero, max-safe-int) and
   `edge-unicode` (NFD, astral surrogate pairs, RTL override).
 
 ### Changed
+- **Consistency-code corrections** (both implementations): `OMW-W014` now fires on non-positive
+  `askingPrice`/`noi`/`buildingSF` (its §H.3 meaning), not on a zero rent-schedule `annualRent`
+  (which has no allocated code and is usually legitimate free rent — the ad-hoc check is removed);
+  `OMI-I001` now signals a defaulted field (currency → USD), not "NOI is pro-forma" (that state
+  has no info code and is already explicit in `deal.noiType`). These align the emitted codes with
+  their normative §H.3 definitions.
+- **`OMW-W050` clarification.** The §C integrity hash covers `meta.supersedes`, so
+  "supersedes == the payload's own hash" is an unreachable fixpoint. `OMW-W050` is therefore
+  defined as: `meta.supersedes` equals the hash of the payload with the `supersedes` pointer
+  removed — i.e. a no-op re-embed of byte-identical content.
 - `format` constraints (`date`) are now **asserted**, not annotation-only, in both
   implementations (Python: jsonschema format-checker; TypeScript: ajv-formats `mode: full`),
   with calendar-strict date validation.
