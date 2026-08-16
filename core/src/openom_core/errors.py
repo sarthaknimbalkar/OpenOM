@@ -13,7 +13,7 @@ IO_DUPKEY = "OM-IO-DUPKEY"
 IO_BADUTF8 = "OM-IO-BADUTF8"
 IO_NUMRANGE = "OM-IO-NUMRANGE"
 IO_BOMB = "OM-IO-BOMB"
-IO_TOPLEVEL = "OM-IO-TOPLEVEL"
+IO_STRUCTURE = "OM-IO-STRUCTURE"  # top-level not an object, or nesting too deep
 
 
 class CanonicalizationError(Exception):
