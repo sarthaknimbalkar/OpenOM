@@ -1,3 +1,4 @@
+import { payloadHash } from "./hash.js";
 import type { Finding } from "./validate.js";
 
 /** Consistency tolerances (§H.4 [OM-ERR-002]) — configurable; mirrors the Python Tolerances. */
@@ -5,19 +6,38 @@ export interface Tolerances {
   capRateAbs: number; // absolute, cap rate is itself a small fraction
   monetaryRel: number; // relative, for money/PSF cross-checks
   rateAbs: number; // absolute, for escalation-rate checks
+  capRateBand: [number, number]; // §H.4 tol.capRateBand (OMW-W013)
+  remainingTermDays: number; // §H.4 tol.remainingTermDays (OMW-W030)
+  leaseTermDays: number; // §H.4 tol.leaseTermDays (OMW-W031)
 }
 
 export const DEFAULT_TOLERANCES: Tolerances = {
   capRateAbs: 0.005,
   monetaryRel: 0.01,
   rateAbs: 0.005,
+  capRateBand: [0.02, 0.2],
+  remainingTermDays: 31,
+  leaseTermDays: 31,
 };
 
+const DAYS_PER_MONTH = 30.4375; // 365.25 / 12, for month<->day term arithmetic
+
+/** Optional context for the consistency tier — mirrors the Python `as_of` parameter. */
+export interface ConsistencyOptions {
+  /** Processing date (YYYY-MM-DD) for OMW-W032; without it, W032 is silent (no wall clock). */
+  asOf?: string;
+}
+
 const NET_LEASE_TYPES = new Set(["NN", "NNN", "absolute-net"]);
+const GROSS_LEASE_TYPES = new Set(["gross", "modified-gross"]);
+const ALL_RESP = ["roof", "structure", "parking", "hvac", "taxes", "insurance", "cam"] as const;
+const STRUCTURAL_RESP = ["roof", "structure", "parking", "hvac"] as const;
 
 const REQUIREMENT: Record<string, string> = {
   "OMW-W010": "OM-CONS-010",
   "OMW-W011": "OM-CONS-011",
+  "OMW-W012": "OM-CONS-012",
+  "OMW-W013": "OM-CONS-013",
   "OMW-W014": "OM-CONS-014",
   "OMW-W020": "OM-CONS-020",
   "OMW-W021": "OM-CONS-021",
@@ -26,8 +46,18 @@ const REQUIREMENT: Record<string, string> = {
   "OMW-W024": "OM-CONS-024",
   "OMW-W025": "OM-CONS-025",
   "OMW-W026": "OM-CONS-026",
+  "OMW-W030": "OM-CONS-030",
+  "OMW-W031": "OM-CONS-031",
+  "OMW-W032": "OM-CONS-032",
+  "OMW-W033": "OM-CONS-033",
+  "OMW-W034": "OM-CONS-034",
   "OMW-W040": "OM-CONS-040",
-  "OMI-I001": "OM-DD-030",
+  "OMW-W041": "OM-CONS-041",
+  "OMW-W050": "OM-CONS-050",
+  "OMW-W060": "OM-CONS-060",
+  "OMI-I001": "OM-DD-002",
+  "OMI-I002": "OM-DD-004",
+  "OMI-I003": "OM-ERR-014",
 };
 
 function warn(
@@ -46,6 +76,15 @@ function warn(
     expected,
     actual,
   };
+}
+
+function infoFinding(code: string, path: string, message: string): Finding {
+  return { code, severity: "info", path, message, requirement: REQUIREMENT[code]! };
+}
+
+/** The value as an ISO date string when it already is one, else undefined (for expected/actual). */
+function isoOf(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
 }
 
 function num(value: unknown): number | null {
@@ -76,12 +115,21 @@ function obj(value: unknown): Record<string, unknown> {
 export function consistencyFindings(
   payload: Record<string, unknown>,
   tol: Tolerances = DEFAULT_TOLERANCES,
+  options: ConsistencyOptions = {},
 ): { warnings: Finding[]; info: Finding[] } {
   const warnings: Finding[] = [];
   const info: Finding[] = [];
   const deal = obj(payload.deal);
   const prop = obj(payload.property);
   const lease = obj(payload.lease);
+
+  // Reference date for term checks (OMW-W030): explicit asOf, else the payload's assertedDate;
+  // processingDate (OMW-W032) is set ONLY when a caller passes asOf — never the wall clock.
+  const processingDate = options.asOf ? epochDay(options.asOf) : null;
+  const asOfDate = processingDate !== null ? processingDate : epochDay(payload.assertedDate);
+  dateTermChecks(lease, asOfDate, tol, warnings);
+  dateSanityChecks(payload, deal, lease, processingDate, options.asOf, warnings);
+  selfSupersedeCheck(payload, warnings);
 
   const cap = num(deal.capRate);
   const noi = num(deal.noi);
@@ -117,6 +165,41 @@ export function consistencyFindings(
       );
     }
   }
+
+  // OMW-W013: cap rate outside the plausibility band (§H.4 tol.capRateBand).
+  if (cap !== null) {
+    const [lo, hi] = tol.capRateBand;
+    if (!(cap >= lo && cap <= hi)) {
+      warnings.push(
+        warn(
+          "OMW-W013",
+          "/deal/capRate",
+          `capRate outside the plausibility band [${lo}, ${hi}]`,
+          undefined,
+          cap,
+        ),
+      );
+    }
+  }
+
+  // OMW-W014: askingPrice, noi, or buildingSF is non-positive (§H.3).
+  for (const [value, path, label] of [
+    [price, "/deal/askingPrice", "askingPrice"],
+    [noi, "/deal/noi", "noi"],
+    [buildingSf, "/property/buildingSF", "buildingSF"],
+  ] as const) {
+    if (value !== null && value <= 0) {
+      warnings.push(warn("OMW-W014", path, `${label} is non-positive`, undefined, value));
+    }
+  }
+
+  // OMW-W012: pro-forma NOI presented without noiAsOfDate context.
+  if (deal.noiType === "pro-forma" && !deal.noiAsOfDate) {
+    warnings.push(
+      warn("OMW-W012", "/deal/noiAsOfDate", "pro-forma NOI presented without noiAsOfDate context"),
+    );
+  }
+
   const leaseType = lease.leaseTypeAsserted;
   const resp = obj(lease.landlordResponsibilities);
   if (
@@ -129,6 +212,30 @@ export function consistencyFindings(
         "OMW-W040",
         "/lease/landlordResponsibilities",
         `${leaseType} lease but landlord bears taxes/insurance/cam`,
+      ),
+    );
+  }
+
+  // OMW-W041: leaseTypeAsserted contradicts the responsibility set generally (§H.3).
+  if (
+    typeof leaseType === "string" &&
+    GROSS_LEASE_TYPES.has(leaseType) &&
+    Object.keys(resp).length > 0 &&
+    !ALL_RESP.some((k) => resp[k])
+  ) {
+    warnings.push(
+      warn(
+        "OMW-W041",
+        "/lease/landlordResponsibilities",
+        `${leaseType} lease but landlord bears no responsibilities`,
+      ),
+    );
+  } else if (leaseType === "absolute-net" && STRUCTURAL_RESP.some((k) => resp[k])) {
+    warnings.push(
+      warn(
+        "OMW-W041",
+        "/lease/landlordResponsibilities",
+        "absolute-net lease but landlord bears structural/HVAC responsibilities",
       ),
     );
   }
@@ -152,16 +259,179 @@ export function consistencyFindings(
     rentScheduleChecks(schedule, buildingSf, lease, tol, warnings);
   }
 
-  if (deal.noiType === "pro-forma") {
-    info.push({
-      code: "OMI-I001",
-      severity: "info",
-      path: "/deal/noiType",
-      message: "NOI is pro-forma (forward-looking), not in-place",
-      requirement: REQUIREMENT["OMI-I001"]!,
-    });
-  }
+  infoTier(payload, deal, prop, lease, info);
   return { warnings, info };
+}
+
+/** OMW-W030/W031: stated term fields vs the date arithmetic (§H.4). */
+function dateTermChecks(
+  lease: Record<string, unknown>,
+  asOfDate: number | null,
+  tol: Tolerances,
+  warnings: Finding[],
+): void {
+  const commencement = epochDay(lease.commencement);
+  const expiration = epochDay(lease.expiration);
+  const termMonths = num(lease.termMonths);
+  const remainingMonths = num(lease.remainingTermMonths);
+
+  if (termMonths !== null && commencement !== null && expiration !== null) {
+    const actualDays = expiration - commencement;
+    if (Math.abs(actualDays - termMonths * DAYS_PER_MONTH) > tol.leaseTermDays) {
+      warnings.push(
+        warn(
+          "OMW-W031",
+          "/lease/termMonths",
+          "stated lease term disagrees with expiration - commencement",
+          round(actualDays / DAYS_PER_MONTH, 1),
+          termMonths,
+        ),
+      );
+    }
+  }
+  if (remainingMonths !== null && expiration !== null && asOfDate !== null) {
+    const actualDays = expiration - asOfDate;
+    if (Math.abs(actualDays - remainingMonths * DAYS_PER_MONTH) > tol.remainingTermDays) {
+      warnings.push(
+        warn(
+          "OMW-W030",
+          "/lease/remainingTermMonths",
+          "stated remaining term disagrees with expiration - as_of",
+          round(actualDays / DAYS_PER_MONTH, 1),
+          remainingMonths,
+        ),
+      );
+    }
+  }
+}
+
+/** OMW-W032/W033/W034: date-ordering sanity (§H.3). */
+function dateSanityChecks(
+  payload: Record<string, unknown>,
+  deal: Record<string, unknown>,
+  lease: Record<string, unknown>,
+  processingDate: number | null,
+  processingIso: string | undefined,
+  warnings: Finding[],
+): void {
+  const asserted = epochDay(payload.assertedDate);
+  const noiAsOf = epochDay(deal.noiAsOfDate);
+  const commencement = epochDay(lease.commencement);
+  const expiration = epochDay(lease.expiration);
+
+  if (processingDate !== null && asserted !== null && asserted > processingDate) {
+    warnings.push(
+      warn(
+        "OMW-W032",
+        "/assertedDate",
+        "assertedDate is in the future relative to the processing date",
+        isoOf(processingIso),
+        isoOf(payload.assertedDate),
+      ),
+    );
+  }
+  if (noiAsOf !== null && asserted !== null && noiAsOf > asserted) {
+    warnings.push(
+      warn(
+        "OMW-W033",
+        "/deal/noiAsOfDate",
+        "noiAsOfDate is after assertedDate",
+        isoOf(payload.assertedDate),
+        isoOf(deal.noiAsOfDate),
+      ),
+    );
+  }
+  if (commencement !== null && expiration !== null && expiration <= commencement) {
+    warnings.push(
+      warn(
+        "OMW-W034",
+        "/lease/expiration",
+        "lease expiration is on or before commencement",
+        undefined,
+        isoOf(lease.expiration),
+      ),
+    );
+  }
+}
+
+/** OMW-W050: self-supersede — supersedes == hash of the payload with the pointer removed (§H.3). */
+function selfSupersedeCheck(payload: Record<string, unknown>, warnings: Finding[]): void {
+  const meta = obj(payload.meta);
+  const supersedes = meta.supersedes;
+  if (typeof supersedes !== "string") return;
+  const strippedMeta = { ...meta };
+  delete strippedMeta.supersedes;
+  const stripped = { ...payload, meta: strippedMeta };
+  let own: string;
+  try {
+    own = payloadHash(stripped);
+  } catch {
+    return; // hashing must never break validation
+  }
+  if (supersedes === own) {
+    warnings.push(
+      warn(
+        "OMW-W050",
+        "/meta/supersedes",
+        "meta.supersedes equals this payload's own hash minus the pointer",
+      ),
+    );
+  }
+}
+
+/** Info tier (§H.3): OMI-I001 (defaulted currency), I002 (source absent), I003 (skipped check). */
+function infoTier(
+  payload: Record<string, unknown>,
+  deal: Record<string, unknown>,
+  prop: Record<string, unknown>,
+  lease: Record<string, unknown>,
+  info: Finding[],
+): void {
+  const schedule = Array.isArray(lease.rentSchedule) ? lease.rentSchedule : [];
+  const periods = schedule.map(obj);
+
+  if (payload.currency === undefined) {
+    info.push(
+      infoFinding("OMI-I001", "/currency", "currency absent; assumed USD (OM-DD-002 default)"),
+    );
+  }
+  if (periods.some((p) => p.source === undefined)) {
+    info.push(
+      infoFinding(
+        "OMI-I002",
+        "/lease/rentSchedule",
+        "a rentPeriod source tag was absent; assumed 'asserted' (OM-DD-004)",
+      ),
+    );
+  }
+  const buildingSf = num(prop.buildingSF);
+  if (num(deal.capRate) !== null && (num(deal.noi) === null || num(deal.askingPrice) === null)) {
+    info.push(
+      infoFinding(
+        "OMI-I003",
+        "/deal/capRate",
+        "cap-rate cross-check (OMW-W010) skipped: noi or askingPrice absent",
+      ),
+    );
+  }
+  if (num(deal.pricePerSF) !== null && (num(deal.askingPrice) === null || buildingSf === null)) {
+    info.push(
+      infoFinding(
+        "OMI-I003",
+        "/deal/pricePerSF",
+        "price/SF cross-check (OMW-W011) skipped: askingPrice or buildingSF absent",
+      ),
+    );
+  }
+  if (buildingSf === null && periods.some((p) => num(p.rentPSF) !== null)) {
+    info.push(
+      infoFinding(
+        "OMI-I003",
+        "/lease/rentSchedule",
+        "rentPSF cross-check (OMW-W024) skipped: buildingSF absent",
+      ),
+    );
+  }
 }
 
 function rentScheduleChecks(
@@ -207,14 +477,12 @@ function rentScheduleChecks(
         );
       }
     }
-    if (annual !== null && annual <= 0 && period.abatement === undefined) {
+    if (period.source === "verified") {
       warnings.push(
         warn(
-          "OMW-W014",
-          `${base}/annualRent`,
-          "non-positive annualRent without an abatement",
-          undefined,
-          annual,
+          "OMW-W060",
+          `${base}/source`,
+          "source is 'verified' but no corroborating verification metadata is present",
         ),
       );
     }

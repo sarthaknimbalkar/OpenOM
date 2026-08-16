@@ -23,10 +23,11 @@ const rentSchedule = (p: Record<string, unknown>) =>
   (p.lease as Record<string, unknown>).rentSchedule as Record<string, unknown>[];
 
 describe("consistency tier", () => {
-  test("the valid sample is internally consistent (no warnings/info)", () => {
+  test("the valid sample is internally consistent (no warnings)", () => {
     const r = consistencyFindings(stnl());
     expect(r.warnings).toEqual([]);
-    expect(r.info).toEqual([]);
+    // The sample omits `currency`, so the only info is the USD-default notice (OMI-I001).
+    expect(r.info.map((i) => i.code)).toEqual(["OMI-I001"]);
   });
 
   test("OMW-W010 cap rate vs NOI/price", () => {
@@ -80,16 +81,94 @@ describe("consistency tier", () => {
     expect(codes(p)).toContain("OMW-W040");
   });
 
-  test("OMW-W014 non-positive rent without abatement", () => {
+  test("OMW-W014 non-positive noi", () => {
     const p = stnl();
-    period(p, 0).annualRent = 0;
+    deal(p).noi = -5000;
     expect(codes(p)).toContain("OMW-W014");
   });
 
-  test("OMI-I001 pro-forma NOI is info (never blocks)", () => {
+  test("OMW-W013 cap rate outside plausibility band", () => {
+    const p = stnl();
+    deal(p).capRate = 0.3;
+    deal(p).noi = 555000; // 555000/1850000 = 0.30 keeps W010 quiet
+    expect(codes(p)).toContain("OMW-W013");
+  });
+
+  test("OMW-W012 pro-forma without noiAsOfDate", () => {
     const p = stnl();
     deal(p).noiType = "pro-forma";
-    const r = consistencyFindings(p);
-    expect(r.info.map((i) => i.code)).toContain("OMI-I001");
+    delete deal(p).noiAsOfDate;
+    expect(codes(p)).toContain("OMW-W012");
+  });
+
+  test("OMW-W030 remaining-term mismatch / OMW-W031 lease-term mismatch", () => {
+    const term = stnl();
+    (term.lease as Record<string, unknown>).termMonths = 60; // vs ~180
+    expect(codes(term)).toContain("OMW-W031");
+    const rem = stnl();
+    (rem.lease as Record<string, unknown>).remainingTermMonths = 12; // vs ~92
+    expect(codes(rem)).toContain("OMW-W030");
+  });
+
+  test("OMW-W032 assertedDate in the future vs processing date", () => {
+    const p = stnl(); // assertedDate 2026-08-15
+    expect(
+      consistencyFindings(p, undefined, { asOf: "2020-01-01" }).warnings.map((w) => w.code),
+    ).toContain("OMW-W032");
+    expect(codes(p)).not.toContain("OMW-W032"); // silent without a processing date
+  });
+
+  test("OMW-W033 noiAsOfDate after assertedDate", () => {
+    const p = stnl();
+    deal(p).noiAsOfDate = "2027-01-01";
+    expect(codes(p)).toContain("OMW-W033");
+  });
+
+  test("OMW-W034 expiration on or before commencement", () => {
+    const p = stnl();
+    (p.lease as Record<string, unknown>).expiration = "2010-01-01";
+    expect(codes(p)).toContain("OMW-W034");
+  });
+
+  test("OMW-W041 gross lease with no responsibilities", () => {
+    const p = stnl();
+    (p.lease as Record<string, unknown>).leaseTypeAsserted = "gross";
+    expect(codes(p)).toContain("OMW-W041");
+  });
+
+  test("OMW-W050 self-supersede (own hash minus the pointer)", async () => {
+    const { payloadHash } = await import("../src/hash.js");
+    const p = stnl();
+    const stripped = JSON.parse(JSON.stringify(p)) as Record<string, unknown>;
+    delete (stripped.meta as Record<string, unknown>).supersedes;
+    (p.meta as Record<string, unknown>).supersedes = payloadHash(stripped);
+    expect(codes(p)).toContain("OMW-W050");
+  });
+
+  test("OMW-W060 source verified without corroborating metadata", () => {
+    const p = stnl();
+    period(p, 0).source = "verified";
+    expect(codes(p)).toContain("OMW-W060");
+  });
+
+  test("OMI-I001 currency defaulted; suppressed when present", () => {
+    expect(consistencyFindings(stnl()).info.map((i) => i.code)).toContain("OMI-I001");
+    const p = stnl();
+    p.currency = "USD";
+    expect(consistencyFindings(p).info.map((i) => i.code)).not.toContain("OMI-I001");
+  });
+
+  test("OMI-I002 source tag absent", () => {
+    const p = stnl();
+    delete period(p, 0).source;
+    expect(consistencyFindings(p).info.map((i) => i.code)).toContain("OMI-I002");
+  });
+
+  test("OMI-I003 cross-check skipped for absent inputs", () => {
+    const p = stnl();
+    delete deal(p).noi;
+    delete deal(p).noiType;
+    delete deal(p).noiAsOfDate;
+    expect(consistencyFindings(p).info.map((i) => i.code)).toContain("OMI-I003");
   });
 });
