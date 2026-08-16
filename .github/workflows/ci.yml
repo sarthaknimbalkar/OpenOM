@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: |
           python core/scripts/gen_vectors.py
-          git diff --exit-code -- spec/vectors/expected spec/vectors/payloads \
+          git diff --exit-code -- spec/vectors/expected spec/vectors/payloads spec/vectors/rejections \
             || (echo "::error::vector regeneration is not a no-op — a canonical hash moved"; exit 1)
 
   sbom:

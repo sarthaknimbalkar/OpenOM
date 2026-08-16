@@ -31,18 +31,23 @@ from unicodedata import normalize
 
 import rfc8785
 
-from .errors import IO_BADUTF8, IO_DUPKEY, IO_NUMRANGE, IO_TOPLEVEL, CanonicalizationError
+from .errors import IO_BADUTF8, IO_DUPKEY, IO_NUMRANGE, IO_STRUCTURE, CanonicalizationError
 
 #: ECMAScript safe-integer limit; integers beyond this are silently rounded by the number
 #: model, which would be data corruption (§C [OM-CANON-013]).
 MAX_SAFE_INT = 2**53 - 1
 
+#: Max nesting depth (§J JSON-hardening guard) — matches the JS parser for cross-impl parity.
+MAX_DEPTH = 64
 
-def _prepare(obj: Any) -> Any:
+
+def _prepare(obj: Any, depth: int = 0) -> Any:
     """NFC-normalize strings + member names, reject duplicate keys and non-representable numbers.
 
     Returns a new structure ready for RFC 8785 serialization. Mutates nothing.
     """
+    if depth > MAX_DEPTH:
+        raise CanonicalizationError(IO_STRUCTURE, f"nesting exceeds {MAX_DEPTH}")
     # bool is an int subclass — must be checked first.
     if isinstance(obj, bool):
         return obj
@@ -60,10 +65,10 @@ def _prepare(obj: Any) -> Any:
             nkey = normalize("NFC", key)
             if nkey in out:
                 raise CanonicalizationError(IO_DUPKEY, f"duplicate member name after NFC: {nkey!r}")
-            out[nkey] = _prepare(value)
+            out[nkey] = _prepare(value, depth + 1)
         return out
     if isinstance(obj, (list, tuple)):
-        return [_prepare(item) for item in obj]
+        return [_prepare(item, depth + 1) for item in obj]
     if isinstance(obj, int):
         if abs(obj) > MAX_SAFE_INT:
             raise CanonicalizationError(IO_NUMRANGE, f"integer exceeds 2^53-1: {obj}")
@@ -88,7 +93,7 @@ def canonicalize(payload: Mapping[str, Any]) -> bytes:
     """
     if not isinstance(payload, Mapping):
         raise CanonicalizationError(
-            IO_TOPLEVEL, f"top-level value must be an object, got {type(payload).__name__}"
+            IO_STRUCTURE, f"top-level value must be an object, got {type(payload).__name__}"
         )
     prepared = _prepare(payload)
     try:

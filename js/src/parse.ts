@@ -180,11 +180,12 @@ function scanAndCheckNumber(text: string, start: number): number {
   if (!Number.isFinite(value)) {
     throw new OmIoError("OM-IO-NUMRANGE", `number token is not finite: ${token}`);
   }
-  const isIntegerForm = /^-?\d+$/.test(token);
-  if (isIntegerForm && !Number.isSafeInteger(value)) {
+  // Value-based (not token-form) — matches the Python core and canonicalize.ts: any
+  // integer-valued number beyond 2^53-1 is rejected, whether written 1000...0 or 1e21.
+  if (Number.isInteger(value) && !Number.isSafeInteger(value)) {
     throw new OmIoError(
       "OM-IO-NUMRANGE",
-      `integer token exceeds safe-integer range (2^53-1): ${token}`,
+      `integer value exceeds safe-integer range (2^53-1): ${token}`,
     );
   }
   return i;

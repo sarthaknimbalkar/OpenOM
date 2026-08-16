@@ -108,7 +108,7 @@ def test_top_level_must_be_object() -> None:
     for bad in ([1, 2], "x", 5, None):
         with pytest.raises(CanonicalizationError) as ei:
             canonicalize(bad)  # type: ignore[arg-type]
-        assert ei.value.code == "OM-IO-TOPLEVEL"
+        assert ei.value.code == "OM-IO-STRUCTURE"
 
 
 def test_unpaired_surrogate_rejected() -> None:
@@ -142,11 +142,20 @@ def test_es6_number_formatting_reference() -> None:
         assert canonicalize({"n": value}) == b'{"n":' + expected + b"}", f"failed on {value!r}"
 
 
-def test_deep_nesting_does_not_crash() -> None:
+def test_nesting_within_limit_ok() -> None:
     obj: Any = {"leaf": 1}
-    for _ in range(200):
+    for _ in range(50):  # within MAX_DEPTH (64)
         obj = {"child": obj}
     assert canonicalize(obj).startswith(b'{"child":')
+
+
+def test_nesting_over_limit_rejected() -> None:
+    obj: Any = {"leaf": 1}
+    for _ in range(100):  # beyond MAX_DEPTH (64) — matches the JS parser's guard
+        obj = {"child": obj}
+    with pytest.raises(CanonicalizationError) as ei:
+        canonicalize(obj)
+    assert ei.value.code == "OM-IO-STRUCTURE"
 
 
 # --- Property-based differential invariants (backlog §0 #3, §2) -------------------------

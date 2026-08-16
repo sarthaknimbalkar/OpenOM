@@ -1,0 +1,41 @@
+{
+  "cases": [
+    {
+      "code": "OM-IO-STRUCTURE",
+      "input": "rejections/toplevel-array.json",
+      "name": "toplevel-array"
+    },
+    {
+      "code": "OM-IO-STRUCTURE",
+      "input": "rejections/toplevel-scalar.json",
+      "name": "toplevel-scalar"
+    },
+    {
+      "code": "OM-IO-NUMRANGE",
+      "input": "rejections/bignum-exponent.json",
+      "name": "bignum-exponent"
+    },
+    {
+      "code": "OM-IO-NUMRANGE",
+      "input": "rejections/bignum-integer.json",
+      "name": "bignum-integer"
+    },
+    {
+      "code": "OM-IO-BADUTF8",
+      "input": "rejections/lone-surrogate.json",
+      "name": "lone-surrogate"
+    },
+    {
+      "code": "OM-IO-DUPKEY",
+      "input": "rejections/nfc-dupkey.json",
+      "name": "nfc-dupkey"
+    },
+    {
+      "code": "OM-IO-STRUCTURE",
+      "input": "rejections/deep-nesting.json",
+      "name": "deep-nesting"
+    }
+  ],
+  "specVersion": "0.1",
+  "suite": "openom-rejections"
+}
