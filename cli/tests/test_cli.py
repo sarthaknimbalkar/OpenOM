@@ -81,6 +81,60 @@ def test_validate_invalid_exits_nonzero(tmp_path: Path) -> None:
     assert "OMV-E002" in r.output
 
 
+def test_check_payload_json(tmp_path: Path) -> None:
+    # Consistency tier only (no schema): the valid sample is internally consistent -> exit 0.
+    r = runner.invoke(app, ["check", str(SPEC / "samples" / "valid-stnl.json")])
+    assert r.exit_code == 0, r.output
+    parsed = json.loads(r.output)
+    assert parsed["source"]["kind"] == "payload"
+    assert parsed["warnings"] == []
+
+
+def test_check_pdf_extracts_payload(tmp_path: Path) -> None:
+    base = _base_pdf(tmp_path / "base.pdf")
+    sample = SPEC / "samples" / "valid-stnl.json"
+    out = tmp_path / "out.pdf"
+    runner.invoke(
+        app,
+        ["embed", str(base), "--payload", str(sample), "--out", str(out),
+         "--asserted-date", "2026-08-15"],
+    )
+    r = runner.invoke(app, ["check", str(out)])
+    assert r.exit_code == 0, r.output
+    parsed = json.loads(r.output)
+    assert parsed["source"]["kind"] == "pdf"
+    assert parsed["source"]["hashValid"] is True
+
+
+def test_check_strict_exits_nonzero_on_warnings(tmp_path: Path) -> None:
+    bad = json.loads((SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8"))
+    bad["deal"]["capRate"] = 0.09  # inconsistent with NOI/price -> OMW-W010
+    payload = tmp_path / "bad.json"
+    payload.write_text(json.dumps(bad), encoding="utf-8")
+    lax = runner.invoke(app, ["check", str(payload)])
+    assert lax.exit_code == 0  # warnings never block by default
+    strict = runner.invoke(app, ["check", str(payload), "--strict"])
+    assert strict.exit_code == 1
+    assert "OMW-W010" in strict.output
+
+
+def test_check_as_of_drives_future_warning(tmp_path: Path) -> None:
+    # assertedDate 2026-08-15 is in the future relative to an earlier processing date -> W032.
+    r = runner.invoke(
+        app,
+        ["check", str(SPEC / "samples" / "valid-stnl.json"), "--as-of", "2020-01-01", "--strict"],
+    )
+    assert r.exit_code == 1
+    assert "OMW-W032" in r.output
+
+
+def test_check_pdf_without_payload_exits_cleanly(tmp_path: Path) -> None:
+    base = _base_pdf(tmp_path / "empty.pdf")
+    r = runner.invoke(app, ["check", str(base)])
+    assert r.exit_code == 3  # OM-IO-ABSENT, not a crash
+    assert "Traceback" not in r.output
+
+
 def test_inspect(tmp_path: Path) -> None:
     base = _base_pdf(tmp_path / "b.pdf")
     r = runner.invoke(app, ["inspect", str(base)])
