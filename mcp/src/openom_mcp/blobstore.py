@@ -91,3 +91,65 @@ class LocalBlobStore(BlobStore):
     def delete(self, blob_id: str) -> None:
         self._meta.pop(blob_id, None)
         (self.root / blob_id).unlink(missing_ok=True)
+
+
+class S3BlobStore(BlobStore):  # pragma: no cover - integration-tested out of CI (needs R2/MinIO)
+    """R2/S3 adapter: real single-use presigned PUT/GET, owner in object metadata, TTL backstop from
+    the object's age. A ≤24h bucket lifecycle rule is the storage-side TTL; ``get`` also enforces it
+    from ``LastModified`` so authz+TTL match ``LocalBlobStore``. boto3 is an optional extra.
+    """
+
+    def __init__(
+        self, *, bucket: str, endpoint_url: str, access_key: str, secret_key: str,
+        ttl_seconds: int = 86400,
+    ) -> None:
+        import boto3  # type: ignore[import-not-found]
+
+        self.bucket = bucket
+        self.ttl = ttl_seconds
+        self.s3 = boto3.client(
+            "s3", endpoint_url=endpoint_url,
+            aws_access_key_id=access_key, aws_secret_access_key=secret_key,
+        )
+
+    def _expires(self) -> str:
+        return _iso(time.time() + self.ttl)
+
+    def create_upload(self, principal: str) -> dict[str, str]:
+        blob_id = new_blob_id()
+        url = self.s3.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": self.bucket, "Key": blob_id, "Metadata": {"owner": principal}},
+            ExpiresIn=min(self.ttl, 3600),
+        )
+        return {"blobId": blob_id, "presignedPut": url, "expiresAt": self._expires()}
+
+    def put_result(self, data: bytes, principal: str) -> dict[str, str]:
+        blob_id = new_blob_id()
+        self.s3.put_object(
+            Bucket=self.bucket, Key=blob_id, Body=data, Metadata={"owner": principal}
+        )
+        url = self.s3.generate_presigned_url(
+            "get_object", Params={"Bucket": self.bucket, "Key": blob_id},
+            ExpiresIn=min(self.ttl, 3600),
+        )
+        return {"blobId": blob_id, "presignedGet": url, "expiresAt": self._expires()}
+
+    def get(self, blob_id: str, principal: str) -> bytes:
+        from botocore.exceptions import ClientError  # type: ignore[import-not-found]
+
+        try:
+            obj = self.s3.get_object(Bucket=self.bucket, Key=blob_id)
+        except ClientError as exc:
+            raise ToolError("OM-IO-006", "blobId not found or expired") from exc
+        age = time.time() - obj["LastModified"].timestamp()
+        if age > self.ttl:
+            self.delete(blob_id)
+            raise ToolError("OM-IO-006", "blobId not found or expired")
+        if obj.get("Metadata", {}).get("owner") != principal:
+            raise ToolError("OM-IO-007", "blobId not authorized for this principal")
+        body: bytes = obj["Body"].read()
+        return body
+
+    def delete(self, blob_id: str) -> None:
+        self.s3.delete_object(Bucket=self.bucket, Key=blob_id)
