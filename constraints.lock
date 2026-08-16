@@ -1,0 +1,65 @@
+# openOM reproducible dependency pin (M2 #12).
+# Libraries keep semver FLOORS in their pyproject.toml (right for consumers); this file pins the
+# exact known-good transitive closure for the release/app layer. CI installs with
+#   pip install -c constraints.lock -e core -e cli -e mcp
+# so builds are reproducible. As a constraints file, unused pins (e.g. pywin32 off-Windows) are
+# ignored. Regenerate after an intentional dependency bump:
+#   python -m pip freeze --exclude-editable | grep -viE '^openom|@ file|^-e ' | sort > constraints.lock
+PyJWT==2.13.0
+Pygments==2.20.0
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.14.2
+ast_serialize==0.8.0
+attrs==26.1.0
+cffi==2.1.1
+click==8.4.2
+colorama==0.4.6
+coverage==7.15.4
+cryptography==50.0.0
+h11==0.16.0
+httpcore2==2.10.0
+httpx2==2.10.0
+hypothesis==6.165.9
+idna==3.18
+iniconfig==2.3.0
+jsonschema-specifications==2025.9.1
+jsonschema==4.26.0
+librt==0.15.0
+lxml==6.1.1
+markdown-it-py==4.2.0
+mcp-types==2.0.0
+mcp==2.0.0
+mdurl==0.1.2
+mypy==2.3.1
+mypy_extensions==1.1.0
+numpy==2.4.6
+opentelemetry-api==1.44.0
+packaging==26.3
+pathspec==1.1.1
+pikepdf==10.11.0
+pillow==12.3.0
+pluggy==1.6.0
+pycparser==3.0
+pydantic==2.13.4
+pydantic_core==2.46.4
+pymupdf==1.28.2
+pytest-cov==7.1.0
+pytest==9.1.1
+python-multipart==0.0.32
+pywin32==312
+referencing==0.37.0
+rfc8785==0.1.4
+rich==15.0.0
+rpds-py==2026.6.3
+ruff==0.16.3
+shellingham==1.5.4
+sortedcontainers==2.4.0
+sse-starlette==3.4.8
+starlette==1.6.0
+truststore==0.10.4
+typer==0.27.1
+types-jsonschema==4.26.0.20260518
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+uvicorn==0.52.3
