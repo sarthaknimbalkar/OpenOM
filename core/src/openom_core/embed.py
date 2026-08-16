@@ -82,6 +82,12 @@ def embed(
     spec_version = str(payload.get("specVersion", "0.1"))
 
     with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+        # §D.4 idempotent re-embed: a *different* prior payload is superseded; an identical
+        # re-embed is a no-op (no self-supersede, cf. OMW-W050).
+        prior = read_marker(pdf)
+        prior_hash = prior.get("payloadHash") if prior else None
+        supersedes = prior_hash if (prior_hash and prior_hash != payload_hash) else None
+
         _remove_existing(pdf)
         # pikepdf's stub marks description/filename/dates as required; runtime defaults them.
         # We intentionally omit dates for determinism (§D [OM-EMB-011]).
@@ -97,6 +103,7 @@ def embed(
             payload_filename=PAYLOAD_NAME,
             payload_hash=payload_hash,
             asserted_date=asserted_date,
+            supersedes=supersedes,
         )
         out = io.BytesIO()
         pdf.save(out, deterministic_id=True)
