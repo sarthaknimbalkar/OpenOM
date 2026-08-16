@@ -20,4 +20,5 @@ export {
   type ReadVerification,
 } from "./read.js";
 export { validatePayload, type Finding, type ValidationReport } from "./validate.js";
+export { consistencyFindings, DEFAULT_TOLERANCES, type Tolerances } from "./consistency.js";
 export { OmIoError, type OmIoCode } from "./errors.js";
