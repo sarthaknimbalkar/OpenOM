@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Two-tier payload validation (spec §H): schema errors block, consistency warnings never do.
 
 Errors (``OMV-E###``) come from JSON Schema plus the noi/signature rules; warnings

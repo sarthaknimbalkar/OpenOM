@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Extract raster images from a PDF (spec §8b): locate + decompress, recombine SMask to RGBA,
 convert CMYK/ICC/Indexed to sRGB, dedupe by xref. Deterministic, inference-free. Unsupported
 images are reported in the manifest and skipped — never a crash.
