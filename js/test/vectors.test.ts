@@ -32,6 +32,8 @@ describe("cross-impl vector pin (spec/vectors @ contract freeze)", () => {
   test("manifest lists the expected seed vectors", () => {
     expect(manifest.vectors.map((v) => v.name).sort()).toEqual([
       "cafe",
+      "edge-numbers",
+      "edge-unicode",
       "numbers",
       "sample-stnl",
       "unicode",
