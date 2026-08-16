@@ -29,7 +29,9 @@ from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
 
 SPEC_VERSION = "0.1"
-app = typer.Typer(help="openOM deterministic engine — embed/read/inspect/validate/extract.")
+app = typer.Typer(
+    help="openOM deterministic engine — embed/read/inspect/validate/check/extract."
+)
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _DATA_ERRORS = (
@@ -123,6 +125,55 @@ def validate(
         }
     )
     raise typer.Exit(code=0 if report.ok else 1)
+
+
+@app.command()
+@_guard
+def check(
+    input: Annotated[
+        Path, typer.Argument(help="A payload JSON file OR a PDF with an embedded om.json")
+    ],
+    schema: Annotated[
+        Path | None, typer.Option(help="JSON Schema (enables the error tier)")
+    ] = None,
+    as_of: Annotated[
+        str | None, typer.Option(help="Processing date (YYYY-MM-DD) for term/future checks")
+    ] = None,
+    strict: Annotated[
+        bool, typer.Option(help="Exit non-zero on consistency warnings, not just schema errors")
+    ] = False,
+) -> None:
+    """Standalone consistency check on a payload OR an embedded-PDF payload (§9 / M1.x).
+
+    Runs the deterministic consistency tier with no network and no inference. Schema is optional:
+    without it, only the internal-consistency (OMW-W###) + info (OMI-I###) tiers run.
+    """
+    raw = input.read_bytes()
+    source: dict[str, Any] = {"input": str(input)}
+    if raw[:5] == b"%PDF-":
+        result = _read(raw)
+        if not result.present or result.payload is None:
+            typer.echo(f"error: OM-IO-ABSENT: no om.json embedded in {input}", err=True)
+            raise typer.Exit(3)
+        payload = result.payload
+        source |= {"kind": "pdf", "hashValid": result.hash_valid}
+    else:
+        payload = _load_json(input)
+        source["kind"] = "payload"
+
+    schema_obj = _load_json(schema) if schema is not None else None
+    report = _validate(payload, schema=schema_obj, as_of=as_of)
+    _emit(
+        {
+            "source": source,
+            "errors": [dataclasses.asdict(f) for f in report.errors],
+            "warnings": [dataclasses.asdict(f) for f in report.warnings],
+            "info": [dataclasses.asdict(f) for f in report.info],
+            "ok": report.ok,
+        }
+    )
+    failed = not report.ok or (strict and bool(report.warnings))
+    raise typer.Exit(code=1 if failed else 0)
 
 
 @app.command()
