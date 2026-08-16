@@ -102,6 +102,16 @@
         },
         "commencement": { "type": "string", "format": "date" },
         "expiration": { "type": "string", "format": "date" },
+        "termMonths": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Stated total lease term in months; cross-checked against expiration - commencement (OMW-W031)."
+        },
+        "remainingTermMonths": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Stated remaining term in months as of assertedDate; cross-checked against expiration - as_of (OMW-W030)."
+        },
         "rentSchedule": {
           "type": "array",
           "items": { "$ref": "#/$defs/rentPeriod" }

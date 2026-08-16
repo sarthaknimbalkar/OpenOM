@@ -8,6 +8,9 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
 ## [Unreleased]
 
 ### Added
+- Optional lease fields `lease.termMonths` (stated total term) and `lease.remainingTermMonths`
+  (stated remaining term as of assertedDate) — inputs for the date/term consistency checks
+  OMW-W031 and OMW-W030. Additive/minor (§F); older payloads remain valid.
 - Conformance sample matrix (`spec/samples/manifest.json`) with expected schema-tier outcomes,
   reproduced by both implementations.
 - Edge canonicalization vectors: `edge-numbers` (denormals, negative zero, max-safe-int) and
