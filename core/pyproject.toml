@@ -52,6 +52,9 @@ disallow_untyped_calls = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = [
+  "cross_impl: cross-implementation round-trip ([OM-VEC-002]); needs Node + OPENOM_XIMPL_DIR",
+]
 # Coverage is enforced in CI (pytest --cov=openom_core --cov-fail-under=90), not in the
 # default addopts, so single-file dev runs stay fast and don't trip the floor.
 
