@@ -12,6 +12,7 @@ annotated-types==0.8.0
 anyio==4.14.2
 ast_serialize==0.8.0
 attrs==26.1.0
+certifi==2026.7.22
 cffi==2.1.1
 click==8.4.2
 colorama==0.4.6
@@ -19,7 +20,9 @@ coverage==7.15.4
 cryptography==50.0.0
 h11==0.16.0
 httpcore2==2.10.0
+httpcore==1.0.9
 httpx2==2.10.0
+httpx==0.28.1
 hypothesis==6.165.9
 idna==3.18
 iniconfig==2.3.0

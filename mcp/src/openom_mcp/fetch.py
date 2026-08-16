@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import ipaddress
 from collections.abc import Callable, Iterator, Mapping
-from typing import Protocol
+from typing import Protocol, cast
 from urllib.parse import urljoin, urlparse
 
 from .tools import ToolError
@@ -60,7 +60,7 @@ def _default_resolver(host: str) -> list[str]:
 def _default_opener(
     pinned_ip: str, host: str, url: str, *, connect_timeout: float, read_timeout: float
 ) -> FetchResponse:
-    import httpx  # type: ignore[import-not-found]
+    import httpx
 
     # Connect to the pinned IP while presenting the original host for SNI + Host, so no
     # re-resolution happens between the block-list check and the socket connect (rebind defense).
@@ -84,7 +84,7 @@ def _default_opener(
     except httpx.HTTPError as exc:
         client.close()
         raise ConnectionError(str(exc)) from exc
-    return resp  # type: ignore[no-any-return]  # caller reads iter_bytes() then close()
+    return cast(FetchResponse, resp)  # caller reads iter_bytes() then close()
 
 
 class SafeFetcher:
