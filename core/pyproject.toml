@@ -40,6 +40,10 @@ module = ["pymupdf", "pymupdf.*"]
 follow_imports = "skip"
 disallow_untyped_calls = false
 
+[[tool.mypy.overrides]]
+module = ["jsonschema", "jsonschema.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
