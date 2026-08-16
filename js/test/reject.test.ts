@@ -21,12 +21,15 @@ describe("[OM-CANON-013/015] value-level number representability", () => {
     expect(() => canonicalize({ x: 9007199254740991 })).not.toThrow();
   });
 
-  test("accepts large-magnitude representable doubles (1e21) — NOT rejected here", () => {
-    // Regression guard: 1e21 is integer-VALUED but exactly representable and
-    // serializes as 1e+21 ([OM-CANON-015]); value-level rejection would be a bug.
-    // Silent integer-precision loss is caught at the parse boundary instead.
-    expect(() => canonicalize({ x: 1e21 })).not.toThrow();
-    expect(() => canonicalize({ x: 1e20 })).not.toThrow();
+  test("rejects integer-valued numbers beyond 2^53-1 (parity with the Python core)", () => {
+    // Unified [OM-CANON-013] policy: any integer-valued number with |v| > 2^53-1 is rejected,
+    // whether written 1000...0 or 1e21. No CRE figure approaches 2^53, and accepting it would
+    // fork from the Python core (which rejects). Non-integer floats (1e-7, 0.0625) are fine.
+    for (const big of [1e20, 1e21, 2 ** 53]) {
+      expect(() => canonicalize({ x: big })).toThrowError(
+        expect.objectContaining({ code: "OM-IO-NUMRANGE" }),
+      );
+    }
   });
 });
 
