@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: MIT
-"""Read/write the OpenOM ``omspec:`` XMP marker in a PDF's document metadata (spec §D.2).
+"""Read/write the openOM ``omspec:`` XMP marker in a PDF's document metadata (spec §D.2).
 
-The marker MUST be **cross-implementation interoperable**: the Track B (pdf-lib/pdf.js)
-writer emits a namespaced ``omspec:`` packet, so Track A must emit and parse the identical
-namespaced form. pikepdf's ``open_metadata`` cannot serialize a custom namespace (it drops the
-prefix and writes unqualified elements that no conformant reader keys as ``omspec:*``), so we
-write the ``omspec`` ``rdf:Description`` directly as XML and read it by namespace URI. Existing
-XMP (dc/pdf/…) is preserved: our block is injected alongside it, never replacing the packet.
+The marker MUST be **cross-implementation interoperable**: the JS (pdf-lib/pdf.js) writer emits
+a namespaced ``omspec:`` packet, so the Python side emits and parses the identical namespaced
+form. pikepdf's ``open_metadata`` cannot serialize a custom namespace (it drops the prefix and
+writes unqualified elements that no conformant reader keys as ``omspec:*``), so we write the
+``omspec`` ``rdf:Description`` directly as XML and read it by namespace URI. Existing XMP
+(dc/pdf/…) is preserved: our block is injected alongside it, never replacing the packet.
 
 Deterministic: no timestamps are written (§D [OM-EMB-011]).
 """
@@ -18,9 +18,9 @@ import xml.etree.ElementTree as ET
 
 import pikepdf
 
-OMSPEC_NS = "https://SPEC-DOMAIN-TBD/ns/0.1#"  # placeholder until Q1 (name lock)
+OMSPEC_NS = "https://verveliolabs.com/openom/ns/0.1#"
 OMSPEC_PREFIX = "omspec"
-SPEC_NAME = "OpenOM"
+SPEC_NAME = "openOM"
 
 # Property order matches the Track B writer for cross-impl parity.
 _ORDER = ("specName", "specVersion", "payloadFilename", "payloadHash", "assertedDate", "supersedes")
@@ -33,7 +33,7 @@ _OMSPEC_DESC_RE = re.compile(
 
 _EMPTY_PACKET = (
     '<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
-    '<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="OpenOM 0.1">\n'
+    '<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">\n'
     ' <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">\n'
     " </rdf:RDF>\n"
     "</x:xmpmeta>\n"
@@ -118,8 +118,8 @@ def _parse_marker(raw: bytes) -> dict[str, str] | None:
 def read_marker(pdf: pikepdf.Pdf) -> dict[str, str] | None:
     """Return the omspec marker properties, or ``None`` if no ``payloadHash`` is present.
 
-    Parses the XMP XML by namespace URI, so it reads any conformant producer's marker
-    (Track A or Track B), not only pikepdf-written metadata.
+    Parses the XMP XML by namespace URI, so it reads any conformant producer's marker,
+    not only pikepdf-written metadata.
     """
     if "/Metadata" not in pdf.Root:
         return None

@@ -122,7 +122,7 @@ def test_es6_number_formatting_reference() -> None:
     from the ECMAScript rules (§C [OM-CANON-011]) — not circularly from rfc8785 itself.
 
     ES rule: use exponential form when the decimal exponent < -6 or >= 21; otherwise plain.
-    All values here are within OpenOM's safe-number policy (|int value| <= 2^53-1).
+    All values here are within openOM's safe-number policy (|int value| <= 2^53-1).
     """
     # A list, not a dict: 0.0 and -0.0 compare equal and would collapse into one dict key.
     cases: list[tuple[float, bytes]] = [

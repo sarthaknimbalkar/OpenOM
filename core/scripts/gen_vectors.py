@@ -84,7 +84,7 @@ def main() -> None:
                 "payloadHash": payload_hash(payload),
                 "assertedDate": FIXED_DATE,
                 "xmp": {
-                    "specName": "OpenOM",
+                    "specName": "openOM",
                     "specVersion": str(payload.get("specVersion", "0.1")),
                     "payloadFilename": "om.json",
                     "payloadHash": payload_hash(payload),

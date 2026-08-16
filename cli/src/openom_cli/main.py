@@ -29,7 +29,7 @@ from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
 
 SPEC_VERSION = "0.1"
-app = typer.Typer(help="OpenOM deterministic engine — embed/read/inspect/validate/extract.")
+app = typer.Typer(help="openOM deterministic engine — embed/read/inspect/validate/extract.")
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 _DATA_ERRORS = (

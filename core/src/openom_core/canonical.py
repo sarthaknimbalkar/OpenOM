@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""RFC 8785 JSON Canonicalization (JCS) + the OpenOM integrity hash (spec §C).
+"""RFC 8785 JSON Canonicalization (JCS) + the openOM integrity hash (spec §C).
 
 The keystone of cross-implementation fidelity: two conformant implementations MUST produce
 byte-identical output here, and therefore the same SHA-256. RFC 8785 itself performs no
@@ -100,7 +100,7 @@ def canonicalize(payload: Mapping[str, Any]) -> bytes:
 
 
 def hash_bytes(data: bytes) -> str:
-    """The OpenOM integrity hash of already-canonical bytes: ``sha256:<lowercase-hex>``.
+    """The openOM integrity hash of already-canonical bytes: ``sha256:<lowercase-hex>``.
 
     Used on both the write path (over the bytes just produced) and the read/verify path
     (over the decompressed stored bytes, as received — no re-canonicalization; §C, §D).
