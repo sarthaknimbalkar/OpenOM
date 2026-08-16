@@ -166,6 +166,37 @@ def test_malformed_date_does_not_crash() -> None:
     validate(bad)  # unparseable dates are skipped, not fatal
 
 
+def test_warning_lease_term_mismatch() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["lease"]["termMonths"] = 60  # far from expiration - commencement (~180 months)
+    assert "OMW-W031" in _codes(validate(bad).warnings)
+
+
+def test_warning_remaining_term_mismatch() -> None:
+    bad = copy.deepcopy(_sample())
+    bad["lease"]["remainingTermMonths"] = 12  # far from expiration - assertedDate (~92 months)
+    assert "OMW-W030" in _codes(validate(bad).warnings)  # as_of defaults to assertedDate
+
+
+def test_consistent_term_fields_clean() -> None:
+    from datetime import date
+
+    days_per_month = 30.4375
+    comm, exp, asof = date(2019, 5, 1), date(2034, 4, 30), date(2026, 8, 15)
+    ok = copy.deepcopy(_sample())
+    ok["lease"]["termMonths"] = round((exp - comm).days / days_per_month, 1)
+    ok["lease"]["remainingTermMonths"] = round((exp - asof).days / days_per_month, 1)
+    codes = _codes(validate(ok).warnings)
+    assert "OMW-W030" not in codes and "OMW-W031" not in codes
+
+
+def test_as_of_override_drives_w030() -> None:
+    p = copy.deepcopy(_sample())
+    p["lease"]["remainingTermMonths"] = 92  # ~consistent as of assertedDate 2026-08-15
+    # Move the processing date years forward -> remaining term is now way off -> W030.
+    assert "OMW-W030" in _codes(validate(p, as_of="2033-06-01").warnings)
+
+
 def test_configurable_tolerances() -> None:
     bad = copy.deepcopy(_sample())
     bad["deal"]["capRate"] = 0.065  # implied 0.0625; off by 0.0025

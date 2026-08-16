@@ -36,9 +36,12 @@ _REQUIREMENT = {
     "OMW-W024": "OM-CONS-024",
     "OMW-W025": "OM-CONS-025",
     "OMW-W026": "OM-CONS-026",
+    "OMW-W030": "OM-CONS-030",
+    "OMW-W031": "OM-CONS-031",
     "OMW-W040": "OM-CONS-040",
     "OMI-I001": "OM-DD-030",
 }
+_DAYS_PER_MONTH = 30.4375  # 365.25 / 12, for month↔day term arithmetic
 _SEVERITY: dict[str, Severity] = {"E": "error", "W": "warning", "I": "info"}
 _NET_LEASE_TYPES = {"NN", "NNN", "absolute-net"}
 
@@ -50,6 +53,8 @@ class Tolerances:
     cap_rate_abs: float = 0.005  # absolute, since cap rate is itself a small fraction
     monetary_rel: float = 0.01  # relative, for money/PSF cross-checks
     rate_abs: float = 0.005  # absolute, for escalation-rate checks
+    remaining_term_days: float = 31.0  # §H.4 tol.remainingTermDays (OMW-W030)
+    lease_term_days: float = 31.0  # §H.4 tol.leaseTermDays (OMW-W031)
 
 
 @dataclass
@@ -96,11 +101,15 @@ def validate(
     *,
     schema: Mapping[str, Any] | None = None,
     tolerances: Tolerances | None = None,
+    as_of: str | None = None,
 ) -> Report:
     report = Report()
     tol = tolerances or Tolerances()
+    # Reference date for term checks (OMW-W030): explicit as_of, else the payload's assertedDate,
+    # so the check is internal-consistency (§H.6) and deterministic rather than wall-clock.
+    as_of_date = _date(as_of) if as_of else _date(payload.get("assertedDate"))
     _error_tier(payload, schema, report)
-    _warning_tier(payload, report, tol)
+    _warning_tier(payload, report, tol, as_of_date)
     _info_tier(payload, report)
     # Deterministic ordering (§H.1): stable across runs and implementations.
     report.errors.sort(key=lambda f: (f.code, f.path))
@@ -150,11 +159,14 @@ def _schema_free_checks(payload: Mapping[str, Any], report: Report) -> None:
         )
 
 
-def _warning_tier(payload: Mapping[str, Any], report: Report, tol: Tolerances) -> None:
+def _warning_tier(
+    payload: Mapping[str, Any], report: Report, tol: Tolerances, as_of_date: dt.date | None = None
+) -> None:
     deal = payload.get("deal") or {}
     prop = payload.get("property") or {}
     lease = payload.get("lease") or {}
     warn = report.warnings.append
+    _date_term_checks(lease, as_of_date, tol, warn)
 
     cap = _num(deal.get("capRate"))
     noi = _num(deal.get("noi"))
@@ -194,6 +206,32 @@ def _warning_tier(payload: Mapping[str, Any], report: Report, tol: Tolerances) -
                          "year-1 annual rent disagrees with stated in-place NOI",
                          expected=noi, actual=first_rent))
         _rent_schedule_checks(schedule, building_sf, lease, tol, warn)
+
+
+def _date_term_checks(
+    lease: Mapping[str, Any], as_of_date: dt.date | None, tol: Tolerances, warn: Any
+) -> None:
+    """OMW-W030/W031: stated term fields vs the date arithmetic (§H.4)."""
+    commencement = _date(lease.get("commencement"))
+    expiration = _date(lease.get("expiration"))
+    term_months = _num(lease.get("termMonths"))
+    remaining_months = _num(lease.get("remainingTermMonths"))
+
+    # OMW-W031: stated total term vs (expiration − commencement).
+    if term_months is not None and commencement and expiration:
+        actual_days = (expiration - commencement).days
+        if abs(actual_days - term_months * _DAYS_PER_MONTH) > tol.lease_term_days:
+            warn(_mk("OMW-W031", "/lease/termMonths",
+                     "stated lease term disagrees with expiration - commencement",
+                     expected=round(actual_days / _DAYS_PER_MONTH, 1), actual=term_months))
+
+    # OMW-W030: stated remaining term vs (expiration − as_of).
+    if remaining_months is not None and expiration and as_of_date:
+        actual_days = (expiration - as_of_date).days
+        if abs(actual_days - remaining_months * _DAYS_PER_MONTH) > tol.remaining_term_days:
+            warn(_mk("OMW-W030", "/lease/remainingTermMonths",
+                     "stated remaining term disagrees with expiration - as_of",
+                     expected=round(actual_days / _DAYS_PER_MONTH, 1), actual=remaining_months))
 
 
 def _rent_schedule_checks(
