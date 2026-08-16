@@ -614,7 +614,7 @@ Each parked item stays parked until its trigger fires; the trigger is the falsif
 | Multi-tenant / industrial / office spec versions | 0.1 STNL wire format is stable across ≥2 minor releases with no open structural defects. |
 | Strict PDF/A-3 conformance | A consumer/regulatory requirement for strict archival conformance is identified (relaxed v1 otherwise suffices, §8a). |
 | XMP mirror fields for dumb crawlers (§15 Q7) | A crawler that cannot open the attachment but reads XMP is a demonstrated consumer. |
-| Hosted inference tier (§15 Q2) | Free/paid boundary decided (§15 Q2) AND M3 remote transport shipped. |
+| Hosted inference tier (§15 Q2) | Boundary decided 2026-08-17 (§15.1) → **graduated: builds with M3** as a separate paid service. |
 | Sidecar convention (§15 Q5) | A workflow needs `om.json` decoupled from the PDF that the embedded file + JSON-LD mirror cannot serve. |
 | Buildout + peer native integrations (§5d) | 0.1 spec + tooling shipped AND initial adoption traction (funnel §11.1 stage 3). |
 | Firefox/Edge ports | Prompt API (or an acceptable extraction fallback) confirmed available on the target browser (§15 Q6). |
@@ -663,7 +663,7 @@ Each gate below is the *machine-checkable* form of the corresponding Technical D
 | # | Question | Priority | Blocks | Decide by | Default if unresolved by deadline | Owner |
 |---|---|---|---|---|---|---|
 | Q1 | **Name sweep** — GitHub org + PyPI + npm + Chrome Web Store + domain as a set. Candidates: OpenOM, omspec, ListingLD. | **P0** | `@context`, all imports, org reservation | **Before first `@context` publish or first import** (M1 scaffolding) | Keep working title "OpenOM" + `verveliolabs.com/openom`; do **not** publish `@context` or reserve packages until locked (blocking is correct here — no risky default). | Scott |
-| Q2 | **Free/paid boundary** — engine/MCP/extension local+consumer = free MIT; hosted inference extraction = commercial? | P0 | M3 (ideally settle at M1) | **Before M3 opens** | Ship everything deterministic as free MIT; leave the hosted extraction endpoint unbuilt (stub only) so no boundary is crossed prematurely. | Scott |
+| Q2 | **Free/paid boundary** — engine/MCP/extension local+consumer = free MIT; hosted inference extraction = commercial? | P0 | M3 (ideally settle at M1) | ~~Before M3 opens~~ | **RESOLVED 2026-08-17 (see §15.1).** Everything deterministic + self-hostable is free MIT; the sole paid product is **Vervelio-hosted inference extraction**, **built in M3** as a service separate from the open MCP server; Vervelio also runs a **free public deterministic MCP** instance alongside self-hosting. | Scott |
 | Q3 | **Fixture matrix** — which producers × which pathologies, concretely. | P1 | M1 exit | **Before M1 exit gate** ([OM-DoD-001]) | Use the §14 baseline matrix (InDesign/Word/Buildout/scanned × messy-schedule/CMYK-SMask/flattened/empty/hash-mismatch); expand as real OMs arrive. | Scott + dev |
 | Q4 | **Blob storage + retention** (R2) — expiry for unreleased OMs. | P1 | M3 | **With M3 remote gate** ([OM-DoD-004]) | Apply [OM-PRIV-002] conservative default: ≤24h TTL + delete-on-completion, single-use presigned URLs. | Dev |
 | Q5 | **Sidecar convention** — `om.json` beside `om.pdf`? | P2 | M5a (nice-to-have) | Before M5a ships (non-blocking) | Do not ship a sidecar convention in 0.1; the embedded file + JSON-LD mirror are the two supported surfaces. | Dev |
@@ -671,6 +671,22 @@ Each gate below is the *machine-checkable* form of the corresponding Technical D
 | Q7 | **XMP mirror fields** for dumb crawlers. | P2 | future | Registry era (non-blocking) | Ship only the required §D.2 XMP marker in 0.1; add mirror fields additively (minor, §F) when a crawler need is demonstrated. | Dev |
 | Q8 | **Consumer-mode defaults** — auto-check every viewed PDF (size cap) vs check-on-open? Link-badging per-domain opt-in? Cache TTL? | P2 | M5a | **With M5a consumer gate** | Default to check-on-panel-open (privacy-conservative), link-badging opt-in per domain, cache TTL 24h; revisit from telemetry-free user feedback. | Dev |
 | Q9 | **Index submission consent model** (registry era) — what is shared, when. | P3 | registry | Before any registry code | Enforce [OM-PRIV-003]: opt-in per submission, share payload + source URL only (never the PDF), require hash + origin verification. | Scott + dev |
+
+### §15.1 Free/paid boundary (Q2 resolution, 2026-08-17) — the written line for [OM-DoD-004]
+
+This is the authoritative statement M3's gate requires in writing. It does not, and cannot, weaken the cardinal rule (§6a): the open server, `/core`, `/mcp`, and consumer-mode `/js` remain deterministic — zero inference, zero keys — forever.
+
+**Free (MIT code / CC-BY-4.0 spec), self-hostable by anyone:**
+- The entire deterministic toolchain: `/core`, `/cli`, `/mcp` (both stdio **and** Streamable HTTP transports), `/js`, and the `/extension` in **both** consumer and author modes.
+- Author-mode extraction that runs **on-device** (Prompt API) or **client-side** — no Vervelio cost, so free.
+- The spec text, JSON Schema, `@context`/vocabulary, and conformance vectors (CC-BY-4.0, attributed to Vervelio, §G).
+- **A free, rate-limited, public Vervelio-hosted instance of the *deterministic* MCP server** — run for reach/adoption (ChatGPT/web clients), since it carries no per-call model cost. Anyone may also self-host the identical code.
+
+**Paid (a separate commercial service — never the open server):**
+- **Vervelio-hosted inference extraction** (extraction path 2, §5b): the endpoint that runs an LLM to turn a messy or scanned OM into a *reviewed-draft* payload. This is the only capability with genuine per-call cost and is the sole commercial product in 0.1's horizon.
+- **Decision: it is BUILT in M3** (not stubbed), alongside — but architecturally separate from — the open deterministic remote transport. It holds its own model keys, lives outside `/mcp`, and is subject to single-use presigned uploads ([OM-SEC-006]) and retention ([OM-PRIV-002]). Path 0 (manual/review-only) and Path 1 (on-device) remain free and always available, so the paid path is never on the critical path to a valid embed.
+
+**Consequence for M3 scope:** M3 now ships two things — (a) the free deterministic Streamable HTTP MCP (self-host + Vervelio public instance), and (b) the separate paid inference-extraction service. The `assert-no-inference` standing gate ([OM-DoD-008]) MUST continue to pass over `/core`, `/mcp`, and consumer `/js`; the paid service is explicitly out of that tree.
 
 ---
 
@@ -717,6 +733,7 @@ Each gate below is the *machine-checkable* form of the corresponding Technical D
 | **2026-08-16** | **Trust contract made normative: badge is a strict precedence state machine with UI-honesty constraints and a stale-assertion check** (§AA, [OM-TRUST-001..010]) | "Hash read as authenticity" (OM-RISK-009) is prevented by enforcing what each layer may *say*, not just what it proves |
 | **2026-08-16** | **"Origin-verified" precisely defined = valid HTTPS host + same-eTLD+1 JSON-LD mirror + mirror hash == embedded hash; verification is non-transitive** (§10.1) | The named cross-impl and consumer gates need an unambiguous, testable definition of Layer 3 |
 | **2026-08-16** | **Six explicit attacker models bound to the four layers, with honest residual gaps** (§10.1) | A trust contract is only load-bearing if it names whom it defends against and where it deliberately does not |
+| **2026-08-17** | **Q2 free/paid boundary RESOLVED (§15.1): all deterministic + self-hostable surfaces free MIT; sole paid product = Vervelio-hosted inference extraction, BUILT in M3 as a service separate from the open server; Vervelio also runs a free public deterministic MCP** | Unblocks M3 ([OM-DoD-004] needs the line in writing); charges only for the one capability with real per-call cost, keeping the standard maximally adoptable |
 | **2026-08-16** | **Risk register uses quantified L×I (1–5) scoring, banded, with a testable gate + stable [OM-RISK-###] ID per risk; five risks added (SSRF, retention leak, dependency abandonment, spec fork, Prompt-API insufficiency)** (§12) | Prose severities aren't comparable or falsifiable; "mitigated" must be provable |
 | **2026-08-16** | **Milestone DoD gains machine-checkable exit gates [OM-DoD-###] with numeric thresholds + verification commands** (§14.1) | A gate that can't be run isn't a gate; "non-destructive/survival" needed numbers |
 | **2026-08-16** | **Every open question gets a decide-by deadline and a default-if-unresolved fallback** (§15) | No pending decision — even a P0 — may silently deadlock the build |
