@@ -1,0 +1,12 @@
+{
+  "assertedDate": "2026-08-15",
+  "payload": "payloads/numbers.json",
+  "payloadHash": "sha256:321efc661f3b2a093a56ecaf14f1933c18a2db374b9b15a440c5a6cacb948430",
+  "xmp": {
+    "assertedDate": "2026-08-15",
+    "payloadFilename": "om.json",
+    "payloadHash": "sha256:321efc661f3b2a093a56ecaf14f1933c18a2db374b9b15a440c5a6cacb948430",
+    "specName": "OpenOM",
+    "specVersion": "0.1"
+  }
+}
