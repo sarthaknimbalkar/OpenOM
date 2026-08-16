@@ -135,6 +135,49 @@ def test_check_pdf_without_payload_exits_cleanly(tmp_path: Path) -> None:
     assert "Traceback" not in r.output
 
 
+def test_format_compact_is_single_line(tmp_path: Path) -> None:
+    sample = str(SPEC / "samples" / "valid-stnl.json")
+    r = runner.invoke(app, ["--format", "compact", "check", sample])
+    assert r.exit_code == 0, r.output
+    assert r.output.strip().count("\n") == 0  # one compact JSON line
+    assert json.loads(r.output)["ok"] is True
+
+
+def test_quiet_suppresses_stdout(tmp_path: Path) -> None:
+    r = runner.invoke(app, ["--quiet", "check", str(SPEC / "samples" / "valid-stnl.json")])
+    assert r.exit_code == 0
+    assert r.stdout.strip() == ""  # nothing on stdout; exit code carries the result
+
+
+def test_bad_format_is_usage_error(tmp_path: Path) -> None:
+    r = runner.invoke(app, ["--format", "yaml", "read", "whatever.pdf"])
+    assert r.exit_code == 2
+
+
+def test_stdin_json_to_check(tmp_path: Path) -> None:
+    payload = (SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8")
+    r = runner.invoke(app, ["check", "-"], input=payload)
+    assert r.exit_code == 0, r.output
+    assert json.loads(r.output)["source"]["kind"] == "payload"
+
+
+def test_embed_stdout_pipe_to_read(tmp_path: Path) -> None:
+    base = _base_pdf(tmp_path / "base.pdf")
+    sample = SPEC / "samples" / "valid-stnl.json"
+    # embed to stdout (binary), then read those bytes back via stdin.
+    r1 = runner.invoke(
+        app,
+        ["embed", str(base), "--payload", str(sample), "--out", "-",
+         "--asserted-date", "2026-08-15"],
+    )
+    assert r1.exit_code == 0, r1.output
+    embedded = r1.stdout_bytes
+    assert embedded[:5] == b"%PDF-"
+    r2 = runner.invoke(app, ["read", "-"], input=embedded)
+    assert r2.exit_code == 0, r2.output
+    assert json.loads(r2.output)["present"] is True
+
+
 def test_inspect(tmp_path: Path) -> None:
     base = _base_pdf(tmp_path / "b.pdf")
     r = runner.invoke(app, ["inspect", str(base)])
