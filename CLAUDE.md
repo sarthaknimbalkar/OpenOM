@@ -119,8 +119,22 @@ Two-tier validation: schema errors block; consistency warnings never block; mark
 scope forever.
 
 ## Current state (2026-08)
-**Pre-implementation.** Scoping is complete enough to begin Milestone 1 (see the handoff doc §14).
-Nothing is built yet. Repo just initialized. Open blockers: name lock + org/PyPI/npm/domain
-reservation (gates `@context` and imports), free/paid boundary (decide before M3). First code is
-M1 — the `/core` round-trip on 3 real OMs — with the cross-implementation test wired in from the
-start. "OpenOM" is a working title until the name sweep is done.
+**M1 + M1.x shipped and at peak** (2026-08-17), on `main`. Built: `/core` (embed/read/inspect/
+extract/text/validate), `/cli` (`om embed/read/inspect/validate/check/extract/conformance`),
+`/mcp` (stdio, six deterministic tools), `/js` (embed/read/validate/consistency at byte-parity
+with Python), `/spec` (schema 0.1, samples, vectors, `@context`, changelog), and the seeded-defect
+gate (`fixtures/seeded_defects` + `core/tests/test_consistency.py`). The cross-impl anti-fork
+oracle runs in CI (now manual, `workflow_dispatch`).
+
+**Name locked (Q1):** **openOM**, published by **Vervelio Labs**; namespace
+`https://verveliolabs.com/openom/...`. GitHub slug stays `sarthaknimbalkar/OpenOM`.
+
+**Free/paid boundary locked (Q2, 2026-08-17 — handoff §15.1):** everything deterministic +
+self-hostable is free MIT (spec CC-BY-4.0); the sole paid product is Vervelio-hosted **inference
+extraction**, a service **separate** from the open server, **built in M3**; Vervelio also runs a
+free public deterministic MCP. The cardinal rule is unchanged — no inference in `/core`, `/mcp`,
+or consumer `/js`, ever.
+
+**Next milestone: M3** (remote transport) — now unblocked. Remaining open questions for M3:
+Q4 (R2 blob retention, decide with the M3 gate). M2 work (schema publish polish, `@context`/vocab,
+webhook envelope, `/process` playbook) is also available and unblocked.
