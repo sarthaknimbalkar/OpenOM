@@ -1,0 +1,10 @@
+{
+  "@context": ["https://schema.org", "https://SPEC-DOMAIN-TBD/ns/0.1"],
+  "@type": "RealEstateListing",
+  "specVersion": "0.1",
+  "assertedBy": { "broker": "Ann Broker", "brokerage": "Sample Advisors", "license": "TX 000001" },
+  "assertedDate": "2026-08-16",
+  "currency": "USD",
+  "deal": { "askingPrice": 5000000, "capRate": 0.07, "noi": 350000, "noiType": "pro-forma", "noiAsOfDate": "2026-08-01", "status": "active" },
+  "meta": { "supersedes": null }
+}
