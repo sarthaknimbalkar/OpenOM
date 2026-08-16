@@ -33,6 +33,13 @@ python_version = "3.11"
 strict = true
 files = ["src"]
 
+# PyMuPDF ships incomplete type info; treat it as untyped so strict no-untyped-call
+# doesn't fire on its API (we still type our own wrappers around it).
+[[tool.mypy.overrides]]
+module = ["pymupdf", "pymupdf.*"]
+follow_imports = "skip"
+disallow_untyped_calls = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
