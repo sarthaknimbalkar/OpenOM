@@ -17,6 +17,7 @@ import base64
 import io
 import json
 from pathlib import Path
+from unicodedata import normalize
 
 import pikepdf
 
@@ -53,6 +54,46 @@ def _deterministic_base() -> bytes:
     buf = io.BytesIO()
     pdf.save(buf, deterministic_id=True)
     return buf.getvalue()
+
+
+REJECTIONS = VECTORS / "rejections"
+
+
+def _deep(levels: int) -> object:
+    obj: object = {"leaf": 1}
+    for _ in range(levels):
+        obj = {"a": obj}
+    return obj
+
+
+def _rejection_cases() -> list[tuple[str, object, str]]:
+    nfc = normalize("NFC", "café")  # precomposed café (U+00E9)
+    nfd = normalize("NFD", "café")  # decomposed café — NFC-collides with nfc
+    return [
+        ("toplevel-array", [1, 2], "OM-IO-STRUCTURE"),
+        ("toplevel-scalar", "not an object", "OM-IO-STRUCTURE"),
+        ("bignum-exponent", {"x": 1e21}, "OM-IO-NUMRANGE"),
+        ("bignum-integer", {"x": 10**19}, "OM-IO-NUMRANGE"),
+        ("lone-surrogate", {"x": "\ud800"}, "OM-IO-BADUTF8"),
+        ("nfc-dupkey", {nfc: 1, nfd: 2}, "OM-IO-DUPKEY"),
+        ("deep-nesting", _deep(70), "OM-IO-STRUCTURE"),
+    ]
+
+
+def _write_rejections() -> None:
+    """Shared rejection-conformance vectors: malformed inputs both implementations MUST reject
+    with the SAME OM-IO-* code (the rejection half of the anti-fork oracle, §C.1)."""
+    REJECTIONS.mkdir(parents=True, exist_ok=True)
+    cases = []
+    for name, value, code in _rejection_cases():
+        text = json.dumps(value, ensure_ascii=True) + "\n"  # ASCII: escapes stay literal
+        (REJECTIONS / f"{name}.json").write_text(text, encoding="ascii", newline="\n")
+        cases.append({"name": name, "input": f"rejections/{name}.json", "code": code})
+    _write_json(
+        REJECTIONS / "manifest.json",
+        {"specVersion": "0.1", "suite": "openom-rejections", "cases": cases},
+    )
+    print(f"wrote {len(cases)} rejection vectors")
 
 
 def main() -> None:
@@ -106,6 +147,7 @@ def main() -> None:
         {"specVersion": "0.1", "suite": "openom-vectors", "vectors": vectors},
     )
     print(f"wrote {len(vectors)} vectors + {len(vectors)} golden PDFs + manifest.json")
+    _write_rejections()
 
 
 if __name__ == "__main__":
