@@ -133,11 +133,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install + test js
+      - name: Install + typecheck + lint + coverage js
         working-directory: js
         run: |
           npm ci
-          npm test
+          npm run typecheck
+          npm run lint
+          npm run coverage
 
   cross-impl:
     # The anti-fork oracle: each implementation reads the other's golden PDFs.

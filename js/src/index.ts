@@ -11,11 +11,7 @@ export { canonicalize } from "./canonicalize.js";
 export { payloadHash, preimageBytes } from "./hash.js";
 export { embedPayload } from "./embed.js";
 export { integrityHashOfBytes, verifyIntegrity, type IntegrityResult } from "./verify.js";
-export {
-  parsePayload,
-  DEFAULT_MAX_PAYLOAD_BYTES,
-  type ParseOptions,
-} from "./parse.js";
+export { parsePayload, DEFAULT_MAX_PAYLOAD_BYTES, type ParseOptions } from "./parse.js";
 export { sha256Hex } from "./crypto.js";
 export {
   readPayloadFromBytes,
@@ -23,9 +19,5 @@ export {
   type ReadState,
   type ReadVerification,
 } from "./read.js";
-export {
-  validatePayload,
-  type Finding,
-  type ValidationReport,
-} from "./validate.js";
+export { validatePayload, type Finding, type ValidationReport } from "./validate.js";
 export { OmIoError, type OmIoCode } from "./errors.js";
