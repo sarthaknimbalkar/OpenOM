@@ -34,3 +34,19 @@ def make_text_pdf() -> bytes:
         return doc.tobytes()
     finally:
         doc.close()
+
+
+def make_hybrid_pdf() -> bytes:
+    """A real text layer PLUS a full-page image on each page -> classifies 'hybrid'."""
+    doc = pymupdf.open()
+    try:
+        for _ in range(2):
+            page = doc.new_page(width=612, height=792)
+            page.insert_text((72, 72), "Real offering text with a full-page graphic. " * 8,
+                             fontsize=11)
+            pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 120, 150))
+            pix.set_rect(pix.irect, (40, 90, 160))
+            page.insert_image(page.rect, pixmap=pix)  # covers >80% of the page
+        return doc.tobytes()
+    finally:
+        doc.close()

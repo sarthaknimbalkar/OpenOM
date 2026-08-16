@@ -41,6 +41,7 @@ Profile = TypedDict(
     "Profile",
     {
         "class": DocClass,
+        "classConfidence": float,
         "pages": int,
         "payload": PayloadInfo,
         "images": ImageInfo,
@@ -48,27 +49,67 @@ Profile = TypedDict(
     },
 )
 
+_FULLPAGE_FRAC_LIMIT = 0.5  # a native doc has few full-page images
+
 
 def classify(text_coverage: float, fullpage_img_frac: float, images_per_page: float) -> DocClass:
     if text_coverage < SCANNED_TEXT_COVERAGE:
         return "scanned"
     if (
         text_coverage >= NATIVE_TEXT_COVERAGE
-        and fullpage_img_frac < 0.5
+        and fullpage_img_frac < _FULLPAGE_FRAC_LIMIT
         and images_per_page < HYBRID_IMAGES_PER_PAGE
     ):
         return "native"
     return "hybrid"
 
 
+def classification_confidence(
+    cls: DocClass, text_coverage: float, fullpage_img_frac: float, images_per_page: float
+) -> float:
+    """Normalized [0,1] margin from the decision surface — near a threshold ⇒ low confidence."""
+
+    def clamp(x: float) -> float:
+        return max(0.0, min(1.0, x))
+
+    tc, fp, ipp = text_coverage, fullpage_img_frac, images_per_page
+    if cls == "scanned":
+        return clamp((SCANNED_TEXT_COVERAGE - tc) / SCANNED_TEXT_COVERAGE)
+    if cls == "native":
+        return clamp(
+            min(
+                (tc - NATIVE_TEXT_COVERAGE) / (1.0 - NATIVE_TEXT_COVERAGE),
+                (_FULLPAGE_FRAC_LIMIT - fp) / _FULLPAGE_FRAC_LIMIT,
+                (HYBRID_IMAGES_PER_PAGE - ipp) / HYBRID_IMAGES_PER_PAGE,
+            )
+        )
+    # hybrid = residual: confident when clearly above scanned AND clearly not native.
+    above_scanned = (tc - SCANNED_TEXT_COVERAGE) / SCANNED_TEXT_COVERAGE
+    from_native = max(
+        (NATIVE_TEXT_COVERAGE - tc) / NATIVE_TEXT_COVERAGE,
+        (fp - _FULLPAGE_FRAC_LIMIT) / _FULLPAGE_FRAC_LIMIT,
+        (ipp - HYBRID_IMAGES_PER_PAGE) / HYBRID_IMAGES_PER_PAGE,
+    )
+    return clamp(min(above_scanned, from_native))
+
+
+def _sample_indices(pages: int, cap: int) -> list[int]:
+    """Evenly-spread page indices across the whole document (not just the first `cap`), so an
+    OM whose first pages are an image-heavy cover isn't misclassified from a biased sample."""
+    if pages <= cap:
+        return list(range(pages))
+    return sorted({round(i * (pages - 1) / (cap - 1)) for i in range(cap)})
+
+
 def inspect(pdf_bytes: bytes) -> Profile:
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     try:
         pages = doc.page_count
-        sample = min(pages, SAMPLE_PAGES) or 1
+        indices = _sample_indices(pages, SAMPLE_PAGES)
+        sample = len(indices) or 1
         text_pages = 0
         fullpage_pages = 0
-        for i in range(min(pages, SAMPLE_PAGES)):
+        for i in indices:
             page = doc.load_page(i)
             if len(page.get_text("text").strip()) >= TEXT_MIN_CHARS:
                 text_pages += 1
@@ -97,6 +138,9 @@ def inspect(pdf_bytes: bytes) -> Profile:
         fullpage_frac = fullpage_pages / sample
         images_per_page = len(seen) / pages if pages else 0.0
         doc_class = classify(text_coverage, fullpage_frac, images_per_page)
+        confidence = classification_confidence(
+            doc_class, text_coverage, fullpage_frac, images_per_page
+        )
     finally:
         doc.close()
 
@@ -108,6 +152,7 @@ def inspect(pdf_bytes: bytes) -> Profile:
     }
     return {
         "class": doc_class,
+        "classConfidence": round(confidence, 4),
         "pages": pages,
         "payload": payload,
         "images": {"count": len(seen), "hasSMask": has_smask, "colorspaces": sorted(colorspaces)},
