@@ -64,4 +64,17 @@ describe("embedPayload", () => {
     expect(md.metadata!.get("omspec:payloadhash")).toBe(payloadHash(validStnl));
     expect(md.metadata!.get("omspec:specversion")).toBe("0.1");
   });
+
+  test("writes the PDF/A extension schema describing the omspec namespace (#2)", async () => {
+    const out = await embedPayload(await blankPdf(), validStnl);
+    const xmp = new TextDecoder().decode(out); // Metadata stream is uncompressed UTF-8
+    expect(xmp).toContain("http://www.aiim.org/pdfa/ns/extension/");
+    expect(xmp).toContain(
+      "<pdfaSchema:namespaceURI>https://verveliolabs.com/openom/ns/0.1#</pdfaSchema:namespaceURI>",
+    );
+    expect(xmp).toContain("<pdfaSchema:prefix>omspec</pdfaSchema:prefix>");
+    for (const name of ["specName", "payloadHash", "assertedDate", "supersedes"]) {
+      expect(xmp).toContain(`<pdfaProperty:name>${name}</pdfaProperty:name>`);
+    }
+  });
 });
