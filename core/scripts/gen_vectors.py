@@ -33,12 +33,17 @@ DIMENSIONS: dict[str, dict[str, list[str]]] = {
     "cafe": {"role": ["producer", "consumer"], "level": ["L1"], "pathology": []},
     "unicode": {"role": ["producer", "consumer"], "level": ["L1"], "pathology": []},
     "numbers": {"role": ["producer", "consumer"], "level": ["L1"], "pathology": []},
-    "sample-stnl": {"role": ["producer", "consumer", "validator"], "level": ["L1"], "pathology": []},
+    "sample-stnl": {
+        "role": ["producer", "consumer", "validator"],
+        "level": ["L1"],
+        "pathology": [],
+    },
 }
 
 
 def _write_json(path: Path, obj: object) -> None:
-    path.write_text(json.dumps(obj, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+    text = json.dumps(obj, indent=2, sort_keys=True) + "\n"
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def _deterministic_base() -> bytes:
