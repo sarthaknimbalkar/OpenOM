@@ -30,6 +30,57 @@ _OMSPEC_DESC_RE = re.compile(
     r"[ \t]*<rdf:Description\b[^>]*xmlns:omspec=[^>]*>.*?</rdf:Description>\s*",
     re.DOTALL,
 )
+# Matches our own prior PDF/A extension-schema Description block (idempotent re-embed).
+_PDFA_DESC_RE = re.compile(
+    r"[ \t]*<rdf:Description\b[^>]*xmlns:pdfaExtension=[^>]*>.*?</rdf:Description>\s*",
+    re.DOTALL,
+)
+
+# PDF/A requires every custom XMP namespace to be described by an embedded Extension Schema
+# ([OM-XMP], PDF/A-3 §6.6.2.3). Without this, a PDF/A validator (veraPDF) flags the `omspec`
+# namespace as undescribed. The block is static (it describes the fixed 0.1 marker properties) and
+# is written by BOTH implementations so the PDF/A claim is producer-independent.
+_PDFA_PROPS = (
+    ("specName", "name of the embedded data standard"),
+    ("specVersion", "version of the embedded data standard"),
+    ("payloadFilename", "filename of the embedded om.json attachment"),
+    ("payloadHash", "sha256 integrity hash of the canonical payload"),
+    ("assertedDate", "assertion date of the embedded payload"),
+    ("supersedes", "prior payload hash this payload replaces"),
+)
+
+
+def _pdfa_extension_description() -> str:
+    props = "\n".join(
+        "        <rdf:li rdf:parseType=\"Resource\">\n"
+        f"         <pdfaProperty:name>{name}</pdfaProperty:name>\n"
+        "         <pdfaProperty:valueType>Text</pdfaProperty:valueType>\n"
+        "         <pdfaProperty:category>internal</pdfaProperty:category>\n"
+        f"         <pdfaProperty:description>{_xml_escape(desc)}</pdfaProperty:description>\n"
+        "        </rdf:li>"
+        for name, desc in _PDFA_PROPS
+    )
+    return (
+        '  <rdf:Description rdf:about=""\n'
+        '      xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/"\n'
+        '      xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#"\n'
+        '      xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#">\n'
+        "   <pdfaExtension:schemas>\n"
+        "    <rdf:Bag>\n"
+        '     <rdf:li rdf:parseType="Resource">\n'
+        "      <pdfaSchema:schema>openOM offering-memorandum payload marker</pdfaSchema:schema>\n"
+        f"      <pdfaSchema:namespaceURI>{OMSPEC_NS}</pdfaSchema:namespaceURI>\n"
+        f"      <pdfaSchema:prefix>{OMSPEC_PREFIX}</pdfaSchema:prefix>\n"
+        "      <pdfaSchema:property>\n"
+        "       <rdf:Seq>\n"
+        f"{props}\n"
+        "       </rdf:Seq>\n"
+        "      </pdfaSchema:property>\n"
+        "     </rdf:li>\n"
+        "    </rdf:Bag>\n"
+        "   </pdfaExtension:schemas>\n"
+        "  </rdf:Description>"
+    )
 
 _EMPTY_PACKET = (
     '<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
@@ -80,11 +131,13 @@ def write_marker(
     }
     if supersedes is not None:
         props["supersedes"] = supersedes
-    block = _omspec_description(props)
+    # The PDF/A extension schema precedes the marker so a validator sees the namespace described.
+    block = f"{_pdfa_extension_description()}\n{_omspec_description(props)}"
 
     if "/Metadata" in pdf.Root:
         xml = bytes(pdf.Root.Metadata.read_bytes()).decode("utf-8", "replace")
-        xml = _OMSPEC_DESC_RE.sub("", xml)  # drop our prior block (no stacking)
+        xml = _OMSPEC_DESC_RE.sub("", xml)  # drop our prior blocks (no stacking)
+        xml = _PDFA_DESC_RE.sub("", xml)
         if "</rdf:RDF>" in xml:
             xml = xml.replace("</rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
         else:  # malformed/absent RDF — fall back to a fresh packet
