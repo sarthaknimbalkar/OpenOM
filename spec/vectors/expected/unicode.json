@@ -1,0 +1,5 @@
+{
+  "jcs_b64": "eyJjamsiOiLkuJzkuqwiLCJldXJvIjoi4oKsIiwic2xhc2giOiJhL2IiLCJ0ZW5hbnRFbnRpdHkiOiJjYWbDqSJ9",
+  "jcs_sha256": "sha256:fce110eb40871c7919acd3ae022291e186f388bca77abc1f0abe0da918553ea6",
+  "payload": "payloads/unicode.json"
+}

@@ -1,0 +1,5 @@
+{
+  "jcs_b64": "eyJhc2tpbmdQcmljZSI6MTg1MDAwMCwiY2FwUmF0ZSI6MC4wNjI1LCJyZW50UFNGIjoxMi43LCJ3aG9sZUZsb2F0IjoxODUwMDAwLCJ6ZXJvIjowfQ==",
+  "jcs_sha256": "sha256:321efc661f3b2a093a56ecaf14f1933c18a2db374b9b15a440c5a6cacb948430",
+  "payload": "payloads/numbers.json"
+}

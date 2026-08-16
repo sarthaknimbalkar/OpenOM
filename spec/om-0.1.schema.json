@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://SPEC-DOMAIN-TBD/spec/om-0.1.schema.json",
+  "title": "OpenOM payload 0.1",
+  "description": "JSON Schema (2020-12) for the OpenOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]).",
+  "type": "object",
+  "required": ["@context", "@type", "specVersion", "assertedBy", "assertedDate", "meta"],
+  "properties": {
+    "@context": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "description": "schema.org + the OpenOM namespace (SPEC-DOMAIN-TBD placeholder until Q1)."
+    },
+    "@type": { "const": "RealEstateListing" },
+    "specVersion": { "const": "0.1" },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217; default USD when absent ([OM-DD-002])."
+    },
+    "assertedBy": {
+      "type": "object",
+      "required": ["broker", "brokerage", "license"],
+      "properties": {
+        "broker": { "type": "string", "minLength": 1 },
+        "brokerage": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 }
+      }
+    },
+    "assertedDate": { "type": "string", "format": "date" },
+    "property": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "object",
+          "properties": {
+            "streetAddress": { "type": "string" },
+            "addressLocality": { "type": "string" },
+            "addressRegion": { "type": "string" },
+            "postalCode": { "type": "string" },
+            "addressCountry": { "type": "string", "pattern": "^[A-Z]{2}$" }
+          }
+        },
+        "geo": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+            "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+          }
+        },
+        "apn": { "type": "string" },
+        "buildingSF": { "type": "number", "exclusiveMinimum": 0 },
+        "lotAcres": { "type": "number", "exclusiveMinimum": 0 },
+        "yearBuilt": { "type": "integer" },
+        "yearRenovated": { "type": "integer" }
+      }
+    },
+    "deal": {
+      "type": "object",
+      "properties": {
+        "askingPrice": { "type": "number", "exclusiveMinimum": 0 },
+        "capRate": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "noi": { "type": "number" },
+        "noiType": { "enum": ["in-place", "pro-forma"] },
+        "noiAsOfDate": { "type": "string", "format": "date" },
+        "pricePerSF": { "type": "number", "exclusiveMinimum": 0 },
+        "status": { "enum": ["active", "under-contract", "sold", "withdrawn"] }
+      },
+      "comment": "capRate is a decimal fraction (0.0625 = 6.25%), not a percentage ([OM-CANON-007]).",
+      "if": { "required": ["noi"] },
+      "then": {
+        "required": ["noiType", "noiAsOfDate"],
+        "description": "noiType + noiAsOfDate REQUIRED whenever noi is present ([OM-DD] / OMV-E002)."
+      }
+    },
+    "lease": {
+      "type": "object",
+      "properties": {
+        "tenantEntity": { "type": "string" },
+        "guarantor": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "type": { "enum": ["corporate", "franchisee", "personal", "none"] }
+          }
+        },
+        "landlordResponsibilities": {
+          "type": "object",
+          "properties": {
+            "roof": { "type": "boolean" },
+            "structure": { "type": "boolean" },
+            "parking": { "type": "boolean" },
+            "hvac": { "type": "boolean" },
+            "taxes": { "type": "boolean" },
+            "insurance": { "type": "boolean" },
+            "cam": { "type": "boolean" }
+          }
+        },
+        "leaseTypeAsserted": {
+          "enum": ["N", "NN", "NNN", "absolute-net", "gross", "modified-gross"]
+        },
+        "commencement": { "type": "string", "format": "date" },
+        "expiration": { "type": "string", "format": "date" },
+        "rentSchedule": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/rentPeriod" }
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "count": { "type": "integer", "minimum": 0 },
+              "lengthYears": { "type": "number", "exclusiveMinimum": 0 },
+              "escalation": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "required": ["supersedes"],
+      "properties": {
+        "sourceDocHash": { "$ref": "#/$defs/sha256OrNull" },
+        "supersedes": { "$ref": "#/$defs/sha256OrNull" },
+        "signature": {
+          "type": "null",
+          "description": "Reserved in 0.1; MUST be null or absent. A populated value is OMV-E003."
+        },
+        "imageRights": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256OrNull": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      ]
+    },
+    "rentPeriod": {
+      "type": "object",
+      "required": ["periodStart", "periodEnd", "annualRent"],
+      "properties": {
+        "periodStart": { "type": "string", "format": "date" },
+        "periodEnd": { "type": "string", "format": "date" },
+        "annualRent": { "type": "number", "minimum": 0 },
+        "monthlyRent": { "type": "number", "minimum": 0 },
+        "rentPSF": { "type": "number", "minimum": 0 },
+        "escalationFromPrior": { "type": "number" },
+        "abatement": { "oneOf": [{ "type": "null" }, { "type": "number" }] },
+        "source": { "enum": ["asserted", "extracted", "verified"] }
+      }
+    }
+  }
+}
