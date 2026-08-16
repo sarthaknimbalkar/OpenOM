@@ -42,24 +42,28 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install core + cli (with dev extras)
+      - name: Install core + cli + mcp (with dev extras)
         run: |
           python -m pip install --upgrade pip
-          pip install -e "core[dev]" -e "cli[dev]"
+          pip install -e "core[dev]" -e "cli[dev]" -e "mcp[dev]"
       - name: ruff
         run: |
-          ruff check core/src core/tests core/scripts cli/src cli/tests
+          ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests
       - name: mypy
         run: |
           mypy core/src
           mypy cli/src
+          mypy mcp/src
       - name: pytest (core, coverage gate)
         run: pytest core -q --cov=openom_core --cov-report=term-missing --cov-fail-under=90
       - name: pytest (cli, coverage gate)
         run: pytest cli -q --cov=openom_cli --cov-report=term-missing --cov-fail-under=90
+      - name: pytest (mcp, coverage gate)
+        run: pytest mcp -q --cov=openom_mcp --cov-report=term-missing --cov-fail-under=85
 
   boundary:
-    # Cardinal rule: /core, /cli, /mcp must never depend on an inference/network client.
+    # Cardinal rule: NO inference anywhere in core/cli/mcp. core+cli are additionally
+    # network-free; /mcp may carry a network client (M3's explicit fetch, §M) but never inference.
     needs: detect
     if: needs.detect.outputs.has_py == 'true'
     runs-on: ubuntu-latest
@@ -68,19 +72,28 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install core + cli
+      - name: core + cli — no inference AND no network client
+        shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install -e core -e cli
-      - name: Assert no inference/network deps leaked in
-        shell: bash
-        run: |
-          banned='openai|anthropic|cohere|langchain|llama-index|transformers|torch|tensorflow|onnxruntime|sentence-transformers|requests|httpx|aiohttp|urllib3'
-          if pip freeze | grep -iE "^($banned)==" ; then
-            echo "::error::inference/network client leaked into the deterministic core/cli tree"
+          inference='openai|anthropic|cohere|langchain|llama-index|transformers|torch|tensorflow|onnxruntime|sentence-transformers'
+          network='requests|httpx|httpx2|aiohttp|urllib3'
+          if pip freeze | grep -iE "^($inference|$network)==" ; then
+            echo "::error::inference/network client leaked into the network-free core/cli tree"
             exit 1
           fi
-          echo "clean: deterministic dependency tree"
+          echo "core/cli: deterministic + network-free"
+      - name: mcp — no inference (network is permitted for the explicit fetch, §M)
+        shell: bash
+        run: |
+          pip install -e mcp
+          inference='openai|anthropic|cohere|langchain|llama-index|transformers|torch|tensorflow|onnxruntime|sentence-transformers'
+          if pip freeze | grep -iE "^($inference)==" ; then
+            echo "::error::inference client leaked into /mcp"
+            exit 1
+          fi
+          echo "mcp: inference-free"
 
   drift:
     # Regenerating the JCS vectors must be a no-op; a diff means a hash silently moved.
