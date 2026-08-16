@@ -42,3 +42,5 @@ class Finding:
     message: str
     expected: Any | None = None
     actual: Any | None = None
+    #: Back-reference to the spec requirement this finding enforces (§H.1 [OM-ERR-008]).
+    requirement: str | None = None

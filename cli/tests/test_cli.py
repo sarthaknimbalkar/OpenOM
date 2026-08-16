@@ -86,3 +86,91 @@ def test_inspect(tmp_path: Path) -> None:
     r = runner.invoke(app, ["inspect", str(base)])
     assert r.exit_code == 0
     assert json.loads(r.output)["class"] in {"native", "hybrid", "scanned"}
+
+
+def test_version() -> None:
+    r = runner.invoke(app, ["version"])
+    assert r.exit_code == 0
+    parsed = json.loads(r.output)
+    assert parsed["specVersion"] == "0.1"
+    assert parsed["tool"] == "openom-cli"
+
+
+def test_conformance_passes_over_spec() -> None:
+    r = runner.invoke(app, ["conformance", "--spec-dir", str(SPEC)])
+    assert r.exit_code == 0, r.output
+    parsed = json.loads(r.output)
+    assert parsed["ok"] is True
+    assert parsed["failed"] == 0
+    assert parsed["total"] > 0
+
+
+def test_conformance_role_filter_runs_subset() -> None:
+    full = json.loads(runner.invoke(app, ["conformance", "--spec-dir", str(SPEC)]).output)
+    validator_only = json.loads(
+        runner.invoke(app, ["conformance", "--spec-dir", str(SPEC), "--role", "validator"]).output
+    )
+    assert validator_only["ok"] is True
+    assert validator_only["total"] <= full["total"]  # a filtered subset
+    # A non-matching level filters out every vector, leaving only the sample checks.
+    l2 = json.loads(
+        runner.invoke(app, ["conformance", "--spec-dir", str(SPEC), "--level", "L2"]).output
+    )
+    assert l2["total"] < full["total"]
+
+
+def test_conformance_detects_divergence(tmp_path: Path) -> None:
+    vdir = tmp_path / "vectors"
+    (vdir / "payloads").mkdir(parents=True)
+    (vdir / "expected").mkdir(parents=True)
+    (vdir / "payloads" / "x.json").write_text('{"a":1}', encoding="utf-8")
+    (vdir / "expected" / "x.json").write_text(
+        json.dumps({"jcs_sha256": "sha256:" + "0" * 64, "jcs_b64": "x"}), encoding="utf-8"
+    )
+    (vdir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "vectors": [
+                    {"name": "x", "payload": "payloads/x.json",
+                     "expected": "expected/x.json", "pdf": "pdfs/x.pdf", "dimensions": {}}
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    r = runner.invoke(app, ["conformance", "--spec-dir", str(tmp_path)])
+    assert r.exit_code == 1  # a wrong expected hash MUST fail the suite
+    assert "vector:x:jcs" in r.output
+
+
+def test_extract_writes_images(tmp_path: Path) -> None:
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page(width=200, height=200)
+    pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 40, 40))
+    pix.set_rect(pix.irect, (10, 20, 30))
+    page.insert_image(pymupdf.Rect(10, 10, 90, 90), pixmap=pix)
+    pdf_path = tmp_path / "img.pdf"
+    pdf_path.write_bytes(doc.tobytes())
+    doc.close()
+
+    out_dir = tmp_path / "images"
+    r = runner.invoke(app, ["extract", str(pdf_path), "--out-dir", str(out_dir)])
+    assert r.exit_code == 0, r.output
+    manifest = json.loads(r.output)
+    assert any(d["error"] is None for d in manifest["images"])
+    assert list(out_dir.glob("*.png"))
+
+
+def test_bad_pdf_exits_cleanly(tmp_path: Path) -> None:
+    bad = tmp_path / "not.pdf"
+    bad.write_text("this is not a pdf", encoding="utf-8")
+    r = runner.invoke(app, ["read", str(bad)])
+    assert r.exit_code == 3  # data error, not a crash/traceback
+    assert "Traceback" not in r.output
+
+
+def test_missing_file_exits_cleanly(tmp_path: Path) -> None:
+    r = runner.invoke(app, ["read", str(tmp_path / "nope.pdf")])
+    assert r.exit_code == 3

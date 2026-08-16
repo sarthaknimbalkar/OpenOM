@@ -61,3 +61,21 @@ def test_golden_pdf_readback(name: str) -> None:
         marker = read_marker(pdf)
         assert marker is not None
         assert marker["payloadHash"] == sidecar["payloadHash"]
+
+
+@pytest.mark.parametrize("name", _payload_names())
+def test_golden_pdf_wire_format(name: str) -> None:
+    """The golden PDFs pin the on-wire structure the standard depends on ([OM-EMB-002/004/007]);
+    any drift here is a silent cross-impl fork, so it fails loudly."""
+    pdf_bytes = (VECTORS / "pdfs" / f"{name}.pdf").read_bytes()
+    with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+        spec = pdf.attachments["om.json"].obj
+        assert "/AF" in pdf.Root  # associated-files array present
+        assert any(f.objgen == spec.objgen for f in pdf.Root.AF)  # /AF -> this Filespec
+        assert str(spec.get("/AFRelationship")) == "/Data"  # [OM-EMB relationship]
+        ef = spec.EF
+        assert ef.F.objgen == ef.UF.objgen  # /F and /UF share one stream ([OM-EMB-007])
+        assert ef.F.Subtype == pikepdf.Name("/application/ld+json")  # [OM-EMB-004]
+        raw = bytes(pdf.Root.Metadata.read_bytes())
+        assert b"omspec:payloadHash" in raw  # conformant, namespaced marker (not unqualified)
+        assert b"https://SPEC-DOMAIN-TBD/ns/0.1#" in raw
