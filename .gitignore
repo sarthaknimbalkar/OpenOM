@@ -11,6 +11,9 @@ docs/superpowers/
 # Eval / tooling scratch
 .deepeval/
 
+# Real OM corpus — private test fixtures, never committed (191MB, confidential)
+OMs/
+
 # --- Python (/core, /cli, /mcp) ---
 __pycache__/
 *.py[cod]
