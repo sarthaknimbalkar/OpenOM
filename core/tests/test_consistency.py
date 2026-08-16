@@ -88,8 +88,10 @@ def test_seeded_defects_detected_with_zero_false_negatives(corpus_dir: Path) -> 
     for name, base, case in _cases(corpus_dir):
         payload = _apply_case(base, case)
         report = validate(payload, as_of=case.get("asOf"))
-        got = {f.code for f in report.warnings}
-        missing = [code for code in case["expect"] if code not in got]
+        got_warn = {f.code for f in report.warnings}
+        got_info = {f.code for f in report.info}
+        missing = [c for c in case["expect"] if c not in got_warn]
+        missing += [c for c in case.get("expectInfo", []) if c not in got_info]
         if missing:
             misses[name] = missing
     assert not misses, f"seeded defects NOT detected (false negatives): {misses}"
