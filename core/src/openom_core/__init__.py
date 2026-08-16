@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """OpenOM deterministic core.
 
 Embed / read / inspect / validate machine-readable, broker-asserted payloads in

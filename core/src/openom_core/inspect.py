@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Classify a PDF (native / hybrid / scanned) and summarize it (spec §I om_inspect, §X.3).
 
 Deterministic, inference-free. Uses PyMuPDF for text/image inspection and the core reader for

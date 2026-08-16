@@ -53,10 +53,10 @@ jobs:
         run: |
           mypy core/src
           mypy cli/src
-      - name: pytest (core)
-        run: pytest core -q
-      - name: pytest (cli)
-        run: pytest cli -q
+      - name: pytest (core, coverage gate)
+        run: pytest core -q --cov=openom_core --cov-report=term-missing --cov-fail-under=90
+      - name: pytest (cli, coverage gate)
+        run: pytest cli -q --cov=openom_cli --cov-report=term-missing --cov-fail-under=90
 
   boundary:
     # Cardinal rule: /core, /cli, /mcp must never depend on an inference/network client.
@@ -102,6 +102,27 @@ jobs:
           python core/scripts/gen_vectors.py
           git diff --exit-code -- spec/vectors/expected spec/vectors/payloads \
             || (echo "::error::vector regeneration is not a no-op — a canonical hash moved"; exit 1)
+
+  sbom:
+    # Software Bill of Materials for the deterministic tree (supply-chain audit, §M).
+    needs: detect
+    if: needs.detect.outputs.has_py == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install core + cli + cyclonedx
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e core -e cli cyclonedx-bom
+      - name: Generate CycloneDX SBOM
+        run: cyclonedx-py environment > sbom.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
 
   javascript:
     needs: detect

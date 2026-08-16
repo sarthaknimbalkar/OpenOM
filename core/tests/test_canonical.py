@@ -9,9 +9,13 @@ divergence fails loudly. The source file is pure ASCII: NFC/NFD strings are deri
 from __future__ import annotations
 
 import hashlib
+import json
 import unicodedata
+from typing import Any
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from openom_core.canonical import canonicalize, hash_bytes, payload_hash, strip_signature
 from openom_core.errors import CanonicalizationError
@@ -85,3 +89,100 @@ def test_signature_excluded_from_hash() -> None:
 def test_hash_bytes_matches_manual() -> None:
     data = b'{"a":1}'
     assert hash_bytes(data) == _sha(data)
+
+
+# --- Boundary / edge cases (backlog §2) -------------------------------------------------
+
+def test_boundary_numbers() -> None:
+    # ES-number formatting at the thresholds a naive serializer gets wrong.
+    assert canonicalize({"n": 1e-7}) == b'{"n":1e-7}'
+    assert canonicalize({"n": -0.0}) == b'{"n":0}'  # negative zero -> "0"
+    assert canonicalize({"n": 2**53 - 1}) == b'{"n":9007199254740991}'  # max safe int
+    for bad in (1e21, 2**53, -(2**53)):  # 1e21's integer value is not safely representable
+        with pytest.raises(CanonicalizationError) as ei:
+            canonicalize({"n": bad})
+        assert ei.value.code == "OM-IO-NUMRANGE"
+
+
+def test_top_level_must_be_object() -> None:
+    for bad in ([1, 2], "x", 5, None):
+        with pytest.raises(CanonicalizationError) as ei:
+            canonicalize(bad)  # type: ignore[arg-type]
+        assert ei.value.code == "OM-IO-TOPLEVEL"
+
+
+def test_unpaired_surrogate_rejected() -> None:
+    with pytest.raises(CanonicalizationError) as ei:
+        canonicalize({"tenantEntity": "bad\ud800end"})
+    assert ei.value.code == "OM-IO-BADUTF8"
+
+
+def test_es6_number_formatting_reference() -> None:
+    """Independent oracle: assert rfc8785's output equals ES6 Number-to-String, hand-derived
+    from the ECMAScript rules (§C [OM-CANON-011]) — not circularly from rfc8785 itself.
+
+    ES rule: use exponential form when the decimal exponent < -6 or >= 21; otherwise plain.
+    All values here are within OpenOM's safe-number policy (|int value| <= 2^53-1).
+    """
+    # A list, not a dict: 0.0 and -0.0 compare equal and would collapse into one dict key.
+    cases: list[tuple[float, bytes]] = [
+        (0.0, b"0"),
+        (-0.0, b"0"),  # negative zero collapses to "0"
+        (1.0, b"1"),
+        (1.5, b"1.5"),
+        (12.70, b"12.7"),  # trailing zero dropped
+        (0.0625, b"0.0625"),
+        (100.0, b"100"),
+        (1e-6, b"0.000001"),  # exponent -6 -> still plain form
+        (1e-7, b"1e-7"),  # exponent -7 -> exponential form (the switch point)
+        (5e-324, b"5e-324"),  # smallest positive double (denormal)
+        (float(2**53 - 1), b"9007199254740991"),  # max safe integer as a float
+    ]
+    for value, expected in cases:
+        assert canonicalize({"n": value}) == b'{"n":' + expected + b"}", f"failed on {value!r}"
+
+
+def test_deep_nesting_does_not_crash() -> None:
+    obj: Any = {"leaf": 1}
+    for _ in range(200):
+        obj = {"child": obj}
+    assert canonicalize(obj).startswith(b'{"child":')
+
+
+# --- Property-based differential invariants (backlog §0 #3, §2) -------------------------
+# Random JSON objects: safe numbers, surrogate-free text, bounded depth.
+
+_text = st.text(alphabet=st.characters(codec="utf-8"), max_size=12)
+_scalars = (
+    st.none()
+    | st.booleans()
+    | st.integers(min_value=-(2**53 - 1), max_value=2**53 - 1)
+    | st.floats(allow_nan=False, allow_infinity=False, min_value=-1e6, max_value=1e6)
+    | _text
+)
+_json = st.recursive(
+    _scalars,
+    lambda ch: st.lists(ch, max_size=4) | st.dictionaries(_text, ch, max_size=4),
+    max_leaves=15,
+)
+_objects = st.dictionaries(_text, _json, max_size=5)
+
+
+@given(_objects)
+def test_property_reparse_is_a_fixed_point(obj: dict[str, Any]) -> None:
+    """Canonical bytes, parsed and re-canonicalized, are byte-identical (JCS is idempotent)."""
+    once = canonicalize(obj)
+    assert canonicalize(json.loads(once)) == once
+
+
+@given(_objects)
+def test_property_key_insertion_order_irrelevant(obj: dict[str, Any]) -> None:
+    reordered = dict(reversed(list(obj.items())))
+    assert canonicalize(reordered) == canonicalize(obj)
+
+
+@given(_text)
+def test_property_nfd_and_nfc_collapse_to_same_bytes(s: str) -> None:
+    nfd = unicodedata.normalize("NFD", s)
+    nfc = unicodedata.normalize("NFC", s)
+    assert canonicalize({"k": nfd}) == canonicalize({"k": nfc})

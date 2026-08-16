@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# SPDX-License-Identifier: MIT
 """Generate /spec/vectors/expected/*.json, manifest.json, and golden PDFs (spec §B).
 
 - expected/*.json: integrity hash + base64 of the exact JCS bytes (byte-match oracle).

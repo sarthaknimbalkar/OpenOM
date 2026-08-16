@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Embed / read the om.json payload in a PDF via pikepdf (spec §D).
 
 Non-destructive by construction: pikepdf appends the embedded file + XMP marker without

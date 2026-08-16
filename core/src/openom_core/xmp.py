@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Read/write the OpenOM ``omspec:`` XMP marker in a PDF's document metadata (spec §D.2).
 
 Uses pikepdf's ``open_metadata`` with ``set_pikepdf_as_editor=False`` so pikepdf does not inject

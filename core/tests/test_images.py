@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from _make_scan import make_text_pdf
+from _make_scan import make_scanned, make_text_pdf
 from openom_core.images import extract_images
 
 
@@ -14,6 +14,18 @@ def test_no_images() -> None:
     manifest = extract_images(make_text_pdf())
     assert manifest["images"] == []
     assert manifest["deduped"] == 0
+
+
+def test_extract_synthetic_image(tmp_path: Path) -> None:
+    """A rasterized page yields an extractable sRGB image — no corpus needed (runs in CI)."""
+    manifest = extract_images(make_scanned(make_text_pdf()), out_dir=tmp_path)
+    ok = [d for d in manifest["images"] if d["error"] is None]
+    assert ok, "expected at least one extractable image"
+    for d in ok:
+        assert d["path"] is not None
+        assert d["width"] > 0 and d["height"] > 0
+        with Image.open(d["path"]) as im:
+            assert im.mode in {"RGB", "RGBA", "L", "LA"}
 
 
 def test_cmyk_and_smask_converted(hybrid_om: bytes, tmp_path: Path) -> None:

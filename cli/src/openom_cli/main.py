@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """The ``om`` CLI over openom-core (spec §5a). Thin, deterministic, zero inference.
 
 Commands: embed · read · inspect · validate · extract. JSON is printed compactly to stdout;
