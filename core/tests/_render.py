@@ -37,3 +37,26 @@ def ssim(a: np.ndarray, b: np.ndarray) -> float:
     num = (2 * mu_x * mu_y + c1) * (2 * cov + c2)
     den = (mu_x**2 + mu_y**2 + c1) * (var_x + var_y + c2)
     return float(num / den)
+
+
+def tiled_ssim_min(a: np.ndarray, b: np.ndarray, tile: int = 64) -> float:
+    """Worst-case SSIM over a grid of tiles — a localized change (a stamp in one corner) tanks
+    one tile even when the global SSIM stays ~1.0, so this is the honest visual-diff metric."""
+    if a.shape != b.shape:
+        return 0.0
+    worst = 1.0
+    for r in range(0, a.shape[0], tile):
+        for c in range(0, a.shape[1], tile):
+            wa = a[r : r + tile, c : c + tile]
+            wb = b[r : r + tile, c : c + tile]
+            worst = min(worst, ssim(wa, wb))
+    return worst
+
+
+def pages_pixel_identical(before: bytes, after: bytes, dpi: int = 150) -> bool:
+    """Strongest visual proof: every page renders to byte-identical pixels (any change fails)."""
+    pa = render_pages(before, dpi=dpi)
+    pb = render_pages(after, dpi=dpi)
+    if len(pa) != len(pb):
+        return False
+    return all(np.array_equal(x, y) for x, y in zip(pa, pb, strict=True))
