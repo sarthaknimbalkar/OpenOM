@@ -11,6 +11,7 @@ Severity = Literal["error", "warning", "info"]
 IO_DUPKEY = "OM-IO-DUPKEY"
 IO_BADUTF8 = "OM-IO-BADUTF8"
 IO_NUMRANGE = "OM-IO-NUMRANGE"
+IO_BOMB = "OM-IO-BOMB"
 
 
 class CanonicalizationError(Exception):
@@ -19,6 +20,14 @@ class CanonicalizationError(Exception):
     def __init__(self, code: str, message: str) -> None:
         super().__init__(f"{code}: {message}")
         self.code = code
+
+
+class PayloadTooLargeError(Exception):
+    """Payload exceeds the decompressed-size cap (§J [OM-SEC-002] / OM-IO-BOMB)."""
+
+    def __init__(self, size: int, limit: int) -> None:
+        super().__init__(f"{IO_BOMB}: payload {size} bytes exceeds cap {limit}")
+        self.code = IO_BOMB
 
 
 @dataclass(frozen=True)
