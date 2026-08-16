@@ -13,8 +13,7 @@ function sha256Hex(bytes: Uint8Array): string {
 describe("[OM-CANON-008] NFC normalization on the Producer path", () => {
   const nfcCafe = "café"; // é = U+00E9 (composed)
   const nfdCafe = "café"; // e + U+0301 combining acute (decomposed)
-  const expectedNfcSha =
-    "851b8c23eb02709cb52f013fff5215d8b1d836fa2283fbf8e7c35dbbc5a48ddf";
+  const expectedNfcSha = "851b8c23eb02709cb52f013fff5215d8b1d836fa2283fbf8e7c35dbbc5a48ddf";
 
   test("NFC input canonicalizes to the NFC hash", () => {
     expect(sha256Hex(canonicalize({ tenantEntity: nfcCafe }))).toBe(expectedNfcSha);

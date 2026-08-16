@@ -84,9 +84,7 @@ function injectOmspecXmp(doc: PDFDocument, props: OmspecProps): void {
   ];
   if (props.supersedes !== null) rows.push(["supersedes", props.supersedes]);
 
-  const body = rows
-    .map(([k, v]) => `   <omspec:${k}>${xmlEscape(v)}</omspec:${k}>`)
-    .join("\n");
+  const body = rows.map(([k, v]) => `   <omspec:${k}>${xmlEscape(v)}</omspec:${k}>`).join("\n");
   const xml = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
