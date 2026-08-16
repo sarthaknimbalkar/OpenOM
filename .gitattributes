@@ -1,0 +1,32 @@
+# OpenOM line-ending & binary policy.
+# The golden PDFs and JCS vectors are byte-oracles for the cross-implementation
+# gate ([OM-VEC-002]); a CRLF-mangled checkout on another OS would break
+# determinism silently. Normalize all text to LF; declare binaries explicitly.
+
+# Default: normalize declared-text files to LF in the repo, regardless of OS.
+* text=auto eol=lf
+
+# Source & data — always LF.
+*.py    text eol=lf
+*.ts    text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.cfg   text eol=lf
+*.txt   text eol=lf
+
+# Binaries — never touched, never EOL-normalized (byte-exact oracles).
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+
+# Marker file (PEP 561) — keep as-is, empty.
+py.typed text eol=lf

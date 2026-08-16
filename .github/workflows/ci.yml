@@ -1,0 +1,140 @@
+name: ci
+
+# The standard's credibility rests on this file: the gate ([OM-VEC-002]) must run on every
+# push/PR, not just locally. Python jobs always run; JS + cross-impl jobs auto-activate once
+# Track B (js/) is present on the branch, so this is green on feat/core and full on main.
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      has_js: ${{ steps.check.outputs.has_js }}
+      has_py: ${{ steps.check.outputs.has_py }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        shell: bash
+        run: |
+          test -f js/package.json && echo "has_js=true" >> "$GITHUB_OUTPUT" || echo "has_js=false" >> "$GITHUB_OUTPUT"
+          test -f core/pyproject.toml && echo "has_py=true" >> "$GITHUB_OUTPUT" || echo "has_py=false" >> "$GITHUB_OUTPUT"
+
+  python:
+    needs: detect
+    if: needs.detect.outputs.has_py == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install core + cli (with dev extras)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "core[dev]" -e "cli[dev]"
+      - name: ruff
+        run: |
+          ruff check core/src core/tests core/scripts cli/src cli/tests
+      - name: mypy
+        run: |
+          mypy core/src
+          mypy cli/src
+      - name: pytest (core)
+        run: pytest core -q
+      - name: pytest (cli)
+        run: pytest cli -q
+
+  boundary:
+    # Cardinal rule: /core, /cli, /mcp must never depend on an inference/network client.
+    needs: detect
+    if: needs.detect.outputs.has_py == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install core + cli
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e core -e cli
+      - name: Assert no inference/network deps leaked in
+        shell: bash
+        run: |
+          banned='openai|anthropic|cohere|langchain|llama-index|transformers|torch|tensorflow|onnxruntime|sentence-transformers|requests|httpx|aiohttp|urllib3'
+          if pip freeze | grep -iE "^($banned)==" ; then
+            echo "::error::inference/network client leaked into the deterministic core/cli tree"
+            exit 1
+          fi
+          echo "clean: deterministic dependency tree"
+
+  drift:
+    # Regenerating the JCS vectors must be a no-op; a diff means a hash silently moved.
+    needs: detect
+    if: needs.detect.outputs.has_py == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install core
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e core
+      - name: Regenerate vectors and assert no drift
+        shell: bash
+        run: |
+          python core/scripts/gen_vectors.py
+          git diff --exit-code -- spec/vectors/expected spec/vectors/payloads \
+            || (echo "::error::vector regeneration is not a no-op — a canonical hash moved"; exit 1)
+
+  javascript:
+    needs: detect
+    if: needs.detect.outputs.has_js == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install + test js
+        working-directory: js
+        run: |
+          npm ci
+          npm test
+
+  cross-impl:
+    # The anti-fork oracle: each implementation reads the other's golden PDFs.
+    needs: [detect, python, javascript]
+    if: needs.detect.outputs.has_js == 'true' && needs.detect.outputs.has_py == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install both toolchains
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e core
+          cd js && npm ci
+      - name: Cross-implementation round-trip ([OM-VEC-002])
+        run: pytest core -q -m cross_impl
