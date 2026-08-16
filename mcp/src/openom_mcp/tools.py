@@ -45,17 +45,21 @@ class ToolError(Exception):
         message: str,
         *,
         retryable: bool = False,
+        retry_after: int | None = None,
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(f"{code}: {message}")
         self.code = code
         self.message = message
         self.retryable = retryable
+        self.retry_after = retry_after
         self.details = details
 
 
 def _envelope(exc: ToolError) -> dict[str, Any]:
     err: dict[str, Any] = {"code": exc.code, "message": exc.message, "retryable": exc.retryable}
+    if exc.retry_after is not None:
+        err["retryAfter"] = exc.retry_after
     if exc.details is not None:
         err["details"] = exc.details
     return {"error": err}
@@ -100,7 +104,8 @@ def _load_pdf(ref: Any) -> bytes:
 
 
 def _load_schema() -> dict[str, Any]:
-    return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    data: dict[str, Any] = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    return data
 
 
 @_guard
