@@ -12,7 +12,7 @@ import pikepdf
 import pytest
 
 from openom_core.canonical import canonicalize, payload_hash
-from openom_core.embed import embed, read
+from openom_core.embed import embed, read, reembed_warnings
 from openom_core.xmp import read_marker
 
 SPEC = Path(__file__).resolve().parents[2] / "spec"
@@ -62,13 +62,48 @@ def test_identical_reembed_is_noop_no_self_supersede(base_pdf: bytes) -> None:
     assert read(e2).hash_valid is True
 
 
-def test_supersedes_cleared_when_reprice_then_reverts(base_pdf: bytes) -> None:
+def test_identical_reembed_preserves_lineage(base_pdf: bytes) -> None:
+    """A no-op re-embed of an already-superseding payload keeps its lineage (provenance)."""
     v1 = _sample()
     v2 = copy.deepcopy(v1)
     v2["deal"]["askingPrice"] = 1795000
 
     e1 = embed(base_pdf, v1, asserted_date="2026-08-15")
     e2 = embed(e1, v2, asserted_date="2026-09-01")  # supersedes = hash(v1)
-    assert "supersedes" in _marker(e2)
-    e3 = embed(e2, v2, asserted_date="2026-09-02")  # identical to v2 -> stale chain cleared
-    assert "supersedes" not in _marker(e3)
+    assert _marker(e2)["supersedes"] == payload_hash(v1)
+    e3 = embed(e2, v2, asserted_date="2026-09-02")  # identical to v2 -> lineage PRESERVED
+    assert _marker(e3)["supersedes"] == payload_hash(v1)
+    assert read(e3).hash_valid is True
+
+
+def test_multi_generation_chain(base_pdf: bytes) -> None:
+    """Three successive reprices each record the immediately-prior payload (§B [OM-CONF-007])."""
+    v1 = _sample()
+    v2 = copy.deepcopy(v1)
+    v2["deal"]["askingPrice"] = 1795000
+    v3 = copy.deepcopy(v2)
+    v3["deal"]["askingPrice"] = 1750000
+
+    e1 = embed(base_pdf, v1, asserted_date="2026-08-15")
+    e2 = embed(e1, v2, asserted_date="2026-09-01")
+    e3 = embed(e2, v3, asserted_date="2026-10-01")
+
+    assert "supersedes" not in _marker(e1)  # first generation has no predecessor
+    assert _marker(e2)["supersedes"] == payload_hash(v1)
+    assert _marker(e3)["supersedes"] == payload_hash(v2)
+    assert read(e3).hash_valid is True
+    assert canonicalize(read(e3).payload) == canonicalize(v3)  # type: ignore[arg-type]
+
+
+def test_reembed_warns_on_backwards_asserted_date(base_pdf: bytes) -> None:
+    v1 = _sample()
+    v2 = copy.deepcopy(v1)
+    v2["deal"]["askingPrice"] = 1795000
+    e1 = embed(base_pdf, v1, asserted_date="2026-08-15")
+
+    backwards = reembed_warnings(e1, v2, asserted_date="2026-07-01")  # earlier than prior
+    assert any(f.code == "OMW-W051" for f in backwards)
+
+    assert reembed_warnings(e1, v2, asserted_date="2026-09-01") == []  # forward: fine
+    assert reembed_warnings(e1, v1, asserted_date="2026-07-01") == []  # identical: not a reprice
+    assert reembed_warnings(base_pdf, v1, asserted_date="2026-07-01") == []  # no prior marker
