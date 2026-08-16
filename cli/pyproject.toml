@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openom-cli"
+version = "0.1.0.dev0"
+description = "OpenOM CLI — the `om` command over openom-core. Zero inference."
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = ["openom-core", "typer>=0.12"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
+
+[project.scripts]
+om = "openom_cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openom_cli"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
