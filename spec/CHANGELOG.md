@@ -27,6 +27,11 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
   and every conformant-sample term must have a mapping).
 - Conformance sample matrix (`spec/samples/manifest.json`) with expected schema-tier outcomes,
   reproduced by both implementations.
+- `warn-realworld` sample (#9): a coherent, fully-redacted STNL payload exhibiting the
+  multi-inconsistency pattern real marketing packages show — a marketing-rounded `capRate`
+  (OMW-W010) plus a `monthlyRent` data slip (OMW-W025) — demonstrating the validator on a
+  realistic payload rather than a single-field synthetic mutation. (The full adoption DoD — the
+  validator run on *actually-embedded* real OMs — remains tracked until a broker embeds one.)
 - Edge canonicalization vectors: `edge-numbers` (denormals, negative zero, max-safe-int) and
   `edge-unicode` (NFD, astral surrogate pairs, RTL override).
 
