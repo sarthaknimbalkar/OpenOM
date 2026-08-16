@@ -16,6 +16,11 @@ OMS_DIR = Path(__file__).resolve().parents[2] / "OMs"
 # The M1 fixture matrix (2026-08-16 corpus characterization).
 NATIVE_OM = "O'Reilly Auto Parts/O'Reilly Auto Parts - Statesboro, GA - 15 Yr NN with 6% Inc.pdf"
 HYBRID_OM = "Family Dollar/Family Dollar - East Camp Dallas, TX.pdf"  # the CMYK doc
+# A genuinely scanned (image-only, ~0.14 text coverage) OM in the corpus — real scanned proof.
+SCANNED_OM = (
+    "O'Reilly Auto Parts/O'Reilly Auto Parts - Marietta, GA - SUPER HUB - "
+    "14,400 Square Feet - All Brick - Outstanding Location - 15 Year NN Lease.pdf"
+)
 
 
 def load_om(rel: str) -> bytes:
@@ -34,3 +39,8 @@ def native_om() -> bytes:
 @pytest.fixture
 def hybrid_om() -> bytes:
     return load_om(HYBRID_OM)
+
+
+@pytest.fixture
+def scanned_om() -> bytes:
+    return load_om(SCANNED_OM)

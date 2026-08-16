@@ -53,6 +53,14 @@ def test_scanned_synthetic() -> None:
     assert profile["images"]["count"] >= 1
 
 
+def test_scanned_real_corpus(scanned_om: bytes) -> None:
+    """Real scanned OM from the corpus (local; skipped without it) — genuine scanned proof."""
+    profile = inspect(scanned_om)
+    assert profile["class"] == "scanned"
+    assert profile["textCoverage"] < 0.2
+    assert profile["images"]["count"] >= 1
+
+
 def test_payload_reported_after_embed() -> None:
     embedded = embed(make_text_pdf(), _sample(), asserted_date="2026-08-15")
     profile = inspect(embedded)
