@@ -52,6 +52,16 @@
     { "name": "w050-self-supersede", "expect": ["OMW-W050"], "selfSupersede": true,
       "mutations": [] },
     { "name": "w060-source-verified", "expect": ["OMW-W060"],
-      "mutations": [{ "path": "/lease/rentSchedule/0/source", "value": "verified" }] }
+      "mutations": [{ "path": "/lease/rentSchedule/0/source", "value": "verified" }] },
+    { "name": "i001-currency-defaulted", "expect": [], "expectInfo": ["OMI-I001"],
+      "mutations": [] },
+    { "name": "i002-source-absent", "expect": [], "expectInfo": ["OMI-I002"],
+      "mutations": [{ "path": "/lease/rentSchedule/0/source", "delete": true }] },
+    { "name": "i003-skipped-check", "expect": [], "expectInfo": ["OMI-I003"],
+      "mutations": [
+        { "path": "/deal/noi", "delete": true },
+        { "path": "/deal/noiType", "delete": true },
+        { "path": "/deal/noiAsOfDate", "delete": true }
+      ] }
   ]
 }
