@@ -206,10 +206,10 @@ def main() -> int:
     if args.assert_full or args.assert_synthetic:
         gaps = assert_matrix(require_corpus=require_corpus)
         if gaps:
-            print(f"\nMATRIX INCOMPLETE — empty cells: {gaps}")
-            print("(producer cells need real OMs under OMs/ — Q3; pathologies are synthetic)")
+            print(f"\nMATRIX INCOMPLETE - empty cells: {gaps}")
+            print("(producer cells need real OMs under OMs/ - Q3; pathologies are synthetic)")
             return 1
-        print("\nMATRIX FULL — every cell filled.")
+        print("\nMATRIX FULL - every cell filled.")
     return 0
 
 
