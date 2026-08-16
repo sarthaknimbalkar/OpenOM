@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """RFC 8785 JSON Canonicalization (JCS) + the OpenOM integrity hash (spec §C).
 
 The keystone of cross-implementation fidelity: two conformant implementations MUST produce
@@ -6,6 +7,17 @@ Unicode normalization and assumes unique member names (RFC 8785 §3.1), so §C.1
 preprocessing done here (NFC, duplicate-key rejection, number-range checks) *before* JCS.
 Serialization (key sorting, minimal escaping, ES number formatting) is delegated to the
 vetted ``rfc8785`` library.
+
+Producer vs Consumer contract (§C, §D)
+--------------------------------------
+The **producer** normalizes (NFC), canonicalizes, hashes the resulting bytes, and stores
+*those exact bytes* as the payload plus the hash in the XMP marker. The **consumer** hashes
+the stored bytes *as received* — it does NOT re-canonicalize before verifying. Verification
+is therefore a byte comparison of ``sha256(stored_bytes)`` against the marker hash; it never
+depends on the consumer re-running NFC/JCS. This asymmetry is deliberate: normalization
+happens once, at authoring time, so a consumer on a different platform/library cannot perturb
+the hash. ``canonicalize`` is the producer path; ``hash_bytes`` over stored bytes is the
+consumer path (see :func:`openom_core.embed.read`).
 """
 
 from __future__ import annotations
@@ -19,7 +31,7 @@ from unicodedata import normalize
 
 import rfc8785
 
-from .errors import IO_DUPKEY, IO_NUMRANGE, CanonicalizationError
+from .errors import IO_BADUTF8, IO_DUPKEY, IO_NUMRANGE, IO_TOPLEVEL, CanonicalizationError
 
 #: ECMAScript safe-integer limit; integers beyond this are silently rounded by the number
 #: model, which would be data corruption (§C [OM-CANON-013]).
@@ -35,6 +47,10 @@ def _prepare(obj: Any) -> Any:
     if isinstance(obj, bool):
         return obj
     if isinstance(obj, str):
+        # A lone UTF-16 surrogate cannot be encoded as UTF-8; reject it explicitly with a
+        # stable code rather than letting the serializer raise a bare UnicodeEncodeError.
+        if any(0xD800 <= ord(ch) <= 0xDFFF for ch in obj):
+            raise CanonicalizationError(IO_BADUTF8, "string contains an unpaired surrogate")
         return normalize("NFC", obj)
     if isinstance(obj, Mapping):
         out: dict[str, Any] = {}
@@ -67,8 +83,13 @@ def canonicalize(payload: Mapping[str, Any]) -> bytes:
     """Serialize a payload to its RFC 8785 JCS bytes (UTF-8, no BOM). Producer path.
 
     Applies the §C.1 preprocessing (NFC, unique keys, number range) then delegates
-    serialization to ``rfc8785``.
+    serialization to ``rfc8785``. The top level MUST be a JSON object (§C.10); a bare
+    array/scalar is rejected rather than hashed.
     """
+    if not isinstance(payload, Mapping):
+        raise CanonicalizationError(
+            IO_TOPLEVEL, f"top-level value must be an object, got {type(payload).__name__}"
+        )
     prepared = _prepare(payload)
     try:
         return rfc8785.dumps(prepared)

@@ -1,0 +1,62 @@
+%PDF-1.3
+%¿÷¢ş
+1 0 obj
+<< /AF [ 3 0 R ] /Metadata 4 0 R /Names << /EmbeddedFiles 5 0 R >> /Pages 6 0 R /Type /Catalog >>
+endobj
+2 0 obj
+<< >>
+endobj
+3 0 obj
+<< /AFRelationship /Data /EF << /F 7 0 R /UF 7 0 R >> /F (om.json) /Type /Filespec /UF (om.json) >>
+endobj
+4 0 obj
+<< /Subtype /XML /Type /Metadata /Length 506 >>
+stream
+<?xpacket begin="ï»¿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="pikepdf">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+ <rdf:Description rdf:about=""><specName>OpenOM</specName><specVersion>0.1</specVersion><payloadFilename>om.json</payloadFilename><payloadHash>sha256:e673f01c0324d423a6be35efdd121929e071fecced8d60b82724eed67671ec59</payloadHash><assertedDate>2026-08-15</assertedDate></rdf:Description></rdf:RDF>
+</x:xmpmeta>
+
+<?xpacket end="w"?>
+
+endstream
+endobj
+5 0 obj
+<< /Names [ (om.json) 3 0 R ] >>
+endobj
+6 0 obj
+<< /Count 1 /Kids [ 8 0 R ] /Type /Pages >>
+endobj
+7 0 obj
+<< /Params << /CheckSum <5bf018ee5c2d49ced890529b84c4af10> /Size 125 >> /Subtype /application#2fld+json /Type /EmbeddedFile /Length 118 /Filter /FlateDecode >>
+stream
+xœË±!EÑ™šİ’¡ÖÂÚÎnbf	;–bñßEÛwÏ{ÃÒøŞsUH8ãÑ+ïW^ä¢!FKä‚‰¬•ÇMZÜÀ¶r)çıYU~ØÊô¬¯“hm#B
+2œkã\²ş¿Û nŸ/FÉ&
+endstream
+endobj
+8 0 obj
+<< /Contents 9 0 R /MediaBox [ 0 0 612 792 ] /Parent 6 0 R /Resources << >> /Type /Page >>
+endobj
+9 0 obj
+<< /Length 0 >>
+stream
+
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000128 00000 n 
+0000000149 00000 n 
+0000000264 00000 n 
+0000000851 00000 n 
+0000000899 00000 n 
+0000000958 00000 n 
+0000001269 00000 n 
+0000001375 00000 n 
+trailer << /Info 2 0 R /Root 1 0 R /Size 10 /ID [<3fd0dfcff4f67e96289094fab9c5e0b2><1f4bdcb98539b4e80128f0848a439057>] >>
+startxref
+1424
+%%EOF

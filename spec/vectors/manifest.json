@@ -29,6 +29,38 @@
           "consumer"
         ]
       },
+      "expected": "expected/edge-numbers.json",
+      "name": "edge-numbers",
+      "payload": "payloads/edge-numbers.json",
+      "pdf": "pdfs/edge-numbers.pdf"
+    },
+    {
+      "dimensions": {
+        "level": [
+          "L1"
+        ],
+        "pathology": [],
+        "role": [
+          "producer",
+          "consumer"
+        ]
+      },
+      "expected": "expected/edge-unicode.json",
+      "name": "edge-unicode",
+      "payload": "payloads/edge-unicode.json",
+      "pdf": "pdfs/edge-unicode.pdf"
+    },
+    {
+      "dimensions": {
+        "level": [
+          "L1"
+        ],
+        "pathology": [],
+        "role": [
+          "producer",
+          "consumer"
+        ]
+      },
       "expected": "expected/numbers.json",
       "name": "numbers",
       "payload": "payloads/numbers.json",

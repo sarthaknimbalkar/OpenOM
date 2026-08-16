@@ -16,7 +16,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5", "numpy>=1.26", "pillow>=10"]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "mypy>=1.10",
+  "ruff>=0.5",
+  "numpy>=1.26",
+  "pillow>=10",
+  "hypothesis>=6.100",
+  "types-jsonschema>=4.20",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/openom_core"]
@@ -40,10 +49,16 @@ module = ["pymupdf", "pymupdf.*"]
 follow_imports = "skip"
 disallow_untyped_calls = false
 
-[[tool.mypy.overrides]]
-module = ["jsonschema", "jsonschema.*"]
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+# Coverage is enforced in CI (pytest --cov=openom_core --cov-fail-under=90), not in the
+# default addopts, so single-file dev runs stay fast and don't trip the floor.
+
+[tool.coverage.run]
+source = ["openom_core"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = ["pragma: no cover", "raise NotImplementedError", "if TYPE_CHECKING:"]

@@ -1,0 +1,8 @@
+{
+  "fraction": 0.0625,
+  "maxSafeInt": 9007199254740991,
+  "negZero": -0.0,
+  "smallExponent": 1e-7,
+  "tinyDenormal": 5e-324,
+  "trailingZeros": 12.70
+}
