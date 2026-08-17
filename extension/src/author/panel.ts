@@ -105,10 +105,13 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const prof = el("section", "profile");
   prof.appendChild(el("h2", undefined, "Reviewing broker"));
   const pin = (cls: string, ph: string, v: string): HTMLInputElement => {
+    const label = el("label", "profile-field");
     const i = el("input", cls) as HTMLInputElement;
     i.placeholder = ph;
     i.value = v;
-    prof.appendChild(i);
+    i.setAttribute("aria-label", ph); // #71 — placeholder is not an accessible name
+    label.append(`${ph} `, i);
+    prof.appendChild(label);
     return i;
   };
   const broker = pin("p-broker", "broker", profile0.broker);
@@ -141,6 +144,7 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const formEl = el("section", "form"); // stable inputs, built once (focus-safe)
   const derivedEl = el("section", "derived"); // validation/preview/assert, re-rendered each edit
   const status = el("p", "status");
+  status.setAttribute("aria-live", "polite"); // #71 — announce embed/extract/error outcomes
   root.append(formEl, derivedEl, status);
 
   // Re-render ONLY the derived panel (no inputs to lose focus). The Assert gate reflects the FINALIZED
