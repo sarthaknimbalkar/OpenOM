@@ -145,5 +145,13 @@ zero inference in `/mcp` (enforced by the `boundary` CI job + `test_boundary.py`
 (≤24h TTL + delete-on-completion). Hardening backlog: #51/#52 (distributed limiter, API-key
 lifecycle) are **hosted-deploy-gated**; the CLI/image items #16/#17/#18 are separate.
 
-**Next milestone: M4** (`/process` playbook — `SKILL.md` + agent instructions, #15) or **M5a**
-(consumer extension). M2/M3 both shipped.
+**M4 gate [OM-DoD-005] met** (2026-08-17). `/process` extraction playbook shipped: `mapping-guide.md`
+(shared field/vocabulary/consistency substance) + `SKILL.md` (Claude-invocable `openom-author`) +
+`agent-instructions.md` (any MCP client), driving `om_inspect→extract→map→om_validate→review→om_embed`
+with `source: extracted` until the human review gate. Inference lives only in the agent's mapping
+step; every `om_*` tool stays deterministic. Committed demo (`process/example/`: synthetic OM +
+produced payload + transcript) is gated by `spec/tests/test_process_example.py` (zero errors +
+warning-clean). The live non-Claude client run is adoption-deferred.
+
+**Next milestone: M5a** (consumer extension — MV3 Chrome, detect/verify/card/publish; `[OM-DoD-006]`).
+M2/M3/M4 all shipped.
