@@ -78,3 +78,30 @@ describe("embedPayload", () => {
     }
   });
 });
+
+describe("embedPayload — idempotent re-embed ([OM-XMP-004], cross-impl parity)", () => {
+  test("re-embed replaces (never stacks a second om.json) and reads the new payload", async () => {
+    const first = await embedPayload(await blankPdf(), validStnl);
+
+    const reprice = JSON.parse(JSON.stringify(validStnl)) as Record<string, unknown>;
+    (reprice.deal as Record<string, unknown>).askingPrice =
+      Number((validStnl.deal as Record<string, unknown>).askingPrice) + 500;
+    (reprice.meta as Record<string, unknown>).supersedes = payloadHash(validStnl);
+
+    const second = await embedPayload(first, reprice);
+
+    // exactly one embedded file remains in /AF
+    const doc = await PDFDocument.load(second);
+    const af = doc.catalog.lookup(PDFName.of("AF"), PDFArray);
+    expect(af.size()).toBe(1);
+
+    // and it reads back as the NEW payload, hash-valid
+    const r = await readPayloadFromBytes(second);
+    expect(r.state).toBe("present");
+    expect(r.verification.hashValid).toBe(true);
+    expect((r.payload!.deal as Record<string, unknown>).askingPrice).toBe(
+      Number((validStnl.deal as Record<string, unknown>).askingPrice) + 500,
+    );
+    expect((r.payload!.meta as Record<string, unknown>).supersedes).toBe(payloadHash(validStnl));
+  });
+});
