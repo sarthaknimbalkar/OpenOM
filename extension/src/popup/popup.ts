@@ -61,6 +61,10 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
   badge.appendChild(el("span", "badge-caption", result.caption));
   root.appendChild(badge);
 
+  // Author-mode entry point (#76): open the side panel to embed a payload. Class-only (no
+  // data-action) so it stays outside the publish-controls set.
+  root.appendChild(el("button", "open-author", "Embed a payload…"));
+
   if (result.stale) {
     root.appendChild(el("p", "stale", "Stale: a newer payload exists at the origin (OMW-W051). This copy is unaltered but superseded."));
   }
@@ -125,6 +129,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
       }
       renderPopup(root, result, await getWebhook());
       wireButtons(root, result);
+      wireOpenAuthor(root);
     } catch (e) {
       root.textContent = `openOM error: ${(e as Error).message}`;
     }
@@ -182,5 +187,17 @@ function wireButtons(root: HTMLElement, result: DetectResult): void {
     a.download = "openom-envelope.json";
     a.click();
     status.textContent = "Downloaded envelope";
+  });
+}
+
+/** Open the author-mode side panel to embed a payload (#76). Requires a user gesture — the click. */
+function wireOpenAuthor(root: HTMLElement): void {
+  root.querySelector(".open-author")?.addEventListener("click", () => {
+    void (async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id !== undefined) await chrome.sidePanel.open({ tabId: tab.id });
+      else if (tab?.windowId !== undefined) await chrome.sidePanel.open({ windowId: tab.windowId });
+      window.close();
+    })();
   });
 }

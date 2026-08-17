@@ -1,6 +1,12 @@
 import { getDomain } from "tldts";
 import { integrityHashOfBytes } from "./verify.js";
 
+// PSL DEPENDENCY ([#80]): the same-registrable-domain check uses tldts, which bundles a SNAPSHOT of
+// the Public Suffix List. As the PSL evolves (new eTLDs like *.github.io / country ccSLDs), a stale
+// snapshot could mis-split a host. Keep tldts current: it is pinned in package.json and refreshed on
+// the routine dependency-update cadence (Dependabot / manual bump), and the multi-label eTLD tests in
+// origin.test.ts (co.uk, github.io) guard the behavior we depend on.
+
 /**
  * Domain-origin verification — the §10.1 L3 check, consumer-mode. Proves "the entity controlling
  * this domain vouches for this exact payload": the source and its JSON-LD mirror are HTTPS, served
@@ -28,7 +34,11 @@ export async function verifyOrigin(a: {
   if (source.protocol !== "https:" || mirror.protocol !== "https:") {
     return { originVerified: false, reason: "not-https" };
   }
-  if (getDomain(source.hostname) !== getDomain(mirror.hostname) || !getDomain(source.hostname)) {
+  // allowPrivateDomains: treat hosting-platform suffixes (github.io, *.herokuapp.com, …) as origin
+  // boundaries, so one tenant's mirror can't vouch for another's payload ([#80]).
+  const sourceDomain = getDomain(source.hostname, { allowPrivateDomains: true });
+  const mirrorDomain = getDomain(mirror.hostname, { allowPrivateDomains: true });
+  if (!sourceDomain || sourceDomain !== mirrorDomain) {
     return { originVerified: false, reason: "cross-origin" };
   }
   const fetched = await a.fetchMirror(a.mirrorUrl);
