@@ -4,6 +4,8 @@
 // schema-error count ALONE — never on extraction confidence, never pre-checked ([OM-EXTP-003]).
 import type { ValidationReport } from "openom-js";
 import { type Draft, fieldsWithoutEvidence, leaves, omissions } from "./draft.js";
+import schema from "../../../spec/om-0.1.schema.json";
+import { schemaExpectedPaths } from "./schema-paths.js";
 
 export interface RepriceDiff {
   added: string[];
@@ -107,12 +109,5 @@ export function renderReview(root: HTMLElement, draft: Draft, view: ReviewView):
   root.appendChild(assert);
 }
 
-/** Required/expected leaf paths surfaced as omissions when unset (§E; kept minimal, non-blocking). */
-const SCHEMA_LEAF_PATHS = [
-  "/assertedBy/broker",
-  "/assertedBy/brokerage",
-  "/assertedBy/license",
-  "/deal/askingPrice",
-  "/deal/noi",
-  "/deal/capRate",
-];
+/** Expected leaf paths surfaced as omissions when unset — derived from the schema/field map ([#92]). */
+const SCHEMA_LEAF_PATHS = schemaExpectedPaths(schema as { properties?: Record<string, unknown> });
