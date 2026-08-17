@@ -40,7 +40,7 @@ describe("renderPopup", () => {
     for (const w of FORBIDDEN) expect(new RegExp(`\\b${w}\\b`).test(text)).toBe(false);
     expect(text).toContain("500 example blvd");
     expect(text).toContain("[asserted]"); // rent period source tag
-    expect(root.querySelectorAll("button[data-action]").length).toBe(3);
+    expect(root.querySelectorAll("button[data-action]").length).toBe(4); // test-fire, publish, copy, download
     expect(root.querySelector("input.wh-target")).not.toBeNull();
   });
 

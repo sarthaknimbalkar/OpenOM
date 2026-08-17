@@ -2,7 +2,7 @@
 // render is a PURE function of data (no chrome calls), so it is unit-testable in jsdom; the runtime
 // bootstrap (query tab → message the service worker → wire buttons) is guarded at the bottom.
 
-import { envelopeText, testFire } from "../publish.js";
+import { envelopeText, publishWithRetry, testFire } from "../publish.js";
 import type { DetectResult } from "../service-worker.js";
 import { getWebhook, setWebhook, type Webhook } from "../storage.js";
 
@@ -87,6 +87,7 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
     publish.append(target, secret);
     for (const [label, action] of [
       ["Test fire", "test-fire"],
+      ["Publish", "publish"],
       ["Copy", "copy"],
       ["Download", "download"],
     ] as const) {
@@ -108,12 +109,14 @@ if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
       // active tab. The pipeline runs identically for both — only the source of the URL differs.
       const override = new URLSearchParams(location.search).get("url");
       let url = override ?? undefined;
-      if (!url && chrome.tabs?.query) {
+      let tabId: number | undefined;
+      if (chrome.tabs?.query) {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        url = tab?.url;
+        tabId = tab?.id; // so the SW can set a PER-TAB badge (#83)
+        if (!url) url = tab?.url;
       }
       if (!url) return;
-      const result = (await chrome.runtime.sendMessage({ type: "detect", url })) as
+      const result = (await chrome.runtime.sendMessage({ type: "detect", url, tabId })) as
         | DetectResult
         | { error: string };
       if ("error" in result) {
@@ -153,6 +156,15 @@ function wireButtons(root: HTMLElement, result: DetectResult): void {
       await setWebhook({ url: target(), secret: secret() });
       const r = await testFire(args());
       status.textContent = `Test fire → ${r.status}`;
+    } catch (e) {
+      status.textContent = `Blocked: ${(e as Error).message}`;
+    }
+  });
+  root.querySelector('[data-action="publish"]')?.addEventListener("click", async () => {
+    try {
+      await setWebhook({ url: target(), secret: secret() });
+      const r = await publishWithRetry({ ...args(), event: "om.payload.published" });
+      status.textContent = `Published → ${r.status} (${r.attempts} attempt${r.attempts > 1 ? "s" : ""})`;
     } catch (e) {
       status.textContent = `Blocked: ${(e as Error).message}`;
     }
