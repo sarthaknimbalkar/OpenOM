@@ -18,6 +18,7 @@ import { guardedMirrorFetch, mirrorUrlFor } from "./mirror.js";
 import { classifyStale } from "./stale.js";
 import { precompiledValidate } from "./validator.js";
 import { assertEmbeddable } from "./author/embed-guard.js";
+import { getCachedDetect, setCachedDetect } from "./cache.js";
 
 export interface DetectResult {
   state: BadgeState;
@@ -58,9 +59,11 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
   const findings: string[] = [];
   let stale: "OMW-W051" | undefined;
   let payload: Record<string, unknown> | null = null;
+  const encrypted = read?.state === "encrypted"; // #72 — distinct from a plain "no payload" PDF
 
-  if (!read || read.state === "absent") {
+  if (!read || read.state === "absent" || read.state === "encrypted") {
     state = "absent";
+    if (encrypted) findings.push("encrypted");
   } else if (read.state === "hash-mismatch" || read.verification.hashValid !== true) {
     state = "hash-mismatch"; // terminal — no L3/L4
   } else {
@@ -110,7 +113,10 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
   }
 
   if (deps.setBadge) await deps.setBadge(state);
-  const { label, caption } = honestLabel(state);
+  const honest = honestLabel(state);
+  // #72 — an encrypted PDF is "absent" for the badge, but say WHY rather than "no data / vision fallback".
+  const label = encrypted ? "Encrypted PDF" : honest.label;
+  const caption = encrypted ? "This PDF is encrypted — openOM can't read it." : honest.caption;
   return {
     state,
     label,
@@ -157,8 +163,20 @@ function fromB64(b64: string): Uint8Array {
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type === "detect" && typeof msg.url === "string") {
+      const url = msg.url as string;
       const tabId = typeof msg.tabId === "number" ? msg.tabId : undefined;
-      handleDetect(msg.url, { setBadge: (s) => _chromeSetBadge(s, tabId) })
+      const now = Date.now();
+      // §15 Q8: serve a fresh cached result (still painting the per-tab badge) before re-fetching (#68).
+      getCachedDetect(url, now)
+        .then(async (cached) => {
+          if (cached) {
+            _chromeSetBadge(cached.state, tabId);
+            return cached;
+          }
+          const result = await handleDetect(url, { setBadge: (s) => _chromeSetBadge(s, tabId) });
+          await setCachedDetect(url, result, now);
+          return result;
+        })
         .then(sendResponse)
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true; // async response

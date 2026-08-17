@@ -21,6 +21,17 @@ describe("handleDetect — §AA pipeline", () => {
     expect(r.state).toBe("absent");
   });
 
+  test("encrypted PDF → badge absent but a distinct 'encrypted' label + finding (#72)", async () => {
+    const r = await handleDetect(SRC, {
+      refetch: async () => BYTES,
+      read: async () => readResult({ state: "encrypted", payload: null, payloadHash: null }),
+    });
+    expect(r.state).toBe("absent");
+    expect(r.findings).toContain("encrypted");
+    expect(r.label).toBe("Encrypted PDF");
+    expect(r.caption.toLowerCase()).toContain("encrypted");
+  });
+
   test("hash-mismatch is terminal (no origin fetch)", async () => {
     const mirrorFetch = vi.fn();
     const r = await handleDetect(SRC, {
