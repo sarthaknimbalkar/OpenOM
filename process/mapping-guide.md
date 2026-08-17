@@ -85,6 +85,25 @@ Payload path → where it typically appears in an OM → notes.
   present — if the OM doesn't make NOI's basis clear, surface that at review rather than guess.
 - Market truth (valuation, investment merit, legal opinion) is out of scope — never add it.
 
+## Ambiguity & uncertainty — omit and flag, never guess
+
+When a value is unreadable, ambiguous, or you are not confident you read it correctly:
+
+- **Omit the field.** Do not write a placeholder, a rounded guess, or a "probably" value. An absent
+  field is honest and forward-compatible; a guessed one is a lie that ships.
+- **Record what you omitted and why**, and surface it at the review gate (see the *Omissions* item
+  in [`./review-contract.md`](./review-contract.md)) so the reviewing broker can supply it from
+  knowledge or confirm the omission.
+- **Never manufacture corroboration to raise confidence.** Unreviewed extraction stays
+  `source: "extracted"`; you may not promote it to `"verified"` because you feel sure.
+- **NOI basis ambiguity is common and load-bearing.** If `noi` appears but whether it is in-place
+  vs pro-forma, or its `noiAsOfDate`, is unclear, do NOT guess `noiType`/`noiAsOfDate` — they are
+  *required* whenever `noi` is present, so surface the ambiguity and leave the payload a draft until
+  the human resolves it at the gate. (Guessing here silently mislabels the single most scrutinized
+  number in the OM.)
+- A **consistency warning is also an uncertainty signal** — see the next section; treat it as
+  "re-read," not "override."
+
 ## Consistency relationships (why warnings mean "look again")
 
 `om_validate` never judges market truth; it checks the payload's internal arithmetic. Each warning
