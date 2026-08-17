@@ -91,13 +91,23 @@ def build_http_app(
     rate_window_seconds: int = 60,
     blob_root: Path | None = None,
     blob_store: BlobStore | None = None,
+    dns_rebinding_protection: bool = False,
+    allowed_hosts: list[str] | None = None,
+    allowed_origins: list[str] | None = None,
 ) -> Any:
     """Wire the deterministic hosted transport and return the Streamable HTTP ASGI app (M3).
 
     Injects the http ``PdfResolver`` (SafeFetcher + BlobStore), the rate limiter, and a principal
     middleware that sets ``tools._current_principal`` from ``Authorization``/client IP per request.
     Zero inference — the paid extraction service is a separate deployment ([OM-DoD-008]).
+
+    HTTP-layer transport security (#48): pass ``dns_rebinding_protection=True`` with
+    ``allowed_hosts``/``allowed_origins`` for a public deployment (rejects spoofed Host/Origin,
+    the browser-DNS-rebinding defense). Off by default so self-hosting on localhost is friction-free
+    — this is inbound protection and is orthogonal to the outbound SSRF ruleset in ``fetch.py``.
     """
+    from mcp.server.transport_security import TransportSecuritySettings
+
     from .fetch import SafeFetcher
     from .principal import extract_principal
     from .ratelimit import InMemoryRateLimiter
@@ -111,7 +121,12 @@ def build_http_app(
         InMemoryRateLimiter(limit=rate_limit, window_seconds=rate_window_seconds)
     )
 
-    return principal_asgi(mcp.streamable_http_app(), extract_principal)
+    security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=dns_rebinding_protection,
+        allowed_hosts=allowed_hosts or [],
+        allowed_origins=allowed_origins or [],
+    )
+    return principal_asgi(mcp.streamable_http_app(transport_security=security), extract_principal)
 
 
 def principal_asgi(app: Any, extract: Any) -> Any:
