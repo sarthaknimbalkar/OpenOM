@@ -38,6 +38,7 @@ async function one(input, name, first) {
 await one(resolve(root, "src/service-worker.ts"), "service-worker", true);
 await one(resolve(root, "src/popup/popup.ts"), "popup", false);
 await one(resolve(root, "src/author/panel.ts"), "sidepanel", false);
+await one(resolve(root, "src/options.ts"), "options", false);
 
 // The author panel extracts OM text with pdf.js, which needs its worker as a web-accessible resource
 // (the panel is a full page and CAN spawn the Worker the consumer service worker could not).
