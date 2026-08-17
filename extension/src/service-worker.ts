@@ -19,6 +19,7 @@ import { classifyStale } from "./stale.js";
 import { precompiledValidate } from "./validator.js";
 import { assertEmbeddable } from "./author/embed-guard.js";
 import { getCachedDetect, setCachedDetect } from "./cache.js";
+import { getSettings } from "./storage.js";
 
 export interface DetectResult {
   state: BadgeState;
@@ -159,24 +160,25 @@ function fromB64(b64: string): Uint8Array {
   return out;
 }
 
+/** Detect for a URL, serving a fresh 24h cache when present (#68) and painting the per-tab badge. */
+async function detectCached(url: string, tabId?: number): Promise<DetectResult> {
+  const now = Date.now();
+  const cached = await getCachedDetect(url, now);
+  if (cached) {
+    _chromeSetBadge(cached.state, tabId);
+    return cached;
+  }
+  const result = await handleDetect(url, { setBadge: (s) => _chromeSetBadge(s, tabId) });
+  await setCachedDetect(url, result, now);
+  return result;
+}
+
 // Wire messages only in the extension runtime (guarded so unit tests can import handleDetect).
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type === "detect" && typeof msg.url === "string") {
-      const url = msg.url as string;
       const tabId = typeof msg.tabId === "number" ? msg.tabId : undefined;
-      const now = Date.now();
-      // §15 Q8: serve a fresh cached result (still painting the per-tab badge) before re-fetching (#68).
-      getCachedDetect(url, now)
-        .then(async (cached) => {
-          if (cached) {
-            _chromeSetBadge(cached.state, tabId);
-            return cached;
-          }
-          const result = await handleDetect(url, { setBadge: (s) => _chromeSetBadge(s, tabId) });
-          await setCachedDetect(url, result, now);
-          return result;
-        })
+      detectCached(msg.url, tabId)
         .then(sendResponse)
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true; // async response
@@ -201,5 +203,19 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     return false;
+  });
+}
+
+// §15 Q8 proactive detection (#84): OFF by default (privacy-conservative — the popup is the default
+// check). When the broker opts in, detect + badge a freshly-loaded HTTPS PDF on navigation, reusing
+// the 24h cache so it's cheap. Never fires unless the setting is on.
+if (typeof chrome !== "undefined" && chrome.tabs?.onUpdated) {
+  chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+    if (info.status !== "complete") return;
+    const url = tab.url;
+    if (!url || !url.startsWith("https://") || !/\.pdf($|\?|#)/i.test(url)) return;
+    void getSettings().then((s) => {
+      if (s.proactiveDetection) void detectCached(url, tabId).catch(() => {});
+    });
   });
 }

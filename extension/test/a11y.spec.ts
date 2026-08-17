@@ -28,3 +28,11 @@ test("author panel: no serious/critical a11y violations", async ({ context, exte
   const v = await audit(page);
   expect(v.map((x) => x.id).join(", ") || "none").toBe("none");
 });
+
+test("options page: no serious/critical a11y violations", async ({ context, extensionId }) => {
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/options.html`);
+  await page.waitForSelector("#save");
+  const v = await audit(page);
+  expect(v.map((x) => x.id).join(", ") || "none").toBe("none");
+});
