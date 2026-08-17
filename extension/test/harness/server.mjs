@@ -41,6 +41,7 @@ const files = {
   "/stale/om.json": ["application/json", "stale/om.json"],
   "/author/plain.pdf": ["application/pdf", "author/plain.pdf"],
   "/author/embedded.pdf": ["application/pdf", "author/embedded.pdf"],
+  "/author/text.pdf": ["application/pdf", "author/text.pdf"],
 };
 
 let lastHook = null;

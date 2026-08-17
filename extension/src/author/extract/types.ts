@@ -17,8 +17,6 @@ export interface FieldExtraction {
 
 export interface ExtractionResult {
   fields: FieldExtraction[];
-  /** Set when the OM exceeded the page cap — the reviewer must know it was not fully read. */
-  truncatedAfterPage?: number;
 }
 
 export interface Extractor {

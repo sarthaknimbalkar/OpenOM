@@ -91,7 +91,7 @@ test("[OM-PRIV-001] extraction makes ZERO network requests leave the device", as
     if (!route.request().url().startsWith("chrome-extension://")) offDevice++;
     return route.continue();
   });
-  const page = await openPanel(context, extensionId, `${BROKER}/author/plain.pdf`);
+  const page = await openPanel(context, extensionId, `${BROKER}/author/text.pdf`);
   offDevice = 0; // count only during extraction, not the panel/fixture load
   await page.click(".extract-btn");
   await page.waitForSelector(".field-path"); // extracted field rendered
@@ -100,7 +100,7 @@ test("[OM-PRIV-001] extraction makes ZERO network requests leave the device", as
 
 test("on-device extraction pre-fills the review, then the human asserts", async ({ context, extensionId }) => {
   await context.addInitScript(FAKE_MODEL);
-  const page = await openPanel(context, extensionId, `${BROKER}/author/plain.pdf`);
+  const page = await openPanel(context, extensionId, `${BROKER}/author/text.pdf`);
   await page.click(".extract-btn");
   await expect(page.locator(".field-evidence").first()).toBeVisible(); // evidence surfaced
   await fillProfile(page);
