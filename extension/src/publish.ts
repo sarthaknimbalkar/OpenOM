@@ -63,3 +63,39 @@ export async function publish(a: PublishArgs): Promise<{ status: number }> {
 export async function testFire(a: Omit<PublishArgs, "event">): Promise<{ status: number }> {
   return publish({ ...a, event: "om.test.ping" });
 }
+
+export interface RetryOpts {
+  maxAttempts?: number;
+  sleep?: (ms: number) => Promise<void>;
+  newDeliveryId?: () => string;
+}
+
+/**
+ * Deliver with bounded retry + exponential backoff on RETRIABLE failures (5xx / network) — §Y is
+ * built for this: the OpenOM-Event-Id stays stable across attempts (== envelope.id) while each retry
+ * mints a fresh OpenOM-Delivery-Id and increments OpenOM-Delivery-Attempt ([#85]). 2xx/4xx are final.
+ * The unsafe-target check runs ONCE up front (a bad target is not retriable).
+ */
+export async function publishWithRetry(
+  a: PublishArgs,
+  opts: RetryOpts = {},
+): Promise<{ status: number; attempts: number }> {
+  assertSafeWebhookTarget(a.target); // throws immediately; never retried
+  const maxAttempts = opts.maxAttempts ?? 3;
+  const sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  const newDeliveryId = opts.newDeliveryId ?? (() => crypto.randomUUID());
+
+  let lastStatus = 0;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const deliveryId = attempt === 1 ? a.deliveryId : newDeliveryId();
+    try {
+      const { status } = await publish({ ...a, attempt, deliveryId });
+      lastStatus = status;
+      if (status < 500) return { status, attempts: attempt }; // 2xx/4xx: final
+    } catch (e) {
+      if (attempt === maxAttempts) throw e; // network error on the last try
+    }
+    if (attempt < maxAttempts) await sleep(250 * 2 ** (attempt - 1)); // 250ms, 500ms, …
+  }
+  return { status: lastStatus, attempts: maxAttempts };
+}

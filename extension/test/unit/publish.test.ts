@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 import { hmacSha256Hex } from "openom-js";
-import { envelopeText, publish, testFire } from "../../src/publish.js";
+import { envelopeText, publish, publishWithRetry, testFire } from "../../src/publish.js";
 
 const base = {
   sourceUrl: "https://broker.example.com/deal.pdf",
@@ -52,5 +52,34 @@ describe("publish (§Y)", () => {
   test("envelopeText is valid JSON with the §Y fields", () => {
     const e = JSON.parse(envelopeText({ ...base, event: "e" }));
     expect(e).toMatchObject({ event: "e", sourceUrl: base.sourceUrl, payloadHash: base.payloadHash });
+  });
+});
+
+describe("publishWithRetry (#85) — bounded retry + backoff", () => {
+  test("retries 5xx then succeeds; Event-Id stable, Delivery-Id changes per attempt", async () => {
+    let n = 0;
+    const seen: { eventId: string; deliveryId: string; attempt: string }[] = [];
+    const send = vi.fn<typeof fetch>(async (_url, init) => {
+      const h = (init?.headers ?? {}) as Record<string, string>;
+      seen.push({ eventId: h["OpenOM-Event-Id"], deliveryId: h["OpenOM-Delivery-Id"], attempt: h["OpenOM-Delivery-Attempt"] });
+      n++;
+      return { status: n < 3 ? 503 : 200 } as Response;
+    });
+    let ids = 100;
+    const r = await publishWithRetry(
+      { ...base, event: "om.payload.published", send },
+      { sleep: async () => {}, newDeliveryId: () => `d${ids++}` },
+    );
+    expect(r).toEqual({ status: 200, attempts: 3 });
+    expect(new Set(seen.map((s) => s.eventId)).size).toBe(1); // Event-Id stable
+    expect(new Set(seen.map((s) => s.deliveryId)).size).toBe(3); // Delivery-Id per attempt
+    expect(seen.map((s) => s.attempt)).toEqual(["1", "2", "3"]);
+  });
+
+  test("does NOT retry a 4xx (final)", async () => {
+    const send = vi.fn<typeof fetch>(async () => ({ status: 400 }) as Response);
+    const r = await publishWithRetry({ ...base, event: "e", send }, { sleep: async () => {} });
+    expect(r.attempts).toBe(1);
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });

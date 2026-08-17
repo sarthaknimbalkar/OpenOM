@@ -128,10 +128,15 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
   };
 }
 
-function _chromeSetBadge(state: BadgeState): void {
-  chrome.action.setBadgeText({ text: BADGE_TEXT[state] });
+// Badge is PER-TAB ([#83]): a detection on one tab must not paint every tab's toolbar. When a tabId
+// is known (the popup reports the tab it inspected), scope the badge to it; without one, no-op rather
+// than set a misleading global badge.
+function _chromeSetBadge(state: BadgeState, tabId?: number): void {
+  if (typeof tabId !== "number") return;
+  chrome.action.setBadgeText({ text: BADGE_TEXT[state], tabId });
   chrome.action.setBadgeBackgroundColor({
     color: state === "hash-mismatch" ? "#b60205" : state === "origin-verified" ? "#0e8a16" : "#888",
+    tabId,
   });
 }
 
@@ -152,7 +157,8 @@ function fromB64(b64: string): Uint8Array {
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type === "detect" && typeof msg.url === "string") {
-      handleDetect(msg.url, { setBadge: _chromeSetBadge })
+      const tabId = typeof msg.tabId === "number" ? msg.tabId : undefined;
+      handleDetect(msg.url, { setBadge: (s) => _chromeSetBadge(s, tabId) })
         .then(sendResponse)
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true; // async response
