@@ -9,7 +9,10 @@
     "esModuleInterop": true,
     "types": ["chrome"],
     "baseUrl": ".",
-    "paths": { "openom-js": ["../js/src/index.ts"] }
+    "paths": {
+      "openom-js/webhook": ["../js/src/webhook.ts"],
+      "openom-js": ["../js/src/index.ts"]
+    }
   },
   "include": ["src", "scripts", "test"]
 }
