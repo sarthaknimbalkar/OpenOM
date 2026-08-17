@@ -22,9 +22,19 @@ import {
   getField,
   type Draft,
 } from "./draft.js";
-import { getProfile, setProfile, profileComplete, type BrokerProfile } from "./profile.js";
+import {
+  getProfile,
+  setProfile,
+  profileComplete,
+  type BrokerProfile,
+} from "./profile.js";
 import { getDraft, setDraft, clearDraft } from "./draft-store.js";
-import { finalize, assertAndEmbed, handBack, suggestedFilename } from "./assert.js";
+import {
+  finalize,
+  assertAndEmbed,
+  handBack,
+  suggestedFilename,
+} from "./assert.js";
 import { renderDerived, repriceDiff } from "./review-panel.js";
 import { buildForm, type FormCallbacks } from "./form.js";
 import { applyExtraction } from "./extract/apply.js";
@@ -41,14 +51,26 @@ const el = (tag: string, cls?: string, text?: string): HTMLElement => {
 
 const todayISO = (): string => localDateISO(new Date());
 const validate = (p: Record<string, unknown>): ValidationReport =>
-  validatePayload(p, schema as Record<string, unknown>, { validate: precompiledValidate });
+  validatePayload(p, schema as Record<string, unknown>, {
+    validate: precompiledValidate,
+  });
 
 /** Entry screen: capture the current tab's PDF, or pick a local file. */
 export function renderCaptureScreen(root: HTMLElement): void {
   root.replaceChildren();
   root.appendChild(el("h1", "title", "openOM — embed a payload"));
-  root.appendChild(el("p", "hint", "Capture an offering memorandum, review its data, assert, and embed."));
-  const useTab = el("button", "capture-tab", "Use current tab's PDF") as HTMLButtonElement;
+  root.appendChild(
+    el(
+      "p",
+      "hint",
+      "Capture an offering memorandum, review its data, assert, and embed.",
+    ),
+  );
+  const useTab = el(
+    "button",
+    "capture-tab",
+    "Use current tab's PDF",
+  ) as HTMLButtonElement;
   useTab.dataset.action = "capture-tab";
   const file = el("input", "capture-file") as HTMLInputElement;
   file.type = "file";
@@ -58,7 +80,8 @@ export function renderCaptureScreen(root: HTMLElement): void {
   useTab.addEventListener("click", () => void captureFromTab(root));
   file.addEventListener("change", () => {
     const f = file.files?.[0];
-    if (f) void f.arrayBuffer().then((b) => startReview(root, new Uint8Array(b)));
+    if (f)
+      void f.arrayBuffer().then((b) => startReview(root, new Uint8Array(b)));
   });
 }
 
@@ -69,20 +92,32 @@ async function captureFromTab(root: HTMLElement): Promise<void> {
 
 /** Fetch a URL's PDF bytes (SW-side, page-CSP-immune) and start review. Also the ?url= deep-link. */
 async function captureFromUrl(root: HTMLElement, url: string): Promise<void> {
-  const resp = (await chrome.runtime.sendMessage({ type: "author:fetch", url })) as
-    | { b64: string | null }
-    | { error: string };
+  const resp = (await chrome.runtime.sendMessage({
+    type: "author:fetch",
+    url,
+  })) as { b64: string | null } | { error: string };
   if ("error" in resp || !resp.b64) {
-    root.replaceChildren(el("p", "err", "Could not fetch this page's PDF bytes."));
+    root.replaceChildren(
+      el("p", "err", "Could not fetch this page's PDF bytes."),
+    );
     return;
   }
   await startReview(root, fromB64(resp.b64));
 }
 
 /** Build the review workspace: profile form + draft JSON + live-validated review render + Assert. */
-async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> {
+async function startReview(
+  root: HTMLElement,
+  bytes: Uint8Array,
+): Promise<void> {
   if (!looksLikePdf(bytes)) {
-    root.replaceChildren(el("p", "err", "That doesn't look like a PDF — capture an offering-memorandum PDF.")); // #65
+    root.replaceChildren(
+      el(
+        "p",
+        "err",
+        "That doesn't look like a PDF — capture an offering-memorandum PDF.",
+      ),
+    ); // #65
     return;
   }
   const capture: Capture = await captureFromBytes(bytes);
@@ -97,8 +132,24 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
     );
     return;
   }
-  const profile0 = (await getProfile()) ?? { broker: "", brokerage: "", license: "" };
+  const profile0 = (await getProfile()) ?? {
+    broker: "",
+    brokerage: "",
+    license: "",
+  };
   root.replaceChildren();
+
+  // #4 — this OM was empty-password permission-encrypted and we decrypted it in-browser to author.
+  // pd-lib can't re-encrypt, so the embedded copy will be unencrypted; tell the broker plainly.
+  if (capture.wasDecrypted) {
+    root.appendChild(
+      el(
+        "p",
+        "decrypted-notice",
+        "This OM was permission-encrypted; the extension decrypted it to embed. The published copy will be unencrypted.",
+      ),
+    );
+  }
 
   // A prior payload that FAILS integrity is not a reprice base — warn that this will be a fresh
   // assertion with no supersedes chain, so the broker is not surprised ([#87]).
@@ -138,18 +189,33 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const restored = await getDraft(sourceDocHash);
   let draft: Draft = restored ?? newDraft(capture.prior?.payload ?? {});
 
-  const profile = (): BrokerProfile => ({ broker: broker.value, brokerage: brokerage.value, license: license.value });
-  const prior = capture.prior ? { payloadHash: capture.prior.payloadHash ?? "", payload: capture.prior.payload ?? {} } : null;
+  const profile = (): BrokerProfile => ({
+    broker: broker.value,
+    brokerage: brokerage.value,
+    license: license.value,
+  });
+  const prior = capture.prior
+    ? {
+        payloadHash: capture.prior.payloadHash ?? "",
+        payload: capture.prior.payload ?? {},
+      }
+    : null;
 
   // On-device extraction (M5b-2): offer it only when a Prompt API is present; else a manual-entry note.
   const extractor = await pickExtractor([onDeviceExtractor]);
   if (extractor) {
-    const btn = el("button", "extract-btn", "Extract with on-device AI") as HTMLButtonElement;
+    const btn = el(
+      "button",
+      "extract-btn",
+      "Extract with on-device AI",
+    ) as HTMLButtonElement;
     btn.dataset.action = "extract";
     btn.addEventListener("click", () => void runExtract());
     root.appendChild(btn);
   } else {
-    root.appendChild(el("p", "no-ai", "On-device AI unavailable — enter fields manually."));
+    root.appendChild(
+      el("p", "no-ai", "On-device AI unavailable — enter fields manually."),
+    );
   }
 
   const formEl = el("section", "form"); // stable inputs, built once (focus-safe)
@@ -161,14 +227,30 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   // Re-render ONLY the derived panel (no inputs to lose focus). The Assert gate reflects the FINALIZED
   // payload — exactly what would be embedded — so the human approves the real assertion (#95).
   const renderDerivedNow = (): void => {
-    const finalized = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
+    const finalized = finalize(
+      draft,
+      profile(),
+      todayISO(),
+      prior && { payloadHash: prior.payloadHash },
+      sourceDocHash,
+    );
     const report = validate(finalized);
-    const diff = prior ? repriceDiff(prior.payload, finalized, prior.payloadHash) : null;
+    const diff = prior
+      ? repriceDiff(prior.payload, finalized, prior.payloadHash)
+      : null;
     renderDerived(derivedEl, draft, { report, diff, finalized });
     if (!profileComplete(profile())) {
-      derivedEl.appendChild(el("p", "profile-incomplete", "Complete the broker profile (broker, brokerage, license) to assert.")); // #97
+      derivedEl.appendChild(
+        el(
+          "p",
+          "profile-incomplete",
+          "Complete the broker profile (broker, brokerage, license) to assert.",
+        ),
+      ); // #97
     }
-    derivedEl.querySelector("#assert")?.addEventListener("click", () => void doAssert());
+    derivedEl
+      .querySelector("#assert")
+      ?.addEventListener("click", () => void doAssert());
   };
 
   // A field-level edit mutates the draft (source of truth), persists (#94), and refreshes the derived
@@ -192,22 +274,35 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
       void setDraft(sourceDocHash, draft);
       // The #93 noiType/noiAsOfDate controls are conditional on deal.noi — rebuild the form only when
       // noi crosses the empty↔set boundary (so those controls appear/disappear), else just re-derive.
-      if (p === "/deal/noi" && wasNoi !== (getField(draft, "/deal/noi") !== undefined)) buildFormNow();
+      if (
+        p === "/deal/noi" &&
+        wasNoi !== (getField(draft, "/deal/noi") !== undefined)
+      )
+        buildFormNow();
       renderDerivedNow();
     },
     onEvidence: (p, e) => edit((d) => setEvidence(d, p, e)),
-    onAddRentPeriod: () => rebuild((d) => appendArrayItem(d, "/lease/rentSchedule", { source: "extracted" })),
-    onRemoveRentPeriod: (i) => rebuild((d) => removeArrayItem(d, "/lease/rentSchedule", i)),
+    onAddRentPeriod: () =>
+      rebuild((d) =>
+        appendArrayItem(d, "/lease/rentSchedule", { source: "extracted" }),
+      ),
+    onRemoveRentPeriod: (i) =>
+      rebuild((d) => removeArrayItem(d, "/lease/rentSchedule", i)),
   };
 
   const buildFormNow = (): void => {
     buildForm(formEl, draft, callbacks);
     // The Advanced raw-JSON textarea is rebuilt with the form; (re)wire it on `change` (not `input`)
     // so committing raw JSON rebuilds the form once, without a rebuild on every keystroke.
-    const ta = formEl.querySelector("textarea.draft-json") as HTMLTextAreaElement | null;
+    const ta = formEl.querySelector(
+      "textarea.draft-json",
+    ) as HTMLTextAreaElement | null;
     ta?.addEventListener("change", () => {
       try {
-        rebuild(() => ({ payload: JSON.parse(ta.value) as Record<string, unknown>, evidence: draft.evidence }));
+        rebuild(() => ({
+          payload: JSON.parse(ta.value) as Record<string, unknown>,
+          evidence: draft.evidence,
+        }));
       } catch {
         status.textContent = "Draft is not valid JSON.";
       }
@@ -217,8 +312,19 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const doAssert = async (): Promise<void> => {
     try {
       await setProfile(profile());
-      const final = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
-      const out = await assertAndEmbed(final, capture.bytes, validate, embedViaSW);
+      const final = finalize(
+        draft,
+        profile(),
+        todayISO(),
+        prior && { payloadHash: prior.payloadHash },
+        sourceDocHash,
+      );
+      const out = await assertAndEmbed(
+        final,
+        capture.bytes,
+        validate,
+        embedViaSW,
+      );
       handBack(out, suggestedFilename(final)); // #99 — meaningful name from the property address
       void clearDraft(sourceDocHash); // #94 — the OM is embedded; drop the saved draft
       status.textContent = "Embedded — downloaded the OM.";
@@ -240,22 +346,31 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
       const result = await extractor.extract(pages);
       rebuild((d) => applyExtraction(d, result)); // reflect extracted fields in the form + derived
       // #66 — surface when only a prefix of a long OM was read; never a silent "complete".
-      const truncated = pages.length < totalPages ? ` (read pages 1–${pages.length} of ${totalPages} only)` : "";
+      const truncated =
+        pages.length < totalPages
+          ? ` (read pages 1–${pages.length} of ${totalPages} only)`
+          : "";
       status.textContent = `Extracted a draft — review every field before asserting.${truncated}`;
     } catch (e) {
       status.textContent = `Extraction failed: ${(e as Error).message}`;
     }
   };
 
-  for (const i of [broker, brokerage, license]) i.addEventListener("input", renderDerivedNow);
+  for (const i of [broker, brokerage, license])
+    i.addEventListener("input", renderDerivedNow);
   buildFormNow();
   renderDerivedNow();
 }
 
-async function embedViaSW(bytes: Uint8Array, payload: Record<string, unknown>): Promise<Uint8Array> {
-  const resp = (await chrome.runtime.sendMessage({ type: "author:embed", pdfB64: toB64(bytes), payload })) as
-    | { okB64: string }
-    | { error: string };
+async function embedViaSW(
+  bytes: Uint8Array,
+  payload: Record<string, unknown>,
+): Promise<Uint8Array> {
+  const resp = (await chrome.runtime.sendMessage({
+    type: "author:embed",
+    pdfB64: toB64(bytes),
+    payload,
+  })) as { okB64: string } | { error: string };
   if ("error" in resp) throw new Error(resp.error);
   return fromB64(resp.okB64);
 }
