@@ -1,4 +1,13 @@
-import { PDFDocument, AFRelationship, PDFName, PDFDict, PDFArray, PDFRef } from "pdf-lib";
+import {
+  PDFDocument,
+  AFRelationship,
+  PDFName,
+  PDFDict,
+  PDFArray,
+  PDFRef,
+  PDFString,
+  PDFHexString,
+} from "pdf-lib";
 import { preimageBytes, payloadHash } from "./hash.js";
 
 /**
@@ -22,6 +31,9 @@ export async function embedPayload(
   const hash = payloadHash(payload);
 
   const staged = await PDFDocument.load(pdfBytes);
+  // Idempotent re-embed ([OM-XMP-004]): strip any prior om.json + its /AF ref first, so a reprice
+  // replaces (never stacks a second attachment) — parity with the Python core's _remove_existing.
+  removeExistingOmJson(staged);
   // Pass the exact JCS bytes; never let the library re-serialize ([OM-EMB-010/022]).
   await staged.attach(bytes, "om.json", {
     mimeType: "application/ld+json",
@@ -43,6 +55,45 @@ export async function embedPayload(
   });
 
   return doc.save();
+}
+
+/** Decoded filename of a `/Filespec` dict (`/UF` preferred, else `/F`), or null. */
+function filespecName(fs: PDFDict): string | null {
+  const n = fs.lookup(PDFName.of("UF")) ?? fs.lookup(PDFName.of("F"));
+  return n instanceof PDFString || n instanceof PDFHexString ? n.decodeText() : null;
+}
+
+/**
+ * Remove any existing `om.json` attachment — its `/AF` reference AND its `/EmbeddedFiles` name-tree
+ * entry — so a re-embed replaces rather than stacks a second copy ([OM-XMP-004]). Mirrors the Python
+ * core's `_remove_existing`; without it, a reprice leaves a stale stream that fails the hash check.
+ */
+function removeExistingOmJson(doc: PDFDocument): void {
+  const context = doc.context;
+  const catalog = doc.catalog;
+
+  const af = catalog.lookup(PDFName.of("AF"));
+  if (af instanceof PDFArray) {
+    for (let i = af.size() - 1; i >= 0; i--) {
+      const fs = context.lookup(af.get(i));
+      if (fs instanceof PDFDict && filespecName(fs) === "om.json") af.remove(i);
+    }
+    if (af.size() === 0) catalog.delete(PDFName.of("AF"));
+  }
+
+  const names = catalog.lookup(PDFName.of("Names"));
+  const ef = names instanceof PDFDict ? names.lookup(PDFName.of("EmbeddedFiles")) : undefined;
+  const arr = ef instanceof PDFDict ? ef.lookup(PDFName.of("Names")) : undefined;
+  if (arr instanceof PDFArray) {
+    for (let i = arr.size() - 2; i >= 0; i -= 2) {
+      const nm = arr.get(i);
+      const decoded = nm instanceof PDFString || nm instanceof PDFHexString ? nm.decodeText() : null;
+      if (decoded === "om.json") {
+        arr.remove(i + 1); // value ref
+        arr.remove(i); // key name
+      }
+    }
+  }
 }
 
 /**
