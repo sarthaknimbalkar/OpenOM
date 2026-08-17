@@ -6,7 +6,7 @@ import {
   buildEnvelope,
   signHeaders,
   type Verification,
-} from "openom-js";
+} from "openom-js/webhook";
 
 export interface PublishArgs {
   event: string;
