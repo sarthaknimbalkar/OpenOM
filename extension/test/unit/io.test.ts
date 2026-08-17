@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getSettings, getWebhook, setWebhook } from "../../src/storage.js";
+import { getSettings, getWebhook, setWebhook, setLinkBadging, isLinkBadgingDomain } from "../../src/storage.js";
 import { refetchPdf } from "../../src/detect.js";
 import { guardedMirrorFetch, mirrorUrlFor } from "../../src/mirror.js";
 
@@ -52,7 +52,16 @@ describe("storage — chrome.storage.local only", () => {
   });
 
   test("settings default when unset", async () => {
-    expect(await getSettings()).toEqual({ linkBadging: false, proactiveDetection: false });
+    expect(await getSettings()).toEqual({ proactiveDetection: false, linkBadgingDomains: [] });
+  });
+
+  test("link-badging allowlist add/remove/dedup (#69)", async () => {
+    await setLinkBadging("buildout.com", true);
+    await setLinkBadging("buildout.com", true); // dedup
+    expect(await isLinkBadgingDomain("buildout.com")).toBe(true);
+    expect((await getSettings()).linkBadgingDomains).toEqual(["buildout.com"]);
+    await setLinkBadging("buildout.com", false);
+    expect(await isLinkBadgingDomain("buildout.com")).toBe(false);
   });
 });
 

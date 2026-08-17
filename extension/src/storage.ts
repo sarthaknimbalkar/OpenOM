@@ -6,13 +6,13 @@ export interface Webhook {
   secret: string;
 }
 export interface Settings {
-  /** §15 Q8: badge OM links on listing pages (opt-in per the privacy-conservative default). */
-  linkBadging: boolean;
   /** §15 Q8: detect + badge on navigation (opt-in; default is check-on-panel-open). [#84] */
   proactiveDetection: boolean;
+  /** §15 Q8: registrable domains (eTLD+1) where openOM links are badged (opt-in per domain). [#69] */
+  linkBadgingDomains: string[];
 }
 
-const DEFAULT_SETTINGS: Settings = { linkBadging: false, proactiveDetection: false };
+const DEFAULT_SETTINGS: Settings = { proactiveDetection: false, linkBadgingDomains: [] };
 
 const KEY_WEBHOOK = "openom.webhook";
 const KEY_SETTINGS = "openom.settings";
@@ -33,4 +33,18 @@ export async function getSettings(): Promise<Settings> {
 
 export async function setSettings(s: Settings): Promise<void> {
   await chrome.storage.local.set({ [KEY_SETTINGS]: s });
+}
+
+/** Is this registrable domain in the link-badging allowlist? [#69] */
+export async function isLinkBadgingDomain(domain: string): Promise<boolean> {
+  return (await getSettings()).linkBadgingDomains.includes(domain);
+}
+
+/** Add or remove a registrable domain from the link-badging allowlist (deduped). [#69] */
+export async function setLinkBadging(domain: string, on: boolean): Promise<void> {
+  const s = await getSettings();
+  const set = new Set(s.linkBadgingDomains);
+  if (on) set.add(domain);
+  else set.delete(domain);
+  await setSettings({ ...s, linkBadgingDomains: [...set] });
 }
