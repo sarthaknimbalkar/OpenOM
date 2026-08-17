@@ -5,6 +5,7 @@
   "description": "Detect, verify, and view openOM data embedded in commercial-real-estate PDFs.",
   "action": { "default_popup": "popup.html", "default_title": "openOM" },
   "background": { "service_worker": "service-worker.js", "type": "module" },
-  "permissions": ["activeTab", "storage", "scripting"],
+  "side_panel": { "default_path": "sidepanel.html" },
+  "permissions": ["activeTab", "storage", "scripting", "sidePanel"],
   "host_permissions": ["https://*/*"]
 }

@@ -31,4 +31,5 @@ async function one(input, name, first) {
 
 await one(resolve(root, "src/service-worker.ts"), "service-worker", true);
 await one(resolve(root, "src/popup/popup.ts"), "popup", false);
-console.log("built dist (service-worker + popup, dynamic imports inlined)");
+await one(resolve(root, "src/author/panel.ts"), "sidepanel", false);
+console.log("built dist (service-worker + popup + sidepanel, dynamic imports inlined)");
