@@ -165,5 +165,21 @@ codegen) — both forced by the MV3 CSP and proven by a real-browser Playwright 
 publish HMAC over a self-signed HTTPS harness). `assert-no-inference` over `extension/dist` keeps the
 consumer bundle inference-free (cardinal rule holds).
 
-**Next milestone: M5b** (author mode — capture/review/embed over `process/review-contract.md`;
-extends `/extension`). M2/M3/M4/M5a all shipped.
+**M5b gate [OM-DoD-007] met** (2026-08-17). Author mode shipped in two sub-projects, extending the
+`/extension` shell. **B1 (deterministic):** side-panel capture (re-fetch/file) → review panel
+rendering `process/review-contract.md` (per-field value+evidence, omissions, residual warnings,
+reprice diff) → explicit human assert (stamps `assertedBy`/`assertedDate`, promotes rent
+`source: extracted→asserted`, `meta.supersedes` on reprice) → embed via `/js` → blob-download. **B2
+(on-device extraction):** an `Extractor` seam isolates inference to one adapter — the browser Prompt
+API (`LanguageModel`/`window.ai`, a global, not an npm dep) — that pre-fills the draft with evidence
+(`source: extracted`); text comes from a worker-agnostic pdf.js pass (`js/src/text.ts`); the hosted
+path is a throwing seam (§15 Q2); the review panel stays the human assertion gate (confidence is
+never consent). Proven by the live author gate (12/12 Playwright): fresh/gated/reprice embed +
+**[OM-PRIV-001] egress-zero** (0 off-device requests during extraction, via an injected fake
+`LanguageModel` exercising the real adapter — the real Gemini Nano can't run in CI, stated not faked).
+The gate also caught + fixed a latent `/js` non-idempotent re-embed bug (cross-impl parity restored).
+
+**Next: adoption / GA hardening** — real-OM corpus proofs (#20/#22), the non-destructive
+incremental-save embed for real fixtures ([OM-EMB-020]), the webhook envelope schema+validator (#14),
+and the hosted inference-extraction service (the sole paid product, a separate Vervelio build).
+M2/M3/M4/M5a/M5b all shipped.
