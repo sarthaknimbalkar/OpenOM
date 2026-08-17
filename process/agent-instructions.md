@@ -34,8 +34,10 @@
    error). For every `OMW-W###` (consistency warning), **re-read the source** — a warning means a
    number you transcribed is internally inconsistent, i.e. probably wrong. Do **not** silence it.
    Loop until schema-clean and warning-clean (or a residual warning is explained to the reviewer).
-6. **Stop for human review** — you MUST NOT self-assert. Present to a human: the full payload, the
-   source evidence for each field, and any residual warnings. Wait for explicit approval.
+6. **Stop for human review** — you MUST NOT self-assert. Present exactly what
+   [`./review-contract.md`](./review-contract.md) requires: per-field value + source evidence +
+   `source` tag, deliberate omissions, residual warnings, and (on reprice) a diff vs the prior
+   payload. Wait for explicit approval.
 7. **Assert & embed** — on approval: set `assertedBy` to the reviewing broker, set `assertedDate`
    (today), confirm `noiType`/`noiAsOfDate`, and promote each rentPeriod `source`
    `"extracted"` → `"asserted"`. Then call `om_embed(pdf, payload, assertedDate)`. On a reprice,
