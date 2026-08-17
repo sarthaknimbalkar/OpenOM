@@ -3,12 +3,18 @@
 // that reads the clock (assertedDate) and touches chrome.* / the DOM runtime; every transform it calls
 // (capture / draft / finalize / repriceDiff / assertAndEmbed) is pure and unit-tested. The workflow
 // validates the FINALIZED-shape payload (what would be embedded), so the Assert gate is honest.
-import { extractPageText, setPdfWorkerSrc, validatePayload, type ValidationReport } from "openom-js";
+import {
+  extractPageText,
+  integrityHashOfBytes,
+  setPdfWorkerSrc,
+  validatePayload,
+  type ValidationReport,
+} from "openom-js";
 import schema from "../../../spec/om-0.1.schema.json";
 import { precompiledValidate } from "../validator.js";
 import { captureFromBytes, type Capture } from "./capture.js";
 import { newDraft, type Draft } from "./draft.js";
-import { getProfile, setProfile, type BrokerProfile } from "./profile.js";
+import { getProfile, setProfile, profileComplete, type BrokerProfile } from "./profile.js";
 import { finalize, assertAndEmbed, handBack } from "./assert.js";
 import { renderReview, repriceDiff } from "./review-panel.js";
 import { applyExtraction } from "./extract/apply.js";
@@ -121,6 +127,7 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
 
   const profile = (): BrokerProfile => ({ broker: broker.value, brokerage: brokerage.value, license: license.value });
   const prior = capture.prior ? { payloadHash: capture.prior.payloadHash ?? "", payload: capture.prior.payload ?? {} } : null;
+  const sourceDocHash = integrityHashOfBytes(capture.bytes); // #96 — provenance of the source doc
 
   // The draft (payload + evidence) is the source of truth so extracted evidence survives re-renders;
   // the textarea edits only the payload half. Extraction confidence is never consent — the human still
@@ -128,17 +135,21 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   let draft: Draft = newDraft(capture.prior?.payload ?? {});
 
   const rerender = (): void => {
-    const preview = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash });
+    const preview = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
     const report = validate(preview);
     const diff = prior ? repriceDiff(prior.payload, preview, prior.payloadHash) : null;
     renderReview(review, draft, { report, diff });
+    // #97 — a distinct cue when the ONLY thing blocking Assert is an incomplete broker profile.
+    if (!profileComplete(profile())) {
+      review.appendChild(el("p", "profile-incomplete", "Complete the broker profile (broker, brokerage, license) to assert."));
+    }
     review.querySelector("#assert")?.addEventListener("click", () => void doAssert());
   };
 
   const doAssert = async (): Promise<void> => {
     try {
       await setProfile(profile());
-      const final = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash });
+      const final = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
       const out = await assertAndEmbed(final, capture.bytes, validate, embedViaSW);
       handBack(out, "openom-embedded.pdf");
       status.textContent = "Embedded — downloaded openom-embedded.pdf";
