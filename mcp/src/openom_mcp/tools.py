@@ -153,6 +153,24 @@ def _load_pdf(ref: Any) -> bytes:
     return data
 
 
+# Untrusted-PDF parse budget on the hosted transport ([OM-SEC-010], [OM-MCP-008]).
+_PARSE_TIMEOUT_S = 30.0
+_PARSE_MEMORY_MB = 2048
+
+
+def _run_core(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """Run a core parse verb. On the hosted transport it runs in a killable, memory-bounded
+    subprocess so a malicious PDF that hangs/OOMs a C parser cannot take down the host (timeout →
+    OM-IO-003, crash → OM-IO-010). On stdio the input is trusted-local, so it runs inline."""
+    if _resolver().transport != "http":
+        return func(*args, **kwargs)
+    from .guard import bounded_call  # lazy: avoids a tools<->guard import cycle
+
+    return bounded_call(
+        func, args, kwargs=kwargs, timeout=_PARSE_TIMEOUT_S, memory_mb=_PARSE_MEMORY_MB
+    )
+
+
 def _load_schema() -> dict[str, Any]:
     data: dict[str, Any] = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     return data
@@ -161,7 +179,7 @@ def _load_schema() -> dict[str, Any]:
 @_guard
 def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
     """Read-only: classify + profile the document (§I OM-MCP-010)."""
-    profile = _inspect(_load_pdf(pdf))
+    profile = _run_core(_inspect, _load_pdf(pdf))
     payload = dict(profile["payload"])
     payload["originVerified"] = None  # §10 layer-3 check is M3; null = not checked
     return {
@@ -177,7 +195,7 @@ def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
 @_guard
 def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
     """Read-only: the cheap consumer path (§I OM-MCP-011)."""
-    result = _read(_load_pdf(pdf))
+    result = _run_core(_read, _load_pdf(pdf))
     # A hash-mismatched payload MUST be surfaced as null, never as trusted (OM-MCP-011).
     trusted = result.present and result.hash_valid is not False
     payload = result.payload if trusted else None
@@ -199,7 +217,9 @@ def om_extract_text(
 ) -> dict[str, Any]:
     """Read-only, paginated text + best-effort tables (§I OM-MCP-012)."""
     data = _load_pdf(pdf)
-    return dict(_extract_text(data, page_range=page_range, max_chars=max_chars, cursor=cursor))
+    return dict(
+        _run_core(_extract_text, data, page_range=page_range, max_chars=max_chars, cursor=cursor)
+    )
 
 
 @_guard
@@ -211,7 +231,7 @@ def om_extract_images(
 ) -> dict[str, Any]:
     """Read-only: manifest + local paths, never inline bytes (§I OM-MCP-013)."""
     dest = Path(out_dir) if out_dir else Path(tempfile.mkdtemp(prefix="openom_img_"))
-    result = _extract_images(_load_pdf(pdf), out_dir=dest)
+    result = _run_core(_extract_images, _load_pdf(pdf), out_dir=dest)
     manifest = []
     for img in result["images"]:
         if img["error"] is not None:
@@ -267,7 +287,7 @@ def om_embed(
             details={"errors": [dataclasses.asdict(f) for f in report.errors]},
         )
     asserted_date = str(payload.get("assertedDate", ""))
-    out_bytes = _embed(_load_pdf(pdf), payload, asserted_date=asserted_date, badge=badge)
+    out_bytes = _run_core(_embed, _load_pdf(pdf), payload, asserted_date=asserted_date, badge=badge)
 
     resolver = _resolver()
     if resolver.transport == "http" and resolver.blobstore is not None:
