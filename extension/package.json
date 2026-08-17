@@ -7,6 +7,7 @@
   "scripts": {
     "gen": "node scripts/gen-validator.mjs",
     "build": "node build.mjs",
+    "package": "node scripts/package.mjs",
     "pretest:unit": "node scripts/gen-validator.mjs",
     "test:unit": "vitest run",
     "pretest:consumer": "node build.mjs",
