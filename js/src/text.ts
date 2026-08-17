@@ -18,15 +18,20 @@ export async function setPdfWorkerSrc(src: string): Promise<void> {
   pdfjs.GlobalWorkerOptions.workerSrc = src;
 }
 
-/**
- * Extract text for pages 1..min(numPages, maxPages). Over-cap pages are omitted; the caller compares
- * the returned length to the document length to surface truncation (never silently "complete").
- */
-export async function extractPageText(bytes: Uint8Array, maxPages = 40): Promise<PageText[]> {
+export interface PageTextResult {
+  /** Extracted pages (1..min(totalPages, maxPages)). */
+  pages: PageText[];
+  /** The document's TRUE page count — so the caller can tell it read only a prefix (never silent). */
+  totalPages: number;
+}
+
+/** Extract text for pages 1..min(totalPages, maxPages), reporting the true page count for truncation. */
+export async function extractPageText(bytes: Uint8Array, maxPages = 40): Promise<PageTextResult> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const pdf = await pdfjs.getDocument({ data: bytes.slice(), verbosity: 0 }).promise;
   try {
-    const last = Math.min(pdf.numPages, maxPages);
+    const totalPages = pdf.numPages;
+    const last = Math.min(totalPages, maxPages);
     const pages: PageText[] = [];
     for (let p = 1; p <= last; p++) {
       const content = await (await pdf.getPage(p)).getTextContent();
@@ -35,7 +40,7 @@ export async function extractPageText(bytes: Uint8Array, maxPages = 40): Promise
         text: layoutText(content.items as Array<{ str?: string; transform?: number[] }>),
       });
     }
-    return pages;
+    return { pages, totalPages };
   } finally {
     await pdf.destroy();
   }

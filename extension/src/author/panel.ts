@@ -161,13 +161,19 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const runExtract = async (): Promise<void> => {
     if (!extractor) return;
     try {
-      const pages = await extractPageText(capture.bytes);
+      const { pages, totalPages } = await extractPageText(capture.bytes);
+      // #91 — a scanned/flattened OM has no text layer; say so instead of pre-filling a blank draft.
+      if (!pages.some((p) => p.text.trim().length > 0)) {
+        status.textContent =
+          "This OM appears to be scanned (no text layer) — extraction can't read it. Enter fields manually.";
+        return;
+      }
       const result = await extractor.extract(pages);
       draft = applyExtraction(draft, result);
       ta.value = JSON.stringify(draft.payload, null, 2);
-      status.textContent = result.truncatedAfterPage
-        ? `Read pages 1–${result.truncatedAfterPage} only — review the rest by hand.`
-        : "Extracted a draft — review every field before asserting.";
+      // #66 — surface when only a prefix of a long OM was read; never a silent "complete".
+      const truncated = pages.length < totalPages ? ` (read pages 1–${pages.length} of ${totalPages} only)` : "";
+      status.textContent = `Extracted a draft — review every field before asserting.${truncated}`;
       rerender();
     } catch (e) {
       status.textContent = `Extraction failed: ${(e as Error).message}`;
