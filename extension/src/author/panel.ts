@@ -44,15 +44,19 @@ export function renderCaptureScreen(root: HTMLElement): void {
 
 async function captureFromTab(root: HTMLElement): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url) return;
-  const resp = (await chrome.runtime.sendMessage({ type: "author:fetch", url: tab.url })) as
+  if (tab?.url) await captureFromUrl(root, tab.url);
+}
+
+/** Fetch a URL's PDF bytes (SW-side, page-CSP-immune) and start review. Also the ?url= deep-link. */
+async function captureFromUrl(root: HTMLElement, url: string): Promise<void> {
+  const resp = (await chrome.runtime.sendMessage({ type: "author:fetch", url })) as
     | { b64: string | null }
     | { error: string };
   if ("error" in resp || !resp.b64) {
-    root.appendChild(el("p", "err", "Could not fetch this page's PDF bytes."));
+    root.replaceChildren(el("p", "err", "Could not fetch this page's PDF bytes."));
     return;
   }
-  startReview(root, fromB64(resp.b64));
+  await startReview(root, fromB64(resp.b64));
 }
 
 /** Build the review workspace: profile form + draft JSON + live-validated review render + Assert. */
@@ -148,5 +152,11 @@ function fromB64(b64: string): Uint8Array {
 // ---- runtime bootstrap (guarded so jsdom/unit imports don't require chrome) ----
 if (typeof chrome !== "undefined" && chrome.runtime?.id) {
   const root = document.getElementById("author");
-  if (root) renderCaptureScreen(root);
+  if (root) {
+    // ?url= deep-link auto-captures (used by the live gate and as a shareable "embed this" link);
+    // otherwise show the capture screen (current tab / file picker).
+    const override = new URLSearchParams(location.search).get("url");
+    if (override) void captureFromUrl(root, override);
+    else renderCaptureScreen(root);
+  }
 }
