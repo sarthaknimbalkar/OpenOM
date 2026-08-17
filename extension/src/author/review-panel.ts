@@ -98,6 +98,9 @@ export function renderDerived(container: HTMLElement, draft: Draft, view: Derive
   preview.appendChild(el("h2", undefined, "Will be embedded"));
   const pre = el("pre", "finalized-json");
   pre.textContent = stableStringify(finalized);
+  pre.tabIndex = 0; // a scrollable region must be keyboard-focusable (#71 / axe)
+  pre.setAttribute("role", "region");
+  pre.setAttribute("aria-label", "Payload that will be embedded");
   preview.appendChild(pre);
   container.appendChild(preview);
 

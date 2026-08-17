@@ -57,6 +57,8 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
   root.replaceChildren();
 
   const badge = el("div", `badge badge-${result.state}`);
+  badge.setAttribute("role", "status"); // #71 — announce the trust state to assistive tech
+  badge.setAttribute("aria-label", `${result.label}. ${result.caption}`);
   badge.appendChild(el("strong", "badge-label", result.label));
   badge.appendChild(el("span", "badge-caption", result.caption));
   root.appendChild(badge);
@@ -142,6 +144,7 @@ function wireButtons(root: HTMLElement, result: DetectResult): void {
   const secret = () => (root.querySelector("input.wh-secret") as HTMLInputElement | null)?.value ?? "";
   const status = document.createElement("p");
   status.className = "status";
+  status.setAttribute("aria-live", "polite"); // #71 — announce publish/test-fire outcomes
   root.appendChild(status);
 
   const args = () => ({
