@@ -67,3 +67,11 @@ def test_every_code_named_in_the_guide_is_real() -> None:
     unknown = cited - known
     assert not unknown, f"guide cites codes the validator does not emit: {sorted(unknown)}"
     assert cited, "the guide should cite at least the consistency codes it explains"
+
+
+def test_guide_states_omit_and_flag_convention() -> None:
+    # #62: ambiguity handling — omit-and-flag, never guess; NOI-basis ambiguity called out.
+    low = GUIDE.lower()
+    assert "omit the field" in low
+    assert "never guess" in low or "not guess" in low
+    assert "noi basis" in low or "noi_basis" in low or "noi basis ambiguity" in low
