@@ -89,7 +89,11 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   // #107 — pd-lib can't load an encrypted PDF, so embedding would fail opaquely later. Say so now.
   if (capture.encrypted) {
     root.replaceChildren(
-      el("p", "err", "This OM is encrypted — openOM can't embed into it. Ask for an unencrypted copy."),
+      el(
+        "p",
+        "err",
+        "This OM is encrypted — the browser extension can't embed into it. Use the openOM CLI (which handles encrypted OMs), or ask for an unencrypted copy.",
+      ),
     );
     return;
   }

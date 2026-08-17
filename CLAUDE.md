@@ -193,7 +193,19 @@ Assert blur-race. **#74** (chrome.downloads interception) **deferred by decision
 not worth the broad `downloads` permission). **#75** (real Prompt-API hand-verify) **environment-blocked**
 (needs a machine with Gemini Nano running). See GitHub #63–#103.
 
-**Next: adoption / GA hardening** — real-OM corpus proofs (#20/#22), the non-destructive
-incremental-save embed for real fixtures ([OM-EMB-020]), the webhook envelope schema+validator (#14),
+**Real-OM evidence (2026-08-18).** Against a **1330-OM corpus across ~60 producers** (Adobe/InDesign,
+Acrobat, iText, Prince, Word/Publisher/PowerPoint, Buildout.com, Ghostscript, Quartz/macOS, scanned/
+RICOH — local, gitignored `OMs/`): the extension's `/js` embed is **non-destructive on 1203/1331**
+(zero structural change on any producer) and **pixel-identical** (ssim 1, maxdiff 0) on a
+one-per-producer visual spot-check — so [OM-DoD-001] non-destructiveness holds across real producers,
+and the M1/M5b real-OM outcome bars are met with evidence. The only failure mode is **encryption**
+(128, ~10%): pd-lib can't load encrypted PDFs so the *browser* refuses them gracefully (#107, points
+to the CLI), but the **Python core embeds them** (hash-valid round-trip) — so the standard covers 100%.
+Harness: `node js/scripts/real-om-fast.mjs`. A committed synthetic non-destructive test (#105) guards
+this in CI without the private corpus. #14 (envelope schema+validator) shipped.
+
+**Next: adoption / GA hardening** — full-extension encrypted-embed (#4, needs an in-browser PDF
+decryptor; CLI covers it today), the truly-incremental byte-preserving save ([OM-EMB-020], YAGNI given
+the load→save evidence — matters only for signed OMs), Web-Store submission (packaging shipped, #104),
 and the hosted inference-extraction service (the sole paid product, a separate Vervelio build).
-M2/M3/M4/M5a/M5b all shipped; M5 at peak.
+M2/M3/M4/M5a/M5b all shipped; M5 at peak; embed proven on real OMs across producers.
