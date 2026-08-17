@@ -25,6 +25,13 @@ function resp(body: Uint8Array, ok = true, headers: Record<string, string> = {})
   return {
     ok,
     headers: { get: (k: string) => headers[k.toLowerCase()] ?? null },
+    // A real ReadableStream so refetchPdf exercises its streaming byte-cap path (#67).
+    body: new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(body);
+        c.close();
+      },
+    }),
     arrayBuffer: async () => body.buffer,
   } as unknown as Response;
 }
@@ -57,6 +64,12 @@ describe("refetchPdf — re-fetch bytes, size-capped", () => {
   test("null when over the byte cap", async () => {
     const big = new Uint8Array(2000);
     expect(await refetchPdf("https://h/x.pdf", 1000, async () => resp(big))).toBeNull();
+  });
+  test("streams and caps a body with NO content-length header (#67)", async () => {
+    const big = new Uint8Array(2000); // no content-length → old code buffered it all before checking
+    expect(await refetchPdf("https://h/x.pdf", 1000, async () => resp(big))).toBeNull();
+    const ok = new Uint8Array([1, 2, 3]);
+    expect(await refetchPdf("https://h/x.pdf", 1000, async () => resp(ok))).toEqual(ok);
   });
   test("null when declared content-length exceeds the cap", async () => {
     const got = await refetchPdf("https://h/x.pdf", 1000, async () => resp(PDF, true, { "content-length": "9999" }));
