@@ -80,8 +80,10 @@ function fieldRow(desc: FieldDescriptor, draft: Draft, flagged: Set<string>, cb:
   const row = el("div", "review-field");
   row.appendChild(el("label", "field-label", desc.label));
   const control = makeControl(desc, getField(draft, desc.path));
+  // `input` only (fires for text/number/date/select/checkbox in modern browsers). Deliberately NOT
+  // `change`: a change on blur would re-render the derived panel mid-click and replace #assert,
+  // making the Assert click miss its own target.
   control.addEventListener("input", () => cb.onField(desc.path, readControl(desc, control)));
-  control.addEventListener("change", () => cb.onField(desc.path, readControl(desc, control)));
   row.appendChild(control);
 
   // evidence

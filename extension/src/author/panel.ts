@@ -19,6 +19,7 @@ import {
   setEvidence,
   appendArrayItem,
   removeArrayItem,
+  getField,
   type Draft,
 } from "./draft.js";
 import { getProfile, setProfile, profileComplete, type BrokerProfile } from "./profile.js";
@@ -170,7 +171,15 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   };
 
   const callbacks: FormCallbacks = {
-    onField: (p, v) => edit((d) => setField(d, p, v)),
+    onField: (p, v) => {
+      const wasNoi = getField(draft, "/deal/noi") !== undefined;
+      draft = setField(draft, p, v);
+      void setDraft(sourceDocHash, draft);
+      // The #93 noiType/noiAsOfDate controls are conditional on deal.noi — rebuild the form only when
+      // noi crosses the empty↔set boundary (so those controls appear/disappear), else just re-derive.
+      if (p === "/deal/noi" && wasNoi !== (getField(draft, "/deal/noi") !== undefined)) buildFormNow();
+      renderDerivedNow();
+    },
     onEvidence: (p, e) => edit((d) => setEvidence(d, p, e)),
     onAddRentPeriod: () => rebuild((d) => appendArrayItem(d, "/lease/rentSchedule", { source: "extracted" })),
     onRemoveRentPeriod: (i) => rebuild((d) => removeArrayItem(d, "/lease/rentSchedule", i)),
