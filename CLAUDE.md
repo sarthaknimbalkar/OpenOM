@@ -179,7 +179,21 @@ never consent). Proven by the live author gate (12/12 Playwright): fresh/gated/r
 `LanguageModel` exercising the real adapter — the real Gemini Nano can't run in CI, stated not faked).
 The gate also caught + fixed a latent `/js` non-idempotent re-embed bug (cross-impl parity restored).
 
+**M5 driven to peak** (2026-08-18). A full audit → issue → fix sweep across all four M5 parts +
+shared shell: **39 of 41 peak issues (#63–#103) resolved**, each TDD'd (js 211 · ext 91 unit ·
+live gate 19/19 incl. 3 axe a11y audits + a real-page link-badging test · cross-impl 6/6 ·
+inference-free throughout). Highlights: §Y made two-sided + SSRF-encoding-proof (`verifyWebhookSignature`,
+constant-time compare); on-device extraction made trustworthy (human-only-field guard, prompt-injection
+fence) AND usable on real OMs (context chunking, table-aware text); the raw-JSON author editor replaced
+by a schema-driven form (+ noiType/noiAsOfDate gate controls + finalized preview); a full design system
++ WCAG-AA a11y (axe-gated); an options page + opt-in proactive detection + per-domain link-badging
+content script; popup bundle 664KB→14KB. Latent bugs fixed along the way: `setField` array corruption,
+UTC assertedDate, non-idempotent JS re-embed, per-tab badge, PSL private-suffix origin cross-vouch, an
+Assert blur-race. **#74** (chrome.downloads interception) **deferred by decision** (adds only a trigger;
+not worth the broad `downloads` permission). **#75** (real Prompt-API hand-verify) **environment-blocked**
+(needs a machine with Gemini Nano running). See GitHub #63–#103.
+
 **Next: adoption / GA hardening** — real-OM corpus proofs (#20/#22), the non-destructive
 incremental-save embed for real fixtures ([OM-EMB-020]), the webhook envelope schema+validator (#14),
 and the hosted inference-extraction service (the sole paid product, a separate Vervelio build).
-M2/M3/M4/M5a/M5b all shipped.
+M2/M3/M4/M5a/M5b all shipped; M5 at peak.
