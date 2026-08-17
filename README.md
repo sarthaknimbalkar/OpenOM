@@ -65,6 +65,21 @@ om read     out.pdf
 om validate deal.json --schema spec/om-0.1.schema.json
 ```
 
+## Browser extension (consumer + author)
+
+The MV3 Chrome extension detects/verifies openOM data on any PDF and lets a broker embed data into an
+OM without the CLI. Chrome **116+**.
+
+```bash
+npm --prefix js install && npm --prefix extension install
+npm --prefix extension run build      # → extension/dist (load this unpacked)
+npm --prefix extension run package    # → extension/openom-extension-<version>.zip (Web Store upload)
+```
+
+**Install (until it's on the Web Store):** open `chrome://extensions`, enable **Developer mode**, click
+**Load unpacked**, and select `extension/dist`. Consumer mode is the toolbar popup; author mode opens
+from the popup's **“Embed a payload…”** button (a side panel).
+
 ## Development
 
 ```bash
