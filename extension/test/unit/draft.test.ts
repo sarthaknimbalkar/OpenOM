@@ -5,6 +5,8 @@ import {
   setEvidence,
   omissions,
   fieldsWithoutEvidence,
+  appendArrayItem,
+  removeArrayItem,
 } from "../../src/author/draft.js";
 
 describe("draft model — immutable payload + per-field evidence", () => {
@@ -45,5 +47,16 @@ describe("draft model — immutable payload + per-field evidence", () => {
     const schedule = (d.payload.lease as Record<string, unknown>).rentSchedule as unknown[];
     expect(schedule).toHaveLength(2);
     expect(schedule[1]).toEqual({ annualRent: 110 });
+  });
+
+  test("appendArrayItem / removeArrayItem are immutable and array-safe", () => {
+    const d0 = newDraft();
+    let d = appendArrayItem(d0, "/lease/rentSchedule", { source: "extracted" });
+    expect(Array.isArray((d.payload.lease as Record<string, unknown>).rentSchedule)).toBe(true);
+    d = appendArrayItem(d, "/lease/rentSchedule", { source: "extracted" });
+    expect((d.payload.lease as Record<string, unknown[]>).rentSchedule).toHaveLength(2);
+    d = removeArrayItem(d, "/lease/rentSchedule", 0);
+    expect((d.payload.lease as Record<string, unknown[]>).rentSchedule).toHaveLength(1);
+    expect(d0.payload).toEqual({}); // original untouched
   });
 });
