@@ -7,5 +7,6 @@
   "background": { "service_worker": "service-worker.js", "type": "module" },
   "side_panel": { "default_path": "sidepanel.html" },
   "permissions": ["activeTab", "storage", "scripting", "sidePanel"],
-  "host_permissions": ["https://*/*"]
+  "host_permissions": ["https://*/*"],
+  "web_accessible_resources": [{ "resources": ["pdf.worker.mjs"], "matches": ["<all_urls>"] }]
 }
