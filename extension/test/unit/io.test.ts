@@ -52,7 +52,7 @@ describe("storage — chrome.storage.local only", () => {
   });
 
   test("settings default when unset", async () => {
-    expect(await getSettings()).toEqual({ linkBadging: false });
+    expect(await getSettings()).toEqual({ linkBadging: false, proactiveDetection: false });
   });
 });
 

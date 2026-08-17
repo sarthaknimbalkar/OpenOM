@@ -6,8 +6,13 @@ export interface Webhook {
   secret: string;
 }
 export interface Settings {
+  /** §15 Q8: badge OM links on listing pages (opt-in per the privacy-conservative default). */
   linkBadging: boolean;
+  /** §15 Q8: detect + badge on navigation (opt-in; default is check-on-panel-open). [#84] */
+  proactiveDetection: boolean;
 }
+
+const DEFAULT_SETTINGS: Settings = { linkBadging: false, proactiveDetection: false };
 
 const KEY_WEBHOOK = "openom.webhook";
 const KEY_SETTINGS = "openom.settings";
@@ -23,7 +28,7 @@ export async function setWebhook(w: Webhook): Promise<void> {
 
 export async function getSettings(): Promise<Settings> {
   const r = await chrome.storage.local.get(KEY_SETTINGS);
-  return (r[KEY_SETTINGS] as Settings | undefined) ?? { linkBadging: false };
+  return { ...DEFAULT_SETTINGS, ...((r[KEY_SETTINGS] as Partial<Settings> | undefined) ?? {}) };
 }
 
 export async function setSettings(s: Settings): Promise<void> {
