@@ -37,7 +37,8 @@ test("fresh embed → produced OM carries the asserted payload", async ({ contex
   expect(read.verification.hashValid).toBe(true);
   const p = read.payload as Record<string, Record<string, unknown>>;
   expect(p.assertedBy.broker).toBe("Jane Broker");
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date(); // assertedDate is the broker's LOCAL calendar date (#64), not UTC
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   expect(p.assertedDate).toBe(today);
 });
 

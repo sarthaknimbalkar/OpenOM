@@ -18,19 +18,29 @@ export function newDraft(seed?: Record<string, unknown>): Draft {
   return { payload: seed ? structuredClone(seed) : {}, evidence: {} };
 }
 
-/** Immutably set a JSON-pointer leaf, cloning objects along the path. */
+/**
+ * Immutably set a JSON-pointer leaf, cloning containers along the path. A numeric token creates (or
+ * keeps) an ARRAY, a non-numeric one an OBJECT — so `/lease/rentSchedule/0/annualRent` builds a real
+ * array, not `{"0":…}` ([#86]).
+ */
 export function setField(d: Draft, path: string, value: unknown): Draft {
   const tokens = tokensOf(path);
   const payload = structuredClone(d.payload);
   let node: Record<string, unknown> = payload;
   for (let i = 0; i < tokens.length - 1; i++) {
     const k = tokens[i];
-    const next = node[k];
-    node[k] = typeof next === "object" && next !== null ? next : {};
+    const wantArray = isIndex(tokens[i + 1]); // the NEXT token decides this container's shape
+    const cur = node[k];
+    if (typeof cur !== "object" || cur === null) node[k] = wantArray ? [] : {};
     node = node[k] as Record<string, unknown>;
   }
-  node[tokens[tokens.length - 1]] = value;
+  node[tokens[tokens.length - 1]] = value; // string or numeric key; arrays index the same way
   return { payload, evidence: d.evidence };
+}
+
+/** A JSON-pointer token that addresses an array position (non-negative integer, no leading zeros). */
+function isIndex(token: string): boolean {
+  return token === "0" || /^[1-9]\d*$/.test(token);
 }
 
 export function setEvidence(d: Draft, path: string, ev: FieldEvidence): Draft {

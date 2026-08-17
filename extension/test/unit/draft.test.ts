@@ -31,4 +31,19 @@ describe("draft model — immutable payload + per-field evidence", () => {
     const d = setField(newDraft(), "/deal/noi", 100);
     expect(omissions(d, ["/deal/noi", "/deal/askingPrice"])).toEqual(["/deal/askingPrice"]);
   });
+
+  test("a numeric pointer token builds an ARRAY, not an object (#86)", () => {
+    const d = setField(newDraft(), "/lease/rentSchedule/0/annualRent", 100);
+    const schedule = (d.payload.lease as Record<string, unknown>).rentSchedule;
+    expect(Array.isArray(schedule)).toBe(true);
+    expect((schedule as Record<string, unknown>[])[0]).toEqual({ annualRent: 100 });
+  });
+
+  test("appending consecutive array indices extends the array (#86)", () => {
+    let d = setField(newDraft(), "/lease/rentSchedule/0/annualRent", 100);
+    d = setField(d, "/lease/rentSchedule/1/annualRent", 110);
+    const schedule = (d.payload.lease as Record<string, unknown>).rentSchedule as unknown[];
+    expect(schedule).toHaveLength(2);
+    expect(schedule[1]).toEqual({ annualRent: 110 });
+  });
 });
