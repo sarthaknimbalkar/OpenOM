@@ -18,3 +18,8 @@ export async function getProfile(): Promise<BrokerProfile | null> {
 export async function setProfile(p: BrokerProfile): Promise<void> {
   await chrome.storage.local.set({ [KEY_PROFILE]: p });
 }
+
+/** All three assertedBy members present (non-blank)? The gate needs a complete identity ([#97]). */
+export function profileComplete(p: BrokerProfile): boolean {
+  return [p.broker, p.brokerage, p.license].every((v) => typeof v === "string" && v.trim().length > 0);
+}

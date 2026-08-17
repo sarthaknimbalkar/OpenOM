@@ -20,6 +20,7 @@ export function finalize(
   profile: BrokerProfile,
   today: string,
   prior: { payloadHash: string } | null,
+  sourceDocHash?: string,
 ): Record<string, unknown> {
   const p = structuredClone(draft.payload);
   p["@context"] = CONTEXT;
@@ -30,6 +31,8 @@ export function finalize(
 
   const meta = (typeof p.meta === "object" && p.meta !== null ? p.meta : {}) as Record<string, unknown>;
   meta.supersedes = prior ? prior.payloadHash : (meta.supersedes ?? null);
+  // Provenance: record the hash of the source document this payload was asserted against ([#96]).
+  if (sourceDocHash) meta.sourceDocHash = sourceDocHash;
   p["meta"] = meta;
 
   const lease = p.lease as { rentSchedule?: Record<string, unknown>[] } | undefined;

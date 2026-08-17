@@ -17,6 +17,7 @@ import { refetchPdf } from "./detect.js";
 import { guardedMirrorFetch, mirrorUrlFor } from "./mirror.js";
 import { classifyStale } from "./stale.js";
 import { precompiledValidate } from "./validator.js";
+import { assertEmbeddable } from "./author/embed-guard.js";
 
 export interface DetectResult {
   state: BadgeState;
@@ -165,7 +166,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
       return true;
     }
     if (msg?.type === "author:embed" && typeof msg.pdfB64 === "string" && msg.payload) {
-      embedPayload(fromB64(msg.pdfB64), msg.payload as Record<string, unknown>)
+      const payload = msg.payload as Record<string, unknown>;
+      Promise.resolve()
+        .then(() => {
+          assertEmbeddable(payload, schema as Record<string, unknown>, precompiledValidate); // #98
+          return embedPayload(fromB64(msg.pdfB64), payload);
+        })
         .then((out) => sendResponse({ okB64: toB64(out) }))
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true;
