@@ -103,6 +103,29 @@ A warning is not a schema error (it never blocks embed), but shipping one means 
 the OM. Re-read, correct, re-validate — until schema-clean and warning-clean or the residual is
 explained to the reviewer.
 
+## Worked traps (read these before you map)
+
+Each is a real first-pass mistake, the warning it trips, and the fix. These are machine-checked in
+`spec/tests/test_process_traps.py` against the demo OM.
+
+- **Percent vs decimal.** OM prints "Cap Rate: 5.75%". Writing `capRate: 5.75` trips `OMW-W013`
+  (outside the [0.02, 0.20] band) and `OMW-W010` (5.75 ≠ 143750÷2500000). **Fix:** `0.0575`.
+- **NNN but a landlord flag is true.** Lease is "NNN" (tenant pays all) but you set
+  `landlordResponsibilities.taxes: true`. Trips `OMW-W040`. **Fix:** for an NNN lease the pass-
+  through flags (taxes/insurance/cam) are `false` — re-read who pays.
+- **Schedule gap/overlap.** You mis-read a period boundary so period 2 starts a month after
+  period 1 ends → `OMW-W021` (gap); starts before it ends → `OMW-W022` (overlap). **Fix:** periods
+  are chronological and contiguous (`periodStart[i] = periodEnd[i-1] + 1 day`).
+- **rentPSF that doesn't tie.** `rentPSF: 30.00` when `annualRent 143750 ÷ buildingSF 6000 = 23.96`
+  → `OMW-W024`. **Fix:** transcribe the printed rent/SF and confirm it ties, or omit it.
+- **Term math.** `termMonths: 60` when `expiration − commencement ≈ 120` months → `OMW-W031`.
+  **Fix:** omit stated terms you can't reconcile, or correct the dates you read.
+- **Wrong escalation.** `escalationFromPrior: 0.05` when 158125÷143750 − 1 = 0.10 → `OMW-W023`.
+  **Fix:** it is the *fraction* between adjacent `annualRent`, not a guess.
+
+A warning is never fatal (it can't block embed), but it almost always means you mis-read the OM.
+Re-read, correct, re-validate.
+
 ## The review gate — the assertion moment
 
 Extraction output is a **draft**. It becomes a broker assertion only when a human reviews the
