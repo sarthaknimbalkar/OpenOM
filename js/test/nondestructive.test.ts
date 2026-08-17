@@ -8,13 +8,14 @@ import { readPayloadFromBytes } from "../src/read.js";
 
 const specDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "spec");
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
-const payload = JSON.parse(readFileSync(join(specDir, "samples", "valid-stnl.json"), "utf8")) as Record<
-  string,
-  unknown
->;
+const payload = JSON.parse(
+  readFileSync(join(specDir, "samples", "valid-stnl.json"), "utf8"),
+) as Record<string, unknown>;
 
 /** Structural fingerprint an embed must preserve ([OM-DoD-001]): pages, outline nodes, link annots. */
-async function structure(bytes: Uint8Array): Promise<{ pages: number; bookmarks: number; links: number }> {
+async function structure(
+  bytes: Uint8Array,
+): Promise<{ pages: number; bookmarks: number; links: number }> {
   const doc = await PDFDocument.load(bytes, { throwOnInvalidObject: false, updateMetadata: false });
   const pages = doc.getPageCount();
 

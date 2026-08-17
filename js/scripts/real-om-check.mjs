@@ -48,7 +48,8 @@ for (const src of files) {
     const out = join(tmp, "e.pdf");
     writeFileSync(out, embedded);
     const a = JSON.parse(execFileSync(PY, [ANALYZE, src, out], { encoding: "utf8" }));
-    const structOk = a.pages[0] === a.pages[1] && a.bookmarks[0] === a.bookmarks[1] && a.links[0] === a.links[1];
+    const structOk =
+      a.pages[0] === a.pages[1] && a.bookmarks[0] === a.bookmarks[1] && a.links[0] === a.links[1];
     const perfect = a.max_pixel_diff === 0;
     if (structOk && a.min_ssim >= 0.9999) pass++;
     if (perfect) visualPerfect++;
