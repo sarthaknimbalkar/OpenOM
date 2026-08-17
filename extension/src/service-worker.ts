@@ -5,6 +5,7 @@
 import {
   type BadgeState,
   badgeState,
+  embedPayload,
   honestLabel,
   readPayloadFromBytes,
   type ReadResult,
@@ -133,6 +134,19 @@ function _chromeSetBadge(state: BadgeState): void {
   });
 }
 
+/** base64 <-> bytes for structured-clone-safe panel<->SW message payloads (PDF bytes). */
+function toB64(bytes: Uint8Array): string {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s);
+}
+function fromB64(b64: string): Uint8Array {
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+
 // Wire messages only in the extension runtime (guarded so unit tests can import handleDetect).
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -141,6 +155,20 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .then(sendResponse)
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true; // async response
+    }
+    // Author mode (M5b) — capture re-fetches PDF bytes SW-side (page CSP can't block it); embed runs
+    // the deterministic /js embedPayload. Zero inference; the human assertion happens in the panel.
+    if (msg?.type === "author:fetch" && typeof msg.url === "string") {
+      refetchPdf(msg.url)
+        .then((bytes) => sendResponse({ b64: bytes ? toB64(bytes) : null }))
+        .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
+      return true;
+    }
+    if (msg?.type === "author:embed" && typeof msg.pdfB64 === "string" && msg.payload) {
+      embedPayload(fromB64(msg.pdfB64), msg.payload as Record<string, unknown>)
+        .then((out) => sendResponse({ okB64: toB64(out) }))
+        .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
+      return true;
     }
     return false;
   });
