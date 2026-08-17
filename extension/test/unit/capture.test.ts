@@ -35,4 +35,10 @@ describe("captureFromBytes — prior payload drives reprice", () => {
     const c = await captureFromBytes(bytes, async () => MISMATCH);
     expect(c.prior).toBeNull();
   });
+
+  test("tampered prior is flagged priorUnverified so the panel can warn (#87)", async () => {
+    expect((await captureFromBytes(bytes, async () => MISMATCH)).priorUnverified).toBe(true);
+    expect((await captureFromBytes(bytes, async () => ABSENT)).priorUnverified).toBe(false);
+    expect((await captureFromBytes(bytes, async () => PRESENT)).priorUnverified).toBe(false);
+  });
 });
