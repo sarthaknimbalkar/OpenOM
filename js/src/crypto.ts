@@ -22,3 +22,15 @@ export function sha256Hex(bytes: Uint8Array): string {
 export function hmacSha256Hex(key: string, msg: string): string {
   return bytesToHex(hmac(sha256, utf8ToBytes(key), utf8ToBytes(msg)));
 }
+
+/**
+ * Constant-time equality of two lowercase-hex strings ([OM-HOOK-003], §Y verify). Compares in time
+ * independent of WHERE they differ, so an attacker cannot recover a valid signature byte-by-byte via
+ * timing. Unequal lengths are still walked to a fixed bound. Never use `===` for a MAC compare.
+ */
+export function timingSafeEqualHex(a: string, b: string): boolean {
+  const n = Math.max(a.length, b.length);
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < n; i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}

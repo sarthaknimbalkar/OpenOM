@@ -75,3 +75,24 @@ describe("verifyOrigin — §10.1", () => {
     expect(r.originVerified).toBe(true);
   });
 });
+
+describe("verifyOrigin — hash format normalization (#81)", () => {
+  const args = (embeddedHash: string) => ({
+    sourceUrl: "https://broker.example.com/deal.pdf",
+    mirrorUrl: "https://broker.example.com/om.json",
+    embeddedHash,
+    fetchMirror: serve(BODY),
+  });
+  test("uppercase-hex embedded hash still verifies", async () => {
+    expect((await verifyOrigin(args(HASH.toUpperCase()))).originVerified).toBe(true);
+  });
+  test("unprefixed digest (no sha256:) still verifies", async () => {
+    expect((await verifyOrigin(args(HASH.replace(/^sha256:/, "")))).originVerified).toBe(true);
+  });
+  test("whitespace-padded embedded hash still verifies", async () => {
+    expect((await verifyOrigin(args(`  ${HASH}  `))).originVerified).toBe(true);
+  });
+  test("a genuinely different digest still mismatches", async () => {
+    expect((await verifyOrigin(args("sha256:" + "b".repeat(64)))).originVerified).toBe(false);
+  });
+});
