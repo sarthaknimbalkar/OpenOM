@@ -22,7 +22,8 @@
     "ajv-formats": "^3.0.1",
     "canonicalize": "^2.1.0",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^4.10.38"
+    "pdfjs-dist": "^4.10.38",
+    "tldts": "^7.4.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
