@@ -47,6 +47,20 @@ export function setEvidence(d: Draft, path: string, ev: FieldEvidence): Draft {
   return { payload: d.payload, evidence: { ...d.evidence, [path]: ev } };
 }
 
+/** Immutably append an item to the array at `path` (creating it if absent) — for the rent editor. */
+export function appendArrayItem(d: Draft, path: string, item: unknown): Draft {
+  const cur = resolve(d.payload, path);
+  const arr = Array.isArray(cur) ? cur : [];
+  return setField(d, path, [...arr, item]);
+}
+
+/** Immutably remove the item at `index` from the array at `path`. No-op if not an array. */
+export function removeArrayItem(d: Draft, path: string, index: number): Draft {
+  const cur = resolve(d.payload, path);
+  if (!Array.isArray(cur)) return d;
+  return setField(d, path, cur.filter((_, i) => i !== index));
+}
+
 /** Schema-known paths that the payload does not set (deliberate omissions to confirm, never invent). */
 export function omissions(d: Draft, schemaPaths: string[]): string[] {
   return schemaPaths.filter((p) => resolve(d.payload, p) === undefined);
