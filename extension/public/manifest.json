@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "openOM",
+  "version": "0.1.0",
+  "description": "Detect, verify, and view openOM data embedded in commercial-real-estate PDFs.",
+  "action": { "default_popup": "popup.html", "default_title": "openOM" },
+  "background": { "service_worker": "service-worker.js", "type": "module" },
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["https://*/*"]
+}
