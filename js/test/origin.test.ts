@@ -96,3 +96,32 @@ describe("verifyOrigin — hash format normalization (#81)", () => {
     expect((await verifyOrigin(args("sha256:" + "b".repeat(64)))).originVerified).toBe(false);
   });
 });
+
+describe("verifyOrigin — multi-label eTLD+1 via the PSL (#80)", () => {
+  const check = (source: string, mirror: string) =>
+    verifyOrigin({
+      sourceUrl: source,
+      mirrorUrl: mirror,
+      embeddedHash: HASH,
+      fetchMirror: serve(BODY),
+    });
+
+  test("same registrable domain under a ccSLD (foo.co.uk) verifies", async () => {
+    expect(
+      (await check("https://foo.co.uk/deal.pdf", "https://foo.co.uk/om.json")).originVerified,
+    ).toBe(true);
+    expect(
+      (await check("https://www.foo.co.uk/deal.pdf", "https://foo.co.uk/om.json")).originVerified,
+    ).toBe(true);
+  });
+  test("different registrable domains under a ccSLD are cross-origin", async () => {
+    expect((await check("https://foo.co.uk/deal.pdf", "https://bar.co.uk/om.json")).reason).toBe(
+      "cross-origin",
+    );
+  });
+  test("*.github.io is a public suffix — distinct users are cross-origin", async () => {
+    expect(
+      (await check("https://a.github.io/deal.pdf", "https://b.github.io/om.json")).reason,
+    ).toBe("cross-origin");
+  });
+});
