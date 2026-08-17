@@ -135,6 +135,15 @@ extraction**, a service **separate** from the open server, **built in M3**; Verv
 free public deterministic MCP. The cardinal rule is unchanged — no inference in `/core`, `/mcp`,
 or consumer `/js`, ever.
 
-**Next milestone: M3** (remote transport) — now unblocked. Remaining open questions for M3:
-Q4 (R2 blob retention, decide with the M3 gate). M2 work (schema publish polish, `@context`/vocab,
-webhook envelope, `/process` playbook) is also available and unblocked.
+**M3 gate [OM-DoD-004] met** (2026-08-17, deterministic-only scope). Built in `/mcp`: hosted
+Streamable HTTP transport (`build_http_app`/`main_http`), SSRF-hardened `url` fetch
+(`fetch.py`, resolve-then-pin), R2/local blob store (`blobstore.py` — ≤24h TTL, delete-on-completion,
+server-bound owner), per-principal rate limit, HTTP transport security (Host/Origin), untrusted-PDF
+parse isolation (`guard.py` — killable subprocess, timeout→OM-IO-003 / crash→OM-IO-010), and a
+per-call page ceiling. The paid inference-extraction service is a **seam only** (`extraction.py`);
+zero inference in `/mcp` (enforced by the `boundary` CI job + `test_boundary.py`). Q4 resolved
+(≤24h TTL + delete-on-completion). Hardening backlog: #51/#52 (distributed limiter, API-key
+lifecycle) are **hosted-deploy-gated**; the CLI/image items #16/#17/#18 are separate.
+
+**Next milestone: M4** (`/process` playbook — `SKILL.md` + agent instructions, #15) or **M5a**
+(consumer extension). M2/M3 both shipped.
