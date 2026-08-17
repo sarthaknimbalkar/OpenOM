@@ -94,7 +94,7 @@ class LocalBlobStore(BlobStore):
         (self.root / blob_id).unlink(missing_ok=True)
 
 
-class S3BlobStore(BlobStore):  # pragma: no cover - integration-tested via MinIO/R2 (#53)
+class S3BlobStore(BlobStore):
     """R2/S3 adapter with **server-bound ownership** (#50). Ownership is recorded by a companion
     ``_owners/<blobId>`` object that ONLY this server writes — never derived from client-supplied
     object metadata — so a presigned PUT (which can write only the data object) cannot forge or
@@ -114,7 +114,9 @@ class S3BlobStore(BlobStore):  # pragma: no cover - integration-tested via MinIO
         )
 
     @staticmethod
-    def _make_client(endpoint_url: str, access_key: str, secret_key: str) -> Any:
+    def _make_client(  # pragma: no cover - real boto3 client; moto tests inject a client
+        endpoint_url: str, access_key: str, secret_key: str
+    ) -> Any:
         import boto3  # type: ignore[import-not-found,import-untyped]
 
         return boto3.client(
