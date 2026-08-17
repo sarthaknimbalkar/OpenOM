@@ -183,12 +183,14 @@ jobs:
         env:
           OPENOM_XIMPL_DIR: ${{ runner.temp }}/ximpl
 
-  consumer-gate:
-    # [OM-DoD-006] — the LIVE proof of M5a consumer mode. Real headed Chromium loads the unpacked
-    # MV3 extension against a self-signed HTTPS harness (fixtures + /om.json mirror + /hook receiver)
-    # and drives every §AA badge state + the §Y publish HMAC. Mocked unit tests cannot prove this:
-    # they stayed green while a pdf.js-worker and an ajv-`new Function` (CSP) defect each broke the
-    # product in-browser. This job — not test:unit — is the gate (repo Rule 5: real fixtures, no mocks).
+  extension-gate:
+    # [OM-DoD-006] + [OM-DoD-007] — the LIVE proof of the MV3 extension. Real headed Chromium loads the
+    # unpacked extension against a self-signed HTTPS harness and drives: consumer mode (every §AA badge
+    # state + §Y publish HMAC) AND author mode (capture→review→assert→embed, reprice, and the
+    # [OM-PRIV-001] egress-zero assertion via an injected fake LanguageModel). `test:consumer` runs both
+    # the consumer and author Playwright specs. Mocked unit tests cannot prove this: they stayed green
+    # while a pdf.js-worker and an ajv-`new Function` (CSP) defect each broke the product in-browser.
+    # This job — not test:unit — is the gate (repo Rule 5: real fixtures, no mocks).
     needs: [detect, javascript]
     if: needs.detect.outputs.has_js == 'true'
     runs-on: ubuntu-latest
