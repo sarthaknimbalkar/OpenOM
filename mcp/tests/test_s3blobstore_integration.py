@@ -46,3 +46,20 @@ def test_r2_foreign_principal_rejected() -> None:
         assert e.value.code == "OM-IO-007"
     finally:
         s.delete(res["blobId"])
+
+
+def test_r2_owner_is_server_bound_not_client_metadata() -> None:
+    # #50: ownership is recorded by the server-written _owners/<id> object, so a presigned upload
+    # (which covers only the data key) cannot forge or omit it. Simulate a raw data-only PUT to a
+    # created-upload slot and confirm the real owner still governs authz.
+    s = _store()
+    slot = s.create_upload("ip:owner")
+    bid = slot["blobId"]
+    try:
+        s.s3.put_object(Bucket=s.bucket, Key=bid, Body=b"%PDF- uploaded")  # client PUT, no metadata
+        assert s.get(bid, "ip:owner") == b"%PDF- uploaded"  # server-bound owner still works
+        with pytest.raises(ToolError) as e:
+            s.get(bid, "ip:attacker")
+        assert e.value.code == "OM-IO-007"
+    finally:
+        s.delete(bid)
