@@ -5,15 +5,21 @@
 # so builds are reproducible. As a constraints file, unused pins (e.g. pywin32 off-Windows) are
 # ignored. Regenerate after an intentional dependency bump:
 #   python -m pip freeze --exclude-editable | grep -viE '^openom|@ file|^-e ' | sort > constraints.lock
+MarkupSafe==3.0.3
 PyJWT==2.13.0
+PyYAML==6.0.3
 Pygments==2.20.0
+Werkzeug==3.1.8
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.14.2
 ast_serialize==0.8.0
 attrs==26.1.0
+boto3==1.43.72
+botocore==1.43.72
 certifi==2026.7.22
 cffi==2.1.1
+charset-normalizer==3.5.1
 click==8.4.2
 colorama==0.4.6
 coverage==7.15.4
@@ -26,6 +32,7 @@ httpx==0.28.1
 hypothesis==6.165.9
 idna==3.18
 iniconfig==2.3.0
+jmespath==1.1.0
 jsonschema-specifications==2025.9.1
 jsonschema==4.26.0
 librt==0.15.0
@@ -34,6 +41,7 @@ markdown-it-py==4.2.0
 mcp-types==2.0.0
 mcp==2.0.0
 mdurl==0.1.2
+moto==5.2.2
 mypy==2.3.1
 mypy_extensions==1.1.0
 numpy==2.4.6
@@ -43,20 +51,26 @@ pathspec==1.1.1
 pikepdf==10.11.0
 pillow==12.3.0
 pluggy==1.6.0
+py-partiql-parser==0.6.3
 pycparser==3.0
 pydantic==2.13.4
 pydantic_core==2.46.4
 pymupdf==1.28.2
 pytest-cov==7.1.0
 pytest==9.1.1
+python-dateutil==2.9.0.post0
 python-multipart==0.0.32
 pywin32==312
 referencing==0.37.0
+requests==2.34.2
+responses==0.26.2
 rfc8785==0.1.4
 rich==15.0.0
 rpds-py==2026.6.3
 ruff==0.16.3
+s3transfer==0.19.2
 shellingham==1.5.4
+six==1.17.0
 sortedcontainers==2.4.0
 sse-starlette==3.4.8
 starlette==1.6.0
@@ -65,4 +79,6 @@ typer==0.27.1
 types-jsonschema==4.26.0.20260518
 typing-inspection==0.4.4
 typing_extensions==4.16.0
+urllib3==2.7.0
 uvicorn==0.52.3
+xmltodict==1.0.4
