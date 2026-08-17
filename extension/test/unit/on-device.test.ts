@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { buildPrompt, onDeviceExtractor } from "../../src/author/extract/on-device.js";
+import { buildPrompt, chunkPages, onDeviceExtractor } from "../../src/author/extract/on-device.js";
 
 const g = globalThis as Record<string, unknown>;
 let lastDestroy: ReturnType<typeof vi.fn>;
@@ -61,5 +61,33 @@ describe("onDeviceExtractor — Prompt API adapter", () => {
     expect(p).toContain("<<<OM>>>");
     expect(p).toContain("<<</OM>>>");
     expect(p.toLowerCase()).toContain("untrusted");
+  });
+
+  test("chunkPages groups pages to the context budget (#88)", () => {
+    const big = "x".repeat(20_000);
+    const chunks = chunkPages([{ page: 1, text: big }, { page: 2, text: big }, { page: 3, text: "small" }]);
+    expect(chunks.length).toBe(2); // ~40k over two chunks, then the small page rides along
+    expect(chunks[0]?.map((p) => p.page)).toEqual([1]);
+    expect(chunks[1]?.map((p) => p.page)).toEqual([2, 3]);
+  });
+
+  test("extract chunks a large doc and merges fields first-wins (#88)", async () => {
+    let n = 0;
+    const calls: string[] = [];
+    g.LanguageModel = {
+      create: async () => ({
+        prompt: async (input: string) => {
+          calls.push(input);
+          n++;
+          return JSON.stringify({ fields: [{ path: `/deal/f${n}`, value: n }, { path: "/deal/dup", value: n }] });
+        },
+        destroy: () => {},
+      }),
+    };
+    const big = "x".repeat(20_000);
+    const r = await onDeviceExtractor.extract([{ page: 1, text: big }, { page: 2, text: big }]);
+    expect(calls.length).toBe(2); // two chunks → two prompts
+    expect(r.fields.find((f) => f.path === "/deal/dup")?.value).toBe(1); // first-wins
+    expect(r.fields.map((f) => f.path)).toEqual(expect.arrayContaining(["/deal/f1", "/deal/f2"]));
   });
 });
