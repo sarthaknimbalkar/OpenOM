@@ -3,7 +3,7 @@
 // and passes the report in. It renders the four contract sections and gates the Assert button on the
 // schema-error count ALONE — never on extraction confidence, never pre-checked ([OM-EXTP-003]).
 import type { ValidationReport } from "openom-js";
-import { type Draft, fieldsWithoutEvidence, leaves, omissions } from "./draft.js";
+import { type Draft, leaves, omissions } from "./draft.js";
 import schema from "../../../spec/om-0.1.schema.json";
 import { schemaExpectedPaths } from "./schema-paths.js";
 
@@ -14,9 +14,11 @@ export interface RepriceDiff {
   supersedes: string;
 }
 
-export interface ReviewView {
+export interface DerivedView {
   report: ValidationReport;
   diff: RepriceDiff | null;
+  /** The exact payload finalize() would embed — shown read-only so the human approves it (#95). */
+  finalized: Record<string, unknown>;
 }
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
@@ -42,35 +44,23 @@ export function repriceDiff(
   return { added, changed, removed, supersedes: priorHash };
 }
 
-/** Render the review contract; sets `#assert.disabled` iff there are schema errors. */
-export function renderReview(root: HTMLElement, draft: Draft, view: ReviewView): void {
-  root.replaceChildren();
-  const { report, diff } = view;
-  const flagged = new Set(fieldsWithoutEvidence(draft));
+/**
+ * Render the DERIVED review output — everything computed from the draft (validation, omissions,
+ * warnings, reprice diff, the finalized-payload preview, and the Assert gate). It contains NO text
+ * inputs (those live in the form), so re-rendering it on every edit never disturbs focus. Assert is
+ * disabled iff there are schema errors — never pre-checked, never enabled by anything else.
+ */
+export function renderDerived(container: HTMLElement, draft: Draft, view: DerivedView): void {
+  container.replaceChildren();
+  const { report, diff, finalized } = view;
 
-  // 1 — per field: value + evidence + source tag; flag values lacking citable evidence.
-  const fields = el("section", "fields");
-  fields.appendChild(el("h2", undefined, "Fields"));
-  for (const [path, value] of leaves(draft.payload)) {
-    const row = el("div", "review-field");
-    row.appendChild(el("span", "field-path", path));
-    row.appendChild(el("span", "field-value", String(value)));
-    const ev = draft.evidence[path];
-    if (ev && (ev.page !== undefined || ev.quote)) {
-      row.appendChild(el("span", "field-evidence", `p.${ev.page ?? "?"} "${ev.quote ?? ""}"`));
-    }
-    if (flagged.has(path)) row.appendChild(el("span", "field-flag", "no evidence — please cite"));
-    fields.appendChild(row);
-  }
-  root.appendChild(fields);
-
-  // 2 — omissions (schema-known but unset). SCHEMA_LEAF_PATHS lives here so the panel can confirm them.
+  // Omissions (schema-known but unset) — from the whole field map ([#92]).
   const missing = omissions(draft, SCHEMA_LEAF_PATHS);
   if (missing.length) {
     const sec = el("section", "omissions");
     sec.appendChild(el("h2", undefined, "Omitted (confirm or supply)"));
     for (const m of missing) sec.appendChild(el("div", "omission", m));
-    root.appendChild(sec);
+    container.appendChild(sec);
   }
 
   // 3 — residual warnings (never block).
@@ -80,7 +70,7 @@ export function renderReview(root: HTMLElement, draft: Draft, view: ReviewView):
     for (const w of report.warnings) {
       sec.appendChild(el("div", "residual-warning", `${w.code} — ${w.message}`));
     }
-    root.appendChild(sec);
+    container.appendChild(sec);
   }
 
   // Schema errors block the assertion; show them so the human can fix values.
@@ -88,7 +78,7 @@ export function renderReview(root: HTMLElement, draft: Draft, view: ReviewView):
     const sec = el("section", "errors");
     sec.appendChild(el("h2", undefined, "Errors (must fix before asserting)"));
     for (const e of report.errors) sec.appendChild(el("div", "schema-error", `${e.code} ${e.path} — ${e.message}`));
-    root.appendChild(sec);
+    container.appendChild(sec);
   }
 
   // 4 — reprice diff (re-embed only).
@@ -99,14 +89,32 @@ export function renderReview(root: HTMLElement, draft: Draft, view: ReviewView):
     for (const a of diff.added) sec.appendChild(el("div", "diff-added", `+ ${a}`));
     for (const r of diff.removed) sec.appendChild(el("div", "diff-removed", `− ${r}`));
     sec.appendChild(el("div", "diff-supersedes", `supersedes ${diff.supersedes}`));
-    root.appendChild(sec);
+    container.appendChild(sec);
   }
+
+  // #95 — the exact payload that will be embedded (stamped assertedBy/assertedDate/@context/meta),
+  // read-only, so the human approves what actually gets written before asserting.
+  const preview = el("section", "finalized-preview");
+  preview.appendChild(el("h2", undefined, "Will be embedded"));
+  const pre = el("pre", "finalized-json");
+  pre.textContent = stableStringify(finalized);
+  preview.appendChild(pre);
+  container.appendChild(preview);
 
   // Assert gate — disabled iff schema errors. Never pre-checked, never enabled by anything else.
   const assert = el("button", "assert", "Assert & Embed") as HTMLButtonElement;
   assert.id = "assert";
   assert.disabled = report.errors.length > 0;
-  root.appendChild(assert);
+  container.appendChild(assert);
+}
+
+/** Deterministic 2-space JSON for the preview (keys sorted so the view is stable across edits). */
+function stableStringify(value: unknown): string {
+  return JSON.stringify(value, (_k, v) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)))
+      : v,
+  2);
 }
 
 /** Expected leaf paths surfaced as omissions when unset — derived from the schema/field map ([#92]). */
