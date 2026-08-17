@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, test } from "vitest";
 import type { ValidationReport } from "openom-js";
-import { newDraft, setField } from "../../src/author/draft.js";
-import { renderReview, repriceDiff } from "../../src/author/review-panel.js";
+import { newDraft } from "../../src/author/draft.js";
+import { renderDerived, repriceDiff } from "../../src/author/review-panel.js";
 
 const clean: ValidationReport = {
   specVersion: "0.1",
@@ -25,30 +25,31 @@ const withWarning: ValidationReport = {
   summary: { errorCount: 0, warningCount: 1, infoCount: 0 },
 };
 
-describe("renderReview — assert gate + contract sections", () => {
-  test("schema error disables Assert; a value without evidence is flagged", () => {
-    const root = document.createElement("div");
-    const draft = setField(newDraft(), "/deal/capRate", 0.0575);
-    renderReview(root, draft, { report: withError, diff: null });
-    const assert = root.querySelector("#assert") as HTMLButtonElement;
-    expect(assert.disabled).toBe(true);
-    expect(root.querySelectorAll(".review-field").length).toBeGreaterThan(0);
-    expect(root.querySelectorAll(".field-flag").length).toBeGreaterThan(0);
+describe("renderDerived — assert gate + finalized preview", () => {
+  test("schema error disables Assert; finalized preview shows the stamped fields (#95)", () => {
+    const c = document.createElement("div");
+    renderDerived(c, newDraft({}), {
+      report: withError,
+      diff: null,
+      finalized: { assertedBy: { broker: "Jane Broker" }, assertedDate: "2026-08-18" },
+    });
+    expect((c.querySelector("#assert") as HTMLButtonElement).disabled).toBe(true);
+    const preview = c.querySelector(".finalized-preview")?.textContent ?? "";
+    expect(preview).toContain("Jane Broker");
+    expect(preview).toContain("2026-08-18");
   });
 
-  test("error-free draft enables Assert; residual warnings are shown", () => {
-    const root = document.createElement("div");
-    const draft = setField(newDraft(), "/deal/capRate", 0.0575);
-    renderReview(root, draft, { report: withWarning, diff: null });
-    expect((root.querySelector("#assert") as HTMLButtonElement).disabled).toBe(false);
-    const w = root.querySelector(".residual-warning");
-    expect(w?.textContent).toContain("OMW-W020");
+  test("error-free draft enables Assert; residual warnings shown", () => {
+    const c = document.createElement("div");
+    renderDerived(c, newDraft({}), { report: withWarning, diff: null, finalized: {} });
+    expect((c.querySelector("#assert") as HTMLButtonElement).disabled).toBe(false);
+    expect(c.querySelector(".residual-warning")?.textContent).toContain("OMW-W020");
   });
 
-  test("Assert is never enabled by anything but a zero error count", () => {
-    const root = document.createElement("div");
-    renderReview(root, newDraft(), { report: withError, diff: null });
-    expect((root.querySelector("#assert") as HTMLButtonElement).disabled).toBe(true);
+  test("Assert never enabled by anything but a zero error count", () => {
+    const c = document.createElement("div");
+    renderDerived(c, newDraft({}), { report: withError, diff: null, finalized: {} });
+    expect((c.querySelector("#assert") as HTMLButtonElement).disabled).toBe(true);
   });
 });
 
@@ -58,7 +59,6 @@ describe("repriceDiff", () => {
     expect(diff.changed).toContainEqual(["/deal/noi", 100, 120]);
     expect(diff.supersedes).toBe("sha256:prior");
   });
-
   test("reports added and removed leaves", () => {
     const diff = repriceDiff({ deal: { noi: 100 } }, { deal: { askingPrice: 9 } }, "sha256:p");
     expect(diff.removed).toContain("/deal/noi");

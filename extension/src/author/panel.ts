@@ -13,11 +13,19 @@ import {
 import schema from "../../../spec/om-0.1.schema.json";
 import { precompiledValidate } from "../validator.js";
 import { captureFromBytes, looksLikePdf, type Capture } from "./capture.js";
-import { newDraft, type Draft } from "./draft.js";
+import {
+  newDraft,
+  setField,
+  setEvidence,
+  appendArrayItem,
+  removeArrayItem,
+  type Draft,
+} from "./draft.js";
 import { getProfile, setProfile, profileComplete, type BrokerProfile } from "./profile.js";
 import { getDraft, setDraft, clearDraft } from "./draft-store.js";
 import { finalize, assertAndEmbed, handBack, suggestedFilename } from "./assert.js";
-import { renderReview, repriceDiff } from "./review-panel.js";
+import { renderDerived, repriceDiff } from "./review-panel.js";
+import { buildForm, type FormCallbacks } from "./form.js";
 import { applyExtraction } from "./extract/apply.js";
 import { onDeviceExtractor } from "./extract/on-device.js";
 import { pickExtractor } from "./extract/pick.js";
@@ -115,41 +123,71 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const restored = await getDraft(sourceDocHash);
   let draft: Draft = restored ?? newDraft(capture.prior?.payload ?? {});
 
-  const ta = el("textarea", "draft-json") as HTMLTextAreaElement;
-  ta.value = JSON.stringify(draft.payload, null, 2);
-  root.appendChild(el("h2", undefined, "Draft payload"));
-  root.appendChild(ta);
+  const profile = (): BrokerProfile => ({ broker: broker.value, brokerage: brokerage.value, license: license.value });
+  const prior = capture.prior ? { payloadHash: capture.prior.payloadHash ?? "", payload: capture.prior.payload ?? {} } : null;
 
   // On-device extraction (M5b-2): offer it only when a Prompt API is present; else a manual-entry note.
   const extractor = await pickExtractor([onDeviceExtractor]);
   if (extractor) {
     const btn = el("button", "extract-btn", "Extract with on-device AI") as HTMLButtonElement;
     btn.dataset.action = "extract";
-    root.appendChild(btn);
     btn.addEventListener("click", () => void runExtract());
+    root.appendChild(btn);
   } else {
     root.appendChild(el("p", "no-ai", "On-device AI unavailable — enter fields manually."));
   }
 
-  const review = el("section", "review");
-  root.appendChild(review);
+  const formEl = el("section", "form"); // stable inputs, built once (focus-safe)
+  const derivedEl = el("section", "derived"); // validation/preview/assert, re-rendered each edit
   const status = el("p", "status");
-  root.appendChild(status);
+  root.append(formEl, derivedEl, status);
 
-  const profile = (): BrokerProfile => ({ broker: broker.value, brokerage: brokerage.value, license: license.value });
-  const prior = capture.prior ? { payloadHash: capture.prior.payloadHash ?? "", payload: capture.prior.payload ?? {} } : null;
-
-  const rerender = (): void => {
-    void setDraft(sourceDocHash, draft); // #94 — checkpoint in-progress work
-    const preview = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
-    const report = validate(preview);
-    const diff = prior ? repriceDiff(prior.payload, preview, prior.payloadHash) : null;
-    renderReview(review, draft, { report, diff });
-    // #97 — a distinct cue when the ONLY thing blocking Assert is an incomplete broker profile.
+  // Re-render ONLY the derived panel (no inputs to lose focus). The Assert gate reflects the FINALIZED
+  // payload — exactly what would be embedded — so the human approves the real assertion (#95).
+  const renderDerivedNow = (): void => {
+    const finalized = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
+    const report = validate(finalized);
+    const diff = prior ? repriceDiff(prior.payload, finalized, prior.payloadHash) : null;
+    renderDerived(derivedEl, draft, { report, diff, finalized });
     if (!profileComplete(profile())) {
-      review.appendChild(el("p", "profile-incomplete", "Complete the broker profile (broker, brokerage, license) to assert."));
+      derivedEl.appendChild(el("p", "profile-incomplete", "Complete the broker profile (broker, brokerage, license) to assert.")); // #97
     }
-    review.querySelector("#assert")?.addEventListener("click", () => void doAssert());
+    derivedEl.querySelector("#assert")?.addEventListener("click", () => void doAssert());
+  };
+
+  // A field-level edit mutates the draft (source of truth), persists (#94), and refreshes the derived
+  // panel only. Structural changes (rent rows, raw-JSON) additionally rebuild the form once.
+  const edit = (mutate: (d: Draft) => Draft): void => {
+    draft = mutate(draft);
+    void setDraft(sourceDocHash, draft);
+    renderDerivedNow();
+  };
+  const rebuild = (mutate: (d: Draft) => Draft): void => {
+    draft = mutate(draft);
+    void setDraft(sourceDocHash, draft);
+    buildFormNow();
+    renderDerivedNow();
+  };
+
+  const callbacks: FormCallbacks = {
+    onField: (p, v) => edit((d) => setField(d, p, v)),
+    onEvidence: (p, e) => edit((d) => setEvidence(d, p, e)),
+    onAddRentPeriod: () => rebuild((d) => appendArrayItem(d, "/lease/rentSchedule", { source: "extracted" })),
+    onRemoveRentPeriod: (i) => rebuild((d) => removeArrayItem(d, "/lease/rentSchedule", i)),
+  };
+
+  const buildFormNow = (): void => {
+    buildForm(formEl, draft, callbacks);
+    // The Advanced raw-JSON textarea is rebuilt with the form; (re)wire it on `change` (not `input`)
+    // so committing raw JSON rebuilds the form once, without a rebuild on every keystroke.
+    const ta = formEl.querySelector("textarea.draft-json") as HTMLTextAreaElement | null;
+    ta?.addEventListener("change", () => {
+      try {
+        rebuild(() => ({ payload: JSON.parse(ta.value) as Record<string, unknown>, evidence: draft.evidence }));
+      } catch {
+        status.textContent = "Draft is not valid JSON.";
+      }
+    });
   };
 
   const doAssert = async (): Promise<void> => {
@@ -159,8 +197,7 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
       const out = await assertAndEmbed(final, capture.bytes, validate, embedViaSW);
       handBack(out, suggestedFilename(final)); // #99 — meaningful name from the property address
       void clearDraft(sourceDocHash); // #94 — the OM is embedded; drop the saved draft
-
-      status.textContent = "Embedded — downloaded openom-embedded.pdf";
+      status.textContent = "Embedded — downloaded the OM.";
     } catch (e) {
       status.textContent = `Blocked: ${(e as Error).message}`;
     }
@@ -177,28 +214,18 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
         return;
       }
       const result = await extractor.extract(pages);
-      draft = applyExtraction(draft, result);
-      ta.value = JSON.stringify(draft.payload, null, 2);
+      rebuild((d) => applyExtraction(d, result)); // reflect extracted fields in the form + derived
       // #66 — surface when only a prefix of a long OM was read; never a silent "complete".
       const truncated = pages.length < totalPages ? ` (read pages 1–${pages.length} of ${totalPages} only)` : "";
       status.textContent = `Extracted a draft — review every field before asserting.${truncated}`;
-      rerender();
     } catch (e) {
       status.textContent = `Extraction failed: ${(e as Error).message}`;
     }
   };
 
-  ta.addEventListener("input", () => {
-    try {
-      draft = { payload: JSON.parse(ta.value) as Record<string, unknown>, evidence: draft.evidence };
-    } catch {
-      review.replaceChildren(el("p", "err", "Draft is not valid JSON."));
-      return;
-    }
-    rerender();
-  });
-  for (const i of [broker, brokerage, license]) i.addEventListener("input", rerender);
-  rerender();
+  for (const i of [broker, brokerage, license]) i.addEventListener("input", renderDerivedNow);
+  buildFormNow();
+  renderDerivedNow();
 }
 
 async function embedViaSW(bytes: Uint8Array, payload: Record<string, unknown>): Promise<Uint8Array> {

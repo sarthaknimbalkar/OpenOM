@@ -61,6 +61,11 @@ export function removeArrayItem(d: Draft, path: string, index: number): Draft {
   return setField(d, path, cur.filter((_, i) => i !== index));
 }
 
+/** Resolve a JSON-pointer path in the draft payload (undefined if absent) — seeds form controls. */
+export function getField(d: Draft, path: string): unknown {
+  return resolve(d.payload, path);
+}
+
 /** Schema-known paths that the payload does not set (deliberate omissions to confirm, never invent). */
 export function omissions(d: Draft, schemaPaths: string[]): string[] {
   return schemaPaths.filter((p) => resolve(d.payload, p) === undefined);
