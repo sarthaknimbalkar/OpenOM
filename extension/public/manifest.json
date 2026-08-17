@@ -29,6 +29,13 @@
     "page": "options.html",
     "open_in_tab": true
   },
+  "content_scripts": [
+    {
+      "matches": ["https://*/*"],
+      "js": ["link-badger.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "permissions": [
     "activeTab",
     "storage",
