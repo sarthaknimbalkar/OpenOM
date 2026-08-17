@@ -24,6 +24,8 @@ export interface Capture {
    * from it ([#87]). A plain PDF (absent) leaves this false — that is a normal fresh embed.
    */
   readonly priorUnverified: boolean;
+  /** True when the PDF is encrypted — embedPayload can't load it, so authoring is refused ([#107]). */
+  readonly encrypted: boolean;
 }
 
 export async function captureFromBytes(
@@ -35,5 +37,6 @@ export async function captureFromBytes(
     bytes,
     prior: r.state === "present" ? r : null,
     priorUnverified: r.state === "hash-mismatch",
+    encrypted: r.state === "encrypted",
   };
 }

@@ -41,4 +41,10 @@ describe("captureFromBytes — prior payload drives reprice", () => {
     expect((await captureFromBytes(bytes, async () => ABSENT)).priorUnverified).toBe(false);
     expect((await captureFromBytes(bytes, async () => PRESENT)).priorUnverified).toBe(false);
   });
+
+  test("an encrypted PDF is flagged so the panel refuses to author (#107)", async () => {
+    const ENCRYPTED: ReadResult = { ...ABSENT, state: "encrypted" };
+    expect((await captureFromBytes(bytes, async () => ENCRYPTED)).encrypted).toBe(true);
+    expect((await captureFromBytes(bytes, async () => ABSENT)).encrypted).toBe(false);
+  });
 });
