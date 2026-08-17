@@ -86,6 +86,13 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
     return;
   }
   const capture: Capture = await captureFromBytes(bytes);
+  // #107 — pd-lib can't load an encrypted PDF, so embedding would fail opaquely later. Say so now.
+  if (capture.encrypted) {
+    root.replaceChildren(
+      el("p", "err", "This OM is encrypted — openOM can't embed into it. Ask for an unencrypted copy."),
+    );
+    return;
+  }
   const profile0 = (await getProfile()) ?? { broker: "", brokerage: "", license: "" };
   root.replaceChildren();
 
