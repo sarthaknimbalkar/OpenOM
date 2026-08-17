@@ -15,9 +15,15 @@ const PAYLOAD = {
   },
 };
 
-function render(result: DetectResult): HTMLElement {
+const base = {
+  sourceUrl: "https://broker.example.com/deal.pdf",
+  payloadHash: "sha256:" + "a".repeat(64),
+  verification: { hashValid: true, originVerified: false, signatureValid: null as null },
+};
+
+function render(result: Omit<DetectResult, keyof typeof base> & Partial<DetectResult>): HTMLElement {
   const root = document.createElement("div");
-  renderPopup(root, result, null);
+  renderPopup(root, { ...base, ...result } as DetectResult, null);
   return root;
 }
 
