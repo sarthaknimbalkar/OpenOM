@@ -19,7 +19,8 @@ import { classifyStale } from "./stale.js";
 import { precompiledValidate } from "./validator.js";
 import { assertEmbeddable } from "./author/embed-guard.js";
 import { getCachedDetect, setCachedDetect } from "./cache.js";
-import { getSettings } from "./storage.js";
+import { getSettings, isLinkBadgingDomain, setLinkBadging } from "./storage.js";
+import { getDomain } from "tldts";
 
 export interface DetectResult {
   state: BadgeState;
@@ -188,6 +189,33 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     if (msg?.type === "author:fetch" && typeof msg.url === "string") {
       refetchPdf(msg.url)
         .then((bytes) => sendResponse({ b64: bytes ? toB64(bytes) : null }))
+        .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
+      return true;
+    }
+    // Link-badging (#69) — the content script is thin; the SW gates by eTLD+1 and verifies via the
+    // deterministic detect pipeline (24h cache), returning only the badge state (never a tab badge).
+    if (msg?.type === "linkbadge:enabled" && typeof msg.hostname === "string") {
+      const d = getDomain(msg.hostname);
+      (d ? isLinkBadgingDomain(d) : Promise.resolve(false)).then((enabled) => sendResponse({ enabled }));
+      return true;
+    }
+    if (msg?.type === "linkbadge:verify" && typeof msg.url === "string") {
+      detectCached(msg.url)
+        .then((r) => sendResponse({ state: r.state }))
+        .catch(() => sendResponse({ state: "absent" as BadgeState }));
+      return true;
+    }
+    if (msg?.type === "linkbadge:toggle" && typeof msg.hostname === "string") {
+      const d = getDomain(msg.hostname);
+      if (!d) {
+        sendResponse({ enabled: false });
+        return true;
+      }
+      isLinkBadgingDomain(d)
+        .then(async (was) => {
+          await setLinkBadging(d, !was);
+          sendResponse({ enabled: !was });
+        })
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true;
     }
