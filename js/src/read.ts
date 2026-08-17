@@ -2,8 +2,9 @@ import { verifyIntegrity } from "./verify.js";
 import { parsePayload, DEFAULT_MAX_PAYLOAD_BYTES } from "./parse.js";
 import { OmIoError } from "./errors.js";
 
-/** Detection outcome ([OM-XMP-005]); `ambiguous` is reserved for a later pass. */
-export type ReadState = "absent" | "present" | "hash-mismatch";
+/** Detection outcome ([OM-XMP-005]); `ambiguous` is reserved for a later pass. `encrypted` = the PDF
+ * is encrypted and could not be decrypted here, so no payload could be read (distinct from `absent`). */
+export type ReadState = "absent" | "present" | "hash-mismatch" | "encrypted";
 
 export interface ReadVerification {
   /** True = unaltered since embed; false = mismatch; null = no reference hash to check. */
@@ -47,11 +48,14 @@ export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadRe
       throwOnInvalidObject: false,
       updateMetadata: false,
     });
-  } catch {
+  } catch (e) {
     // Encrypted or otherwise unparseable by pdf-lib (which can't decrypt streams). Fall back to
-    // pdf.js, which decrypts empty-password PDFs. pdf.js needs a Worker, so in an MV3 service
-    // worker `getDocument` throws → a graceful `absent` (encrypted OMs are an extension edge case).
-    return readViaPdfjs(pdfBytes);
+    // pdf.js, which decrypts empty-password PDFs. pdf.js needs a Worker, so in an MV3 service worker
+    // `getDocument` throws. When the PDF is encrypted and pdf.js can't read it either, report the
+    // distinct `encrypted` state (not `absent`), so the UI can say "can't read (encrypted)" ([#72]).
+    const encrypted =
+      e instanceof pdfLib.EncryptedPDFError || /encrypt/i.test(String((e as Error)?.message ?? ""));
+    return readViaPdfjs(pdfBytes, encrypted);
   }
 
   const expectedHash = await readXmpPayloadHash(doc, pdfLib);
@@ -79,7 +83,7 @@ export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadRe
  * encrypted files, which pdf.js decrypts). pdf.js requires a Worker; where none is available (an
  * MV3 service worker) `getDocument` throws and we return `absent`, never crash.
  */
-async function readViaPdfjs(pdfBytes: Uint8Array): Promise<ReadResult> {
+async function readViaPdfjs(pdfBytes: Uint8Array, encrypted = false): Promise<ReadResult> {
   try {
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
     const pdf = await pdfjs.getDocument({ data: pdfBytes.slice(), verbosity: 0 }).promise;
@@ -111,7 +115,12 @@ async function readViaPdfjs(pdfBytes: Uint8Array): Promise<ReadResult> {
       await pdf.destroy();
     }
   } catch {
-    return { state: "absent", payload: null, payloadHash: null, verification: UNVERIFIED };
+    return {
+      state: encrypted ? "encrypted" : "absent",
+      payload: null,
+      payloadHash: null,
+      verification: UNVERIFIED,
+    };
   }
 }
 
