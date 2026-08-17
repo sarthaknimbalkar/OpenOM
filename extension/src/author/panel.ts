@@ -12,10 +12,11 @@ import {
 } from "openom-js";
 import schema from "../../../spec/om-0.1.schema.json";
 import { precompiledValidate } from "../validator.js";
-import { captureFromBytes, type Capture } from "./capture.js";
+import { captureFromBytes, looksLikePdf, type Capture } from "./capture.js";
 import { newDraft, type Draft } from "./draft.js";
 import { getProfile, setProfile, profileComplete, type BrokerProfile } from "./profile.js";
-import { finalize, assertAndEmbed, handBack } from "./assert.js";
+import { getDraft, setDraft, clearDraft } from "./draft-store.js";
+import { finalize, assertAndEmbed, handBack, suggestedFilename } from "./assert.js";
 import { renderReview, repriceDiff } from "./review-panel.js";
 import { applyExtraction } from "./extract/apply.js";
 import { onDeviceExtractor } from "./extract/on-device.js";
@@ -71,6 +72,10 @@ async function captureFromUrl(root: HTMLElement, url: string): Promise<void> {
 
 /** Build the review workspace: profile form + draft JSON + live-validated review render + Assert. */
 async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> {
+  if (!looksLikePdf(bytes)) {
+    root.replaceChildren(el("p", "err", "That doesn't look like a PDF — capture an offering-memorandum PDF.")); // #65
+    return;
+  }
   const capture: Capture = await captureFromBytes(bytes);
   const profile0 = (await getProfile()) ?? { broker: "", brokerage: "", license: "" };
   root.replaceChildren();
@@ -102,10 +107,16 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const license = pin("p-license", "license", profile0.license ?? "");
   root.appendChild(prof);
 
-  // Draft payload (seeded from a prior payload on reprice). B1 input is JSON; M5b-2 pre-fills it.
-  const seed = capture.prior?.payload ?? {};
+  // The draft (payload + evidence) is the source of truth so extracted evidence survives re-renders;
+  // the textarea edits only the payload half. Seeded from a prior payload on reprice, OR restored from
+  // a saved in-progress draft ([#94]). Extraction confidence is never consent — the human still clicks
+  // Assert below on the SAME review the extraction pre-filled ([OM-EXTP-003]).
+  const sourceDocHash = integrityHashOfBytes(capture.bytes); // #96 provenance + #94 draft key
+  const restored = await getDraft(sourceDocHash);
+  let draft: Draft = restored ?? newDraft(capture.prior?.payload ?? {});
+
   const ta = el("textarea", "draft-json") as HTMLTextAreaElement;
-  ta.value = JSON.stringify(seed, null, 2);
+  ta.value = JSON.stringify(draft.payload, null, 2);
   root.appendChild(el("h2", undefined, "Draft payload"));
   root.appendChild(ta);
 
@@ -127,14 +138,9 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
 
   const profile = (): BrokerProfile => ({ broker: broker.value, brokerage: brokerage.value, license: license.value });
   const prior = capture.prior ? { payloadHash: capture.prior.payloadHash ?? "", payload: capture.prior.payload ?? {} } : null;
-  const sourceDocHash = integrityHashOfBytes(capture.bytes); // #96 — provenance of the source doc
-
-  // The draft (payload + evidence) is the source of truth so extracted evidence survives re-renders;
-  // the textarea edits only the payload half. Extraction confidence is never consent — the human still
-  // clicks Assert below on the SAME review the extraction pre-filled ([OM-EXTP-003]).
-  let draft: Draft = newDraft(capture.prior?.payload ?? {});
 
   const rerender = (): void => {
+    void setDraft(sourceDocHash, draft); // #94 — checkpoint in-progress work
     const preview = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
     const report = validate(preview);
     const diff = prior ? repriceDiff(prior.payload, preview, prior.payloadHash) : null;
@@ -151,7 +157,9 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
       await setProfile(profile());
       const final = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash }, sourceDocHash);
       const out = await assertAndEmbed(final, capture.bytes, validate, embedViaSW);
-      handBack(out, "openom-embedded.pdf");
+      handBack(out, suggestedFilename(final)); // #99 — meaningful name from the property address
+      void clearDraft(sourceDocHash); // #94 — the OM is embedded; drop the saved draft
+
       status.textContent = "Embedded — downloaded openom-embedded.pdf";
     } catch (e) {
       status.textContent = `Blocked: ${(e as Error).message}`;

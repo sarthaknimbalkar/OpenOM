@@ -59,6 +59,31 @@ export async function assertAndEmbed(
   return embed(bytes, finalPayload);
 }
 
+/**
+ * A meaningful download name from the payload's street address (or the source URL's basename), always
+ * ending `-openom.pdf`; falls back to `openom-embedded.pdf` ([#99]). Sanitized to a safe filename.
+ */
+export function suggestedFilename(payload: Record<string, unknown>, sourceUrl?: string): string {
+  const addr = (payload.property as Record<string, unknown> | undefined)?.address as
+    | Record<string, unknown>
+    | undefined;
+  const street = typeof addr?.streetAddress === "string" ? addr.streetAddress : "";
+  let base = street;
+  if (!base && sourceUrl) {
+    try {
+      base = new URL(sourceUrl).pathname.split("/").pop()?.replace(/\.pdf$/i, "") ?? "";
+    } catch {
+      base = "";
+    }
+  }
+  const slug = base
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return slug ? `${slug}-openom.pdf` : "openom-embedded.pdf";
+}
+
 /** Hand the embedded OM to the broker as a download (panel document; no `downloads` permission). */
 export function handBack(out: Uint8Array, filename: string): void {
   const url = URL.createObjectURL(new Blob([new Uint8Array(out)], { type: "application/pdf" }));

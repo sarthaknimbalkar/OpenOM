@@ -4,6 +4,16 @@
 // tampered file (hash-mismatch) or a plain PDF (absent) starts a fresh assertion.
 import { readPayloadFromBytes, type ReadResult } from "openom-js";
 
+/** Cheap sniff that bytes are a PDF (the `%PDF-` signature within the first bytes) ([#65]). */
+export function looksLikePdf(bytes: Uint8Array): boolean {
+  const head = bytes.subarray(0, 8);
+  const sig = [0x25, 0x50, 0x44, 0x46, 0x2d]; // %PDF-
+  for (let start = 0; start <= head.length - sig.length; start++) {
+    if (sig.every((b, i) => head[start + i] === b)) return true;
+  }
+  return false;
+}
+
 export interface Capture {
   readonly bytes: Uint8Array;
   /** Non-null only for a cleanly-readable existing payload — the reprice base. */
