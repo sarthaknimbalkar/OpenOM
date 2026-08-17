@@ -1,0 +1,24 @@
+{
+  "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
+  "@type": "RealEstateListing",
+  "specVersion": "0.1",
+  "assertedBy": { "broker": "Dana Sample", "brokerage": "Placeholder Retail Advisors", "license": "TX 000000" },
+  "assertedDate": "2026-09-01",
+  "property": {
+    "address": { "streetAddress": "500 Example Blvd", "addressLocality": "Testville", "addressRegion": "TX", "postalCode": "75000", "addressCountry": "US" },
+    "apn": "R000000", "buildingSF": 6000, "yearBuilt": 2021
+  },
+  "deal": { "askingPrice": 2400000, "capRate": 0.0599, "noi": 143750, "noiType": "in-place", "noiAsOfDate": "2026-05-31", "pricePerSF": 400.00, "status": "active" },
+  "lease": {
+    "tenantEntity": "Placeholder Quick Service, LLC",
+    "guarantor": { "name": "Placeholder Brands Inc.", "type": "corporate" },
+    "landlordResponsibilities": { "roof": false, "structure": false, "parking": false, "hvac": false, "taxes": false, "insurance": false, "cam": false },
+    "leaseTypeAsserted": "NNN",
+    "commencement": "2021-06-01", "expiration": "2031-05-31",
+    "rentSchedule": [
+      { "periodStart": "2021-06-01", "periodEnd": "2026-05-31", "annualRent": 143750, "rentPSF": 23.96, "source": "asserted" },
+      { "periodStart": "2026-06-01", "periodEnd": "2031-05-31", "annualRent": 158125, "rentPSF": 26.35, "escalationFromPrior": 0.10, "source": "asserted" }
+    ]
+  },
+  "meta": { "supersedes": "sha256:90cb7e3c7ff06dd339f46cf80e99d0f661f77c72d167baca2393d4bbfbceb919" }
+}
