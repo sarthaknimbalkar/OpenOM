@@ -129,7 +129,8 @@ Re-read, correct, re-validate.
 ## The review gate — the assertion moment
 
 Extraction output is a **draft**. It becomes a broker assertion only when a human reviews the
-payload against the source and approves (§7a, [OM-EXTP-003]). At the gate:
+payload against the source and approves (§7a, [OM-EXTP-003]). What you MUST present at the gate is
+specified in [`./review-contract.md`](./review-contract.md). In short, at the gate:
 
 1. Present the payload, the source evidence for each field, and any residual warnings.
 2. On approval: set `assertedBy` to the reviewing broker, set `assertedDate` (today), confirm
