@@ -204,8 +204,23 @@ to the CLI), but the **Python core embeds them** (hash-valid round-trip) — so 
 Harness: `node js/scripts/real-om-fast.mjs`. A committed synthetic non-destructive test (#105) guards
 this in CI without the private corpus. #14 (envelope schema+validator) shipped.
 
-**Next: adoption / GA hardening** — full-extension encrypted-embed (#4, needs an in-browser PDF
-decryptor; CLI covers it today), the truly-incremental byte-preserving save ([OM-EMB-020], YAGNI given
+**In-browser encrypted-embed shipped (#4, 2026-08-18).** Author mode now decrypts empty-user-password
+AES OMs (permission encryption — restrict print/copy — NOT password-protected) in-browser, then embeds
+into the plaintext. New deterministic `js/src/decrypt.ts` (`decryptPdf(bytes)→Uint8Array|null`): reads
+`/Encrypt` via pdf-lib, derives the file key with `@noble/hashes` (MD5 R4 / SHA-2 "Algorithm 2.B" R6),
+AES-CBC via `@noble/ciphers` (the one new light dep), validates the empty user password against `/U`
+(RC4 for R4, SHA-2 for R6) BEFORE decrypting, and a PKCS#7 failure aborts to `null` — a wrong key can
+never emit a corrupt OM. Handles the real-world structure: compressed **object streams** + xref streams
+(pdf-lib dissolves an encrypted ObjStm at load, so containers are located by a safe raw scan — ObjStm
+dicts are plaintext — decrypted, and reparsed via `PDFObjectStreamParser`). Scope is empty-password AES
+only (V4/R4 + V5/R6); RC4 / real passwords / out-of-scope → `null` → the #107 CLI-refuse. `captureFromBytes`
+decrypts-then-authors (`wasDecrypted`), the panel shows an unencrypted-output notice. **Proven by the
+pikepdf render oracle over the real corpus: 102 R4 + 23 R6 = 125/125 in-scope encrypted OMs decrypt
+render-identical (ssim 1, maxdiff 0)**; CI-gated by synthetic AES-128/256 fixtures WITH object streams
+(`js/test/decrypt.test.ts`) + the live author gate (`author/encrypted.pdf`, 9/9); bundle stays inference-free.
+
+**Next: adoption / GA hardening** — the truly-incremental byte-preserving save ([OM-EMB-020], YAGNI given
 the load→save evidence — matters only for signed OMs), Web-Store submission (packaging shipped, #104),
 and the hosted inference-extraction service (the sole paid product, a separate Vervelio build).
-M2/M3/M4/M5a/M5b all shipped; M5 at peak; embed proven on real OMs across producers.
+M2/M3/M4/M5a/M5b all shipped; M5 at peak; embed proven on real OMs across producers; encrypted OMs now
+covered in-browser as well as via the CLI (100% corpus coverage from either surface).

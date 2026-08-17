@@ -37,14 +37,47 @@ describe("captureFromBytes — prior payload drives reprice", () => {
   });
 
   test("tampered prior is flagged priorUnverified so the panel can warn (#87)", async () => {
-    expect((await captureFromBytes(bytes, async () => MISMATCH)).priorUnverified).toBe(true);
-    expect((await captureFromBytes(bytes, async () => ABSENT)).priorUnverified).toBe(false);
-    expect((await captureFromBytes(bytes, async () => PRESENT)).priorUnverified).toBe(false);
+    expect(
+      (await captureFromBytes(bytes, async () => MISMATCH)).priorUnverified,
+    ).toBe(true);
+    expect(
+      (await captureFromBytes(bytes, async () => ABSENT)).priorUnverified,
+    ).toBe(false);
+    expect(
+      (await captureFromBytes(bytes, async () => PRESENT)).priorUnverified,
+    ).toBe(false);
   });
 
-  test("an encrypted PDF is flagged so the panel refuses to author (#107)", async () => {
+  test("an out-of-scope encrypted PDF (decrypt → null) is refused (#107)", async () => {
     const ENCRYPTED: ReadResult = { ...ABSENT, state: "encrypted" };
-    expect((await captureFromBytes(bytes, async () => ENCRYPTED)).encrypted).toBe(true);
-    expect((await captureFromBytes(bytes, async () => ABSENT)).encrypted).toBe(false);
+    const c = await captureFromBytes(
+      bytes,
+      async () => ENCRYPTED,
+      async () => null,
+    );
+    expect(c.encrypted).toBe(true);
+    expect(c.wasDecrypted).toBe(false);
+    expect((await captureFromBytes(bytes, async () => ABSENT)).encrypted).toBe(
+      false,
+    );
+  });
+
+  test("an empty-password AES PDF is decrypted then read as embeddable (#4)", async () => {
+    const ENCRYPTED: ReadResult = { ...ABSENT, state: "encrypted" };
+    const decrypted = new Uint8Array([9, 9, 9]);
+    let call = 0;
+    const read = async (): Promise<ReadResult> =>
+      call++ === 0 ? ENCRYPTED : ABSENT;
+    const c = await captureFromBytes(bytes, read, async () => decrypted);
+    expect(c.wasDecrypted).toBe(true);
+    expect(c.encrypted).toBe(false);
+    expect(c.bytes).toBe(decrypted); // authoring proceeds against the decrypted copy
+    expect(c.prior).toBeNull();
+  });
+
+  test("a fresh (unencrypted) capture reports wasDecrypted false", async () => {
+    expect(
+      (await captureFromBytes(bytes, async () => ABSENT)).wasDecrypted,
+    ).toBe(false);
   });
 });
