@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import ipaddress
 from collections.abc import Callable, Iterator, Mapping
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 from urllib.parse import urljoin, urlparse
 
 from .tools import ToolError
@@ -58,7 +58,8 @@ def _default_resolver(host: str) -> list[str]:
 
 
 def _default_opener(
-    pinned_ip: str, host: str, url: str, *, connect_timeout: float, read_timeout: float
+    pinned_ip: str, host: str, url: str, *, connect_timeout: float, read_timeout: float,
+    verify: Any = True,
 ) -> FetchResponse:
     import httpx
 
@@ -73,7 +74,7 @@ def _default_opener(
             connect=connect_timeout, read=read_timeout, write=read_timeout, pool=connect_timeout
         ),
         headers={"Host": host},
-        verify=True,
+        verify=verify,
     )
     try:
         request = client.build_request("GET", target, extensions={"sni_hostname": host})
@@ -99,6 +100,7 @@ class SafeFetcher:
         connect_timeout: float = 10.0,
         read_timeout: float = 30.0,
         max_redirects: int = 5,
+        verify: Any = True,
     ) -> None:
         self.max_bytes = max_bytes
         self.resolver = resolver
@@ -106,6 +108,7 @@ class SafeFetcher:
         self.connect_timeout = connect_timeout
         self.read_timeout = read_timeout
         self.max_redirects = max_redirects
+        self.verify = verify
 
     def get(self, url: str) -> bytes:
         for _hop in range(self.max_redirects + 1):
@@ -134,6 +137,7 @@ class SafeFetcher:
             return self.opener(
                 pinned, host, url,
                 connect_timeout=self.connect_timeout, read_timeout=self.read_timeout,
+                verify=self.verify,
             )
         except TimeoutError as exc:
             raise ToolError("OM-IO-003", f"fetch timeout: {exc}", retryable=True) from exc
