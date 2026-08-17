@@ -156,6 +156,34 @@ def _load_pdf(ref: Any) -> bytes:
 # Untrusted-PDF parse budget on the hosted transport ([OM-SEC-010], [OM-MCP-008]).
 _PARSE_TIMEOUT_S = 30.0
 _PARSE_MEMORY_MB = 2048
+_MAX_PAGES = 3000  # per-call page ceiling; exceeding it returns OM-IO-005 (never silent truncation)
+
+
+def set_max_pages(n: int) -> None:
+    """Configure the per-call page ceiling ([OM-MCP-008])."""
+    global _MAX_PAGES
+    _MAX_PAGES = n
+
+
+def _page_count(pdf_bytes: bytes) -> int:
+    """Cheap page count (page tree only, no content streams). Top-level for subprocess pickling."""
+    import io
+
+    import pikepdf
+
+    with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+        return len(pdf.pages)
+
+
+def _enforce_page_limit(pdf_bytes: bytes) -> None:
+    """On the hosted transport, reject a document over the per-call page ceiling ([OM-MCP-008]).
+    The count runs in the bounded subprocess too, so a malicious page tree can't hang/OOM the host.
+    """
+    if _resolver().transport != "http":
+        return
+    pages = _run_core(_page_count, pdf_bytes)
+    if pages > _MAX_PAGES:
+        raise ToolError("OM-IO-005", f"document has {pages} pages; per-call limit is {_MAX_PAGES}")
 
 
 def _run_core(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
@@ -179,7 +207,9 @@ def _load_schema() -> dict[str, Any]:
 @_guard
 def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
     """Read-only: classify + profile the document (§I OM-MCP-010)."""
-    profile = _run_core(_inspect, _load_pdf(pdf))
+    data = _load_pdf(pdf)
+    _enforce_page_limit(data)
+    profile = _run_core(_inspect, data)
     payload = dict(profile["payload"])
     payload["originVerified"] = None  # §10 layer-3 check is M3; null = not checked
     return {
@@ -217,6 +247,7 @@ def om_extract_text(
 ) -> dict[str, Any]:
     """Read-only, paginated text + best-effort tables (§I OM-MCP-012)."""
     data = _load_pdf(pdf)
+    _enforce_page_limit(data)
     return dict(
         _run_core(_extract_text, data, page_range=page_range, max_chars=max_chars, cursor=cursor)
     )
@@ -231,7 +262,9 @@ def om_extract_images(
 ) -> dict[str, Any]:
     """Read-only: manifest + local paths, never inline bytes (§I OM-MCP-013)."""
     dest = Path(out_dir) if out_dir else Path(tempfile.mkdtemp(prefix="openom_img_"))
-    result = _run_core(_extract_images, _load_pdf(pdf), out_dir=dest)
+    data = _load_pdf(pdf)
+    _enforce_page_limit(data)
+    result = _run_core(_extract_images, data, out_dir=dest)
     manifest = []
     for img in result["images"]:
         if img["error"] is not None:
