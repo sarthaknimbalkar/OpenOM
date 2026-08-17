@@ -8,6 +8,12 @@ export interface Capture {
   readonly bytes: Uint8Array;
   /** Non-null only for a cleanly-readable existing payload — the reprice base. */
   readonly prior: ReadResult | null;
+  /**
+   * True when the PDF DID carry a payload that failed its integrity check (hash-mismatch): it is not
+   * a reprice base, and the panel MUST warn that embedding will start a fresh assertion, not chain
+   * from it ([#87]). A plain PDF (absent) leaves this false — that is a normal fresh embed.
+   */
+  readonly priorUnverified: boolean;
 }
 
 export async function captureFromBytes(
@@ -15,5 +21,9 @@ export async function captureFromBytes(
   read: (b: Uint8Array) => Promise<ReadResult> = readPayloadFromBytes,
 ): Promise<Capture> {
   const r = await read(bytes);
-  return { bytes, prior: r.state === "present" ? r : null };
+  return {
+    bytes,
+    prior: r.state === "present" ? r : null,
+    priorUnverified: r.state === "hash-mismatch",
+  };
 }

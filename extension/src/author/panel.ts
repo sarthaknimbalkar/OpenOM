@@ -14,6 +14,7 @@ import { renderReview, repriceDiff } from "./review-panel.js";
 import { applyExtraction } from "./extract/apply.js";
 import { onDeviceExtractor } from "./extract/on-device.js";
 import { pickExtractor } from "./extract/pick.js";
+import { localDateISO } from "./clock.js";
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
   const n = document.createElement(tag);
@@ -22,7 +23,7 @@ const el = (tag: string, cls?: string, text?: string): HTMLElement => {
   return n;
 };
 
-const todayISO = (): string => new Date().toISOString().slice(0, 10);
+const todayISO = (): string => localDateISO(new Date());
 const validate = (p: Record<string, unknown>): ValidationReport =>
   validatePayload(p, schema as Record<string, unknown>, { validate: precompiledValidate });
 
@@ -67,6 +68,18 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const capture: Capture = await captureFromBytes(bytes);
   const profile0 = (await getProfile()) ?? { broker: "", brokerage: "", license: "" };
   root.replaceChildren();
+
+  // A prior payload that FAILS integrity is not a reprice base — warn that this will be a fresh
+  // assertion with no supersedes chain, so the broker is not surprised ([#87]).
+  if (capture.priorUnverified) {
+    root.appendChild(
+      el(
+        "p",
+        "prior-unverified",
+        "This PDF already contains openOM data that FAILS its integrity check. It will not be used as a reprice base — embedding will create a fresh assertion with no link to the prior payload.",
+      ),
+    );
+  }
 
   // Broker profile (assertedBy), device-local.
   const prof = el("section", "profile");
