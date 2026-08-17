@@ -75,6 +75,10 @@ def main() -> None:
     _write("stale/deal.pdf", embed(_blank(), SAMPLE, asserted_date=date))
     _write("stale/om.json", canonicalize(stale_new))
 
+    # author (M5b-1): a plain OM the broker embeds from scratch, and an already-embedded OM to reprice.
+    _write("author/plain.pdf", _blank())
+    _write("author/embedded.pdf", embed(_blank(), SAMPLE, asserted_date=date))
+
     print(f"wrote fixtures to {OUT}")
 
 
