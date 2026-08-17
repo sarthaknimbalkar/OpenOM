@@ -36,8 +36,22 @@ export async function verifyOrigin(a: {
     return { originVerified: false, reason: "unreachable" };
   }
   const mirrorHash = integrityHashOfBytes(fetched.body);
-  if (mirrorHash !== a.embeddedHash) {
+  if (!hashesEqual(mirrorHash, a.embeddedHash)) {
     return { originVerified: false, reason: "hash-mismatch", mirrorHash };
   }
   return { originVerified: true, reason: "ok", mirrorHash };
+}
+
+/**
+ * Compare two `sha256:` digests up to formatting ([#81]): trim, lowercase, and tolerate a present /
+ * absent `sha256:` prefix on either side. A valid-but-differently-cased or unprefixed embedded hash
+ * must not read as a mismatch and silently drop origin verification. The digest itself must match.
+ */
+function hashesEqual(a: string, b: string): boolean {
+  const norm = (h: string): string =>
+    h
+      .trim()
+      .toLowerCase()
+      .replace(/^sha256:/, "");
+  return norm(a) === norm(b) && norm(a).length > 0;
 }

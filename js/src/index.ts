@@ -12,15 +12,17 @@ export { embedPayload } from "./embed.js";
 export { reembedWarnings } from "./reembed.js";
 export { integrityHashOfBytes, verifyIntegrity, type IntegrityResult } from "./verify.js";
 export { parsePayload, DEFAULT_MAX_PAYLOAD_BYTES, type ParseOptions } from "./parse.js";
-export { sha256Hex, hmacSha256Hex } from "./crypto.js";
+export { sha256Hex, hmacSha256Hex, timingSafeEqualHex } from "./crypto.js";
 export { verifyOrigin, type OriginResult, type MirrorFetch } from "./origin.js";
 export { badgeState, honestLabel, FORBIDDEN, type BadgeState } from "./badge.js";
 export {
   buildEnvelope,
   signHeaders,
   assertSafeWebhookTarget,
+  verifyWebhookSignature,
   type Envelope,
   type Verification,
+  type VerifyResult,
 } from "./webhook.js";
 export {
   readPayloadFromBytes,
