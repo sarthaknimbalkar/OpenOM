@@ -41,3 +41,12 @@ def test_example_rent_periods_are_asserted_post_review() -> None:
 def test_sample_om_has_no_embedded_payload() -> None:
     # The demo doc is an OM to extract FROM, not an already-embedded openOM.
     assert read((EXAMPLE / "sample-om.pdf").read_bytes()).present is False
+
+
+def test_scanned_demo_om_classifies_scanned() -> None:
+    # The image-only variant drives the playbook's scanned/OCR branch (#58).
+    from openom_core.inspect import inspect
+
+    data = (EXAMPLE / "sample-om-scanned.pdf").read_bytes()
+    assert inspect(data)["class"] == "scanned"
+    assert read(data).present is False

@@ -19,6 +19,7 @@ from pathlib import Path
 import pymupdf
 
 OUT = Path(__file__).resolve().parent / "sample-om.pdf"
+OUT_SCANNED = Path(__file__).resolve().parent / "sample-om-scanned.pdf"
 
 LINES = [
     ("OFFERING MEMORANDUM", 20, True),
@@ -57,7 +58,7 @@ LINES = [
 ]
 
 
-def build() -> None:
+def _text_doc() -> pymupdf.Document:
     doc = pymupdf.open()
     page = doc.new_page(width=612, height=792)
     y = 60.0
@@ -66,10 +67,31 @@ def build() -> None:
             font = "hebo" if bold else "helv"
             page.insert_text((54, y), text, fontsize=size, fontname=font)
         y += size + 6
+    return doc
+
+
+def build() -> None:
+    """The native (text-layer) demo OM — the default extraction target."""
+    doc = _text_doc()
     doc.save(OUT)
     doc.close()
     print(f"wrote {OUT}")
 
 
+def build_scanned() -> None:
+    """An image-only (no text layer) version of the same OM — classifies as ``scanned``, exercising
+    the playbook's vision/OCR branch. Rasterize the text page, then place ONLY that image."""
+    src = _text_doc()
+    pix = src[0].get_pixmap(dpi=150)
+    src.close()
+    out = pymupdf.open()
+    page = out.new_page(width=612, height=792)
+    page.insert_image(page.rect, pixmap=pix)
+    out.save(OUT_SCANNED)
+    out.close()
+    print(f"wrote {OUT_SCANNED}")
+
+
 if __name__ == "__main__":
     build()
+    build_scanned()
