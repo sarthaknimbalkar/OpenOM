@@ -182,3 +182,33 @@ jobs:
         run: pytest core -q -m cross_impl
         env:
           OPENOM_XIMPL_DIR: ${{ runner.temp }}/ximpl
+
+  consumer-gate:
+    # [OM-DoD-006] — the LIVE proof of M5a consumer mode. Real headed Chromium loads the unpacked
+    # MV3 extension against a self-signed HTTPS harness (fixtures + /om.json mirror + /hook receiver)
+    # and drives every §AA badge state + the §Y publish HMAC. Mocked unit tests cannot prove this:
+    # they stayed green while a pdf.js-worker and an ajv-`new Function` (CSP) defect each broke the
+    # product in-browser. This job — not test:unit — is the gate (repo Rule 5: real fixtures, no mocks).
+    needs: [detect, javascript]
+    if: needs.detect.outputs.has_js == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install /js + /extension deps
+        run: |
+          cd js && npm ci
+          cd ../extension && npm ci
+      - name: Install xvfb + Playwright Chromium (+ OS deps)
+        working-directory: extension
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          npx playwright install --with-deps chromium
+      - name: Consumer gate — headed MV3 Chromium under xvfb (builds eval-free bundle first)
+        working-directory: extension
+        run: xvfb-run -a npm run test:consumer
+      - name: Assert the built consumer bundle is inference-free (cardinal rule)
+        working-directory: extension
+        run: node scripts/assert-no-inference.mjs dist
