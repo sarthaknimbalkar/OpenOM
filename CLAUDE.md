@@ -153,5 +153,17 @@ step; every `om_*` tool stays deterministic. Committed demo (`process/example/`:
 produced payload + transcript) is gated by `spec/tests/test_process_example.py` (zero errors +
 warning-clean). The live non-Claude client run is adoption-deferred.
 
-**Next milestone: M5a** (consumer extension — MV3 Chrome, detect/verify/card/publish; `[OM-DoD-006]`).
-M2/M3/M4 all shipped.
+**M5a gate [OM-DoD-006] met** (2026-08-17). Consumer extension shipped in two sub-projects.
+**A** (`/js` trust core): `verifyOrigin` (§10.1 domain-origin), `badgeState`/`honestLabel`/FORBIDDEN
+(§AA precedence + UI-honesty), `buildEnvelope`/`signHeaders`/`assertSafeWebhookTarget` (§Y HMAC +
+SSRF host-guard), all byte-parity with Python. **B** (`/extension`, MV3 Chrome consumer): service
+worker runs detect (re-fetch bytes, never the viewer) → read → validate → verifyOrigin → stale →
+badge; popup card with source tags + residual warnings + OMW-W051 stale notice; named-webhook
+publish (test-fire/copy/download). The read path is **worker-free** (pdf-lib + zlib/DecompressionStream,
+pdf.js only as an encrypted fallback) and the schema validator is **eval-free** (ajv standalone
+codegen) — both forced by the MV3 CSP and proven by a real-browser Playwright gate (7/7 §AA states +
+publish HMAC over a self-signed HTTPS harness). `assert-no-inference` over `extension/dist` keeps the
+consumer bundle inference-free (cardinal rule holds).
+
+**Next milestone: M5b** (author mode — capture/review/embed over `process/review-contract.md`;
+extends `/extension`). M2/M3/M4/M5a all shipped.
