@@ -67,6 +67,12 @@ const server = createServer({ key: pems.private, cert: pems.cert }, (req, res) =
     res.end(JSON.stringify(lastHook));
     return;
   }
+  if (url.pathname === "/listing") {
+    // A listing page (text/html) with links to OM fixtures — for the link-badging gate (#69).
+    res.writeHead(200, { "content-type": "text/html", "access-control-allow-origin": "*" });
+    res.end(readFileSync(join(HERE, "listing.html")));
+    return;
+  }
   const entry = files[url.pathname];
   if (!entry) {
     res.writeHead(404);
