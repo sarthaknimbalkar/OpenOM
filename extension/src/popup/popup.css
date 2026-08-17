@@ -1,2 +1,51 @@
-:root { font: 14px system-ui, sans-serif; }
-body { margin: 0; padding: 12px; min-width: 320px; }
+:root {
+  font: 14px system-ui, sans-serif;
+  color: #1a1a1a;
+}
+body {
+  margin: 0;
+  padding: 12px;
+  min-width: 340px;
+}
+.badge {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f2f2f2;
+}
+.badge-label {
+  display: block;
+  font-size: 15px;
+}
+.badge-caption {
+  display: block;
+  color: #555;
+  font-size: 12px;
+}
+.badge-origin-verified {
+  background: #e6f4ea;
+}
+.badge-hash-mismatch {
+  background: #fce8e6;
+}
+.stale {
+  color: #8a6d00;
+  font-size: 12px;
+}
+.fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 8px 0;
+}
+.fields dt {
+  color: #555;
+}
+.fields dd {
+  margin: 0;
+}
+.publish input,
+.publish button {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+}
