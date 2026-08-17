@@ -4,7 +4,7 @@ import { defineConfig } from "@playwright/test";
 // context). The harness HTTPS server is started + reused. [OM-DoD-006].
 export default defineConfig({
   testDir: "test",
-  testMatch: /(consumer|author|a11y)\.spec\.ts/,
+  testMatch: /(consumer|author|a11y|link-badger)\.spec\.ts/,
   fullyParallel: false,
   workers: 1,
   timeout: 30_000,
