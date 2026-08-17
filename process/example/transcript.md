@@ -74,3 +74,28 @@ Result: `expected-payload.json`.
 With approval, `om_embed({"path": ".../sample-om.pdf"}, payload, assertedDate="2026-08-17")` would
 write the embedded PDF (first embed → `meta.supersedes: null`). Left unrun here so the demo OM
 stays payload-free for the gate's `test_sample_om_has_no_embedded_payload`.
+
+## Appendix — the warning-iteration loop (a corrected mis-extraction)
+
+The happy path above was clean on the first pass. The loop's real purpose is catching a bad
+mapping. A representative first-pass slip on this same OM, and its correction:
+
+```
+# First pass (WRONG): transcribed "Cap Rate: 5.75%" verbatim.
+deal.capRate = 5.75
+
+→ om_validate(draft, schema)
+← warnings: ["OMW-W013"]   # capRate outside the plausibility band [0.02, 0.20]
+
+# Re-read mapping-guide.md → "capRate is a decimal fraction: 6.25% → 0.0625". Re-examine the OM.
+# Correct: 5.75% → 0.0575.
+deal.capRate = 0.0575
+
+→ om_validate(draft, schema)
+← warnings: []             # ties to NOI ÷ askingPrice = 143750 / 2500000 = 0.0575
+```
+
+The rule the loop enforces: **a warning means the extraction is probably wrong — re-read and fix,
+never silence it.** `spec/tests/test_process_traps.py` machine-checks this and the other common
+traps (schedule gap → `OMW-W021`, NNN-but-landlord-pays → `OMW-W040`, rentPSF mismatch →
+`OMW-W024`, deal-math → `OMW-W010`/`W011`), each against the corrected warning-clean payload.
