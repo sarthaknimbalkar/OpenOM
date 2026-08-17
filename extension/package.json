@@ -5,13 +5,18 @@
   "type": "module",
   "description": "openOM MV3 consumer-mode extension — detect, verify, view, publish. Zero inference.",
   "scripts": {
-    "build": "vite build",
+    "gen": "node scripts/gen-validator.mjs",
+    "build": "node build.mjs",
+    "pretest:unit": "node scripts/gen-validator.mjs",
     "test:unit": "vitest run",
+    "pretest:consumer": "node build.mjs",
     "test:consumer": "playwright test",
     "assert-no-inference": "node scripts/assert-no-inference.mjs dist"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "@types/chrome": "^0.0.287",
     "jsdom": "^25.0.0",
     "selfsigned": "^2.4.1",

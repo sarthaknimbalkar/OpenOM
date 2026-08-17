@@ -15,12 +15,16 @@ import schema from "../../spec/om-0.1.schema.json";
 import { refetchPdf } from "./detect.js";
 import { guardedMirrorFetch, mirrorUrlFor } from "./mirror.js";
 import { classifyStale } from "./stale.js";
+import { precompiledValidate } from "./validator.js";
 
 export interface DetectResult {
   state: BadgeState;
   label: string;
   caption: string;
+  sourceUrl: string;
   payload: Record<string, unknown> | null;
+  payloadHash: string | null;
+  verification: { hashValid: boolean; originVerified: boolean; signatureValid: null };
   findings: string[];
   stale?: "OMW-W051";
 }
@@ -59,7 +63,10 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
     state = "hash-mismatch"; // terminal — no L3/L4
   } else {
     payload = read.payload;
-    const report = validatePayload(payload, schema as Record<string, unknown>);
+    // Eval-free validator (ajv standalone) — the MV3 CSP forbids ajv's runtime compile.
+    const report = validatePayload(payload, schema as Record<string, unknown>, {
+      validate: precompiledValidate,
+    });
     findings.push(...report.warnings.map((w) => w.code));
 
     const mirrorUrl = mirrorUrlFor(url);
@@ -102,7 +109,21 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
 
   if (deps.setBadge) await deps.setBadge(state);
   const { label, caption } = honestLabel(state);
-  return { state, label, caption, payload, findings, ...(stale ? { stale } : {}) };
+  return {
+    state,
+    label,
+    caption,
+    sourceUrl: url,
+    payload,
+    payloadHash: read?.payloadHash ?? null,
+    verification: {
+      hashValid: state !== "absent" && state !== "hash-mismatch",
+      originVerified: state === "origin-verified",
+      signatureValid: null,
+    },
+    findings,
+    ...(stale ? { stale } : {}),
+  };
 }
 
 function _chromeSetBadge(state: BadgeState): void {
@@ -116,7 +137,9 @@ function _chromeSetBadge(state: BadgeState): void {
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type === "detect" && typeof msg.url === "string") {
-      handleDetect(msg.url, { setBadge: _chromeSetBadge }).then(sendResponse);
+      handleDetect(msg.url, { setBadge: _chromeSetBadge })
+        .then(sendResponse)
+        .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true; // async response
     }
     return false;
