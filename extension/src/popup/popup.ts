@@ -67,6 +67,13 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
   // data-action) so it stays outside the publish-controls set.
   root.appendChild(el("button", "open-author", "Embed a payload…"));
 
+  // Per-site link-badging opt-in (#69). Wired in the runtime bootstrap (needs the tab's domain).
+  const lb = el("label", "lb");
+  const lbToggle = el("input", "lb-toggle") as HTMLInputElement;
+  lbToggle.type = "checkbox";
+  lb.append(lbToggle, " Badge openOM links on this site");
+  root.appendChild(lb);
+
   if (result.stale) {
     root.appendChild(el("p", "stale", "Stale: a newer payload exists at the origin (OMW-W051). This copy is unaltered but superseded."));
   }
@@ -132,6 +139,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
       renderPopup(root, result, await getWebhook());
       wireButtons(root, result);
       wireOpenAuthor(root);
+      wireLinkBadge(root, result);
     } catch (e) {
       root.textContent = `openOM error: ${(e as Error).message}`;
     }
@@ -202,5 +210,28 @@ function wireOpenAuthor(root: HTMLElement): void {
       else if (tab?.windowId !== undefined) await chrome.sidePanel.open({ windowId: tab.windowId });
       window.close();
     })();
+  });
+}
+
+/** Per-site link-badging toggle (#69): seed from the SW's allowlist, flip the current domain on change. */
+function wireLinkBadge(root: HTMLElement, result: DetectResult): void {
+  const cb = root.querySelector(".lb-toggle") as HTMLInputElement | null;
+  if (!cb) return;
+  let hostname: string;
+  try {
+    hostname = new URL(result.sourceUrl).hostname;
+  } catch {
+    cb.disabled = true;
+    return;
+  }
+  void chrome.runtime.sendMessage({ type: "linkbadge:enabled", hostname }).then((r: { enabled?: boolean }) => {
+    cb.checked = !!r?.enabled;
+  });
+  cb.addEventListener("change", () => {
+    void chrome.runtime
+      .sendMessage({ type: "linkbadge:toggle", hostname })
+      .then((r: { enabled?: boolean }) => {
+        cb.checked = !!r?.enabled;
+      });
   });
 }

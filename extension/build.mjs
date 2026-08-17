@@ -15,7 +15,9 @@ const alias = {
   "openom-js": resolve(root, "../js/src/index.ts"),
 };
 
-async function one(input, name, first) {
+// `format` is "es" for the service worker + extension pages, but "iife" for the declarative content
+// script — MV3 content_scripts run as CLASSIC scripts, not ES modules ([#69]).
+async function one(input, name, first, format = "es") {
   await build({
     root,
     configFile: false,
@@ -29,7 +31,7 @@ async function one(input, name, first) {
       rollupOptions: {
         input,
         external: ["node:zlib"],
-        output: { entryFileNames: `${name}.js`, format: "es", inlineDynamicImports: true },
+        output: { entryFileNames: `${name}.js`, format, inlineDynamicImports: true },
       },
     },
   });
@@ -39,6 +41,7 @@ await one(resolve(root, "src/service-worker.ts"), "service-worker", true);
 await one(resolve(root, "src/popup/popup.ts"), "popup", false);
 await one(resolve(root, "src/author/panel.ts"), "sidepanel", false);
 await one(resolve(root, "src/options.ts"), "options", false);
+await one(resolve(root, "src/content/link-badger.ts"), "link-badger", false, "iife"); // classic script
 
 // The author panel extracts OM text with pdf.js, which needs its worker as a web-accessible resource
 // (the panel is a full page and CAN spawn the Worker the consumer service worker could not).
