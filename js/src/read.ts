@@ -40,7 +40,10 @@ const UNVERIFIED: ReadVerification = {
  * (`verifyIntegrity`), never re-canonicalized ([OM-CANON-008]); a hash mismatch still returns the
  * payload with `hashValid: false` ([OM-VAL-006]) — the caller MUST NOT trust it.
  */
-export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadResult> {
+export async function readPayloadFromBytes(
+  pdfBytes: Uint8Array,
+  decrypt?: import("./read-decrypt.js").DecryptRead,
+): Promise<ReadResult> {
   const pdfLib = await import("pdf-lib");
   let doc: import("pdf-lib").PDFDocument;
   try {
@@ -49,13 +52,19 @@ export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadRe
       updateMetadata: false,
     });
   } catch (e) {
-    // Encrypted or otherwise unparseable by pdf-lib (which can't decrypt streams). Fall back to
-    // pdf.js, which decrypts empty-password PDFs. pdf.js needs a Worker, so in an MV3 service worker
-    // `getDocument` throws. When the PDF is encrypted and pdf.js can't read it either, report the
-    // distinct `encrypted` state (not `absent`), so the UI can say "can't read (encrypted)" ([#72]).
+    // Encrypted or otherwise unparseable by pdf-lib (which can't decrypt streams). Report the distinct
+    // `encrypted` state (vs `absent`) so the UI can say "can't read (encrypted)" ([#72]). An OPT-IN
+    // pdf.js decrypt fallback (Node tooling, empty-password PDFs) is used only when provided — it is
+    // NOT bundled into the deterministic path, so the MV3 service worker carries no pdf.js ([#106]).
     const encrypted =
       e instanceof pdfLib.EncryptedPDFError || /encrypt/i.test(String((e as Error)?.message ?? ""));
-    return readViaPdfjs(pdfBytes, encrypted);
+    if (decrypt) return decrypt(pdfBytes, encrypted);
+    return {
+      state: encrypted ? "encrypted" : "absent",
+      payload: null,
+      payloadHash: null,
+      verification: UNVERIFIED,
+    };
   }
 
   const expectedHash = await readXmpPayloadHash(doc, pdfLib);
@@ -76,52 +85,6 @@ export async function readPayloadFromBytes(pdfBytes: Uint8Array): Promise<ReadRe
     payloadHash: computedHash,
     verification: { hashValid, originVerified: null, signatureValid: null },
   };
-}
-
-/**
- * Last-resort reader via pdf.js — only for PDFs pdf-lib cannot load (notably empty-password
- * encrypted files, which pdf.js decrypts). pdf.js requires a Worker; where none is available (an
- * MV3 service worker) `getDocument` throws and we return `absent`, never crash.
- */
-async function readViaPdfjs(pdfBytes: Uint8Array, encrypted = false): Promise<ReadResult> {
-  try {
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const pdf = await pdfjs.getDocument({ data: pdfBytes.slice(), verbosity: 0 }).promise;
-    try {
-      const meta = await pdf.getMetadata();
-      const expectedHash = meta.metadata?.get("omspec:payloadhash") ?? null;
-      const attachments = await pdf.getAttachments();
-      const bytes: Uint8Array | null = attachments?.["om.json"]?.content ?? null;
-      if (bytes === null) {
-        return {
-          state: "absent",
-          payload: null,
-          payloadHash: expectedHash,
-          verification: UNVERIFIED,
-        };
-      }
-      const payload = safeParse(bytes);
-      if (expectedHash === null) {
-        return { state: "present", payload, payloadHash: null, verification: { ...UNVERIFIED } };
-      }
-      const { hashValid, computedHash } = verifyIntegrity(bytes, expectedHash);
-      return {
-        state: hashValid ? "present" : "hash-mismatch",
-        payload,
-        payloadHash: computedHash,
-        verification: { hashValid, originVerified: null, signatureValid: null },
-      };
-    } finally {
-      await pdf.destroy();
-    }
-  } catch {
-    return {
-      state: encrypted ? "encrypted" : "absent",
-      payload: null,
-      payloadHash: null,
-      verification: UNVERIFIED,
-    };
-  }
 }
 
 type PdfLib = typeof import("pdf-lib");
