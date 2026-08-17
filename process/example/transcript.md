@@ -99,3 +99,23 @@ The rule the loop enforces: **a warning means the extraction is probably wrong �
 never silence it.** `spec/tests/test_process_traps.py` machine-checks this and the other common
 traps (schedule gap → `OMW-W021`, NNN-but-landlord-pays → `OMW-W040`, rentPSF mismatch →
 `OMW-W024`, deal-math → `OMW-W010`/`W011`), each against the corrected warning-clean payload.
+
+## Appendix — reprice (re-embed with a supersedes chain)
+
+The common repeat operation is a price change on an already-embedded OM. The playbook reads the
+prior payload, builds the new one, and links it:
+
+```
+→ om_read({"path": ".../embedded.pdf"})     # the previously embedded OM
+← payload (askingPrice 2,500,000, …)         # prior payload; its hash is H_prev
+
+# Repriced: askingPrice 2,400,000 → capRate 143750/2400000 = 0.0599, pricePerSF 400.00.
+# Bump assertedDate; set meta.supersedes = H_prev.
+→ om_validate(repriced, schema)             ← warnings: []   # still ties
+→ om_embed({"path": ".../embedded.pdf"}, repriced, assertedDate="2026-09-01")
+← a NEW PDF with exactly ONE om.json (replaced in place, not stacked) and
+  meta.supersedes = H_prev — the audit chain to the superseded assertion.
+```
+
+`process/example/repriced-payload.json` is the committed after-state;
+`spec/tests/test_process_reprice.py` proves the chain and the replace-not-stack guarantee.
