@@ -40,3 +40,4 @@ export { consistencyFindings, DEFAULT_TOLERANCES, type Tolerances } from "./cons
 export { OmIoError, type OmIoCode } from "./errors.js";
 export { extractPageText, setPdfWorkerSrc, type PageText, type PageTextResult } from "./text.js";
 export { pdfjsDecryptRead, type DecryptRead } from "./read-decrypt.js";
+export { validateEnvelope, ENVELOPE_SCHEMA, type EnvelopeValidation } from "./envelope.js";
