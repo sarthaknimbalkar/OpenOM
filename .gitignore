@@ -34,6 +34,9 @@ htmlcov/
 node_modules/
 *.tsbuildinfo
 .npm/
+extension/src/generated/
+extension/test-results/
+extension/playwright-report/
 
 # --- OS / editor ---
 .DS_Store

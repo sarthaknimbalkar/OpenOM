@@ -2,8 +2,9 @@
 // render is a PURE function of data (no chrome calls), so it is unit-testable in jsdom; the runtime
 // bootstrap (query tab → message the service worker → wire buttons) is guarded at the bottom.
 
+import { envelopeText, testFire } from "../publish.js";
 import type { DetectResult } from "../service-worker.js";
-import type { Webhook } from "../storage.js";
+import { getWebhook, setWebhook, type Webhook } from "../storage.js";
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
   const n = document.createElement(tag);
@@ -98,17 +99,76 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
 }
 
 // ---- runtime bootstrap (guarded so jsdom tests can import renderPopup without chrome) ----
-if (typeof chrome !== "undefined" && chrome.tabs?.query) {
+if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
   void (async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     const root = document.getElementById("app");
-    if (!tab?.url || !root) return;
-    const [{ getWebhook }, result] = await Promise.all([
-      import("../storage.js"),
-      chrome.runtime.sendMessage({ type: "detect", url: tab.url }) as Promise<DetectResult>,
-    ]);
-    renderPopup(root, result, await getWebhook());
-    // Button wiring (publish/testFire/copy/download) is attached here in the runtime; omitted from
-    // the pure render for testability. See publish.ts for the underlying calls.
+    if (!root) return;
+    try {
+      // Target URL: a ?url= deep-link (used by the harness + as a shareable check link), else the
+      // active tab. The pipeline runs identically for both — only the source of the URL differs.
+      const override = new URLSearchParams(location.search).get("url");
+      let url = override ?? undefined;
+      if (!url && chrome.tabs?.query) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        url = tab?.url;
+      }
+      if (!url) return;
+      const result = (await chrome.runtime.sendMessage({ type: "detect", url })) as
+        | DetectResult
+        | { error: string };
+      if ("error" in result) {
+        root.textContent = `openOM error: ${result.error}`;
+        return;
+      }
+      renderPopup(root, result, await getWebhook());
+      wireButtons(root, result);
+    } catch (e) {
+      root.textContent = `openOM error: ${(e as Error).message}`;
+    }
   })();
+}
+
+/** Attach publish/test-fire/copy/download behavior to the rendered controls (runtime only). */
+function wireButtons(root: HTMLElement, result: DetectResult): void {
+  const target = () => (root.querySelector("input.wh-target") as HTMLInputElement | null)?.value ?? "";
+  const secret = () => (root.querySelector("input.wh-secret") as HTMLInputElement | null)?.value ?? "";
+  const status = document.createElement("p");
+  status.className = "status";
+  root.appendChild(status);
+
+  const args = () => ({
+    sourceUrl: result.sourceUrl,
+    payload: result.payload ?? {},
+    payloadHash: result.payloadHash ?? "",
+    verification: result.verification,
+    target: target(),
+    secret: secret(),
+    now: new Date(),
+    id: crypto.randomUUID(),
+    deliveryId: crypto.randomUUID(),
+  });
+
+  root.querySelector('[data-action="test-fire"]')?.addEventListener("click", async () => {
+    try {
+      await setWebhook({ url: target(), secret: secret() });
+      const r = await testFire(args());
+      status.textContent = `Test fire → ${r.status}`;
+    } catch (e) {
+      status.textContent = `Blocked: ${(e as Error).message}`;
+    }
+  });
+  root.querySelector('[data-action="copy"]')?.addEventListener("click", () => {
+    void navigator.clipboard?.writeText(envelopeText({ ...args(), event: "om.payload.published" }));
+    status.textContent = "Copied envelope";
+  });
+  root.querySelector('[data-action="download"]')?.addEventListener("click", () => {
+    const blob = new Blob([envelopeText({ ...args(), event: "om.payload.published" })], {
+      type: "application/json",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "openom-envelope.json";
+    a.click();
+    status.textContent = "Downloaded envelope";
+  });
 }
