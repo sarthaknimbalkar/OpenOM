@@ -3,7 +3,7 @@
 // that reads the clock (assertedDate) and touches chrome.* / the DOM runtime; every transform it calls
 // (capture / draft / finalize / repriceDiff / assertAndEmbed) is pure and unit-tested. The workflow
 // validates the FINALIZED-shape payload (what would be embedded), so the Assert gate is honest.
-import { validatePayload, type ValidationReport } from "openom-js";
+import { extractPageText, setPdfWorkerSrc, validatePayload, type ValidationReport } from "openom-js";
 import schema from "../../../spec/om-0.1.schema.json";
 import { precompiledValidate } from "../validator.js";
 import { captureFromBytes, type Capture } from "./capture.js";
@@ -11,6 +11,9 @@ import { newDraft, type Draft } from "./draft.js";
 import { getProfile, setProfile, type BrokerProfile } from "./profile.js";
 import { finalize, assertAndEmbed, handBack } from "./assert.js";
 import { renderReview, repriceDiff } from "./review-panel.js";
+import { applyExtraction } from "./extract/apply.js";
+import { onDeviceExtractor } from "./extract/on-device.js";
+import { pickExtractor } from "./extract/pick.js";
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
   const n = document.createElement(tag);
@@ -87,6 +90,17 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   root.appendChild(el("h2", undefined, "Draft payload"));
   root.appendChild(ta);
 
+  // On-device extraction (M5b-2): offer it only when a Prompt API is present; else a manual-entry note.
+  const extractor = await pickExtractor([onDeviceExtractor]);
+  if (extractor) {
+    const btn = el("button", "extract-btn", "Extract with on-device AI") as HTMLButtonElement;
+    btn.dataset.action = "extract";
+    root.appendChild(btn);
+    btn.addEventListener("click", () => void runExtract());
+  } else {
+    root.appendChild(el("p", "no-ai", "On-device AI unavailable — enter fields manually."));
+  }
+
   const review = el("section", "review");
   root.appendChild(review);
   const status = el("p", "status");
@@ -95,37 +109,57 @@ async function startReview(root: HTMLElement, bytes: Uint8Array): Promise<void> 
   const profile = (): BrokerProfile => ({ broker: broker.value, brokerage: brokerage.value, license: license.value });
   const prior = capture.prior ? { payloadHash: capture.prior.payloadHash ?? "", payload: capture.prior.payload ?? {} } : null;
 
+  // The draft (payload + evidence) is the source of truth so extracted evidence survives re-renders;
+  // the textarea edits only the payload half. Extraction confidence is never consent — the human still
+  // clicks Assert below on the SAME review the extraction pre-filled ([OM-EXTP-003]).
+  let draft: Draft = newDraft(capture.prior?.payload ?? {});
+
   const rerender = (): void => {
-    let draft: Draft;
-    try {
-      draft = newDraft(JSON.parse(ta.value) as Record<string, unknown>);
-    } catch {
-      review.replaceChildren(el("p", "err", "Draft is not valid JSON."));
-      return;
-    }
     const preview = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash });
     const report = validate(preview);
     const diff = prior ? repriceDiff(prior.payload, preview, prior.payloadHash) : null;
     renderReview(review, draft, { report, diff });
-    wireAssert(draft);
+    review.querySelector("#assert")?.addEventListener("click", () => void doAssert());
   };
 
-  const wireAssert = (draft: Draft): void => {
-    review.querySelector("#assert")?.addEventListener("click", async () => {
-      try {
-        await setProfile(profile());
-        const final = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash });
-        const out = await assertAndEmbed(final, capture.bytes, validate, embedViaSW);
-        handBack(out, "openom-embedded.pdf");
-        status.textContent = "Embedded — downloaded openom-embedded.pdf";
-      } catch (e) {
-        status.textContent = `Blocked: ${(e as Error).message}`;
-      }
-    });
+  const doAssert = async (): Promise<void> => {
+    try {
+      await setProfile(profile());
+      const final = finalize(draft, profile(), todayISO(), prior && { payloadHash: prior.payloadHash });
+      const out = await assertAndEmbed(final, capture.bytes, validate, embedViaSW);
+      handBack(out, "openom-embedded.pdf");
+      status.textContent = "Embedded — downloaded openom-embedded.pdf";
+    } catch (e) {
+      status.textContent = `Blocked: ${(e as Error).message}`;
+    }
   };
 
+  const runExtract = async (): Promise<void> => {
+    if (!extractor) return;
+    try {
+      const pages = await extractPageText(capture.bytes);
+      const result = await extractor.extract(pages);
+      draft = applyExtraction(draft, result);
+      ta.value = JSON.stringify(draft.payload, null, 2);
+      status.textContent = result.truncatedAfterPage
+        ? `Read pages 1–${result.truncatedAfterPage} only — review the rest by hand.`
+        : "Extracted a draft — review every field before asserting.";
+      rerender();
+    } catch (e) {
+      status.textContent = `Extraction failed: ${(e as Error).message}`;
+    }
+  };
+
+  ta.addEventListener("input", () => {
+    try {
+      draft = { payload: JSON.parse(ta.value) as Record<string, unknown>, evidence: draft.evidence };
+    } catch {
+      review.replaceChildren(el("p", "err", "Draft is not valid JSON."));
+      return;
+    }
+    rerender();
+  });
   for (const i of [broker, brokerage, license]) i.addEventListener("input", rerender);
-  ta.addEventListener("input", rerender);
   rerender();
 }
 
@@ -153,10 +187,16 @@ function fromB64(b64: string): Uint8Array {
 if (typeof chrome !== "undefined" && chrome.runtime?.id) {
   const root = document.getElementById("author");
   if (root) {
-    // ?url= deep-link auto-captures (used by the live gate and as a shareable "embed this" link);
-    // otherwise show the capture screen (current tab / file picker).
-    const override = new URLSearchParams(location.search).get("url");
-    if (override) void captureFromUrl(root, override);
-    else renderCaptureScreen(root);
+    void (async () => {
+      // pdf.js needs its worker as an extension URL before extractPageText runs (the panel is a full
+      // page, so unlike the consumer service worker it CAN spawn the Worker). Set it once.
+      await setPdfWorkerSrc(chrome.runtime.getURL("pdf.worker.mjs"));
+
+      // ?url= deep-link auto-captures (used by the live gate and as a shareable "embed this" link);
+      // otherwise show the capture screen (current tab / file picker).
+      const override = new URLSearchParams(location.search).get("url");
+      if (override) await captureFromUrl(root, override);
+      else renderCaptureScreen(root);
+    })();
   }
 }
