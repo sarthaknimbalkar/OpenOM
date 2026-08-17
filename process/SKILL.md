@@ -27,8 +27,10 @@ of the client-agnostic [`./agent-instructions.md`](./agent-instructions.md); the
 4. **Validate & iterate** — `om_validate(payload, schema)`: fix every `OMV-E###`; treat every
    `OMW-W###` as evidence your extraction is wrong and re-read the source — never silence a warning.
    Loop until schema-clean and warning-clean (or the residual is explained at review).
-5. **Human review gate** — the assertion moment. **Do not self-assert.** Present the payload, the
-   source evidence per field, and any residual warnings to the human, and wait for approval.
+5. **Human review gate** — the assertion moment. **Do not self-assert.** Present exactly what
+   [`./review-contract.md`](./review-contract.md) requires (per-field value + source evidence +
+   `source` tag, omissions, residual warnings, and a reprice diff when re-embedding), and wait for
+   the human's approval.
 6. **Assert & embed** — on approval: set `assertedBy` to the reviewing broker, set `assertedDate`
    (today), confirm `noiType`/`noiAsOfDate`, promote each rent period `source` `"extracted"` →
    `"asserted"`, then `om_embed(pdf, payload, assertedDate)` (reprice ⇒ set `meta.supersedes`).

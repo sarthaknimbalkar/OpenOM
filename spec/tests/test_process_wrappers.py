@@ -48,3 +48,13 @@ def test_mapping_guide_link_targets_exist() -> None:
     for text in (SKILL, AGENT):
         for target in re.findall(r"\]\(\./([\w.-]+\.md)\)", text):
             assert (PROC / target).exists(), f"dangling link: {target}"
+
+
+def test_review_contract_states_required_elements() -> None:
+    # #61: the review-presentation contract must specify what the agent surfaces at the gate.
+    contract = (PROC / "review-contract.md").read_text(encoding="utf-8").lower()
+    for needle in ("source evidence", "residual warning", "reprice", "must not"):
+        assert needle in contract, f"review-contract.md missing: {needle!r}"
+    # both wrappers point at it
+    for text in (SKILL, AGENT):
+        assert "review-contract.md" in text
