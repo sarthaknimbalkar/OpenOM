@@ -39,3 +39,4 @@ export {
 export { consistencyFindings, DEFAULT_TOLERANCES, type Tolerances } from "./consistency.js";
 export { OmIoError, type OmIoCode } from "./errors.js";
 export { extractPageText, setPdfWorkerSrc, type PageText, type PageTextResult } from "./text.js";
+export { pdfjsDecryptRead, type DecryptRead } from "./read-decrypt.js";
