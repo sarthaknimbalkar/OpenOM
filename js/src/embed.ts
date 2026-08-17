@@ -87,7 +87,8 @@ function removeExistingOmJson(doc: PDFDocument): void {
   if (arr instanceof PDFArray) {
     for (let i = arr.size() - 2; i >= 0; i -= 2) {
       const nm = arr.get(i);
-      const decoded = nm instanceof PDFString || nm instanceof PDFHexString ? nm.decodeText() : null;
+      const decoded =
+        nm instanceof PDFString || nm instanceof PDFHexString ? nm.decodeText() : null;
       if (decoded === "om.json") {
         arr.remove(i + 1); // value ref
         arr.remove(i); // key name
