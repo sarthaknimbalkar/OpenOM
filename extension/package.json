@@ -14,10 +14,11 @@
     "assert-no-inference": "node scripts/assert-no-inference.mjs dist"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.48.0",
+    "@types/chrome": "^0.0.287",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "@types/chrome": "^0.0.287",
     "jsdom": "^25.0.0",
     "selfsigned": "^2.4.1",
     "typescript": "^5.7.0",

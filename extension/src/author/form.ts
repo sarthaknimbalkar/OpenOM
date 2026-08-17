@@ -78,23 +78,27 @@ export function buildForm(root: HTMLElement, draft: Draft, cb: FormCallbacks): v
 /** One field row: label + typed control (data-path) + evidence (page/quote) + no-evidence flag. */
 function fieldRow(desc: FieldDescriptor, draft: Draft, flagged: Set<string>, cb: FormCallbacks): HTMLElement {
   const row = el("div", "review-field");
-  row.appendChild(el("label", "field-label", desc.label));
   const control = makeControl(desc, getField(draft, desc.path));
   // `input` only (fires for text/number/date/select/checkbox in modern browsers). Deliberately NOT
   // `change`: a change on blur would re-render the derived panel mid-click and replace #assert,
   // making the Assert click miss its own target.
   control.addEventListener("input", () => cb.onField(desc.path, readControl(desc, control)));
-  row.appendChild(control);
+  // Wrap the control in its label so the two are associated for assistive tech (#71).
+  const label = el("label", "field-label");
+  label.append(`${desc.label} `, control);
+  row.appendChild(label);
 
-  // evidence
+  // evidence — placeholder alone is not an accessible name, so label each input explicitly.
   const ev = el("span", "field-evidence");
   const priorEv = draft.evidence[desc.path];
   const page = el("input", "ev-page") as HTMLInputElement;
   page.type = "number";
   page.placeholder = "pg";
+  page.setAttribute("aria-label", `${desc.label} — evidence page`);
   if (priorEv?.page !== undefined) page.value = String(priorEv.page);
   const quote = el("input", "ev-quote") as HTMLInputElement;
   quote.placeholder = "quote";
+  quote.setAttribute("aria-label", `${desc.label} — evidence quote`);
   if (priorEv?.quote) quote.value = priorEv.quote;
   const emitEv = (): void =>
     cb.onEvidence(desc.path, {
@@ -153,6 +157,7 @@ function rentEditor(draft: Draft, cb: FormCallbacks): HTMLElement {
     for (const f of RENT_FIELDS) {
       const desc: FieldDescriptor = { path: `/lease/rentSchedule/${i}/${f.key}`, kind: f.kind, label: f.label };
       const control = makeControl(desc, period[f.key]);
+      control.setAttribute("aria-label", `Rent period ${i + 1} — ${f.label}`); // #71
       control.addEventListener("input", () => cb.onField(desc.path, readControl(desc, control)));
       row.appendChild(control);
     }
