@@ -31,6 +31,20 @@ def _blank() -> bytes:
     return buf.getvalue()
 
 
+def _encrypted() -> bytes:
+    """A blank OM, empty-user-password AES-128 (permission encryption) with compressed object streams —
+    the real-world encrypted structure the #4 in-browser decrypt handles. The extension decrypts it,
+    then authors against the plaintext."""
+    with pikepdf.open(io.BytesIO(_blank())) as pdf:
+        buf = io.BytesIO()
+        pdf.save(
+            buf,
+            encryption=pikepdf.Encryption(owner="owner", user="", aes=True, R=4),
+            object_stream_mode=pikepdf.ObjectStreamMode.generate,
+        )
+        return buf.getvalue()
+
+
 def _write(rel: str, data: bytes) -> None:
     p = OUT / rel
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -78,6 +92,7 @@ def main() -> None:
     # author (M5b-1): a plain OM the broker embeds from scratch, and an already-embedded OM to reprice.
     _write("author/plain.pdf", _blank())
     _write("author/embedded.pdf", embed(_blank(), SAMPLE, asserted_date=date))
+    _write("author/encrypted.pdf", _encrypted())  # #4 — empty-password AES, decrypted in-browser
 
     print(f"wrote fixtures to {OUT}")
 
