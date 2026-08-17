@@ -14,17 +14,18 @@ async function twoPagePdf(): Promise<Uint8Array> {
 
 describe("extractPageText — worker-agnostic pdf.js page text", () => {
   test("returns per-page text", async () => {
-    const pages = await extractPageText(await twoPagePdf());
+    const { pages } = await extractPageText(await twoPagePdf());
     expect(pages).toHaveLength(2);
     expect(pages[0]).toMatchObject({ page: 1 });
     expect(pages[0]?.text).toContain("Cap Rate 5.75");
     expect(pages[1]?.text).toContain("NOI 100000");
   });
 
-  test("respects the page cap", async () => {
-    const pages = await extractPageText(await twoPagePdf(), 1);
+  test("respects the page cap and reports the true total for truncation (#66)", async () => {
+    const { pages, totalPages } = await extractPageText(await twoPagePdf(), 1);
     expect(pages).toHaveLength(1);
     expect(pages[0]?.page).toBe(1);
+    expect(totalPages).toBe(2); // caller: pages.length < totalPages → truncated, not silent
   });
 
   test("preserves line structure top-to-bottom (#103)", async () => {
@@ -33,7 +34,8 @@ describe("extractPageText — worker-agnostic pdf.js page text", () => {
     const page = doc.addPage([612, 792]);
     page.drawText("Year 1 Rent 100000", { x: 50, y: 700, size: 12, font });
     page.drawText("Year 2 Rent 110000", { x: 50, y: 650, size: 12, font });
-    const [p] = await extractPageText(await doc.save());
+    const { pages: p2 } = await extractPageText(await doc.save());
+    const p = p2[0];
     const lines = p!.text.split("\n");
     expect(lines[0]).toContain("Year 1"); // higher on the page comes first
     expect(lines.some((l) => l.includes("Year 2"))).toBe(true);
