@@ -67,6 +67,7 @@ Payload path → where it typically appears in an OM → notes.
 | `lease.options[]` = `{count,lengthYears,escalation}` | "Options to Renew" | Option periods — NOT appended to rentSchedule. |
 | `meta.supersedes` | — | `null` on first embed; prior payload hash on a reprice re-embed. |
 | `meta.sourceDocHash` | — | Optional; hash of the source doc if tracked. |
+| `meta.imageRights` | Disclaimer / photo credits | Optional rights statement for the OM's imagery. |
 
 ## Vocabularies & units (the traps)
 
