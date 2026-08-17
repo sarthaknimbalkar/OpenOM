@@ -8,7 +8,12 @@ import { build } from "vite";
 import "./scripts/gen-validator.mjs"; // regenerate the eval-free schema validator before bundling
 
 const root = dirname(fileURLToPath(import.meta.url));
-const alias = { "openom-js": resolve(root, "../js/src/index.ts") };
+// Narrow sub-entry so the popup (webhook/publish only) doesn't drag the whole barrel — and with it
+// pd-lib + ajv-formats — into its bundle ([#102]). More-specific key first.
+const alias = {
+  "openom-js/webhook": resolve(root, "../js/src/webhook.ts"),
+  "openom-js": resolve(root, "../js/src/index.ts"),
+};
 
 async function one(input, name, first) {
   await build({
