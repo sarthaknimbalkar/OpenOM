@@ -33,12 +33,15 @@ def test_repriced_supersedes_points_at_prior_payload() -> None:
 def test_reprice_round_trip_replaces_not_stacks() -> None:
     pdf = (EXAMPLE / "sample-om.pdf").read_bytes()
     first = embed(pdf, PRIOR, asserted_date=PRIOR["assertedDate"])
-    prior_hash = payload_hash(read(first).payload)  # hash of what was actually embedded
+    first_read = read(first)
+    assert first_read.payload is not None
+    prior_hash = payload_hash(first_read.payload)  # hash of what was actually embedded
     assert REPRICED["meta"]["supersedes"] == prior_hash  # the chain link the playbook sets
 
     second = embed(first, REPRICED, asserted_date=REPRICED["assertedDate"])
     result = read(second)
     assert result.present is True and result.hash_valid is True
+    assert result.payload is not None
     assert result.payload["deal"]["askingPrice"] == 2400000  # the new payload won
     assert result.payload["meta"]["supersedes"] == prior_hash
 
