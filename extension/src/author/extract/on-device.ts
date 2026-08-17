@@ -3,7 +3,7 @@
 // is a browser global, NOT an npm dependency, so assert-no-inference stays green. It touches the model
 // ONLY — never fetch/XHR/WebSocket, so extraction never leaves the device ([OM-PRIV-001]). Its output
 // is a DRAFT for the human review gate; nothing here asserts or embeds.
-import type { Extractor, ExtractionResult, PageText } from "./types.js";
+import type { Extractor, ExtractionResult, FieldExtraction, PageText } from "./types.js";
 
 interface PromptSession {
   prompt(input: string, opts?: { responseConstraint?: unknown }): Promise<string>;
@@ -72,6 +72,29 @@ const MAX_PROMPT_CHARS = 24_000;
  * with an instruction that everything within is DATA, never commands — so a hostile OM cannot inject
  * instructions to steer the extraction ([#100]). The document is truncated to a safe budget.
  */
+/**
+ * Split pages into groups whose combined text fits the on-device context budget ([#88]), so a real
+ * multi-page OM is extracted chunk-by-chunk instead of overflowing (and silently truncating) the
+ * small Nano window. A single over-budget page becomes its own chunk (buildPrompt caps within).
+ */
+export function chunkPages(pages: PageText[], maxChars = MAX_PROMPT_CHARS): PageText[][] {
+  const chunks: PageText[][] = [];
+  let cur: PageText[] = [];
+  let size = 0;
+  for (const p of pages) {
+    const len = p.text.length + 8;
+    if (cur.length > 0 && size + len > maxChars) {
+      chunks.push(cur);
+      cur = [];
+      size = 0;
+    }
+    cur.push(p);
+    size += len;
+  }
+  if (cur.length > 0) chunks.push(cur);
+  return chunks;
+}
+
 export function buildPrompt(pages: PageText[]): string {
   let body = pages.map((p) => `[p${p.page}]\n${p.text}`).join("\n\n");
   if (body.length > MAX_PROMPT_CHARS) body = body.slice(0, MAX_PROMPT_CHARS);
@@ -100,16 +123,23 @@ export const onDeviceExtractor: Extractor = {
     if (!lm) throw new Error("on-device Prompt API is unavailable");
     const session = await lm.create();
     try {
-      const raw = await session.prompt(buildPrompt(pages), { responseConstraint: RESPONSE_CONSTRAINT });
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        throw new Error("on-device extraction returned non-JSON output");
+      // Extract each context-sized chunk, merging fields first-wins by path ([#88]).
+      const merged = new Map<string, FieldExtraction>();
+      for (const chunk of chunkPages(pages)) {
+        const raw = await session.prompt(buildPrompt(chunk), { responseConstraint: RESPONSE_CONSTRAINT });
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          throw new Error("on-device extraction returned non-JSON output");
+        }
+        const fields = (parsed as { fields?: unknown }).fields;
+        if (!Array.isArray(fields)) throw new Error("on-device extraction output missing a fields array");
+        for (const f of fields as FieldExtraction[]) {
+          if (f && typeof f.path === "string" && !merged.has(f.path)) merged.set(f.path, f);
+        }
       }
-      const fields = (parsed as { fields?: unknown }).fields;
-      if (!Array.isArray(fields)) throw new Error("on-device extraction output missing a fields array");
-      return { fields: fields as ExtractionResult["fields"] };
+      return { fields: [...merged.values()] };
     } finally {
       session.destroy?.(); // release the model session ([#89])
     }
