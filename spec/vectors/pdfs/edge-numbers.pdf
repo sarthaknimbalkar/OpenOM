@@ -7,11 +7,62 @@ endobj
 << /AFRelationship /Data /EF << /F 6 0 R /UF 6 0 R >> /F (om.json) /Type /Filespec /UF (om.json) >>
 endobj
 3 0 obj
-<< /Subtype /XML /Type /Metadata /Length 660 >>
+<< /Subtype /XML /Type /Metadata /Length 3460 >>
 stream
 <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/" xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#" xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#" rdf:about="">
+   <pdfaExtension:schemas>
+    <rdf:Bag>
+     <rdf:li rdf:parseType="Resource">
+      <pdfaSchema:schema>openOM offering-memorandum payload marker</pdfaSchema:schema>
+      <pdfaSchema:namespaceURI>https://verveliolabs.com/openom/ns/0.1#</pdfaSchema:namespaceURI>
+      <pdfaSchema:prefix>omspec</pdfaSchema:prefix>
+      <pdfaSchema:property>
+       <rdf:Seq>
+        <rdf:li rdf:parseType="Resource">
+         <pdfaProperty:name>specName</pdfaProperty:name>
+         <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+         <pdfaProperty:category>internal</pdfaProperty:category>
+         <pdfaProperty:description>name of the embedded data standard</pdfaProperty:description>
+        </rdf:li>
+        <rdf:li rdf:parseType="Resource">
+         <pdfaProperty:name>specVersion</pdfaProperty:name>
+         <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+         <pdfaProperty:category>internal</pdfaProperty:category>
+         <pdfaProperty:description>version of the embedded data standard</pdfaProperty:description>
+        </rdf:li>
+        <rdf:li rdf:parseType="Resource">
+         <pdfaProperty:name>payloadFilename</pdfaProperty:name>
+         <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+         <pdfaProperty:category>internal</pdfaProperty:category>
+         <pdfaProperty:description>filename of the embedded om.json attachment</pdfaProperty:description>
+        </rdf:li>
+        <rdf:li rdf:parseType="Resource">
+         <pdfaProperty:name>payloadHash</pdfaProperty:name>
+         <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+         <pdfaProperty:category>internal</pdfaProperty:category>
+         <pdfaProperty:description>sha256 integrity hash of the canonical payload</pdfaProperty:description>
+        </rdf:li>
+        <rdf:li rdf:parseType="Resource">
+         <pdfaProperty:name>assertedDate</pdfaProperty:name>
+         <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+         <pdfaProperty:category>internal</pdfaProperty:category>
+         <pdfaProperty:description>assertion date of the embedded payload</pdfaProperty:description>
+        </rdf:li>
+        <rdf:li rdf:parseType="Resource">
+         <pdfaProperty:name>supersedes</pdfaProperty:name>
+         <pdfaProperty:valueType>Text</pdfaProperty:valueType>
+         <pdfaProperty:category>internal</pdfaProperty:category>
+         <pdfaProperty:description>prior payload hash this payload replaces</pdfaProperty:description>
+        </rdf:li>
+       </rdf:Seq>
+      </pdfaSchema:property>
+     </rdf:li>
+    </rdf:Bag>
+   </pdfaExtension:schemas>
+  </rdf:Description>
   <rdf:Description xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#" rdf:about="">
    <omspec:specName>openOM</omspec:specName>
    <omspec:specVersion>0.1</omspec:specVersion>
@@ -54,12 +105,12 @@ xref
 0000000015 00000 n 
 0000000128 00000 n 
 0000000243 00000 n 
-0000000984 00000 n 
-0000001032 00000 n 
-0000001091 00000 n 
-0000001402 00000 n 
-0000001508 00000 n 
-trailer << /Root 1 0 R /Size 9 /ID [<3fd0dfcff4f67e96289094fab9c5e0b2><31d7d997e563cc4119863298edc80711>] >>
+0000003785 00000 n 
+0000003833 00000 n 
+0000003892 00000 n 
+0000004203 00000 n 
+0000004309 00000 n 
+trailer << /Root 1 0 R /Size 9 /ID [<3fd0dfcff4f67e96289094fab9c5e0b2><721643b22e7f008a9211e3b6050e593b>] >>
 startxref
-1557
+4358
 %%EOF
