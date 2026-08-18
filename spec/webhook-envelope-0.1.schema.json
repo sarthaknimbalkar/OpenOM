@@ -23,7 +23,11 @@
     "publishedAt": { "type": "string", "format": "date-time", "description": "RFC 3339 UTC with a Z designator" },
     "sourceUrl": { "type": "string", "minLength": 1 },
     "specVersion": { "const": "0.1" },
-    "payloadHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "payloadHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "The §C integrity hash of `payload`. JSON Schema cannot bind it to `payload`, so a receiver MUST recompute and compare (verifyEnvelopePayloadHash) after verifying the signature — a schema-valid envelope can still carry a mismatched hash ([OM-HOOK], #120)."
+    },
     "verification": {
       "type": "object",
       "required": ["hashValid", "originVerified", "signatureValid"],
