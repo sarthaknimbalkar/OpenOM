@@ -40,24 +40,33 @@ SCANNED_OM = (
 )
 
 
-def load_om(rel: str) -> bytes:
-    """Return the bytes of a corpus OM, or skip the test if the corpus is not present."""
+# Committed producer-diverse fixtures (#130): stand in for each corpus class when OMs/ is absent, so
+# the named non-destructive/survival tests RUN in CI (with producer diversity) instead of skipping.
+_PRODUCERS = Path(__file__).resolve().parent / "fixtures" / "producers"
+
+
+def load_om(rel: str, fallback: str) -> bytes:
+    """Bytes of the real corpus OM if present, else the committed producer-diverse fallback (so the
+    test always runs). Only skips if BOTH are missing (a broken checkout)."""
     path = OMS_DIR / rel
-    if not path.exists():
-        pytest.skip(f"corpus file missing (OMs/ not present): {rel}")
-    return path.read_bytes()
+    if path.exists():
+        return path.read_bytes()
+    fb = _PRODUCERS / fallback
+    if fb.exists():
+        return fb.read_bytes()
+    pytest.skip(f"neither corpus ({rel}) nor fallback ({fallback}) present")
 
 
 @pytest.fixture
 def native_om() -> bytes:
-    return load_om(NATIVE_OM)
+    return load_om(NATIVE_OM, "producer-native.pdf")
 
 
 @pytest.fixture
 def hybrid_om() -> bytes:
-    return load_om(HYBRID_OM)
+    return load_om(HYBRID_OM, "producer-hybrid.pdf")
 
 
 @pytest.fixture
 def scanned_om() -> bytes:
-    return load_om(SCANNED_OM)
+    return load_om(SCANNED_OM, "producer-scanned.pdf")
