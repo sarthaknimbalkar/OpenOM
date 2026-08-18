@@ -87,6 +87,8 @@ def _docs_index() -> str:
         — generated from the JSON Schema.</li>
     <li><a href="/openom/docs/codes.html">Validation code catalog</a>
         — every error/warning/info code the validator emits.</li>
+    <li><a href="/openom/verify/">Verify a PDF</a>
+        — drop a PDF and check its openOM state, entirely in your browser.</li>
     <li><a href="/openom/spec/om-0.1.schema.json">Raw JSON Schema</a> ·
         <a href="/openom/ns/0.1">JSON-LD context</a></li>
   </ul>
@@ -254,9 +256,49 @@ def _codes_catalog() -> str:
     return _page("Code catalog", body)
 
 
+def _verify_tool() -> str:
+    # A hosted, fully client-side "drop a PDF -> see its openOM state" tool (#145). Bytes never
+    # leave the browser: it reads the file locally via the deployed widget bundle's window.openOM.
+    body = """
+  <h1>Verify an openOM PDF</h1>
+  <p>Drop or choose a PDF. It is read <strong>entirely in your browser</strong> — the bytes never
+     leave your machine — and checked for an embedded, unaltered openOM payload.</p>
+  <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
+  <div id="badge" style="margin:1rem 0;"></div>
+  <pre id="out" hidden></pre>
+  <script src="/openom/widget/openom-badge.js" defer></script>
+  <script>
+    const f = document.getElementById("f");
+    const out = document.getElementById("out");
+    const badge = document.getElementById("badge");
+    f.addEventListener("change", async () => {
+      const file = f.files && f.files[0];
+      if (!file || !window.openOM) return;
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const r = await window.openOM.readPayloadFromBytes(bytes);
+      const present = r.state === "present" || r.state === "hash-mismatch";
+      const view = window.openOM.computeBadge({
+        present,
+        hashValid: r.verification.hashValid,
+        originVerified: false,
+        signatureValid: r.verification.signatureValid,
+      });
+      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " — " + view.caption;
+      if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
+      else { out.hidden = true; }
+    });
+  </script>
+  <p><small>Origin verification (the domain-vouch layer) needs a hosted mirror and isn't available
+     for a local file; this tool shows integrity only. For a live page, use the
+     <a href="/openom/docs/quickstart-portal.html">embeddable badge</a>.</small></p>
+"""
+    return _page("Verify a PDF", body)
+
+
 def docs_pages() -> dict[str, str]:
     """Return ``{relative_path_under_site: html}`` for the whole docs tree. Deterministic."""
     return {
+        "openom/verify/index.html": _verify_tool(),
         "openom/docs/index.html": _docs_index(),
         "openom/docs/quickstart-broker.html": _quickstart_broker(),
         "openom/docs/quickstart-portal.html": _quickstart_portal(),

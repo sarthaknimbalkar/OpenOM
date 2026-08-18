@@ -15,8 +15,26 @@
  * This file is the DOM shell; build it via widget/build.mjs and typecheck it via tsconfig.widget.json
  * (it needs the DOM lib the deterministic core deliberately excludes).
  */
-import { evaluateBadge, absentView, sanitizeHref, type BadgeView } from "./badge-core.js";
+import {
+  evaluateBadge,
+  computeBadge,
+  absentView,
+  sanitizeHref,
+  type BadgeView,
+} from "./badge-core.js";
+import { readPayloadFromBytes } from "../src/read.js";
 import type { BadgeState } from "../src/badge.js";
+
+declare global {
+  interface Window {
+    // Minimal global API for the hosted verify tool (a plain page can't import an IIFE's exports).
+    openOM?: {
+      evaluateBadge: typeof evaluateBadge;
+      computeBadge: typeof computeBadge;
+      readPayloadFromBytes: typeof readPayloadFromBytes;
+    };
+  }
+}
 
 const PALETTE: Record<BadgeState, { fg: string; bg: string; mark: string }> = {
   absent: { fg: "", bg: "", mark: "" },
@@ -96,3 +114,8 @@ export function defineOpenOmBadge(tag = "openom-badge"): void {
 
 // Auto-register when loaded as a browser script (the embed use case).
 if (typeof document !== "undefined") defineOpenOmBadge();
+
+// Expose the read/verify primitives for the hosted verify tool (#145).
+if (typeof window !== "undefined") {
+  window.openOM = { evaluateBadge, computeBadge, readPayloadFromBytes };
+}

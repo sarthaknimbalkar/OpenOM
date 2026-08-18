@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verify a PDF · openOM docs</title>
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 2.5rem auto;
+            padding: 0 1rem; color: #111; }
+    a { color: #065f46; }
+    code { background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #0b1021; color: #e6edf3; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+    pre code { background: none; color: inherit; padding: 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #e5e7eb;
+              vertical-align: top; }
+    th { background: #f9fafb; }
+    nav.crumbs { font-size: 0.9em; margin-bottom: 1.5rem; }
+    .cards { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+    @media (min-width: 40rem) { .cards { grid-template-columns: 1fr 1fr 1fr; } }
+    .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.1rem; }
+    .card h3 { margin: 0 0 0.3rem; }
+    .sev-error { color: #7f1d1d; font-weight: 600; }
+    .sev-warning { color: #92400e; }
+    .sev-info { color: #374151; }
+    .req { color: #b91c1c; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <nav class="crumbs"><a href="/openom/">openOM</a> · <a href="/openom/docs/">docs</a></nav>
+
+  <h1>Verify an openOM PDF</h1>
+  <p>Drop or choose a PDF. It is read <strong>entirely in your browser</strong> — the bytes never
+     leave your machine — and checked for an embedded, unaltered openOM payload.</p>
+  <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
+  <div id="badge" style="margin:1rem 0;"></div>
+  <pre id="out" hidden></pre>
+  <script src="/openom/widget/openom-badge.js" defer></script>
+  <script>
+    const f = document.getElementById("f");
+    const out = document.getElementById("out");
+    const badge = document.getElementById("badge");
+    f.addEventListener("change", async () => {
+      const file = f.files && f.files[0];
+      if (!file || !window.openOM) return;
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const r = await window.openOM.readPayloadFromBytes(bytes);
+      const present = r.state === "present" || r.state === "hash-mismatch";
+      const view = window.openOM.computeBadge({
+        present,
+        hashValid: r.verification.hashValid,
+        originVerified: false,
+        signatureValid: r.verification.signatureValid,
+      });
+      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " — " + view.caption;
+      if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
+      else { out.hidden = true; }
+    });
+  </script>
+  <p><small>Origin verification (the domain-vouch layer) needs a hosted mirror and isn't available
+     for a local file; this tool shows integrity only. For a live page, use the
+     <a href="/openom/docs/quickstart-portal.html">embeddable badge</a>.</small></p>
+
+</body>
+</html>
