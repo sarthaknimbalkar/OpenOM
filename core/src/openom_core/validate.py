@@ -48,6 +48,7 @@ _REQUIREMENT = {
     "OMW-W041": "OM-CONS-041",
     "OMW-W050": "OM-CONS-050",
     "OMW-W060": "OM-CONS-060",
+    "OMW-W061": "OM-DD-002",
     "OMI-I001": "OM-DD-002",
     "OMI-I002": "OM-DD-004",
     "OMI-I003": "OM-ERR-014",
@@ -194,6 +195,15 @@ def _warning_tier(
     _date_term_checks(lease, as_of_date, tol, warn)
     _date_sanity_checks(payload, deal, lease, processing_date, warn)
     _self_supersede_check(payload, warn)
+
+    # OMW-W061 (#119): currency absent on an EXPLICITLY non-US property — the silent-USD default is
+    # likely wrong. The plain-absent case stays info (OMI-I001); this targets the real footgun and
+    # skips the common US omission. (currency becomes REQUIRED next major.)
+    if payload.get("currency") is None:
+        country = (prop.get("address") or {}).get("addressCountry")
+        if isinstance(country, str) and country.upper() not in ("US", ""):
+            warn(_mk("OMW-W061", "/currency",
+                     "currency absent on a non-US property; assumed USD — confirm the currency"))
 
     cap = _num(deal.get("capRate"))
     noi = _num(deal.get("noi"))

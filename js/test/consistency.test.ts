@@ -23,6 +23,15 @@ const rentSchedule = (p: Record<string, unknown>) =>
   (p.lease as Record<string, unknown>).rentSchedule as Record<string, unknown>[];
 
 describe("consistency tier", () => {
+  test("currency absent on a non-US property → OMW-W061 (#119); US base stays warning-free", () => {
+    const nonUs = stnl();
+    (
+      (nonUs.property as Record<string, unknown>).address as Record<string, unknown>
+    ).addressCountry = "GB";
+    expect(codes(nonUs)).toContain("OMW-W061");
+    expect(codes(stnl())).not.toContain("OMW-W061"); // US base
+  });
+
   test("the valid sample is internally consistent (no warnings)", () => {
     const r = consistencyFindings(stnl());
     expect(r.warnings).toEqual([]);

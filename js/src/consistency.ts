@@ -55,6 +55,7 @@ const REQUIREMENT: Record<string, string> = {
   "OMW-W041": "OM-CONS-041",
   "OMW-W050": "OM-CONS-050",
   "OMW-W060": "OM-CONS-060",
+  "OMW-W061": "OM-DD-002",
   "OMI-I001": "OM-DD-002",
   "OMI-I002": "OM-DD-004",
   "OMI-I003": "OM-ERR-014",
@@ -130,6 +131,21 @@ export function consistencyFindings(
   dateTermChecks(lease, asOfDate, tol, warnings);
   dateSanityChecks(payload, deal, lease, processingDate, options.asOf, warnings);
   selfSupersedeCheck(payload, warnings);
+
+  // OMW-W061 (#119): currency absent on an EXPLICITLY non-US property — the silent-USD default is
+  // likely wrong. The plain absent case stays info (OMI-I001); this targets the real footgun.
+  if (payload.currency === undefined || payload.currency === null) {
+    const country = obj(prop.address).addressCountry;
+    if (typeof country === "string" && country.toUpperCase() !== "US" && country !== "") {
+      warnings.push(
+        warn(
+          "OMW-W061",
+          "/currency",
+          "currency absent on a non-US property; assumed USD — confirm the currency",
+        ),
+      );
+    }
+  }
 
   const cap = num(deal.capRate);
   const noi = num(deal.noi);
