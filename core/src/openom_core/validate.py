@@ -97,7 +97,8 @@ def _mk(
     )
 
 
-def _num(value: Any) -> float | None:
+def _num(value: object) -> float | None:
+    # `object` not `Any` (#153): callers must narrow, and the isinstance gate is the only entry.
     return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
 
 
@@ -105,7 +106,7 @@ def _rel_off(actual: float, expected: float) -> float:
     return abs(actual - expected) / abs(expected) if expected else float("inf")
 
 
-def _date(value: Any) -> dt.date | None:
+def _date(value: object) -> dt.date | None:  # #153: object, narrowed below
     if not isinstance(value, str):
         return None
     try:
