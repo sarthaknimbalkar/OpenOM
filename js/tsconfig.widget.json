@@ -1,0 +1,12 @@
+{
+  // Typecheck the DOM shell of the embeddable badge (widget/openom-badge.ts). It is the ONE file in
+  // /js that touches the DOM; the base tsconfig deliberately omits the DOM lib to keep the
+  // deterministic core DOM-agnostic, so the shell gets its own config that adds it. Emits nothing.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true
+  },
+  "include": ["widget/openom-badge.ts", "widget/badge-core.ts", "src/**/*.ts"],
+  "exclude": []
+}
