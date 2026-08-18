@@ -9,3 +9,5 @@ No code; inference lives ONLY in the agent's mapping step — every `om_*` tool 
   (omit-and-flag, never guess). Drift-locked to the schema + validator.
 - `review-contract.md` — the human review/assertion gate contract.
 - `example/` — a worked synthetic run (OM → payload → transcript), gated in CI.
+- `PROMPT-API-VERIFICATION.md` — turnkey manual checklist to hand-verify the real on-device Prompt
+  API (Gemini Nano) against the ground-truth OM, for the one path CI can't run (#75).
