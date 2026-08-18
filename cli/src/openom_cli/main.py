@@ -350,10 +350,14 @@ def watch(
 def extract(
     pdf: Annotated[Path, typer.Argument(help="PDF to extract images from")],
     out_dir: Annotated[Path, typer.Option(help="Directory to write images into")],
+    render_vector_pages: Annotated[
+        bool, typer.Option(help="Also rasterize pages that have no raster images (vector-only)")
+    ] = False,
 ) -> None:
-    # Written filenames are img_<xref>.png (xref is an integer), so no untrusted path component
-    # can escape out_dir — path traversal is not reachable from payload/PDF content.
-    _emit(_extract_images(_read_bytes(pdf), out_dir=out_dir))
+    # Written filenames are img_<xref>.png / page_<n>.png (both integers), so no untrusted path
+    # component can escape out_dir — path traversal is not reachable from payload/PDF content.
+    data = _read_bytes(pdf)
+    _emit(_extract_images(data, out_dir=out_dir, render_vector_pages=render_vector_pages))
 
 
 @app.command()

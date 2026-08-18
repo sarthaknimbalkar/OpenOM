@@ -123,3 +123,41 @@ def test_cmyk_and_smask_converted(hybrid_om: bytes, tmp_path: Path) -> None:
             assert im.mode in {"RGB", "RGBA", "L", "LA"}
             if d["hasSMask"]:
                 assert im.mode in {"RGBA", "LA"}
+
+
+def _vector_only_pdf() -> bytes:
+    """A page drawn with vector graphics (a rectangle + line) and NO raster image (#16)."""
+    doc = pymupdf.open()
+    try:
+        page = doc.new_page(width=200, height=200)
+        page.draw_rect(pymupdf.Rect(20, 20, 180, 120), color=(0, 0, 1), fill=(0.8, 0.9, 1), width=2)
+        page.draw_line(pymupdf.Point(20, 150), pymupdf.Point(180, 150), color=(1, 0, 0), width=3)
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+def test_vector_only_page_yields_nothing_without_the_flag() -> None:
+    manifest = extract_images(_vector_only_pdf())
+    assert manifest["images"] == []  # no raster images, and the fallback is opt-in
+
+
+def test_render_vector_pages_rasterizes_a_vector_only_page(tmp_path: Path) -> None:
+    manifest = extract_images(_vector_only_pdf(), out_dir=tmp_path, render_vector_pages=True)
+    rendered = [i for i in manifest["images"] if i.get("source") == "rendered-page"]
+    assert len(rendered) == 1
+    d = rendered[0]
+    assert d["page"] == 1 and d["error"] is None and d["mime"] == "image/png"
+    assert d["width"] == 400 and d["height"] == 400  # 200pt at 144 DPI (zoom 2.0)
+    assert d["contentHash"] and d["contentHash"].startswith("sha256:")
+    assert d["path"] is not None and Path(d["path"]).is_file()
+    # The rendered pixels actually carry the drawn vector content (not a blank page).
+    with Image.open(d["path"]) as im:
+        assert im.getextrema() != ((255, 255), (255, 255), (255, 255))  # some non-white pixels
+
+
+def test_render_vector_pages_skips_pages_that_already_have_rasters() -> None:
+    # A page WITH a raster image must not also be rendered as a page (no double-count).
+    manifest = extract_images(_one_image_pdf(), render_vector_pages=True)
+    assert all(i.get("source") != "rendered-page" for i in manifest["images"])
+    assert len(manifest["images"]) == 1
