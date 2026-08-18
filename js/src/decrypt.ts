@@ -123,45 +123,58 @@ interface ObjStmContainer {
 }
 
 /**
- * Locate every `/Type /ObjStm` container by scanning the raw bytes. Safe because an ObjStm's dict is
- * NOT encrypted — only string values and stream bodies are — so `/Type /ObjStm`, `/N`, `/First`, and a
- * direct `/Length` appear literally. The encrypted body is sliced by `/Length` (falling back to an
- * `endstream` search). pdf-lib can't hand us these containers (it dissolves them at load), so this is
- * how the ObjStm-decrypt pass reaches them. Latin-1 view: 1 char == 1 byte, so string indices are byte
- * offsets. A stray match inside another object's encrypted body is caught by the pikepdf oracle.
+ * Locate every `/Type /ObjStm` container by walking the raw bytes object-by-object. Safe because an
+ * ObjStm's dict is NOT encrypted — only string values and stream bodies are — so `/Type /ObjStm`,
+ * `/N`, `/First`, and `/Length` appear literally in the dict. pdf-lib can't hand us these containers
+ * (it dissolves them at load), so this raw pass is how the ObjStm-decrypt reaches them.
+ *
+ * Hardening (#124): the walk SKIPS each stream body (advancing the cursor past `endstream`), so an
+ * `N G obj … /ObjStm` sequence forged inside another object's encrypted/binary body can never be
+ * mistaken for a real container — the scanner only ever inspects genuine object dicts. `/Length` is
+ * cross-checked against the actual `endstream` position and clamped to it, so a lying `/Length`
+ * cannot make us over-read past the body. Latin-1 view: 1 char == 1 byte, so indices are byte offsets.
  */
 function findObjStmContainers(bytes: Uint8Array): ObjStmContainer[] {
   const S = new TextDecoder("latin1").decode(bytes);
   const out: ObjStmContainer[] = [];
   const objRe = /(\d+)\s+(\d+)\s+obj\b/g;
-  let m: RegExpExecArray | null;
-  while ((m = objRe.exec(S)) !== null) {
+  let cursor = 0;
+  for (;;) {
+    objRe.lastIndex = cursor;
+    const m = objRe.exec(S);
+    if (m === null) break;
     const hdrEnd = m.index + m[0].length;
-    const streamKw = S.indexOf("stream", hdrEnd);
-    if (streamKw < 0) continue;
     const endobj = S.indexOf("endobj", hdrEnd);
-    if (endobj >= 0 && streamKw > endobj) continue; // no stream in this object
+    // The `stream` KEYWORD (token-bounded), not a "stream" substring inside a name like /Downstream.
+    const streamRe = /(^|[\s>])stream(\r\n|\n|\r)/g;
+    streamRe.lastIndex = hdrEnd;
+    const sm = streamRe.exec(S);
+    if (sm === null || (endobj >= 0 && sm.index >= endobj)) {
+      cursor = endobj >= 0 ? endobj + "endobj".length : hdrEnd + 1; // no body — advance past this object
+      continue;
+    }
+    const lead = sm[1] ?? "";
+    const streamKw = sm.index + lead.length; // start of the `stream` keyword
+    const bodyStart = sm.index + sm[0].length; // first byte after `stream` + its EOL
+    const es = S.indexOf("endstream", bodyStart);
+    if (es < 0) {
+      cursor = streamKw + 6;
+      continue;
+    }
+    let esTrim = es; // strip the single EOL before `endstream`
+    if (S[esTrim - 1] === "\n") esTrim--;
+    if (S[esTrim - 1] === "\r") esTrim--;
+    const maxLen = esTrim - bodyStart; // the body cannot extend past endstream
+    cursor = es + "endstream".length; // SKIP the body — never scan inside it
+
     const dictText = S.slice(hdrEnd, streamKw);
     if (!/\/ObjStm\b/.test(dictText)) continue;
     const nM = /\/N\s+(\d+)/.exec(dictText);
     const fM = /\/First\s+(\d+)/.exec(dictText);
     if (!nM || !fM) continue;
-
-    let bodyStart = streamKw + "stream".length;
-    if (S[bodyStart] === "\r") bodyStart++;
-    if (S[bodyStart] === "\n") bodyStart++;
     const lenM = /\/Length\s+(\d+)(?!\s+\d+\s+R)/.exec(dictText); // direct /Length only
-    let length: number;
-    if (lenM) {
-      length = Number(lenM[1]);
-    } else {
-      const es = S.indexOf("endstream", bodyStart);
-      if (es < 0) continue;
-      let e = es;
-      if (S[e - 1] === "\n") e--;
-      if (S[e - 1] === "\r") e--;
-      length = e - bodyStart;
-    }
+    // Clamp a (possibly-lying) /Length to the real endstream bound; fall back to it when indirect.
+    const length = lenM ? Math.min(Number(lenM[1]), maxLen) : maxLen;
     out.push({
       num: Number(m[1]),
       gen: Number(m[2]),
