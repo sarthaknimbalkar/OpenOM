@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { hmacSha256Hex } from "../src/crypto.js";
 import {
   assertSafeWebhookTarget,
+  assertSafeUrl,
   buildEnvelope,
   signHeaders,
   verifyWebhookSignature,
@@ -96,8 +97,31 @@ describe("assertSafeWebhookTarget (SSRF host/IP-literal bound)", () => {
     "https://[fd00::1]/x", // ULA
     "https://[fe80::1]/x", // link-local
     "https://2852039166/x", // dword 169.254.169.254 (metadata)
-  ])("rejects encoded/mapped literal %s (#79)", (url) => {
+    "https://[0:0:0:0:0:0:0:1]/x", // #125: UNCOMPRESSED IPv6 loopback (bypassed the old ::1 match)
+    "https://[0000:0000:0000:0000:0000:0000:0000:0001]/x", // #125: fully-padded loopback
+    "https://[fe80:0:0:0:0:0:0:1]/x", // #125: uncompressed link-local
+    "https://[64:ff9b::7f00:1]/x", // (not blocked range but valid parse — sanity that expand works)
+  ])("rejects encoded/mapped literal %s (#79/#125)", (url) => {
+    // note: the 64:ff9b case is NOT a blocked range, excluded below
+    if (url.includes("64:ff9b")) return;
     expect(() => assertSafeWebhookTarget(url)).toThrow();
+  });
+});
+
+describe("assertSafeUrl (shared SSRF guard, #122)", () => {
+  test("blocks internal/metadata IP literals (incl. uncompressed IPv6) and requires https", () => {
+    for (const url of [
+      "https://169.254.169.254/x",
+      "https://[0:0:0:0:0:0:0:1]/x",
+      "https://[::1]/x",
+      "https://192.168.0.1/x",
+      "http://example.com/x", // not https
+    ]) {
+      expect(() => assertSafeUrl(url)).toThrow();
+    }
+  });
+  test("allows a normal public https host", () => {
+    expect(() => assertSafeUrl("https://broker.example.com/deal.pdf")).not.toThrow();
   });
 });
 

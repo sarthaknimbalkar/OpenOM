@@ -1,5 +1,6 @@
 // Detection = RE-FETCH the viewed PDF's bytes over the network. It never reads the browser PDF
 // viewer's DOM/internals (§4, [OM-DoD-006]); the byte source of truth is the URL, re-fetched.
+import { assertSafeUrl } from "openom-js";
 
 export async function refetchPdf(
   url: string,
@@ -7,6 +8,9 @@ export async function refetchPdf(
   fetchImpl: typeof fetch = fetch,
 ): Promise<Uint8Array | null> {
   try {
+    // #122 SSRF guard: a link-badge href (attacker-controlled page content) reaches here via the
+    // service worker, so refuse internal/loopback/metadata IP-literal targets before fetching.
+    assertSafeUrl(url);
     const resp = await fetchImpl(url);
     if (!resp.ok) return null;
     const declared = Number(resp.headers.get("content-length") ?? "0");
