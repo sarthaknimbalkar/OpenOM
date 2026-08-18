@@ -33,7 +33,8 @@ const GROSS_LEASE_TYPES = new Set(["gross", "modified-gross"]);
 const ALL_RESP = ["roof", "structure", "parking", "hvac", "taxes", "insurance", "cam"] as const;
 const STRUCTURAL_RESP = ["roof", "structure", "parking", "hvac"] as const;
 
-const REQUIREMENT: Record<string, string> = {
+// Exported for the drift-lock (#151): tests assert this matches the canonical spec/codes.json registry.
+export const REQUIREMENT: Record<string, string> = {
   "OMW-W010": "OM-CONS-010",
   "OMW-W011": "OM-CONS-011",
   "OMW-W012": "OM-CONS-012",
