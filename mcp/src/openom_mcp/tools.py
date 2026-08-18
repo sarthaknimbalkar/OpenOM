@@ -230,6 +230,7 @@ def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
         "payload": payload,
         "images": profile["images"],
         "textCoverage": profile["textCoverage"],
+        "ocrOverlay": profile["ocrOverlay"],  # #6: OCR'd-scan overlay fraction
     }
 
 

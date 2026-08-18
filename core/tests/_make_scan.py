@@ -23,6 +23,29 @@ def make_scanned(pdf_bytes: bytes, dpi: int = 150) -> bytes:
         out.close()
 
 
+def make_ocr_scanned(pdf_bytes: bytes, dpi: int = 150) -> bytes:
+    """A scan WITH an OCR text layer (#6): each page is a full-page raster with an INVISIBLE
+    (render mode 3) searchable text layer over it — the classic OCR'd-scan structure that must
+    classify 'scanned' even though its text is extractable."""
+    src = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    out = pymupdf.open()
+    try:
+        for page in src:
+            pix = page.get_pixmap(dpi=dpi)
+            new_page = out.new_page(width=page.rect.width, height=page.rect.height)
+            new_page.insert_image(new_page.rect, pixmap=pix)
+            new_page.insert_text(
+                (36, 60),
+                "OCR searchable text layer over the scanned page image. " * 6,
+                fontsize=10,
+                render_mode=3,  # invisible: the OCR overlay, not authored/visible text
+            )
+        return out.tobytes()
+    finally:
+        src.close()
+        out.close()
+
+
 def make_text_pdf() -> bytes:
     """A synthetic text-only PDF (real text layer, no images) -> classifies 'native'."""
     doc = pymupdf.open()
