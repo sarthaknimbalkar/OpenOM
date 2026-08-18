@@ -126,6 +126,12 @@ jobs:
           python core/scripts/gen_fuzz_corpus.py
           git diff --exit-code -- spec/vectors/expected spec/vectors/payloads spec/vectors/rejections spec/vectors/fuzz \
             || (echo "::error::vector/fuzz regeneration is not a no-op — a canonical hash moved"; exit 1)
+      - name: Regenerate the hosted namespace tree and assert no drift (#139)
+        shell: bash
+        run: |
+          python spec/scripts/gen_site.py
+          git diff --exit-code -- site \
+            || (echo "::error::site/ is stale vs spec/ — run: python spec/scripts/gen_site.py"; exit 1)
 
   sbom:
     # Software Bill of Materials for the deterministic tree (supply-chain audit, §M).

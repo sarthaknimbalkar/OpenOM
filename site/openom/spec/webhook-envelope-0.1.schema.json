@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verveliolabs.com/openom/spec/webhook-envelope-0.1.schema.json",
+  "title": "openOM webhook envelope 0.1",
+  "description": "The §Y change-notification webhook envelope a consumer POSTs to a broker-configured receiver ([OM-HOOK-002]). Signed per §Y (OpenOM-Signature); this schema validates the JSON body a receiver parses. Human-readable mirror is spec Part II §5b.",
+  "type": "object",
+  "required": [
+    "envelopeVersion",
+    "event",
+    "id",
+    "publishedAt",
+    "sourceUrl",
+    "specVersion",
+    "payloadHash",
+    "verification",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "envelopeVersion": { "const": "1" },
+    "event": { "type": "string", "minLength": 1, "description": "e.g. om.payload.published, om.test.ping" },
+    "id": { "type": "string", "minLength": 1, "description": "stable event id (== OpenOM-Event-Id, stable across retries)" },
+    "publishedAt": { "type": "string", "format": "date-time", "description": "RFC 3339 UTC with a Z designator" },
+    "sourceUrl": { "type": "string", "minLength": 1 },
+    "specVersion": { "const": "0.1" },
+    "payloadHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "The §C integrity hash of `payload`. JSON Schema cannot bind it to `payload`, so a receiver MUST recompute and compare (verifyEnvelopePayloadHash) after verifying the signature — a schema-valid envelope can still carry a mismatched hash ([OM-HOOK], #120)."
+    },
+    "verification": {
+      "type": "object",
+      "required": ["hashValid", "originVerified", "signatureValid"],
+      "additionalProperties": false,
+      "properties": {
+        "hashValid": { "type": ["boolean", "null"] },
+        "originVerified": { "type": ["boolean", "null"] },
+        "signatureValid": { "type": ["boolean", "null"] }
+      }
+    },
+    "payload": { "type": "object" }
+  }
+}

@@ -12,3 +12,27 @@ The versioned contract every implementation conforms to — **CC-BY-4.0** (see [
 - `CHANGELOG.md` — spec version history.
 
 Regenerate the vectors (must be a no-op = no drift): `python core/scripts/gen_vectors.py`.
+
+## Hosted namespace (the URLs must resolve)
+
+Payloads carry `"@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"]`
+and the schemas pin absolute `$id`s under the same base. A JSON-LD processor dereferences that
+context URL and a `$ref`/`$id` resolver fetches the schemas, so those URLs **must serve the exact
+committed bytes** with the right content-type and open CORS — otherwise the web half of the standard
+is inert (#139).
+
+`../site/` is the deploy tree that mirrors those pinned paths, generated from this directory (the
+single source of truth) by `python spec/scripts/gen_site.py`. It is drift-locked in CI and
+byte-diffed against the sources by `tests/test_site.py`; regeneration must be a no-op.
+
+| Pinned URL | Serves |
+|------------|--------|
+| `…/openom/ns/0.1` | `context/openom-0.1.jsonld` (`application/ld+json`) |
+| `…/openom/spec/om-0.1.schema.json` | the payload schema (`application/schema+json`) |
+| `…/openom/spec/webhook-envelope-0.1.schema.json` | the webhook envelope schema |
+| `…/openom/` | a human-readable vocabulary landing |
+
+Deployment (Cloudflare Pages, chosen because its `site/_headers` sets the content-type for the
+extensionless `ns/0.1`) is wired in `.github/workflows/deploy-site.yml` — inert until
+`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets and the `verveliolabs.com/openom/*` route
+exist. After deploy, verify live: `OPENOM_SITE_BASE=https://verveliolabs.com pytest spec/tests/test_site.py -k live`.
