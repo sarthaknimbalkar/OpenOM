@@ -43,10 +43,12 @@ Payload path → where it typically appears in an OM → notes.
 | Path | Typical OM location | Notes |
 |---|---|---|
 | `assertedBy.broker` / `.brokerage` / `.license` | Contact block / disclaimer / broker of record | Required. Filled/confirmed by the reviewing broker at the gate. |
+| `assertedBy.website` / `.licenseJurisdiction` / `.licenseAuthority` | Contact block / disclaimer | Optional identity anchors (#118). `website` = the broker/brokerage domain (feeds §10 origin verification); `licenseJurisdiction` = ISO 3166 (e.g. US-CA); `licenseAuthority` = issuing body. Confirmed by the broker, not guessed. |
 | `assertedDate` | — | The assertion date; set at the review gate, not extracted. |
 | `currency` | Financials (assume USD if unstated) | Optional; omit to default USD ([OM-DD-002]). |
 | `property.address.{streetAddress,addressLocality,addressRegion,postalCode,addressCountry}` | Cover / property summary | `addressRegion` 2-letter US; `addressCountry` ISO-2 (default US). |
 | `property.geo.{latitude,longitude}` | Aerial/map caption, rarely printed | Omit unless stated. |
+| `property.propertyType` | Cover / property summary | Optional (#114). retail\|office\|industrial\|multifamily\|land\|mixed-use\|hospitality\|self-storage\|other (open string). |
 | `property.apn` | Property details | Assessor parcel number, as printed. |
 | `property.buildingSF` | Property details / "±X SF" | Number only. |
 | `property.lotAcres` / `.yearBuilt` / `.yearRenovated` | Property details | Omit if absent. |
@@ -68,6 +70,7 @@ Payload path → where it typically appears in an OM → notes.
 | `meta.supersedes` | — | `null` on first embed; prior payload hash on a reprice re-embed. |
 | `meta.sourceDocHash` | — | Optional; hash of the source doc if tracked. |
 | `meta.imageRights` | Disclaimer / photo credits | Optional rights statement for the OM's imagery. |
+| `ext` | — | Optional (#115). Vendor/non-standard fields ONLY, namespaced by vendor (`ext.<vendor>.…`). Never extracted into core paths; preserved untouched. |
 
 ## Vocabularies & units (the traps)
 

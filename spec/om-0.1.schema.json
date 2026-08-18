@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://verveliolabs.com/openom/spec/om-0.1.schema.json",
   "title": "openOM payload 0.1",
-  "description": "JSON Schema (2020-12) for the openOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]).",
+  "description": "JSON Schema (2020-12) for the openOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]). The unprefixed top-level key space is RESERVED for the standard; non-standard/vendor fields belong under the `ext` object (#115) so they cannot collide with future core terms.",
   "type": "object",
   "required": ["@context", "@type", "specVersion", "assertedBy", "assertedDate", "meta"],
   "properties": {
@@ -25,13 +25,32 @@
       "properties": {
         "broker": { "type": "string", "minLength": 1 },
         "brokerage": { "type": "string", "minLength": 1 },
-        "license": { "type": "string", "minLength": 1 }
+        "license": { "type": "string", "minLength": 1 },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "OPTIONAL (#118). The asserting party's website — the identity anchor §10 layer-3 origin verification binds to. Reserved for the registry-era license↔domain↔key cross-check."
+        },
+        "licenseJurisdiction": {
+          "type": "string",
+          "description": "OPTIONAL (#118). ISO 3166-1/-2 code (e.g. US, US-CA) disambiguating the license number's authority space for worldwide use."
+        },
+        "licenseAuthority": {
+          "type": "string",
+          "description": "OPTIONAL (#118). Name of the issuing licensing authority."
+        }
       }
     },
     "assertedDate": { "type": "string", "format": "date" },
     "property": {
       "type": "object",
+      "comment": "Multi-tenant/portfolio (#114): 0.1 describes a single property + single `lease`. A future version adds an OPTIONAL `leases[]` (and/or portfolio container) ADDITIVELY — `lease` is never removed/retyped — so the migration stays a minor, not a breaking ns/0.2.",
       "properties": {
+        "propertyType": {
+          "type": "string",
+          "description": "OPTIONAL (#114). Extensible discriminator: retail | office | industrial | multifamily | land | mixed-use | hospitality | self-storage | other. Open string in 0.1; 0.2 may formalize the enum.",
+          "examples": ["retail", "office", "industrial", "multifamily", "land"]
+        },
         "address": {
           "type": "object",
           "properties": {
@@ -136,11 +155,26 @@
         "sourceDocHash": { "$ref": "#/$defs/sha256OrNull" },
         "supersedes": { "$ref": "#/$defs/sha256OrNull" },
         "signature": {
-          "type": "null",
-          "description": "Reserved in 0.1; MUST be null or absent. A populated value is OMV-E003."
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["alg", "keyId", "value"],
+              "properties": {
+                "alg": { "type": "string", "minLength": 1 },
+                "keyId": { "type": "string", "minLength": 1 },
+                "value": { "type": "string", "minLength": 1 }
+              }
+            }
+          ],
+          "description": "Reserved (#117, §11.1 layer-4). Either null/absent OR the {alg,keyId,value} envelope. 0.1 consumers MUST IGNORE a populated value (no trust weight); it is excluded from the integrity preimage ([OM-CANON-003]) so it stays additive. A value that is neither null nor the reserved shape is OMV-E003."
         },
         "imageRights": { "type": "string" }
       }
+    },
+    "ext": {
+      "type": "object",
+      "description": "OPTIONAL (#115). The ONLY place non-standard/vendor fields belong — namespaced by vendor (e.g. `\"ext\": { \"acme\": { ... } }`) so they never collide with future core terms. 0.1 tools preserve it and MUST NOT interpret it."
     }
   },
   "$defs": {

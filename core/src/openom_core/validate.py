@@ -52,6 +52,7 @@ _REQUIREMENT = {
     "OMI-I002": "OM-DD-004",
     "OMI-I003": "OM-ERR-014",
 }
+_SIG_MSG = "signature must be null or the reserved {alg,keyId,value} shape"  # #117
 _DAYS_PER_MONTH = 30.4375  # 365.25 / 12, for month↔day term arithmetic
 _SEVERITY: dict[str, Severity] = {"E": "error", "W": "warning", "I": "info"}
 _NET_LEASE_TYPES = {"NN", "NNN", "absolute-net"}
@@ -155,8 +156,9 @@ def _error_tier(
 def _map_schema_error(err: jsonschema.ValidationError) -> Finding:
     """Map one jsonschema error to a stable §H code — path-based, matching Track B's mapError."""
     path = "/" + "/".join(str(p) for p in err.absolute_path)
-    if path == "/meta/signature":
-        return _mk("OMV-E003", "/meta/signature", "signature reserved in 0.1 (null/absent)")
+    if path.startswith("/meta/signature"):
+        # #117: null OR the reserved {alg,keyId,value} shape; anything else is OMV-E003.
+        return _mk("OMV-E003", "/meta/signature", _SIG_MSG)
     if err.validator == "required" and path == "/deal":
         missing = err.message.split("'")[1] if "'" in err.message else ""
         if missing in ("noiType", "noiAsOfDate"):
@@ -171,10 +173,14 @@ def _schema_free_checks(payload: Mapping[str, Any], report: Report) -> None:
     deal = payload.get("deal") or {}
     if "noi" in deal and (deal.get("noiType") is None or deal.get("noiAsOfDate") is None):
         report.errors.append(_mk("OMV-E002", "/deal", "noi present without noiType/noiAsOfDate"))
-    if (payload.get("meta") or {}).get("signature") is not None:
-        report.errors.append(
-            _mk("OMV-E003", "/meta/signature", "signature populated (reserved in 0.1)")
-        )
+    # #117: null OR the reserved {alg,keyId,value} shape (accepted then ignored); else OMV-E003 —
+    # checked here too so the schema-free path matches the schema tier.
+    sig = (payload.get("meta") or {}).get("signature")
+    if sig is not None and not (
+        isinstance(sig, dict)
+        and all(isinstance(sig.get(k), str) and sig.get(k) for k in ("alg", "keyId", "value"))
+    ):
+        report.errors.append(_mk("OMV-E003", "/meta/signature", _SIG_MSG))
 
 
 def _warning_tier(

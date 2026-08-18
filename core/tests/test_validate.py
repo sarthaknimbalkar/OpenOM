@@ -42,6 +42,19 @@ def test_error_populated_signature() -> None:
     assert "OMV-E003" in _codes(report.errors)
 
 
+def test_reserved_signature_and_optional_identity_fields_accepted() -> None:
+    # #117/#118/#114/#115: a well-formed signature + the reserved optional fields validate cleanly.
+    p = copy.deepcopy(_sample())
+    p["meta"]["signature"] = {"alg": "ed25519", "keyId": "did:key:z6Mk", "value": "BASE64SIG"}
+    p.setdefault("property", {})["propertyType"] = "retail"
+    p["assertedBy"]["website"] = "https://example.com"
+    p["assertedBy"]["licenseJurisdiction"] = "US-CA"
+    p["ext"] = {"acme": {"internalId": 42}}
+    report = validate(p, schema=_schema())
+    assert "OMV-E003" not in _codes(report.errors)
+    assert report.ok is True
+
+
 def test_error_caprate_percentage_schema() -> None:
     report = validate(_load_invalid("invalid-caprate-percentage"), schema=_schema())
     assert "OMV-E001" in _codes(report.errors)  # capRate 6.25 > schema max 1

@@ -43,9 +43,25 @@ describe("validatePayload — schema tier", () => {
     expect(r.errors.map((e) => e.code)).toContain("OMV-E002");
   });
 
-  test("populated meta.signature → OMV-E003 at /meta/signature", () => {
+  test("malformed meta.signature → OMV-E003 at /meta/signature", () => {
     const r = validatePayload(sample("invalid-populated-signature"), schema);
     expect(r.errors.some((e) => e.code === "OMV-E003" && e.path === "/meta/signature")).toBe(true);
+  });
+
+  test("reserved signature shape + optional identity/type/ext fields validate cleanly (#117/#118/#114/#115)", () => {
+    const p = sample("valid-stnl");
+    (p.meta as Record<string, unknown>).signature = {
+      alg: "ed25519",
+      keyId: "did:key:z6Mk",
+      value: "BASE64SIG",
+    };
+    (p.property as Record<string, unknown>).propertyType = "retail";
+    (p.assertedBy as Record<string, unknown>).website = "https://example.com";
+    (p.assertedBy as Record<string, unknown>).licenseJurisdiction = "US-CA";
+    p.ext = { acme: { internalId: 42 } };
+    const r = validatePayload(p, schema);
+    expect(r.errors.some((e) => e.code === "OMV-E003")).toBe(false);
+    expect(r.blocked).toBe(false);
   });
 
   test("findings are deterministically ordered (severity, code, path)", () => {

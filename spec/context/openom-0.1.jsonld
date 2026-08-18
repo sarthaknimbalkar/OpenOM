@@ -14,8 +14,12 @@
     "broker": "schema:name",
     "brokerage": "om:brokerage",
     "license": "om:license",
+    "website": { "@id": "schema:url", "@type": "@id" },
+    "licenseJurisdiction": "om:licenseJurisdiction",
+    "licenseAuthority": "om:licenseAuthority",
 
     "property": "om:property",
+    "propertyType": "om:propertyType",
     "address": "schema:address",
     "streetAddress": "schema:streetAddress",
     "addressLocality": "schema:addressLocality",
@@ -78,6 +82,10 @@
     "sourceDocHash": "om:sourceDocHash",
     "supersedes": "om:supersedes",
     "signature": "om:signature",
-    "imageRights": "om:imageRights"
+    "alg": "om:alg",
+    "keyId": "om:keyId",
+    "value": "om:value",
+    "imageRights": "om:imageRights",
+    "ext": "om:ext"
   }
 }
