@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {
+      "expectState": "hash-mismatch",
+      "level": "L1",
+      "name": "tampered-stnl",
+      "note": "om.json stream altered after embed; XMP payloadHash is stale.",
+      "pdf": "negatives/tampered-stnl.pdf",
+      "role": "consumer"
+    }
+  ],
+  "specVersion": "0.1",
+  "suite": "openom-negatives"
+}

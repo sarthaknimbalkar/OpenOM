@@ -1,8 +1,13 @@
 import { describe, expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { readPayloadFromBytes } from "../src/read.js";
 import { payloadHash } from "../src/hash.js";
 import { buildEmbeddedPdf, buildPlainPdf } from "./fixtures/build-embedded-pdf.js";
 import { SAMPLE_STNL } from "./fixtures/sample-stnl.js";
+
+const vectorsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "spec", "vectors");
 
 const sample = SAMPLE_STNL as unknown as Record<string, unknown>;
 
@@ -12,6 +17,19 @@ const sample = SAMPLE_STNL as unknown as Record<string, unknown>;
  * test-synthesized PDFs (embed module + real vectors land after the contract).
  */
 describe("readPayloadFromBytes", () => {
+  // #113: the committed negative-state golden vectors (shared manifest with the Python core).
+  test("negative-state goldens read as their expected state", async () => {
+    const manifest = JSON.parse(
+      readFileSync(join(vectorsDir, "negatives", "manifest.json"), "utf8"),
+    ) as { cases: { name: string; pdf: string; expectState: string }[] };
+    expect(manifest.cases.length).toBeGreaterThan(0);
+    for (const c of manifest.cases) {
+      const r = await readPayloadFromBytes(new Uint8Array(readFileSync(join(vectorsDir, c.pdf))));
+      expect(r.state, c.name).toBe(c.expectState);
+      if (c.expectState === "hash-mismatch") expect(r.verification.hashValid, c.name).toBe(false);
+    }
+  });
+
   test("absent: a PDF with no payload → state 'absent', null payload", async () => {
     const r = await readPayloadFromBytes(await buildPlainPdf());
     expect(r.state).toBe("absent");
