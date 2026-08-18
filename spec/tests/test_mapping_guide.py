@@ -20,7 +20,7 @@ SCHEMA = json.loads((SPEC / "om-0.1.schema.json").read_text(encoding="utf-8"))
 
 # Structural/reserved fields the extractor never maps (set by tooling / const / reserved), so the
 # guide is not expected to describe them as extraction targets.
-_STRUCTURAL = {"specVersion", "signature"}
+_STRUCTURAL = {"specVersion", "signature", "alg", "keyId", "value"}
 
 
 def _schema_property_names(node: Any, acc: set[str]) -> None:
