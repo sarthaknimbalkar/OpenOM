@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from _make_scan import make_scanned, make_text_pdf
+from _make_scan import make_hybrid_pdf, make_ocr_scanned, make_scanned, make_text_pdf
 from openom_core.embed import embed
 from openom_core.inspect import classify, inspect
 
@@ -26,8 +26,27 @@ def test_classify_branches() -> None:
     """The pure classifier, exercised directly (corpus-independent)."""
     assert classify(0.10, 0.0, 0.0) == "scanned"  # below scanned text threshold
     assert classify(0.90, 0.0, 0.0) == "native"  # text-rich, image-light
-    assert classify(0.90, 0.9, 0.0) == "hybrid"  # text-rich but a full-page image
+    assert classify(0.90, 0.9, 0.0) == "hybrid"  # text-rich but a full-page image (visible text)
     assert classify(0.50, 0.0, 5.0) == "hybrid"  # mid text, image-dense
+    # #6: a high OCR-overlay fraction ⇒ scanned, even with full text coverage.
+    assert classify(1.0, 1.0, 0.0, ocr_overlay_frac=0.9) == "scanned"
+    assert classify(1.0, 1.0, 0.0, ocr_overlay_frac=0.0) == "hybrid"  # visible-text hybrid stays
+
+
+def test_ocr_scanned_classifies_as_scanned() -> None:
+    """#6: a scan with an INVISIBLE OCR text layer is 'scanned', not native/hybrid, despite having
+    fully extractable text."""
+    profile = inspect(make_ocr_scanned(make_text_pdf()))
+    assert profile["class"] == "scanned"
+    assert profile["textCoverage"] >= 0.85  # the OCR layer IS extractable — coverage is high
+    assert profile["classConfidence"] > 0.0
+    assert profile["ocrOverlay"] >= 0.6
+
+
+def test_visible_text_hybrid_is_not_mistaken_for_an_ocr_scan() -> None:
+    """The OCR rule keys on INVISIBLE text: a hybrid with visible text over a full-page image must
+    still classify 'hybrid' (no false OCR-scan detection)."""
+    assert inspect(make_hybrid_pdf())["class"] == "hybrid"
 
 
 def test_native_synthetic() -> None:
