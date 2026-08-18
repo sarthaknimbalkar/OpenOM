@@ -6,7 +6,8 @@
 > inside commercial-real-estate offering-memorandum (OM) PDFs, and exposes the same payload as
 > JSON-LD on the web. **Extract once at the source; consume infinitely, cheaply, downstream.**
 
-Published by **[Vervelio Labs](https://verveliolabs.com)** (neutral steward). MIT-licensed.
+Published by **[Vervelio Labs](https://verveliolabs.com)** (neutral steward). Dual-licensed: the
+toolchain is MIT, the specification is CC-BY-4.0 (see [License](#license)).
 
 ## Why
 
@@ -40,9 +41,10 @@ never do.
 | [`cli/`](cli/) | The `om` command over `core`. |
 | [`spec/`](spec/) | JSON Schema, sample payloads, `@context`/vocabulary, and the conformance **vectors** (JCS oracles + golden PDFs). **The product.** |
 | [`mcp/`](mcp/) | Deterministic MCP server — the 6-tool surface (`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`) over `core`. stdio (M1); hosted HTTP is M3. |
-| `js/` | TypeScript reference implementation (embed/read/validate) powering the extension + web/Node consumers. |
-| `process/` | Extraction/mapping playbook for authoring clients. No code. _(planned)_ |
-| `fixtures/` | Real OMs across producers (confidential; not committed). |
+| [`js/`](js/) | TypeScript reference implementation (`openom-js`) — embed/read/validate/verify/decrypt — powering the extension + web/Node consumers. Byte-parity with `core`. |
+| [`extension/`](extension/) | MV3 Chrome extension: consumer mode (detect/verify/badge/publish) + author mode (capture/review/assert/embed, on-device extraction). |
+| [`process/`](process/) | Extraction/mapping playbook (`SKILL.md` + agent-instructions) for authoring clients. No code. |
+| `fixtures/` | Seeded-defect + producer-diverse fixtures (committed for CI); the full real-OM corpus is confidential (gitignored). |
 
 **Cardinal boundary:** `core/`, `mcp/`, and consumer-mode `js/` never import an inference client.
 
@@ -98,10 +100,16 @@ the threat model.
 
 ## Status
 
-**Pre-1.0, active development.** The `core` engine + `cli` + `spec` contract (schema, vectors,
-golden PDFs) are implemented and green; `mcp` and the browser extension are next. The schema is
+**Pre-1.0, active development — the full toolchain is shipped and green.** Implemented: `core`
+(embed/read/inspect/extract/validate), `cli` (`om`), `mcp` (six deterministic tools, stdio +
+hosted Streamable HTTP), `js` (`openom-js`, byte-parity with `core`), `spec` (schema 0.1, vectors,
+`@context`, webhook envelope, codes registry), `process` (extraction playbook), and the two-persona
+`extension` (consumer + author). Non-destructive embedding is proven across ~60 real producers; the
+cross-implementation, JCS-differential-fuzz, and RFC 8785 anti-fork gates run in CI. The schema is
 `0.1` and may change until 1.0.
 
 ## License
 
-[MIT](LICENSE) © 2026 Vervelio.
+Dual-licensed. The **toolchain** (`core`, `cli`, `mcp`, `js`, `extension`) is [MIT](LICENSE); the
+**specification** artifacts under [`spec/`](spec/) and the spec documents are
+[CC-BY-4.0](spec/LICENSE). © 2026 Vervelio Labs.
