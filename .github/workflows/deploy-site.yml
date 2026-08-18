@@ -11,9 +11,7 @@
 name: deploy-site
 
 on:
-  push:
-    branches: [main]
-    paths: ["site/**", ".github/workflows/deploy-site.yml"]
+  # Manual by design (matches ci.yml): deploy the hosted namespace on demand, not on every push.
   workflow_dispatch:
 
 permissions:
