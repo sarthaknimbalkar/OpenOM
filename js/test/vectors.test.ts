@@ -35,6 +35,7 @@ describe("cross-impl vector pin (spec/vectors @ contract freeze)", () => {
       "edge-numbers",
       "edge-unicode",
       "numbers",
+      "reprice-stnl",
       "sample-stnl",
       "unicode",
     ]);

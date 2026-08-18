@@ -74,6 +74,22 @@
         "pathology": [],
         "role": [
           "producer",
+          "consumer"
+        ]
+      },
+      "expected": "expected/reprice-stnl.json",
+      "name": "reprice-stnl",
+      "payload": "payloads/reprice-stnl.json",
+      "pdf": "pdfs/reprice-stnl.pdf"
+    },
+    {
+      "dimensions": {
+        "level": [
+          "L1"
+        ],
+        "pathology": [],
+        "role": [
+          "producer",
           "consumer",
           "validator"
         ]
