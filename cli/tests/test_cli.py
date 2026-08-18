@@ -271,3 +271,31 @@ def test_bad_pdf_exits_cleanly(tmp_path: Path) -> None:
 def test_missing_file_exits_cleanly(tmp_path: Path) -> None:
     r = runner.invoke(app, ["read", str(tmp_path / "nope.pdf")])
     assert r.exit_code == 3
+
+
+def test_force_utf8_switches_a_legacy_encoding() -> None:
+    """#18: a cp1252 console stream is reconfigured to UTF-8 so em-dashes never mojibake."""
+    from openom_cli.main import _force_utf8
+
+    stream = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    _force_utf8(stream)
+    assert stream.encoding == "utf-8"
+    stream.write("em-dash — and middot ·")  # would raise on a strict cp1252 stream
+    stream.flush()
+
+
+def test_force_utf8_tolerates_a_non_reconfigurable_stream() -> None:
+    """A test harness / pipe may swap stdout for a plain object w/o reconfigure — never raise."""
+    from openom_cli.main import _force_utf8
+
+    class _Plain:
+        pass
+
+    _force_utf8(_Plain())  # no exception
+
+
+def test_help_renders_non_ascii_without_error() -> None:
+    """The app help (em-dash) is emitted cleanly through the runner."""
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "—" in result.stdout
