@@ -65,3 +65,14 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 exclude_lines = ["pragma: no cover", "raise NotImplementedError", "if TYPE_CHECKING:"]
+
+# Mutation testing (#133) — assertion-STRENGTH, beyond line/branch coverage. Targets the correctness-
+# critical modules where a flipped comparison or wrong rounding would produce a divergent-but-passing
+# standard. Runs on a schedule (not per-push); surviving mutants are tracked as coverage debt.
+[tool.mutmut]
+paths_to_mutate = [
+  "src/openom_core/canonical.py",
+  "src/openom_core/validate.py",
+  "src/openom_core/embed.py",
+]
+tests_dir = ["tests/"]
