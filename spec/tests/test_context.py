@@ -75,7 +75,9 @@ def test_every_mapping_resolves_to_a_declared_prefix() -> None:
         if not isinstance(iri, str) or iri.split(":", 1)[0] not in _PREFIXES:
             bad[term] = mapping
         if isinstance(mapping, dict) and "@type" in mapping:
-            if mapping["@type"].split(":", 1)[0] not in _PREFIXES:
+            at = mapping["@type"]
+            # A coercion is either a JSON-LD keyword (@id, @vocab) or a prefixed datatype IRI.
+            if not (at.startswith("@") or at.split(":", 1)[0] in _PREFIXES):
                 bad[term] = mapping
     assert not bad, f"mappings not resolving to a declared prefix: {bad}"
 
@@ -99,18 +101,18 @@ def test_vocabulary_covers_every_conformant_sample_term() -> None:
 
 
 # [OM-LD-004] #111: every non-string term MUST carry an explicit datatype coercion, else a JSON-LD
-# consumer cannot tell a decimal from a string. Derive the expectation from the schema so the context
-# can never silently drift back to bare numeric/boolean/date terms.
+# consumer can't tell a decimal from a string. Derive the expectation from the schema so the context
+# cannot silently drift back to bare numeric/boolean/date terms.
 _TYPE_TO_XSD = {
-    "number": {"xsd:decimal", "xsd:double"},  # xsd:double allowed for geo coordinates (schema.org norm)
+    "number": {"xsd:decimal", "xsd:double"},  # xsd:double allowed for geo coords (schema.org norm)
     "integer": {"xsd:integer"},
     "boolean": {"xsd:boolean"},
 }
 
 
 def _schema_typed_terms(node: Any, acc: dict[str, set[str]]) -> None:
-    """Map each property name → the set of scalar JSON types (and 'date') the schema declares for it,
-    including oneOf/anyOf/allOf branches."""
+    """Map each property name → the set of scalar JSON types (+ 'date') the schema declares for it,
+    across oneOf/anyOf/allOf branches."""
 
     def note(name: str, d: dict[str, Any]) -> None:
         t = d.get("type")
