@@ -4,11 +4,38 @@
   "description": "openOM TypeScript reference implementation (/js) — canonicalization, embed/read, validate. Deterministic; zero inference.",
   "license": "MIT",
   "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "files": [
+    "dist/src",
+    "README.md"
+  ],
+  "keywords": [
+    "openom",
+    "offering-memorandum",
+    "cre",
+    "json-ld",
+    "pdf",
+    "factur-x"
+  ],
+  "homepage": "https://github.com/sarthaknimbalkar/OpenOM/tree/main/js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sarthaknimbalkar/OpenOM.git",
+    "directory": "js"
+  },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
