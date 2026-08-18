@@ -21,6 +21,7 @@ export const test = base.extend<{ context: BrowserContext; extensionId: string }
         // (the CI user can't use it). Harmless locally.
         "--disable-dev-shm-usage",
         "--no-sandbox",
+        "--disable-gpu",
       ],
     });
     await use(context);
