@@ -13,6 +13,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # weekly (Mon 06:00 UTC) — for the mutation-testing job (#133)
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -189,6 +191,29 @@ jobs:
           npm --prefix js audit --audit-level=high || true
           npm --prefix extension audit --audit-level=high || true
           echo "::endgroup::"
+
+  mutation:
+    # Mutation testing (#133): assertion-STRENGTH beyond line/branch coverage. Line coverage confirms
+    # code RAN; a surviving mutant (a flipped comparison / wrong rounding that no test catches) is real
+    # coverage debt — exactly the class of bug that produces a divergent-but-passing standard. Slow, so
+    # weekly-scheduled / on-demand only, and non-blocking (surviving mutants are tracked, not a hard
+    # fail). Python via mutmut (Linux-only). JS via Stryker is a follow-up (vitest-runner dry-run needs
+    # stabilizing) — see the tracking issue.
+    needs: detect
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.detect.outputs.has_py == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: mutmut (canonical / validate / embed)
+        run: |
+          python -m pip install --upgrade pip mutmut
+          pip install -c constraints.lock -e "core[dev]"
+          cd core && mutmut run || true
+          mutmut results || true
 
   javascript:
     needs: detect
