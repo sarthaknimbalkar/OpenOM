@@ -117,12 +117,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -c constraints.lock -e core
-      - name: Regenerate vectors and assert no drift
+      - name: Regenerate vectors + fuzz corpus and assert no drift
         shell: bash
         run: |
           python core/scripts/gen_vectors.py
-          git diff --exit-code -- spec/vectors/expected spec/vectors/payloads spec/vectors/rejections \
-            || (echo "::error::vector regeneration is not a no-op — a canonical hash moved"; exit 1)
+          python core/scripts/gen_fuzz_corpus.py
+          git diff --exit-code -- spec/vectors/expected spec/vectors/payloads spec/vectors/rejections spec/vectors/fuzz \
+            || (echo "::error::vector/fuzz regeneration is not a no-op — a canonical hash moved"; exit 1)
 
   sbom:
     # Software Bill of Materials for the deterministic tree (supply-chain audit, §M).
