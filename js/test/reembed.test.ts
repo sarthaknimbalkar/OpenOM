@@ -5,6 +5,8 @@ import { dirname, join } from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { embedPayload } from "../src/embed.js";
 import { reembedWarnings } from "../src/reembed.js";
+import { readMarkerProp } from "../src/read.js";
+import { integrityHashOfBytes } from "../src/verify.js";
 
 /**
  * OMW-W051 re-embed provenance warning — parity with the Python core's reembed_warnings.
@@ -56,5 +58,20 @@ describe("reembedWarnings (OMW-W051)", () => {
 
   test("no warning when the prior PDF has no marker", async () => {
     expect(await reembedWarnings(await blankPdf(), v1())).toEqual([]);
+  });
+});
+
+describe("#166: sourceDocHash carried across reprices (parity with Python #5)", () => {
+  test("first embed records the hash of the source PDF; a reprice preserves it", async () => {
+    const src = await blankPdf();
+    const origin = integrityHashOfBytes(src);
+
+    const first = await embedPayload(src, sample("valid-stnl"));
+    expect(await readMarkerProp(first, "sourceDocHash")).toBe(origin);
+
+    // A reprice (different payload) must keep the ORIGINAL sourceDocHash, not hash the embedded PDF.
+    const second = await embedPayload(first, reprice(sample("valid-stnl"), "2026-08-19"));
+    expect(await readMarkerProp(second, "sourceDocHash")).toBe(origin);
+    expect(await readMarkerProp(second, "sourceDocHash")).not.toBe(integrityHashOfBytes(first));
   });
 });
