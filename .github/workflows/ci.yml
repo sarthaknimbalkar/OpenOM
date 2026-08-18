@@ -1,20 +1,14 @@
 name: ci
 
-# The gate ([OM-VEC-002], #110) — full jobs defined below. Runs automatically on every push to
-# main/feat/** and on PRs to main, and can still be run manually from the Actions tab or
-# `gh workflow run ci.yml`. Auto-triggers are ON so the cardinal invariants (no-inference boundary,
-# JCS drift, cross-impl anti-fork oracle) are ENFORCED, not advisory. To make specific jobs required
-# status checks, set branch protection on `main` in repo settings (a policy choice — it also blocks
-# direct pushes to main).
+# The gate ([OM-VEC-002], #110) — full jobs defined below. MANUAL by design: this workflow runs only
+# when dispatched (Actions tab or `gh workflow run ci.yml`), NOT automatically on push/PR. The
+# deterministic invariants (no-inference boundary, JCS drift, cross-impl anti-fork oracle, python/js
+# suites, the openom-embed Action) are verified LOCALLY before pushing — see CONTRIBUTING.md
+# "Verification gates" — and this workflow reproduces them on demand. Auto-triggers are intentionally
+# off (repo owner runs gates manually); re-add a `push:`/`pull_request:` block here to restore them.
 
 on:
-  push:
-    branches: [main, "feat/**"]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
-  schedule:
-    - cron: "0 6 * * 1" # weekly (Mon 06:00 UTC) — for the mutation-testing job (#133)
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -198,29 +192,6 @@ jobs:
           npm --prefix extension audit --audit-level=high || true
           echo "::endgroup::"
 
-  mutation:
-    # Mutation testing (#133): assertion-STRENGTH beyond line/branch coverage. Line coverage confirms
-    # code RAN; a surviving mutant (a flipped comparison / wrong rounding that no test catches) is real
-    # coverage debt — exactly the class of bug that produces a divergent-but-passing standard. Slow, so
-    # weekly-scheduled / on-demand only, and non-blocking (surviving mutants are tracked, not a hard
-    # fail). Python via mutmut (Linux-only). JS via Stryker is a follow-up (vitest-runner dry-run needs
-    # stabilizing) — see the tracking issue.
-    needs: detect
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.detect.outputs.has_py == 'true'
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: mutmut (canonical / validate / embed)
-        run: |
-          python -m pip install --upgrade pip mutmut
-          pip install -c constraints.lock -e "core[dev]"
-          cd core && mutmut run || true
-          mutmut results || true
-
   javascript:
     needs: detect
     if: needs.detect.outputs.has_js == 'true'
@@ -306,39 +277,7 @@ jobs:
         env:
           OPENOM_XIMPL_DIR: ${{ runner.temp }}/ximpl
 
-  extension-gate:
-    # [OM-DoD-006] + [OM-DoD-007] — the LIVE proof of the MV3 extension. Real headed Chromium loads the
-    # unpacked extension against a self-signed HTTPS harness and drives: consumer mode (every §AA badge
-    # state + §Y publish HMAC) AND author mode (capture→review→assert→embed, reprice, and the
-    # [OM-PRIV-001] egress-zero assertion via an injected fake LanguageModel). `test:consumer` runs both
-    # the consumer and author Playwright specs. Mocked unit tests cannot prove this: they stayed green
-    # while a pdf.js-worker and an ajv-`new Function` (CSP) defect each broke the product in-browser.
-    # This job — not test:unit — is the gate (repo Rule 5: real fixtures, no mocks).
-    # MANUAL-only (workflow_dispatch): headed MV3 Chromium under xvfb crashes deterministically in the
-    # GitHub-hosted runner env (it passes fully — 23/23 — locally and needs dedicated CI-env work; see
-    # the follow-up issue). The DETERMINISTIC anti-fork gates that must guard every push — boundary,
-    # drift, cross-impl, python, javascript, vuln-scan — run on push/PR above; this live E2E proof is
-    # run locally and on-demand until it is stabilized in CI.
-    needs: [detect, javascript]
-    if: github.event_name == 'workflow_dispatch' && needs.detect.outputs.has_js == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: Install /js + /extension deps
-        run: |
-          cd js && npm ci
-          cd ../extension && npm ci
-      - name: Install xvfb + Playwright Chromium (+ OS deps)
-        working-directory: extension
-        run: |
-          sudo apt-get update && sudo apt-get install -y xvfb
-          npx playwright install --with-deps chromium
-      - name: Consumer gate — headed MV3 Chromium under xvfb (builds eval-free bundle first)
-        working-directory: extension
-        run: xvfb-run -a npm run test:consumer
-      - name: Assert the built consumer bundle is inference-free (cardinal rule)
-        working-directory: extension
-        run: node scripts/assert-no-inference.mjs dist
+  # The live headed-Chromium extension gate and mutation testing are LOCAL/manual gates, not CI jobs:
+  # headed MV3 Chromium crashes deterministically under the GitHub-hosted xvfb env, and mutation runs
+  # are long. Both are run locally before a release and documented in CONTRIBUTING.md "Verification
+  # gates" (#163, #164). The deterministic anti-fork jobs above are the automated proof.
