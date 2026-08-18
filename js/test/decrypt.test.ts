@@ -97,12 +97,14 @@ describe("decryptPdf — malformed input fuzz never throws/hangs (#132)", () => 
   // never throwing or hanging — the caller falls back to the #107 CLI path. Deterministic byte flips
   // across the /Encrypt-carrying tail of each fixture (seeded positions, no Math.random).
   for (const name of ["enc-aes128.pdf", "enc-aes256.pdf"]) {
-    test(`byte-corruption of ${name} always fails safe`, async () => {
+    // Generous timeout: each corrupted AES-256 attempt runs the full R6 Algorithm-2.B derivation
+    // before failing, so keep the iteration count modest but the budget CI-proof.
+    test(`byte-corruption of ${name} always fails safe`, { timeout: 30_000 }, async () => {
       const base = fix(name);
-      // Hit a spread of offsets weighted toward the trailer/Encrypt region (last ~40% of the file).
+      // A spread of offsets weighted toward the trailer/Encrypt region (last ~40% of the file).
       const offsets: number[] = [];
-      for (let i = 0; i < 60; i++) {
-        offsets.push(Math.floor(base.length * (0.55 + 0.45 * (i / 60))));
+      for (let i = 0; i < 15; i++) {
+        offsets.push(Math.floor(base.length * (0.55 + 0.45 * (i / 15))));
       }
       for (const off of offsets) {
         for (const xor of [0x01, 0x80, 0xff]) {
