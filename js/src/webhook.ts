@@ -119,14 +119,26 @@ const _PRIVATE_HOSTS = new Set(["localhost", "metadata.google.internal"]);
  * `http://0x7f.1`, and `[::ffff:127.0.0.1]` are all rejected, not just `127.0.0.1` ([#79]).
  */
 export function assertSafeWebhookTarget(url: string): void {
+  assertSafeUrl(url, "webhook target");
+}
+
+/**
+ * SSRF host guard for ANY outbound fetch ([#122]): https only, and the host must not be a private /
+ * loopback / link-local / CGNAT / metadata IP literal (every inet_aton + IPv6 encoding). Reused by the
+ * extension's PDF re-fetch and origin-mirror fetch so an attacker-supplied link-badge href cannot steer
+ * the service worker at 169.254.169.254 or an internal host. Caveat (same as the webhook path): the
+ * browser cannot resolve DNS, so a hostname that RESOLVES to a private IP is not caught here — the
+ * hosted /mcp fetch.py resolve-then-pin guard covers that server-side.
+ */
+export function assertSafeUrl(url: string, label = "fetch target"): void {
   const u = new URL(url);
-  if (u.protocol !== "https:") throw new Error(`webhook target must be https, got ${u.protocol}`);
+  if (u.protocol !== "https:") throw new Error(`${label} must be https, got ${u.protocol}`);
   const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (_PRIVATE_HOSTS.has(host) || host.endsWith(".local")) {
-    throw new Error(`webhook target host not allowed: ${host}`);
+    throw new Error(`${label} host not allowed: ${host}`);
   }
   if (_isBlockedIp(host)) {
-    throw new Error(`webhook target resolves to a blocked range: ${host}`);
+    throw new Error(`${label} resolves to a blocked range: ${host}`);
   }
 }
 
@@ -181,15 +193,52 @@ function _ipv4ToInt(host: string): number | null {
   return int >>> 0;
 }
 
-/** Block IPv6 loopback (::1), unspecified (::), ULA fc00::/7, link-local fe80::/10, and mapped v4. */
+/**
+ * Block IPv6 loopback (::1), unspecified (::), ULA fc00::/7, link-local fe80::/10, and mapped v4 —
+ * in EVERY textual form. Prior code string-matched "::1"/"::" only, so uncompressed/alternate forms
+ * like 0:0:0:0:0:0:0:1 bypassed it ([#125]); we now expand to 8 groups and range-check numerically.
+ */
 function _isBlockedIpv6(host: string): boolean {
-  if (host === "::1" || host === "::") return true;
-  const mapped = /^::ffff:(.+)$/.exec(host);
-  if (mapped && mapped[1] !== undefined) {
-    const inner = mapped[1];
-    if (inner.includes(".")) return _isBlockedIp(inner); // ::ffff:127.0.0.1
-    const hex = inner.replace(/:/g, "");
-    if (/^[0-9a-f]{1,8}$/.test(hex)) return _isBlockedV4Int(parseInt(hex, 16) >>> 0); // ::ffff:7f00:1
+  const g = _expandIpv6(host);
+  if (g === null) return false;
+  if (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff) {
+    return _isBlockedV4Int((((g[6] ?? 0) << 16) | (g[7] ?? 0)) >>> 0); // ::ffff:v4 mapped
   }
-  return /^f[cd]/.test(host) || /^fe[89ab]/.test(host); // ULA + link-local
+  if (g.every((x) => x === 0)) return true; // :: unspecified
+  if (g.slice(0, 7).every((x) => x === 0) && g[7] === 1) return true; // ::1 loopback (any form)
+  const first = g[0] ?? 0;
+  if ((first & 0xfe00) === 0xfc00) return true; // fc00::/7 ULA
+  if ((first & 0xffc0) === 0xfe80) return true; // fe80::/10 link-local
+  return false;
+}
+
+/** Expand an IPv6 literal (incl. `::` compression and a trailing embedded v4) to 8 groups, or null. */
+function _expandIpv6(host: string): number[] | null {
+  if (!/^[0-9a-f:.]+$/.test(host) || (host.match(/::/g) ?? []).length > 1) return null;
+  let h = host;
+  const v4 = /^(.*:)(\d+\.\d+\.\d+\.\d+)$/.exec(h);
+  if (v4 && v4[1] !== undefined && v4[2] !== undefined) {
+    const int = _ipv4ToInt(v4[2]);
+    if (int === null) return null;
+    h = `${v4[1]}${((int >>> 16) & 0xffff).toString(16)}:${(int & 0xffff).toString(16)}`;
+  }
+  const [headStr, tailStr] = h.split("::");
+  const head = headStr ? headStr.split(":") : [];
+  const hasCompression = h.includes("::");
+  const tail = hasCompression ? (tailStr ? tailStr.split(":") : []) : null;
+  let groups: string[];
+  if (tail === null) {
+    groups = head;
+  } else {
+    const fill = 8 - head.length - tail.length;
+    if (fill < 0) return null;
+    groups = [...head, ...Array<string>(fill).fill("0"), ...tail];
+  }
+  if (groups.length !== 8) return null;
+  const out: number[] = [];
+  for (const grp of groups) {
+    if (!/^[0-9a-f]{1,4}$/.test(grp)) return null;
+    out.push(parseInt(grp, 16));
+  }
+  return out;
 }
