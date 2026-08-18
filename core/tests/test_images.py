@@ -161,3 +161,95 @@ def test_render_vector_pages_skips_pages_that_already_have_rasters() -> None:
     manifest = extract_images(_one_image_pdf(), render_vector_pages=True)
     assert all(i.get("source") != "rendered-page" for i in manifest["images"])
     assert len(manifest["images"]) == 1
+
+
+# --- #7: exotic image-codec coverage (CCITT G4 + JPEG2000) ---------------------------------------
+def _ccitt_g4_pdf(w: int = 64, h: int = 48) -> bytes:
+    """A PDF whose only image is a real /CCITTFaxDecode (Group-4 fax) XObject — the encoding a
+    scanned/faxed B&W OM page uses. Extracts the raw G4 codestream from a libtiff group4 TIFF."""
+    im = Image.new("1", (w, h), 1)
+    for y in range(h):
+        for x in range(w):
+            if (x // 8 + y // 8) % 2 == 0:
+                im.putpixel((x, y), 0)  # a checkerboard so it isn't blank
+    buf = io.BytesIO()
+    im.save(buf, format="TIFF", compression="group4")
+    tif = Image.open(io.BytesIO(buf.getvalue()))
+    off, cnt = tif.tag_v2[273][0], tif.tag_v2[279][0]  # StripOffsets / StripByteCounts
+    g4 = buf.getvalue()[off : off + cnt]
+
+    pdf = pikepdf.Pdf.new()
+    pdf.add_blank_page(page_size=(w, h))
+    img = pikepdf.Stream(pdf, g4)
+    img.Type, img.Subtype = pikepdf.Name.XObject, pikepdf.Name.Image
+    img.Width, img.Height, img.BitsPerComponent = w, h, 1
+    img.ColorSpace, img.Filter = pikepdf.Name.DeviceGray, pikepdf.Name.CCITTFaxDecode
+    img.DecodeParms = pikepdf.Dictionary(K=-1, Columns=w, Rows=h, BlackIs1=False)
+    page = pdf.pages[0]
+    page.Resources = pikepdf.Dictionary(XObject=pikepdf.Dictionary(Im0=img))
+    page.Contents = pikepdf.Stream(pdf, f"q {w} 0 0 {h} 0 0 cm /Im0 Do Q".encode())
+    out = io.BytesIO()
+    pdf.save(out)
+    return out.getvalue()
+
+
+def _jpx_pdf(w: int = 40, h: int = 30) -> bytes:
+    """A PDF whose only image is a real /JPXDecode (JPEG 2000) XObject."""
+    im = Image.new("RGB", (w, h))
+    for y in range(h):
+        for x in range(w):
+            im.putpixel((x, y), (x * 6 % 256, y * 8 % 256, 120))
+    buf = io.BytesIO()
+    im.save(buf, format="JPEG2000")
+
+    pdf = pikepdf.Pdf.new()
+    pdf.add_blank_page(page_size=(w, h))
+    img = pikepdf.Stream(pdf, buf.getvalue())
+    img.Type, img.Subtype = pikepdf.Name.XObject, pikepdf.Name.Image
+    img.Width, img.Height, img.BitsPerComponent = w, h, 8
+    img.ColorSpace, img.Filter = pikepdf.Name.DeviceRGB, pikepdf.Name.JPXDecode
+    page = pdf.pages[0]
+    page.Resources = pikepdf.Dictionary(XObject=pikepdf.Dictionary(Im0=img))
+    page.Contents = pikepdf.Stream(pdf, f"q {w} 0 0 {h} 0 0 cm /Im0 Do Q".encode())
+    out = io.BytesIO()
+    pdf.save(out)
+    return out.getvalue()
+
+
+def _inline_image_pdf(w: int = 4, h: int = 4) -> bytes:
+    """A page whose only image is an INLINE image (BI/ID/EI in the content stream, not XObject)."""
+    px = bytes([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0] * (w * h // 4))
+    head = b"q 40 0 0 40 0 0 cm\nBI /W %d /H %d /CS /RGB /BPC 8 ID\n" % (w, h)
+    content = head + px + b"\nEI\nQ"
+    pdf = pikepdf.Pdf.new()
+    pdf.add_blank_page(page_size=(40, 40))
+    page = pdf.pages[0]
+    page.Contents = pikepdf.Stream(pdf, content)
+    page.Resources = pikepdf.Dictionary()
+    out = io.BytesIO()
+    pdf.save(out)
+    return out.getvalue()
+
+
+def test_extracts_ccitt_g4_image() -> None:
+    manifest = extract_images(_ccitt_g4_pdf())
+    imgs = [i for i in manifest["images"] if i["error"] is None]
+    assert len(imgs) == 1
+    assert (imgs[0]["width"], imgs[0]["height"]) == (64, 48)
+    assert imgs[0]["contentHash"] is not None  # decoded to real pixels, not an error stub
+
+
+def test_extracts_jpeg2000_image() -> None:
+    manifest = extract_images(_jpx_pdf())
+    imgs = [i for i in manifest["images"] if i["error"] is None]
+    assert len(imgs) == 1
+    assert (imgs[0]["width"], imgs[0]["height"]) == (40, 30)
+    assert imgs[0]["contentHash"] is not None
+
+
+def test_inline_image_page_captured_by_vector_render_fallback() -> None:
+    """Inline images aren't XObjects, so get_images (and thus plain extraction) misses them — but a
+    page carrying one has no raster XObject, so the #16 render_vector_pages fallback captures it."""
+    assert extract_images(_inline_image_pdf())["images"] == []  # not seen without the fallback
+    rendered = extract_images(_inline_image_pdf(), render_vector_pages=True)["images"]
+    assert any(i.get("source") == "rendered-page" and i["error"] is None for i in rendered)
