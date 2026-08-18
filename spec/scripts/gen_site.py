@@ -18,7 +18,11 @@ from __future__ import annotations
 
 import json
 import shutil
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from gen_docs import docs_pages  # noqa: E402  (local sibling module)
 
 SPEC = Path(__file__).resolve().parent.parent
 ROOT = SPEC.parent
@@ -77,6 +81,8 @@ def _landing_html() -> str:
   <p>Machine-readable, broker-asserted data for commercial-real-estate offering
      memoranda. Published by <a href="https://verveliolabs.com">Vervelio Labs</a>.
      Spec + toolchain: <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a>.</p>
+  <p><strong>New here? <a href="/{PREFIX}/docs/">Read the docs</a></strong> — per-persona
+     quick-starts, the field reference, and the validation-code catalog.</p>
   <h2>Resolvable artifacts</h2>
   <ul>
 {links}
@@ -114,6 +120,10 @@ def generate() -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(src.read_bytes())  # byte-exact mirror; spec/ is the source
     (SITE / PREFIX / "index.html").write_text(_landing_html(), "utf-8", newline="\n")
+    for rel, page_html in docs_pages().items():
+        dest = SITE / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(page_html, "utf-8", newline="\n")
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
     # A bare deploy root should not 404; point it at the namespace landing.
     (SITE / "index.html").write_text(

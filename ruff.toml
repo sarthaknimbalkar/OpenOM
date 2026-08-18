@@ -4,3 +4,7 @@ line-length = 100
 
 [lint]
 select = ["E", "F", "I", "B", "UP", "W"]
+
+[lint.per-file-ignores]
+# gen_docs.py emits static HTML/URLs; wrapping literal <pre> and long links would corrupt output.
+"spec/scripts/gen_docs.py" = ["E501"]
