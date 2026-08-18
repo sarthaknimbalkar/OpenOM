@@ -299,3 +299,49 @@ def test_help_renders_non_ascii_without_error() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "—" in result.stdout
+
+
+def test_watch_once_embeds_pairs_and_skips_lonely_pdf(tmp_path: Path) -> None:
+    """#17: watch --once embeds each <name>.pdf that has a sibling <name>.json; a PDF without
+    a JSON is left for later, and the produced OM reads back."""
+    import shutil
+
+    indir = tmp_path / "in"
+    outdir = tmp_path / "out"
+    indir.mkdir()
+    _base_pdf(indir / "deal.pdf")
+    shutil.copyfile(SPEC / "samples" / "valid-stnl.json", indir / "deal.json")
+    _base_pdf(indir / "lonely.pdf")  # no lonely.json → must be skipped silently
+
+    result = runner.invoke(
+        app, ["watch", str(indir), "--out", str(outdir), "--asserted-date", "2026-08-18", "--once"]
+    )
+    assert result.exit_code == 0, result.stdout
+    payload = json.loads(result.stdout)
+    names = {e["name"]: e for e in payload["events"]}
+    assert names["deal"]["action"] == "embedded"
+    assert "lonely" not in names  # incomplete pair not processed
+    produced = outdir / "deal.openom.pdf"
+    assert produced.is_file()
+    read = runner.invoke(app, ["read", str(produced)])
+    assert json.loads(read.stdout)["present"] is True
+
+
+def test_watch_once_skips_schema_invalid_payload(tmp_path: Path) -> None:
+    """A payload with schema errors is skipped (never embedded) when --schema is given."""
+    indir = tmp_path / "in"
+    outdir = tmp_path / "out"
+    indir.mkdir()
+    _base_pdf(indir / "bad.pdf")
+    # missing required fields → schema errors
+    (indir / "bad.json").write_text('{"@type": "RealEstateListing"}', encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        ["watch", str(indir), "--out", str(outdir), "--asserted-date", "2026-08-18",
+         "--schema", str(SPEC / "om-0.1.schema.json"), "--once"],
+    )
+    assert result.exit_code == 0, result.stdout
+    ev = json.loads(result.stdout)["events"][0]
+    assert ev["action"] == "skipped" and ev["reason"] == "schema-errors"
+    assert not (outdir / "bad.openom.pdf").exists()

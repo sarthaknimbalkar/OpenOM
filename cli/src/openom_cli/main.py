@@ -14,6 +14,7 @@ import dataclasses
 import functools
 import json
 import sys
+import time
 from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
@@ -248,6 +249,100 @@ def check(
     )
     failed = not report.ok or (strict and bool(report.warnings))
     raise typer.Exit(code=1 if failed else 0)
+
+
+def _embed_pair(
+    stem: str,
+    pdf: Path,
+    payload_path: Path,
+    out_dir: Path,
+    asserted_date: str,
+    schema_obj: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Validate (if a schema is given) then embed one <name>.pdf + <name>.json pair.
+
+    A pair with schema ERRORS is skipped and never embedded (schema errors block, §6); warnings do
+    not block. Deterministic, zero inference. Returns a per-pair record for the summary.
+    """
+    data = _load_json(payload_path)
+    if schema_obj is not None:
+        report = _validate(data, schema=schema_obj)
+        if report.errors:
+            return {"name": stem, "action": "skipped", "reason": "schema-errors",
+                    "codes": [e.code for e in report.errors]}
+    src = pdf.read_bytes()
+    warnings = [w.code for w in _reembed_warnings(src, data, asserted_date=asserted_date)]
+    out_path = out_dir / f"{stem}.openom.pdf"
+    out_path.write_bytes(_embed(src, data, asserted_date=asserted_date))
+    return {"name": stem, "action": "embedded", "out": str(out_path), "warnings": warnings}
+
+
+def _scan_once(
+    in_dir: Path,
+    out_dir: Path,
+    asserted_date: str,
+    schema_obj: dict[str, Any] | None,
+    seen: dict[str, tuple[float, float]],
+) -> list[dict[str, Any]]:
+    """One pass: embed each <name>.pdf with a sibling <name>.json that changed since last seen."""
+    events: list[dict[str, Any]] = []
+    for pdf in sorted(in_dir.glob("*.pdf")):
+        payload_path = pdf.with_suffix(".json")
+        if not payload_path.is_file():
+            continue  # not a complete pair yet
+        sig = (pdf.stat().st_mtime, payload_path.stat().st_mtime)
+        if seen.get(pdf.stem) == sig:
+            continue  # unchanged since we last processed it
+        record = _embed_pair(pdf.stem, pdf, payload_path, out_dir, asserted_date, schema_obj)
+        seen[pdf.stem] = sig
+        events.append(record)
+    return events
+
+
+@app.command()
+@_guard
+def watch(
+    in_dir: Annotated[Path, typer.Argument(help="Folder watched for <name>.pdf+<name>.json pairs")],
+    out: Annotated[Path, typer.Option(help="Output folder for <name>.openom.pdf")],
+    asserted_date: Annotated[str, typer.Option(help="ISO 8601 assertion date stamped on embeds")],
+    schema: Annotated[
+        Path | None,
+        typer.Option(help="JSON Schema; a payload with schema errors is skipped, not embedded"),
+    ] = None,
+    once: Annotated[
+        bool,
+        typer.Option(help="Process the current backlog once and exit (for cron/CI); no polling"),
+    ] = False,
+    interval: Annotated[
+        float, typer.Option(help="Poll interval in seconds (ignored with --once)")
+    ] = 2.0,
+) -> None:
+    """Watch a folder and auto-embed each <name>.pdf with a sibling <name>.json (server-side path).
+
+    Deterministic, zero inference. A pair is (re)processed when its pdf/json changes; the produced
+    <name>.openom.pdf lands in --out. With --schema, a payload with schema errors is logged and
+    skipped (never embedded). --once drains the current backlog and exits; otherwise it polls every
+    --interval seconds until interrupted (Ctrl-C).
+    """
+    out.mkdir(parents=True, exist_ok=True)
+    schema_obj = _load_json(schema) if schema is not None else None
+    seen: dict[str, tuple[float, float]] = {}
+
+    if once:
+        events = _scan_once(in_dir, out, asserted_date, schema_obj, seen)
+        _emit({"watched": str(in_dir), "out": str(out), "events": events})
+        return
+
+    if not _output.quiet:
+        typer.echo(f"watching {in_dir} -> {out} (every {interval}s; Ctrl-C to stop)", err=True)
+    try:
+        while True:
+            for ev in _scan_once(in_dir, out, asserted_date, schema_obj, seen):
+                typer.echo(json.dumps(ev, ensure_ascii=False), err=True)
+            time.sleep(interval)
+    except KeyboardInterrupt:  # pragma: no cover - interactive stop
+        if not _output.quiet:
+            typer.echo("stopped", err=True)
 
 
 @app.command()
