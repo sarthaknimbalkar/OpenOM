@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import contextvars
 import dataclasses
-import json
 import tempfile
 from collections.abc import Callable
 from functools import wraps
@@ -31,13 +30,12 @@ from openom_core.embed import read as _read
 from openom_core.errors import CanonicalizationError, PayloadTooLargeError
 from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
+from openom_core.schema import load_schema as _load_schema  # cached + wheel-safe (#148/#149)
 from openom_core.text import CursorError, PageRangeError
 from openom_core.text import extract_text as _extract_text
 from openom_core.validate import Tolerances
 from openom_core.validate import validate as _validate
 from openom_core.xmp import read_marker
-
-SCHEMA_PATH = Path(__file__).resolve().parents[3] / "spec" / "om-0.1.schema.json"
 
 
 class ToolError(Exception):
@@ -199,9 +197,6 @@ def _run_core(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
     )
 
 
-def _load_schema() -> dict[str, Any]:
-    data: dict[str, Any] = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-    return data
 
 
 @_guard

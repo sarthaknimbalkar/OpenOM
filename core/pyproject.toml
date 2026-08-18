@@ -30,6 +30,12 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/openom_core"]
 
+# Ship the JSON Schema INSIDE the wheel (#149) so a pip-installed openom-core/-mcp can load it via
+# importlib.resources — no reliance on an adjacent /spec dir. /spec stays the single source; this is a
+# build-time copy (openom_core.schema.load_schema prefers it, falls back to /spec for editable installs).
+[tool.hatch.build.targets.wheel.force-include]
+"../spec/om-0.1.schema.json" = "openom_core/om-0.1.schema.json"
+
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
