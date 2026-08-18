@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openom-cli"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "openOM CLI — the `om` command over openom-core. Zero inference."
 requires-python = ">=3.11"
 license = "MIT"
