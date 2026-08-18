@@ -89,10 +89,11 @@ export async function readPayloadFromBytes(
 
 type PdfLib = typeof import("pdf-lib");
 
-/** Read `omspec:payloadHash` from the catalog `/Metadata` XMP stream (case-insensitive element). */
-async function readXmpPayloadHash(
+/** Read one `omspec:<prop>` from the catalog `/Metadata` XMP stream (case-insensitive element). */
+async function readXmpProp(
   doc: import("pdf-lib").PDFDocument,
   { PDFName, PDFRawStream }: PdfLib,
+  prop: string,
 ): Promise<string | null> {
   const meta = doc.catalog.lookup(PDFName.of("Metadata"));
   if (!(meta instanceof PDFRawStream)) return null;
@@ -103,8 +104,29 @@ async function readXmpPayloadHash(
       ? await inflate(raw, DEFAULT_MAX_PAYLOAD_BYTES)
       : raw;
   const xml = new TextDecoder().decode(xmlBytes);
-  const m = /<omspec:payloadHash>\s*([^<\s]+)\s*<\/omspec:payloadHash>/i.exec(xml);
+  const m = new RegExp(`<omspec:${prop}>\\s*([^<\\s]+)\\s*</omspec:${prop}>`, "i").exec(xml);
   return m?.[1] ?? null;
+}
+
+const readXmpPayloadHash = (doc: import("pdf-lib").PDFDocument, pdfLib: PdfLib) =>
+  readXmpProp(doc, pdfLib, "payloadHash");
+
+/**
+ * Read one omspec marker property directly from PDF bytes (loads the PDF itself). Used by the embed
+ * path to carry provenance forward (#5/#166). Returns null on an unreadable/encrypted PDF or a
+ * missing property — never throws.
+ */
+export async function readMarkerProp(pdfBytes: Uint8Array, prop: string): Promise<string | null> {
+  try {
+    const pdfLib = await import("pdf-lib");
+    const doc = await pdfLib.PDFDocument.load(pdfBytes, {
+      throwOnInvalidObject: false,
+      updateMetadata: false,
+    });
+    return await readXmpProp(doc, pdfLib, prop);
+  } catch {
+    return null;
+  }
 }
 
 /**

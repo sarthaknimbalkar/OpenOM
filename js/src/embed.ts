@@ -9,6 +9,8 @@ import {
   PDFHexString,
 } from "pdf-lib";
 import { preimageBytes, payloadHash } from "./hash.js";
+import { integrityHashOfBytes } from "./verify.js";
+import { readMarkerProp } from "./read.js";
 
 /**
  * Embed an openOM payload into a PDF as the associated file `om.json`, with the
@@ -29,6 +31,12 @@ export async function embedPayload(
 ): Promise<Uint8Array> {
   const bytes = preimageBytes(payload);
   const hash = payloadHash(payload);
+
+  // #5/#166: sourceDocHash identifies the underlying source PDF and is held STABLE across reprices —
+  // carried forward from a prior marker, or computed once (hash of the source bytes) on first embed.
+  // Mirrors the Python core; marker-only, so the asserted payload + payloadHash are untouched.
+  const priorSourceHash = await readMarkerProp(pdfBytes, "sourceDocHash");
+  const sourceDocHash = priorSourceHash ?? integrityHashOfBytes(pdfBytes);
 
   const staged = await PDFDocument.load(pdfBytes);
   // Idempotent re-embed ([OM-XMP-004]): strip any prior om.json + its /AF ref first, so a reprice
@@ -52,6 +60,7 @@ export async function embedPayload(
     payloadHash: hash,
     assertedDate: String(payload["assertedDate"] ?? ""),
     supersedes: readSupersedes(payload),
+    sourceDocHash,
   });
 
   return doc.save();
@@ -118,6 +127,7 @@ interface OmspecProps {
   payloadHash: string;
   assertedDate: string;
   supersedes: string | null;
+  sourceDocHash: string | null;
 }
 
 // PDF/A requires every custom XMP namespace to be described by an embedded Extension Schema
@@ -177,6 +187,7 @@ function injectOmspecXmp(doc: PDFDocument, props: OmspecProps): void {
     ["assertedDate", props.assertedDate],
   ];
   if (props.supersedes !== null) rows.push(["supersedes", props.supersedes]);
+  if (props.sourceDocHash !== null) rows.push(["sourceDocHash", props.sourceDocHash]);
 
   const body = rows.map(([k, v]) => `   <omspec:${k}>${xmlEscape(v)}</omspec:${k}>`).join("\n");
   const xml = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
