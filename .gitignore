@@ -45,3 +45,5 @@ Thumbs.db
 .vscode/
 coverage/
 extension/*.zip
+
+js/test-results/
