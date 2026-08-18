@@ -36,6 +36,15 @@ jobs:
           python spec/scripts/gen_site.py
           git diff --exit-code -- site \
             || (echo "::error::refusing to deploy a stale site/ — regenerate it"; exit 1)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build the embeddable badge into the deploy tree (#144)
+        run: |
+          npm --prefix js ci
+          npm --prefix js run build:widget
+          mkdir -p site/openom/widget
+          cp js/widget/dist/openom-badge.js site/openom/widget/openom-badge.js
       - name: Deploy to Cloudflare Pages
         if: ${{ env.CF_TOKEN != '' && env.CF_ACCOUNT != '' }}
         env:

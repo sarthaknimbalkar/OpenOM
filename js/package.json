@@ -10,10 +10,15 @@
     ".": {
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js"
+    },
+    "./widget/badge-core.js": {
+      "types": "./dist/widget/badge-core.d.ts",
+      "import": "./dist/widget/badge-core.js"
     }
   },
   "files": [
     "dist/src",
+    "dist/widget",
     "README.md"
   ],
   "keywords": [
@@ -39,7 +44,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.widget.json",
+    "build:widget": "node widget/build.mjs && node ../extension/scripts/assert-no-inference.mjs widget/dist",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write ."
   },
@@ -57,6 +63,7 @@
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^2.1.0",
+    "esbuild": "^0.24.0",
     "eslint": "^9.17.0",
     "prettier": "^3.4.0",
     "typescript": "^5.7.0",

@@ -23,5 +23,6 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "examples/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "examples/**/*.ts", "widget/**/*.ts"],
+  "exclude": ["widget/openom-badge.ts"]
 }
