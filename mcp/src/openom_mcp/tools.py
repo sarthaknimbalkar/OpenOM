@@ -82,6 +82,7 @@ def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
                 _LIMITER.check(_current_principal.get() or "")
             return fn(*args, **kwargs)
         except ToolError as exc:
+            _log_failure(fn, exc.code)  # #152 — observe rate-limit/SSRF/IO rejections (hosted only)
             return _envelope(exc)
         except PayloadTooLargeError as exc:
             return _envelope(ToolError("OM-IO-BOMB", str(exc)))
@@ -98,6 +99,21 @@ def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
             _consumed_blobs.reset(token)
 
     return wrapper
+
+
+def _log_failure(fn: Callable[..., Any], code: str) -> None:
+    """Observe a mapped tool rejection on the HOSTED transport (#152). No-op on stdio (trusted-
+    local); never logs request content — just the tool name, error code, and principal."""
+    if _RESOLVER is None or _RESOLVER.transport != "http":
+        return
+    import logging
+
+    from .log import event
+
+    event(
+        logging.WARNING, "tool_error", tool=getattr(fn, "__name__", "?"),
+        code=code, principal=_current_principal.get(),
+    )
 
 
 def _delete_consumed_blobs() -> None:
