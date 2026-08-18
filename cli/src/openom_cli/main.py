@@ -32,6 +32,28 @@ from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
 
 SPEC_VERSION = "0.1"
+
+
+def _force_utf8(stream: object) -> None:
+    """Emit UTF-8 on a text stream regardless of the OS console codepage (#18).
+
+    On Windows with a legacy codepage (cp1252) — the default on Python < 3.15 or under
+    ``PYTHONUTF8=0`` — the em-dashes / middots in help text and any non-ASCII in JSON output
+    mojibake or raise UnicodeEncodeError. Reconfiguring to UTF-8 fixes it everywhere. Text layer
+    only: the binary ``embed --out -`` path writes ``sys.stdout.buffer`` and is unaffected.
+    """
+    reconfigure = getattr(stream, "reconfigure", None)
+    if reconfigure is None:
+        return  # e.g. a test harness replaced stdout with a plain object
+    try:
+        reconfigure(encoding="utf-8")
+    except (ValueError, OSError):  # detached / already-written stream — best-effort
+        pass
+
+
+for _std in (sys.stdout, sys.stderr):
+    _force_utf8(_std)
+
 app = typer.Typer(
     help="openOM deterministic engine — embed/read/inspect/validate/check/extract."
 )
