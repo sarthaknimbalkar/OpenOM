@@ -168,6 +168,7 @@ def read(pdf: Annotated[Path, typer.Argument(help="PDF to read")]) -> None:
         {
             "present": result.present,
             "payload": result.payload,
+            "sourceDocHash": result.source_doc_hash,  # #5: provenance of the underlying source PDF
             "verification": {
                 "hashValid": result.hash_valid,
                 "originVerified": result.origin_verified,

@@ -23,7 +23,10 @@ OMSPEC_PREFIX = "omspec"
 SPEC_NAME = "openOM"
 
 # Property order matches the Track B writer for cross-impl parity.
-_ORDER = ("specName", "specVersion", "payloadFilename", "payloadHash", "assertedDate", "supersedes")
+_ORDER = (
+    "specName", "specVersion", "payloadFilename", "payloadHash", "assertedDate",
+    "supersedes", "sourceDocHash",
+)
 
 # Matches our own prior omspec Description block (for idempotent re-embed).
 _OMSPEC_DESC_RE = re.compile(
@@ -119,6 +122,7 @@ def write_marker(
     payload_hash: str,
     asserted_date: str,
     supersedes: str | None = None,
+    source_doc_hash: str | None = None,
 ) -> None:
     """Write the required omspec XMP properties ([OM-XMP-002]) as a conformant, namespaced
     ``omspec:`` block, preserving any existing XMP. Idempotent: replaces our prior block."""
@@ -131,6 +135,8 @@ def write_marker(
     }
     if supersedes is not None:
         props["supersedes"] = supersedes
+    if source_doc_hash is not None:
+        props["sourceDocHash"] = source_doc_hash  # #5: provenance of the underlying source PDF
     # The PDF/A extension schema precedes the marker so a validator sees the namespace described.
     block = f"{_pdfa_extension_description()}\n{_omspec_description(props)}"
 

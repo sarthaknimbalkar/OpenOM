@@ -122,3 +122,27 @@ def test_reembed_warns_on_backwards_asserted_date(base_pdf: bytes) -> None:
     assert reembed_warnings(e1, v2, asserted_date="2026-09-01") == []  # forward: fine
     assert reembed_warnings(e1, v1, asserted_date="2026-07-01") == []  # identical: not a reprice
     assert reembed_warnings(base_pdf, v1, asserted_date="2026-07-01") == []  # no prior marker
+
+
+def test_source_doc_hash_recorded_on_first_embed(base_pdf: bytes) -> None:
+    """#5: the first embed stamps the marker with the hash of the SOURCE PDF (pre-embed bytes)."""
+    from openom_core.canonical import hash_bytes
+
+    out = embed(base_pdf, _sample(), asserted_date="2026-08-18")
+    assert _marker(out)["sourceDocHash"] == hash_bytes(base_pdf)
+    assert read(out).source_doc_hash == hash_bytes(base_pdf)
+
+
+def test_source_doc_hash_preserved_across_reprice(base_pdf: bytes) -> None:
+    """#5: a reprice keeps the ORIGINAL sourceDocHash, not the re-embed bytes."""
+    from openom_core.canonical import hash_bytes
+
+    first = embed(base_pdf, _sample(), asserted_date="2026-08-18")
+    origin = hash_bytes(base_pdf)
+    repriced_payload = copy.deepcopy(_sample())
+    repriced_payload["deal"]["askingPrice"] = repriced_payload["deal"]["askingPrice"] + 100000
+    second = embed(first, repriced_payload, asserted_date="2026-08-19")
+    # supersedes advances, but sourceDocHash is the stable original — NOT hash_bytes(first).
+    assert _marker(second)["sourceDocHash"] == origin
+    assert _marker(second)["sourceDocHash"] != hash_bytes(first)
+    assert read(second).source_doc_hash == origin

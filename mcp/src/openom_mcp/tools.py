@@ -245,6 +245,7 @@ def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
         "payload": payload,
         "payloadHash": payload_hash(payload) if payload is not None else None,
         "specVersion": (payload or {}).get("specVersion") if payload else None,
+        "sourceDocHash": result.source_doc_hash,  # #5: provenance of the underlying source PDF
         "verification": {
             "hashValid": result.hash_valid,
             "originVerified": None,
