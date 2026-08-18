@@ -7,6 +7,7 @@
 // its published mirror. A drift test asserts they stay identical.
 import Ajv2020, { type ErrorObject } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { payloadHash } from "./hash.js";
 
 export const ENVELOPE_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -42,7 +43,12 @@ export const ENVELOPE_SCHEMA = {
     },
     sourceUrl: { type: "string", minLength: 1 },
     specVersion: { const: "0.1" },
-    payloadHash: { type: "string", pattern: "^sha256:[0-9a-f]{64}$" },
+    payloadHash: {
+      type: "string",
+      pattern: "^sha256:[0-9a-f]{64}$",
+      description:
+        "The §C integrity hash of `payload`. JSON Schema cannot bind it to `payload`, so a receiver MUST recompute and compare (verifyEnvelopePayloadHash) after verifying the signature — a schema-valid envelope can still carry a mismatched hash ([OM-HOOK], #120).",
+    },
     verification: {
       type: "object",
       required: ["hashValid", "originVerified", "signatureValid"],
@@ -71,6 +77,27 @@ function validator() {
     _validate = ajv.compile(ENVELOPE_SCHEMA as unknown as Record<string, unknown>);
   }
   return _validate;
+}
+
+/**
+ * Verify the envelope's `payloadHash` actually binds its inline `payload` — i.e. it equals the §C
+ * integrity hash of the payload ([OM-HOOK], #120). JSON Schema cannot express this cross-field
+ * invariant, so a schema-valid envelope can still carry a mismatched hash; a receiver MUST run this
+ * (after verifying the signature) before trusting `payloadHash`. Returns false on any shape error.
+ */
+export function verifyEnvelopePayloadHash(envelope: unknown): boolean {
+  try {
+    if (envelope === null || typeof envelope !== "object") return false;
+    const { payload, payloadHash: claimed } = envelope as {
+      payload?: unknown;
+      payloadHash?: unknown;
+    };
+    if (typeof claimed !== "string") return false;
+    if (payload === null || typeof payload !== "object" || Array.isArray(payload)) return false;
+    return payloadHash(payload as Record<string, unknown>) === claimed;
+  } catch {
+    return false;
+  }
 }
 
 /** Validate a parsed webhook-envelope object against the published §Y schema. */
