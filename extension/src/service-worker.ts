@@ -14,6 +14,7 @@ import {
 } from "openom-js";
 import schema from "../../spec/om-0.1.schema.json";
 import { refetchPdf } from "./detect.js";
+import { accepts } from "./message-gate.js";
 import { guardedMirrorFetch, mirrorUrlFor } from "./mirror.js";
 import { classifyStale } from "./stale.js";
 import { precompiledValidate } from "./validator.js";
@@ -205,19 +206,11 @@ async function detectCached(
 // Wire messages only in the extension runtime (guarded so unit tests can import handleDetect).
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    // #127: only trust messages from THIS extension's own contexts. MV3 without externally_connectable
-    // already keeps web pages out; this is defense-in-depth for a future connectable/content-script
-    // compromise. A content script runs in the hostile-page world (sender.tab set), so it may ONLY ask
-    // for read-only badge state — never trigger a fetch, an embed, or a settings write.
-    if (sender.id !== chrome.runtime.id) return false;
-    const fromContentScript = sender.tab !== undefined;
-    if (
-      fromContentScript &&
-      msg?.type !== "linkbadge:enabled" &&
-      msg?.type !== "linkbadge:verify"
-    ) {
-      return false;
-    }
+    // #127 (fixed): only trust messages from THIS extension's own contexts, and confine content
+    // scripts to the read-only badge verbs. The content-script test is by sender URL, not merely by
+    // the presence of a tab — our own extension pages hosted in a tab (deep-link popup, side panel)
+    // also have sender.tab set and must NOT be treated as content scripts. See message-gate.ts.
+    if (!accepts(sender, msg?.type, chrome.runtime.id)) return false;
     if (msg?.type === "detect" && typeof msg.url === "string") {
       const tabId = typeof msg.tabId === "number" ? msg.tabId : undefined;
       detectCached(msg.url, tabId)
