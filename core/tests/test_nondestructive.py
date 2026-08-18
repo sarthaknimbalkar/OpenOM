@@ -14,6 +14,7 @@ from typing import Any
 
 import pikepdf
 import pymupdf
+import pytest
 
 from _make_rich import make_rich_pdf
 from _render import pages_pixel_identical
@@ -110,3 +111,13 @@ def test_nondestructive_hybrid(hybrid_om: bytes) -> None:
 
 def test_nondestructive_scanned(scanned_om: bytes) -> None:
     _assert_nondestructive(scanned_om, embed(scanned_om, _sample(), asserted_date=FIXED_DATE))
+
+
+# --- committed producer-diverse fixtures (#130): RUN IN CI, unlike the corpus tests above ------
+
+@pytest.mark.parametrize("cls", ["native", "hybrid", "scanned"])
+def test_nondestructive_producer(cls: str, producer_pdfs: dict[str, bytes]) -> None:
+    """Non-destructiveness across object-stream/linearized (native), text+image (hybrid), and
+    image-only (scanned) producer structures — the diversity the CI gate previously lacked."""
+    original = producer_pdfs[cls]
+    _assert_nondestructive(original, embed(original, _sample(), asserted_date=FIXED_DATE))

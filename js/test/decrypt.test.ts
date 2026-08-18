@@ -109,12 +109,14 @@ describe("decryptPdf — malformed input fuzz never throws/hangs (#132)", () => 
           const bad = base.slice();
           bad[off] = (bad[off]! ^ xor) & 0xff;
           let out: Uint8Array | null = null;
-          await expect(
-            (async () => {
-              out = await decryptPdf(bad);
-            })(),
-          ).resolves.toBeUndefined(); // never throws
-          expect(out === null || out instanceof Uint8Array).toBe(true);
+          let threw = false;
+          try {
+            out = await decryptPdf(bad);
+          } catch {
+            threw = true;
+          }
+          expect(threw).toBe(false); // fails safe, never throws
+          expect(out === null || ArrayBuffer.isView(out)).toBe(true); // null or valid bytes
         }
       }
     });
