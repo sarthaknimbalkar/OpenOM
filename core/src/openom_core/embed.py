@@ -38,6 +38,7 @@ class ReadResult:
     hash_valid: bool | None
     origin_verified: None = None  # read-time origin check is a Consumer concern; null in core
     signature_valid: None = None  # reserved (§10 layer 4)
+    source_doc_hash: str | None = None  # #5: marker sourceDocHash (provenance of the source PDF)
 
 
 def _remove_existing(pdf: pikepdf.Pdf) -> None:
@@ -100,6 +101,14 @@ def embed(
         else:
             supersedes = None
 
+        # #5: sourceDocHash identifies the underlying source PDF, held STABLE across reprices. It is
+        # computed once — the hash of the document at first embed (before any om.json existed) — and
+        # carried forward from the prior marker on every re-embed, so a reprice never loses or
+        # mutates the source-document provenance. (Marker-only: the asserted payload is untouched,
+        # so payloadHash and cross-impl JCS parity are unaffected.)
+        prior_source = prior.get("sourceDocHash") if prior else None
+        source_doc_hash = prior_source or hash_bytes(pdf_bytes)
+
         _remove_existing(pdf)
         # pikepdf's stub marks description/filename/dates as required; runtime defaults them.
         # We intentionally omit dates for determinism (§D [OM-EMB-011]).
@@ -116,6 +125,7 @@ def embed(
             payload_hash=payload_hash,
             asserted_date=asserted_date,
             supersedes=supersedes,
+            source_doc_hash=source_doc_hash,
         )
         out = io.BytesIO()
         pdf.save(out, deterministic_id=True)
@@ -227,4 +237,9 @@ def read(pdf_bytes: bytes) -> ReadResult:
         payload = json.loads(raw)
         xmp_hash = marker.get("payloadHash") if marker else None
         hash_valid = (hash_bytes(raw) == xmp_hash) if xmp_hash else None
-        return ReadResult(present=True, payload=payload, hash_valid=hash_valid)
+        return ReadResult(
+            present=True,
+            payload=payload,
+            hash_valid=hash_valid,
+            source_doc_hash=marker.get("sourceDocHash") if marker else None,
+        )
