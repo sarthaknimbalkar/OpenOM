@@ -19,6 +19,7 @@ export {
   buildEnvelope,
   signHeaders,
   assertSafeWebhookTarget,
+  assertSafeUrl,
   verifyWebhookSignature,
   type Envelope,
   type Verification,

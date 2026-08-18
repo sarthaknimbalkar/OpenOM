@@ -1,5 +1,6 @@
 // The origin JSON-LD mirror fetch that feeds `verifyOrigin` (§10.1). MVP convention: a sibling
-// `om.json` in the same directory as the source PDF. HTTPS-only + size-capped.
+// `om.json` in the same directory as the source PDF. HTTPS-only + SSRF-host-guarded + size-capped.
+import { assertSafeUrl } from "openom-js";
 
 export function mirrorUrlFor(sourceUrl: string): string {
   const u = new URL(sourceUrl);
@@ -12,14 +13,8 @@ export async function guardedMirrorFetch(
   maxBytes = 5_000_000,
   fetchImpl: typeof fetch = fetch,
 ): Promise<{ https: boolean; body: Uint8Array } | null> {
-  let u: URL;
   try {
-    u = new URL(mirrorUrl);
-  } catch {
-    return null;
-  }
-  if (u.protocol !== "https:") return null;
-  try {
+    assertSafeUrl(mirrorUrl); // #122/#125: https + SSRF host guard (throws → caught → null)
     const resp = await fetchImpl(mirrorUrl);
     if (!resp.ok) return null;
     const body = new Uint8Array(await resp.arrayBuffer());

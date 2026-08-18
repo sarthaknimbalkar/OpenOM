@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getSettings, getWebhook, setWebhook, setLinkBadging, isLinkBadgingDomain } from "../../src/storage.js";
+import {
+  getSettings,
+  getWebhook,
+  setWebhook,
+  setLinkBadging,
+  isLinkBadgingDomain,
+} from "../../src/storage.js";
 import { refetchPdf } from "../../src/detect.js";
 import { guardedMirrorFetch, mirrorUrlFor } from "../../src/mirror.js";
 
@@ -21,7 +27,11 @@ function fakeChrome() {
   };
 }
 
-function resp(body: Uint8Array, ok = true, headers: Record<string, string> = {}): Response {
+function resp(
+  body: Uint8Array,
+  ok = true,
+  headers: Record<string, string> = {},
+): Response {
   return {
     ok,
     headers: { get: (k: string) => headers[k.toLowerCase()] ?? null },
@@ -47,12 +57,20 @@ describe("storage — chrome.storage.local only", () => {
 
   test("setWebhook round-trips via local, never sync", async () => {
     await setWebhook({ url: "https://hooks.example.com/x", secret: "s" });
-    expect(await getWebhook()).toEqual({ url: "https://hooks.example.com/x", secret: "s" });
-    expect((globalThis as unknown as { __sync: ReturnType<typeof vi.fn> }).__sync).not.toHaveBeenCalled();
+    expect(await getWebhook()).toEqual({
+      url: "https://hooks.example.com/x",
+      secret: "s",
+    });
+    expect(
+      (globalThis as unknown as { __sync: ReturnType<typeof vi.fn> }).__sync,
+    ).not.toHaveBeenCalled();
   });
 
   test("settings default when unset", async () => {
-    expect(await getSettings()).toEqual({ proactiveDetection: false, linkBadgingDomains: [] });
+    expect(await getSettings()).toEqual({
+      proactiveDetection: false,
+      linkBadgingDomains: [],
+    });
   });
 
   test("link-badging allowlist add/remove/dedup (#69)", async () => {
@@ -67,37 +85,78 @@ describe("storage — chrome.storage.local only", () => {
 
 describe("refetchPdf — re-fetch bytes, size-capped", () => {
   test("returns bytes for a normal PDF", async () => {
-    const got = await refetchPdf("https://h/x.pdf", 1000, async () => resp(PDF));
+    const got = await refetchPdf("https://h/x.pdf", 1000, async () =>
+      resp(PDF),
+    );
     expect(got).toEqual(PDF);
   });
   test("null when over the byte cap", async () => {
     const big = new Uint8Array(2000);
-    expect(await refetchPdf("https://h/x.pdf", 1000, async () => resp(big))).toBeNull();
+    expect(
+      await refetchPdf("https://h/x.pdf", 1000, async () => resp(big)),
+    ).toBeNull();
   });
   test("streams and caps a body with NO content-length header (#67)", async () => {
     const big = new Uint8Array(2000); // no content-length → old code buffered it all before checking
-    expect(await refetchPdf("https://h/x.pdf", 1000, async () => resp(big))).toBeNull();
+    expect(
+      await refetchPdf("https://h/x.pdf", 1000, async () => resp(big)),
+    ).toBeNull();
     const ok = new Uint8Array([1, 2, 3]);
-    expect(await refetchPdf("https://h/x.pdf", 1000, async () => resp(ok))).toEqual(ok);
+    expect(
+      await refetchPdf("https://h/x.pdf", 1000, async () => resp(ok)),
+    ).toEqual(ok);
   });
   test("null when declared content-length exceeds the cap", async () => {
-    const got = await refetchPdf("https://h/x.pdf", 1000, async () => resp(PDF, true, { "content-length": "9999" }));
+    const got = await refetchPdf("https://h/x.pdf", 1000, async () =>
+      resp(PDF, true, { "content-length": "9999" }),
+    );
     expect(got).toBeNull();
   });
   test("null on network error", async () => {
-    expect(await refetchPdf("https://h/x.pdf", 1000, async () => { throw new Error("net"); })).toBeNull();
+    expect(
+      await refetchPdf("https://h/x.pdf", 1000, async () => {
+        throw new Error("net");
+      }),
+    ).toBeNull();
+  });
+  test("#122 SSRF: refuses an internal/metadata target WITHOUT fetching", async () => {
+    const spy = vi.fn(async () => resp(PDF));
+    for (const url of [
+      "https://169.254.169.254/x.pdf",
+      "https://[0:0:0:0:0:0:0:1]/x.pdf",
+      "http://h/x.pdf",
+    ]) {
+      expect(await refetchPdf(url, 1000, spy)).toBeNull();
+    }
+    expect(spy).not.toHaveBeenCalled();
   });
 });
 
 describe("mirror", () => {
   test("mirrorUrlFor derives sibling om.json", () => {
-    expect(mirrorUrlFor("https://h.example.com/dir/deal.pdf")).toBe("https://h.example.com/dir/om.json");
+    expect(mirrorUrlFor("https://h.example.com/dir/deal.pdf")).toBe(
+      "https://h.example.com/dir/om.json",
+    );
   });
   test("guardedMirrorFetch rejects non-https", async () => {
-    expect(await guardedMirrorFetch("http://h/om.json", 1000, async () => resp(PDF))).toBeNull();
+    expect(
+      await guardedMirrorFetch("http://h/om.json", 1000, async () => resp(PDF)),
+    ).toBeNull();
   });
   test("guardedMirrorFetch returns body for https", async () => {
-    const r = await guardedMirrorFetch("https://h/om.json", 1000, async () => resp(PDF));
+    const r = await guardedMirrorFetch("https://h/om.json", 1000, async () =>
+      resp(PDF),
+    );
     expect(r).toEqual({ https: true, body: PDF });
+  });
+  test("#122 SSRF: guardedMirrorFetch refuses an internal target WITHOUT fetching", async () => {
+    const spy = vi.fn(async () => resp(PDF));
+    expect(
+      await guardedMirrorFetch("https://[::1]/om.json", 1000, spy),
+    ).toBeNull();
+    expect(
+      await guardedMirrorFetch("https://192.168.0.1/om.json", 1000, spy),
+    ).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
   });
 });

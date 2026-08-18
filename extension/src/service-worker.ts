@@ -29,7 +29,11 @@ export interface DetectResult {
   sourceUrl: string;
   payload: Record<string, unknown> | null;
   payloadHash: string | null;
-  verification: { hashValid: boolean; originVerified: boolean; signatureValid: null };
+  verification: {
+    hashValid: boolean;
+    originVerified: boolean;
+    signatureValid: null;
+  };
   findings: string[];
   stale?: "OMW-W051";
 }
@@ -37,7 +41,9 @@ export interface DetectResult {
 export interface DetectDeps {
   refetch?: (url: string) => Promise<Uint8Array | null>;
   read?: (bytes: Uint8Array) => Promise<ReadResult>;
-  mirrorFetch?: (url: string) => Promise<{ https: boolean; body: Uint8Array } | null>;
+  mirrorFetch?: (
+    url: string,
+  ) => Promise<{ https: boolean; body: Uint8Array } | null>;
   setBadge?: (state: BadgeState) => void | Promise<void>;
 }
 
@@ -49,10 +55,14 @@ const BADGE_TEXT: Record<BadgeState, string> = {
   "signature-verified": "✓✓",
 };
 
-export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<DetectResult> {
+export async function handleDetect(
+  url: string,
+  deps: DetectDeps = {},
+): Promise<DetectResult> {
   const refetch = deps.refetch ?? ((u: string) => refetchPdf(u));
   const readFn = deps.read ?? readPayloadFromBytes;
-  const mirrorFetch = deps.mirrorFetch ?? ((u: string) => guardedMirrorFetch(u));
+  const mirrorFetch =
+    deps.mirrorFetch ?? ((u: string) => guardedMirrorFetch(u));
 
   const bytes = await refetch(url);
   const read = bytes ? await readFn(bytes) : null;
@@ -66,7 +76,10 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
   if (!read || read.state === "absent" || read.state === "encrypted") {
     state = "absent";
     if (encrypted) findings.push("encrypted");
-  } else if (read.state === "hash-mismatch" || read.verification.hashValid !== true) {
+  } else if (
+    read.state === "hash-mismatch" ||
+    read.verification.hashValid !== true
+  ) {
     state = "hash-mismatch"; // terminal — no L3/L4
   } else {
     payload = read.payload;
@@ -85,12 +98,15 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
       fetchMirror: async () => mirrorRes,
     });
 
-    if (!origin.originVerified && origin.reason === "hash-mismatch" && mirrorRes) {
+    if (
+      !origin.originVerified &&
+      origin.reason === "hash-mismatch" &&
+      mirrorRes
+    ) {
       try {
-        const mirrorPayload = JSON.parse(new TextDecoder().decode(mirrorRes.body)) as Record<
-          string,
-          unknown
-        >;
+        const mirrorPayload = JSON.parse(
+          new TextDecoder().decode(mirrorRes.body),
+        ) as Record<string, unknown>;
         const s = classifyStale({
           embeddedHash: read.payloadHash ?? "",
           mirrorHash: origin.mirrorHash ?? "",
@@ -118,7 +134,9 @@ export async function handleDetect(url: string, deps: DetectDeps = {}): Promise<
   const honest = honestLabel(state);
   // #72 — an encrypted PDF is "absent" for the badge, but say WHY rather than "no data / vision fallback".
   const label = encrypted ? "Encrypted PDF" : honest.label;
-  const caption = encrypted ? "This PDF is encrypted — openOM can't read it." : honest.caption;
+  const caption = encrypted
+    ? "This PDF is encrypted — openOM can't read it."
+    : honest.caption;
   return {
     state,
     label,
@@ -143,7 +161,12 @@ function _chromeSetBadge(state: BadgeState, tabId?: number): void {
   if (typeof tabId !== "number") return;
   chrome.action.setBadgeText({ text: BADGE_TEXT[state], tabId });
   chrome.action.setBadgeBackgroundColor({
-    color: state === "hash-mismatch" ? "#b60205" : state === "origin-verified" ? "#0e8a16" : "#888",
+    color:
+      state === "hash-mismatch"
+        ? "#b60205"
+        : state === "origin-verified"
+          ? "#0e8a16"
+          : "#888",
     tabId,
   });
 }
@@ -162,21 +185,39 @@ function fromB64(b64: string): Uint8Array {
 }
 
 /** Detect for a URL, serving a fresh 24h cache when present (#68) and painting the per-tab badge. */
-async function detectCached(url: string, tabId?: number): Promise<DetectResult> {
+async function detectCached(
+  url: string,
+  tabId?: number,
+): Promise<DetectResult> {
   const now = Date.now();
   const cached = await getCachedDetect(url, now);
   if (cached) {
     _chromeSetBadge(cached.state, tabId);
     return cached;
   }
-  const result = await handleDetect(url, { setBadge: (s) => _chromeSetBadge(s, tabId) });
+  const result = await handleDetect(url, {
+    setBadge: (s) => _chromeSetBadge(s, tabId),
+  });
   await setCachedDetect(url, result, now);
   return result;
 }
 
 // Wire messages only in the extension runtime (guarded so unit tests can import handleDetect).
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    // #127: only trust messages from THIS extension's own contexts. MV3 without externally_connectable
+    // already keeps web pages out; this is defense-in-depth for a future connectable/content-script
+    // compromise. A content script runs in the hostile-page world (sender.tab set), so it may ONLY ask
+    // for read-only badge state — never trigger a fetch, an embed, or a settings write.
+    if (sender.id !== chrome.runtime.id) return false;
+    const fromContentScript = sender.tab !== undefined;
+    if (
+      fromContentScript &&
+      msg?.type !== "linkbadge:enabled" &&
+      msg?.type !== "linkbadge:verify"
+    ) {
+      return false;
+    }
     if (msg?.type === "detect" && typeof msg.url === "string") {
       const tabId = typeof msg.tabId === "number" ? msg.tabId : undefined;
       detectCached(msg.url, tabId)
@@ -196,7 +237,9 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     // deterministic detect pipeline (24h cache), returning only the badge state (never a tab badge).
     if (msg?.type === "linkbadge:enabled" && typeof msg.hostname === "string") {
       const d = getDomain(msg.hostname);
-      (d ? isLinkBadgingDomain(d) : Promise.resolve(false)).then((enabled) => sendResponse({ enabled }));
+      (d ? isLinkBadgingDomain(d) : Promise.resolve(false)).then((enabled) =>
+        sendResponse({ enabled }),
+      );
       return true;
     }
     if (msg?.type === "linkbadge:verify" && typeof msg.url === "string") {
@@ -219,11 +262,19 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true;
     }
-    if (msg?.type === "author:embed" && typeof msg.pdfB64 === "string" && msg.payload) {
+    if (
+      msg?.type === "author:embed" &&
+      typeof msg.pdfB64 === "string" &&
+      msg.payload
+    ) {
       const payload = msg.payload as Record<string, unknown>;
       Promise.resolve()
         .then(() => {
-          assertEmbeddable(payload, schema as Record<string, unknown>, precompiledValidate); // #98
+          assertEmbeddable(
+            payload,
+            schema as Record<string, unknown>,
+            precompiledValidate,
+          ); // #98
           return embedPayload(fromB64(msg.pdfB64), payload);
         })
         .then((out) => sendResponse({ okB64: toB64(out) }))
@@ -241,7 +292,8 @@ if (typeof chrome !== "undefined" && chrome.tabs?.onUpdated) {
   chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
     if (info.status !== "complete") return;
     const url = tab.url;
-    if (!url || !url.startsWith("https://") || !/\.pdf($|\?|#)/i.test(url)) return;
+    if (!url || !url.startsWith("https://") || !/\.pdf($|\?|#)/i.test(url))
+      return;
     void getSettings().then((s) => {
       if (s.proactiveDetection) void detectCached(url, tabId).catch(() => {});
     });
