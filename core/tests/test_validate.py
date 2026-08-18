@@ -138,6 +138,14 @@ def test_info_currency_defaulted() -> None:
     assert "OMI-I001" not in _codes(validate(with_ccy).info)
 
 
+def test_warning_currency_absent_non_us() -> None:
+    # #119: currency absent on an explicitly non-US property → OMW-W061 (US/absent stays info-only).
+    non_us = copy.deepcopy(_sample())
+    non_us["property"]["address"]["addressCountry"] = "GB"
+    assert "OMW-W061" in _codes(validate(non_us).warnings)
+    assert "OMW-W061" not in _codes(validate(_sample()).warnings)  # US base: no warning
+
+
 def test_warning_cap_rate_outside_band() -> None:
     bad = copy.deepcopy(_sample())
     bad["deal"]["capRate"] = 0.30  # NOI/price still ~matches but 0.30 > band max 0.20
