@@ -133,17 +133,41 @@ def principal_asgi(app: Any, extract: Any) -> Any:
     """Wrap an ASGI ``app`` so each HTTP request sets ``tools._current_principal`` from its headers/
     client IP (``extract(headers, client_ip)``), reset afterwards. Non-http scopes pass through."""
 
+    import logging
+    import time
+
+    from .log import event
+
     async def middleware(scope: Any, receive: Any, send: Any) -> None:
         if scope.get("type") != "http":
             await app(scope, receive, send)
             return
         headers = {k.decode(): v.decode() for k, v in scope.get("headers", [])}
         client_ip = (scope.get("client") or ("unknown",))[0]
-        token = tools._current_principal.set(extract(headers, client_ip))
+        principal = extract(headers, client_ip)
+        token = tools._current_principal.set(principal)
+        # Per-request observability (#152): principal + path + status + duration, no request bodies.
+        status = {"code": 0}
+
+        async def _send(message: Any) -> None:
+            if message.get("type") == "http.response.start":
+                status["code"] = message.get("status", 0)
+            await send(message)
+
+        start = time.monotonic()
         try:
-            await app(scope, receive, send)
+            await app(scope, receive, _send)
         finally:
             tools._current_principal.reset(token)
+            event(
+                logging.INFO,
+                "request",
+                principal=principal,
+                method=scope.get("method"),
+                path=scope.get("path"),
+                status=status["code"],
+                ms=round((time.monotonic() - start) * 1000, 1),
+            )
 
     return middleware
 
