@@ -49,3 +49,21 @@ def test_js_embedded_read_by_python(name: str) -> None:
     with pikepdf.open(io.BytesIO(data)) as pdf:
         stored = pdf.attachments["om.json"].get_file().read_bytes()
     assert hash_bytes(stored) == payload_hash(payload), "canonical byte fork between JS and Python"
+
+
+@pytest.mark.skipif(not XIMPL_DIR, reason="OPENOM_XIMPL_DIR not set (run via the cross-impl job)")
+@pytest.mark.parametrize("producer", ["producer-native", "producer-hybrid", "producer-scanned"])
+def test_js_embed_onto_producer_bases_read_by_python(producer: str) -> None:
+    """#131: JS embed onto structurally-diverse producer PDFs (object-stream / linearized /
+    image-only) must be Python-readable and byte-identical — not just onto a blank page."""
+    pdf_path = Path(XIMPL_DIR or "") / f"{producer}.pdf"
+    if not pdf_path.exists():
+        pytest.skip(f"missing JS-embedded producer PDF: {pdf_path}")
+    data = pdf_path.read_bytes()
+    payload = json.loads((VECTORS / "payloads" / "sample-stnl.json").read_text(encoding="utf-8"))
+    result = read(data)
+    assert result.present is True, f"{producer}: Python reader missed the JS-embedded payload"
+    assert result.hash_valid is True, f"{producer}: JS XMP marker not verifiable by Python"
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        stored = pdf.attachments["om.json"].get_file().read_bytes()
+    assert hash_bytes(stored) == payload_hash(payload), f"{producer}: canonical byte fork"

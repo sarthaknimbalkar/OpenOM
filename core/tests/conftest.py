@@ -40,33 +40,40 @@ SCANNED_OM = (
 )
 
 
-# Committed producer-diverse fixtures (#130): stand in for each corpus class when OMs/ is absent, so
-# the named non-destructive/survival tests RUN in CI (with producer diversity) instead of skipping.
-_PRODUCERS = Path(__file__).resolve().parent / "fixtures" / "producers"
-
-
-def load_om(rel: str, fallback: str) -> bytes:
-    """Bytes of the real corpus OM if present, else the committed producer-diverse fallback (so the
-    test always runs). Only skips if BOTH are missing (a broken checkout)."""
+def load_om(rel: str) -> bytes:
+    """Return the bytes of a corpus OM, or skip the test if the corpus is not present."""
     path = OMS_DIR / rel
-    if path.exists():
-        return path.read_bytes()
-    fb = _PRODUCERS / fallback
-    if fb.exists():
-        return fb.read_bytes()
-    pytest.skip(f"neither corpus ({rel}) nor fallback ({fallback}) present")
+    if not path.exists():
+        pytest.skip(f"corpus file missing (OMs/ not present): {rel}")
+    return path.read_bytes()
 
 
 @pytest.fixture
 def native_om() -> bytes:
-    return load_om(NATIVE_OM, "producer-native.pdf")
+    return load_om(NATIVE_OM)
 
 
 @pytest.fixture
 def hybrid_om() -> bytes:
-    return load_om(HYBRID_OM, "producer-hybrid.pdf")
+    return load_om(HYBRID_OM)
 
 
 @pytest.fixture
 def scanned_om() -> bytes:
-    return load_om(SCANNED_OM, "producer-scanned.pdf")
+    return load_om(SCANNED_OM)
+
+
+# Committed producer-diverse fixtures (#130): ALWAYS present (unlike the gitignored corpus), so the
+# non-destructive gate runs in CI with producer diversity. These are structural stand-ins (object
+# streams / linearized / image-only), NOT corpus replacements — the CMYK/classification tests keep
+# using the real corpus fixtures above (and skip in CI, since they need specific real OMs).
+_PRODUCERS = Path(__file__).resolve().parent / "fixtures" / "producers"
+
+
+def _producer(name: str) -> bytes:
+    return (_PRODUCERS / name).read_bytes()
+
+
+@pytest.fixture
+def producer_pdfs() -> dict[str, bytes]:
+    return {cls: _producer(f"producer-{cls}.pdf") for cls in ("native", "hybrid", "scanned")}
