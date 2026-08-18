@@ -10,7 +10,14 @@ import { sha256Hex } from "../src/crypto.js";
 // the SAME corpus and must reproduce every hash byte-for-byte. A single divergence (an ES6 number
 // switch-point, a UTF-16 surrogate ordering, an NFC edge) fails here — catching a silent fork of the
 // standard that the hand-picked vectors never reach.
-const fuzzDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "spec", "vectors", "fuzz");
+const fuzzDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  "spec",
+  "vectors",
+  "fuzz",
+);
 const lines = (name: string): string[] =>
   readFileSync(join(fuzzDir, name), "utf8").split("\n").filter(Boolean);
 
@@ -23,7 +30,8 @@ describe("JCS differential fuzz — TS core matches the Python core (#129)", () 
     const mismatches: string[] = [];
     for (let i = 0; i < corpus.length; i++) {
       const got = "sha256:" + sha256Hex(canonicalize(JSON.parse(corpus[i]!)));
-      if (got !== expected[i]) mismatches.push(`vector ${i}: ${got} != ${expected[i]}\n  ${corpus[i]}`);
+      if (got !== expected[i])
+        mismatches.push(`vector ${i}: ${got} != ${expected[i]}\n  ${corpus[i]}`);
     }
     expect(mismatches).toEqual([]);
   });
