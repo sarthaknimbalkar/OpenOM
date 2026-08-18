@@ -57,6 +57,48 @@ def _deterministic_base() -> bytes:
 
 
 REJECTIONS = VECTORS / "rejections"
+NEGATIVES = VECTORS / "negatives"
+
+
+def _tampered(base: bytes, payload: dict) -> bytes:
+    """Embed `payload`, then overwrite the stored om.json stream with DIFFERENT-but-valid canonical
+    bytes, leaving the XMP payloadHash marker stale — a hash-mismatch that still parses as JSON. A
+    conformant consumer MUST report hash-mismatch / hashValid=false ([OM-VAL-006])."""
+    embedded = embed(base, payload, asserted_date=FIXED_DATE)
+    altered = json.loads(json.dumps(payload))
+    altered["deal"]["askingPrice"] = int(altered["deal"]["askingPrice"]) + 1  # changed, still valid
+    with pikepdf.open(io.BytesIO(embedded)) as pdf:
+        pdf.Root.Names.EmbeddedFiles.Names[1].EF.F.write(canonicalize(altered))
+        buf = io.BytesIO()
+        pdf.save(buf, deterministic_id=True)
+        return buf.getvalue()
+
+
+def _write_negatives(base: bytes) -> None:
+    """Negative-state golden PDFs (#113): embed/read outcomes beyond the L1 happy path, so an
+    implementer can self-certify the FAILURE paths, not just success. Currently: a tampered payload
+    (→ hash-mismatch). Kept in their own suite so the L1 cross-impl round-trip gate is untouched."""
+    NEGATIVES.mkdir(parents=True, exist_ok=True)
+    sample = json.loads((PAYLOADS / "sample-stnl.json").read_text(encoding="utf-8"))
+    (NEGATIVES / "tampered-stnl.pdf").write_bytes(_tampered(base, sample))
+    _write_json(
+        NEGATIVES / "manifest.json",
+        {
+            "specVersion": "0.1",
+            "suite": "openom-negatives",
+            "cases": [
+                {
+                    "name": "tampered-stnl",
+                    "pdf": "negatives/tampered-stnl.pdf",
+                    "expectState": "hash-mismatch",
+                    "role": "consumer",
+                    "level": "L1",
+                    "note": "om.json stream altered after embed; XMP payloadHash is stale.",
+                }
+            ],
+        },
+    )
+    print("wrote 1 negative-state golden + manifest.json")
 
 
 def _deep(levels: int) -> object:
@@ -148,6 +190,7 @@ def main() -> None:
     )
     print(f"wrote {len(vectors)} vectors + {len(vectors)} golden PDFs + manifest.json")
     _write_rejections()
+    _write_negatives(base)
 
 
 if __name__ == "__main__":
