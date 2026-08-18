@@ -1,0 +1,122 @@
+{
+  "specVersion": "0.1",
+  "description": "Canonical openOM finding-code registry (#151): code -> requirement back-reference + severity. Single source both cores drift-lock to (validate.py _REQUIREMENT / consistency.ts REQUIREMENT). Adding a code means editing here + both maps; the drift tests fail if they diverge.",
+  "codes": {
+    "OMI-I001": {
+      "requirement": "OM-DD-002",
+      "severity": "info"
+    },
+    "OMI-I002": {
+      "requirement": "OM-DD-004",
+      "severity": "info"
+    },
+    "OMI-I003": {
+      "requirement": "OM-ERR-014",
+      "severity": "info"
+    },
+    "OMV-E001": {
+      "requirement": "OM-DD-001",
+      "severity": "error"
+    },
+    "OMV-E002": {
+      "requirement": "OM-DD",
+      "severity": "error"
+    },
+    "OMV-E003": {
+      "requirement": "OM-ERR-090",
+      "severity": "error"
+    },
+    "OMV-E010": {
+      "requirement": "OM-ERR-013",
+      "severity": "error"
+    },
+    "OMW-W010": {
+      "requirement": "OM-CONS-010",
+      "severity": "warning"
+    },
+    "OMW-W011": {
+      "requirement": "OM-CONS-011",
+      "severity": "warning"
+    },
+    "OMW-W012": {
+      "requirement": "OM-CONS-012",
+      "severity": "warning"
+    },
+    "OMW-W013": {
+      "requirement": "OM-CONS-013",
+      "severity": "warning"
+    },
+    "OMW-W014": {
+      "requirement": "OM-CONS-014",
+      "severity": "warning"
+    },
+    "OMW-W020": {
+      "requirement": "OM-CONS-020",
+      "severity": "warning"
+    },
+    "OMW-W021": {
+      "requirement": "OM-CONS-021",
+      "severity": "warning"
+    },
+    "OMW-W022": {
+      "requirement": "OM-CONS-022",
+      "severity": "warning"
+    },
+    "OMW-W023": {
+      "requirement": "OM-CONS-023",
+      "severity": "warning"
+    },
+    "OMW-W024": {
+      "requirement": "OM-CONS-024",
+      "severity": "warning"
+    },
+    "OMW-W025": {
+      "requirement": "OM-CONS-025",
+      "severity": "warning"
+    },
+    "OMW-W026": {
+      "requirement": "OM-CONS-026",
+      "severity": "warning"
+    },
+    "OMW-W030": {
+      "requirement": "OM-CONS-030",
+      "severity": "warning"
+    },
+    "OMW-W031": {
+      "requirement": "OM-CONS-031",
+      "severity": "warning"
+    },
+    "OMW-W032": {
+      "requirement": "OM-CONS-032",
+      "severity": "warning"
+    },
+    "OMW-W033": {
+      "requirement": "OM-CONS-033",
+      "severity": "warning"
+    },
+    "OMW-W034": {
+      "requirement": "OM-CONS-034",
+      "severity": "warning"
+    },
+    "OMW-W040": {
+      "requirement": "OM-CONS-040",
+      "severity": "warning"
+    },
+    "OMW-W041": {
+      "requirement": "OM-CONS-041",
+      "severity": "warning"
+    },
+    "OMW-W050": {
+      "requirement": "OM-CONS-050",
+      "severity": "warning"
+    },
+    "OMW-W060": {
+      "requirement": "OM-CONS-060",
+      "severity": "warning"
+    },
+    "OMW-W061": {
+      "requirement": "OM-DD-002",
+      "severity": "warning"
+    }
+  }
+}
