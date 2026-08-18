@@ -10,7 +10,7 @@ import time
 
 import pytest
 
-from openom_mcp.guard import bounded_call
+from openom_mcp.guard import _RESOURCE_AVAILABLE, bounded_call
 from openom_mcp.tools import ToolError
 
 
@@ -27,6 +27,15 @@ def test_in_child_exception_maps_to_010() -> None:
 def test_hard_crash_maps_to_010() -> None:
     with pytest.raises(ToolError) as e:
         bounded_call(os._exit, (1,), timeout=30)  # child dies without returning
+    assert e.value.code == "OM-IO-010"
+
+
+@pytest.mark.skipif(not _RESOURCE_AVAILABLE, reason="RLIMIT_AS is POSIX-only")
+def test_memory_cap_enforced_not_swallowed() -> None:
+    # #123: under a 1 MB address-space cap, allocating ~64 MB in the child MUST fail (MemoryError),
+    # surfacing as OM-IO-010 — proving the cap is applied and a breach is not silently swallowed.
+    with pytest.raises(ToolError) as e:
+        bounded_call(bytearray, (64 * 1024 * 1024,), timeout=30, memory_mb=1)
     assert e.value.code == "OM-IO-010"
 
 
