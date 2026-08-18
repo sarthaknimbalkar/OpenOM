@@ -91,3 +91,40 @@ describe("decryptPdf — out-of-scope ⇒ null (#4 fallback to #107)", () => {
     expect(typeof decryptPdfFromIndex).toBe("function");
   });
 });
+
+describe("decryptPdf — malformed input fuzz never throws/hangs (#132)", () => {
+  // A crafted/corrupt encrypted OM must fail SAFE: decryptPdf returns null (or, rarely, valid bytes),
+  // never throwing or hanging — the caller falls back to the #107 CLI path. Deterministic byte flips
+  // across the /Encrypt-carrying tail of each fixture (seeded positions, no Math.random).
+  for (const name of ["enc-aes128.pdf", "enc-aes256.pdf"]) {
+    test(`byte-corruption of ${name} always fails safe`, async () => {
+      const base = fix(name);
+      // Hit a spread of offsets weighted toward the trailer/Encrypt region (last ~40% of the file).
+      const offsets: number[] = [];
+      for (let i = 0; i < 60; i++) {
+        offsets.push(Math.floor(base.length * (0.55 + 0.45 * (i / 60))));
+      }
+      for (const off of offsets) {
+        for (const xor of [0x01, 0x80, 0xff]) {
+          const bad = base.slice();
+          bad[off] = (bad[off]! ^ xor) & 0xff;
+          let out: Uint8Array | null = null;
+          await expect(
+            (async () => {
+              out = await decryptPdf(bad);
+            })(),
+          ).resolves.toBeUndefined(); // never throws
+          expect(out === null || out instanceof Uint8Array).toBe(true);
+        }
+      }
+    });
+  }
+
+  test("truncated encrypted PDFs fail safe (null, no throw)", async () => {
+    const base = fix("enc-aes128.pdf");
+    for (const frac of [0.1, 0.5, 0.9, 0.99]) {
+      const truncated = base.slice(0, Math.floor(base.length * frac));
+      await expect(decryptPdf(truncated)).resolves.toBeDefined(); // resolves (null|bytes), no throw
+    }
+  });
+});
