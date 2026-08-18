@@ -79,8 +79,19 @@ npm --prefix extension run package    # → extension/openom-extension-<version>
 ```
 
 **Install (until it's on the Web Store):** open `chrome://extensions`, enable **Developer mode**, click
-**Load unpacked**, and select `extension/dist`. Consumer mode is the toolbar popup; author mode opens
-from the popup's **“Embed a payload…”** button (a side panel).
+**Load unpacked**, and select `extension/dist`. The same build loads in **Edge** (`edge://extensions`);
+**Firefox** is roadmapped (see [extension/README](extension/README.md#browser-support-145)). Consumer
+mode is the toolbar popup; author mode opens from the popup's **“Embed a payload…”** button (a side panel).
+
+## No-browser distribution
+
+- **CI / server-side:** the [openom-embed GitHub Action](.github/actions/openom-embed/) embeds or
+  validates payloads in a broker's pipeline, and the `om` CLI does the same locally — no browser, no
+  inference.
+- **Verify without installing anything:** the hosted, fully client-side tool at `…/openom/verify/`
+  reads a PDF in your browser and shows its openOM state (bytes never leave your machine).
+- **Portals:** the embeddable [`<openom-badge>`](js/widget/) shows the trust badge next to a listing
+  with one script tag.
 
 ## Development
 

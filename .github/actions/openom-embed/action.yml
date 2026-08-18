@@ -1,0 +1,88 @@
+# openOM GitHub Action (#145): embed or validate openOM payloads in a broker's CI pipeline —
+# "from I-have-OM-PDFs to they're-openOM-enabled" without a browser. Wraps the deterministic CLI
+# (openom-cli over openom-core); zero inference, no keys, no network calls beyond pip.
+name: openOM
+description: Embed a broker-asserted payload into an OM PDF, or validate a payload/embedded PDF.
+branding:
+  icon: file-text
+  color: green
+
+inputs:
+  command:
+    description: "embed | check (check = schema + consistency validation; the CI gate)."
+    required: true
+    default: check
+  pdf:
+    description: "Input PDF (embed: the OM to embed into)."
+    required: false
+  payload:
+    description: "Payload JSON (embed: to embed; check: the payload to validate)."
+    required: false
+  input:
+    description: "check only: a payload JSON OR a PDF with an embedded om.json (defaults to `payload`)."
+    required: false
+  out:
+    description: "embed only: output PDF path."
+    required: false
+    default: out.openom.pdf
+  asserted-date:
+    description: "embed only: ISO-8601 assertion date (defaults to today, UTC)."
+    required: false
+    default: ""
+  schema:
+    description: "check only: path to a JSON Schema to enable the blocking error tier."
+    required: false
+    default: ""
+  strict:
+    description: "check only: exit non-zero on consistency warnings, not just schema errors."
+    required: false
+    default: "false"
+  version:
+    description: 'pip version spec for openom-core/openom-cli, e.g. "==0.1.0" (default: latest).'
+    required: false
+    default: ""
+  install:
+    description: "Install openom-core/openom-cli from PyPI. Set false if `om` is already on PATH."
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install openOM CLI
+      if: ${{ inputs.install == 'true' }}
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install "openom-core${{ inputs.version }}" "openom-cli${{ inputs.version }}"
+    - name: Run openOM
+      shell: bash
+      env:
+        OM_COMMAND: ${{ inputs.command }}
+        OM_PDF: ${{ inputs.pdf }}
+        OM_PAYLOAD: ${{ inputs.payload }}
+        OM_INPUT: ${{ inputs.input }}
+        OM_OUT: ${{ inputs.out }}
+        OM_DATE: ${{ inputs.asserted-date }}
+        OM_SCHEMA: ${{ inputs.schema }}
+        OM_STRICT: ${{ inputs.strict }}
+      run: |
+        set -euo pipefail
+        case "$OM_COMMAND" in
+          embed)
+            : "${OM_PDF:?embed requires 'pdf'}"
+            : "${OM_PAYLOAD:?embed requires 'payload'}"
+            date="${OM_DATE:-$(date -u +%Y-%m-%d)}"
+            om embed "$OM_PDF" --payload "$OM_PAYLOAD" --out "$OM_OUT" --asserted-date "$date"
+            ;;
+          check)
+            target="${OM_INPUT:-$OM_PAYLOAD}"
+            : "${target:?check requires 'input' or 'payload'}"
+            args=("$target")
+            [ -n "$OM_SCHEMA" ] && args+=(--schema "$OM_SCHEMA")
+            [ "$OM_STRICT" = "true" ] && args+=(--strict)
+            om check "${args[@]}"
+            ;;
+          *)
+            echo "::error::unknown command '$OM_COMMAND' (expected embed|check)"; exit 2 ;;
+        esac
