@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Developer quick-start · openOM docs</title>
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 2.5rem auto;
+            padding: 0 1rem; color: #111; }
+    a { color: #065f46; }
+    code { background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #0b1021; color: #e6edf3; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+    pre code { background: none; color: inherit; padding: 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #e5e7eb;
+              vertical-align: top; }
+    th { background: #f9fafb; }
+    nav.crumbs { font-size: 0.9em; margin-bottom: 1.5rem; }
+    .cards { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+    @media (min-width: 40rem) { .cards { grid-template-columns: 1fr 1fr 1fr; } }
+    .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.1rem; }
+    .card h3 { margin: 0 0 0.3rem; }
+    .sev-error { color: #7f1d1d; font-weight: 600; }
+    .sev-warning { color: #92400e; }
+    .sev-info { color: #374151; }
+    .req { color: #b91c1c; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <nav class="crumbs"><a href="/openom/">openOM</a> · <a href="/openom/docs/">docs</a></nav>
+
+  <h1>Quick-start · implementer / developer</h1>
+  <p>Goal: build against the standard and stay byte-compatible with the reference cores.</p>
+  <h2>The contract</h2>
+  <ul>
+    <li><a href="/openom/spec/om-0.1.schema.json">Payload schema</a> (JSON Schema 2020-12) and the
+        <a href="/openom/ns/0.1">JSON-LD context</a>.</li>
+    <li>Canonicalization is <strong>RFC 8785 (JCS)</strong>; the integrity hash is SHA-256 over the
+        canonical bytes. This is the anti-fork keystone — two conformant implementations MUST produce
+        byte-identical canonical JSON and the same hash.</li>
+    <li>The <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/spec/vectors">conformance
+        vectors</a> are the oracle: canonical bytes, hashes, golden embedded PDFs, negatives, and a
+        differential-fuzz corpus. Reproduce them exactly.</li>
+  </ul>
+  <h2>Reference implementations</h2>
+  <pre><code>pip install openom-core     # Python: embed/read/inspect/extract/validate
+npm  install openom-js       # TypeScript: byte-parity with the Python core</code></pre>
+  <h2>Validation model</h2>
+  <p>Two tiers: <strong>schema errors block</strong>; <strong>consistency warnings never block</strong>;
+     market truth is out of scope forever. See the
+     <a href="/openom/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
+
+</body>
+</html>
