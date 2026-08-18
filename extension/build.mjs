@@ -1,14 +1,15 @@
-// MV3 build: each entry is a SELF-CONTAINED bundle (inlineDynamicImports), because a service worker
-// and extension pages cannot load vite's code-split dynamic chunks. Two single-input vite builds →
-// dist/service-worker.js + dist/popup.js; public/ (manifest, popup.html, popup.css) is copied once.
+// MV3 build: each entry is its own single-input vite build. The service worker + the classic content
+// script are SELF-CONTAINED (inlineDynamicImports) because neither can load an ES-module chunk. The
+// sidepanel is a full extension PAGE, so it CAN — under the default CSP (script-src 'self') a
+// same-origin chunk loads — and it opts into chunking (`chunks: true`). public/ is copied once.
 //
-// Bundle ceiling (#150; #103 cited only the ~886 KB service worker): sidepanel.js is the real max at
-// ~1.17 MB (pd-lib + ajv-standalone + pdf.js text extraction + the schema-driven form); popup is
-// 16 KB (#102), options 4 KB, link-badger 2 KB, pdf.worker.mjs 2.35 MB (a separate on-demand file).
-// pd-lib/ajv/@noble are duplicated across the SW and sidepanel because MV3 gives them separate
-// execution contexts with no shared chunk. Splitting pdf.js out of the sidepanel as a lazy chunk was
-// tried and shrank it to ~788 KB (+378 KB on-demand), but the page failed to load the split chunk in
-// MV3 — deferred to a follow-up (needs the headed live gate green in CI first, #163).
+// Bundle sizes (#150 / #165): sidepanel.js is now ~788 KB (pd-lib + ajv-standalone + the schema form),
+// with pdf.js split into a ~378 KB on-demand chunk (sidepanel-<hash>.js) loaded only when text
+// extraction / encrypted-decrypt actually runs. service-worker.js ~896 KB (#103), popup 16 KB (#102),
+// options 4 KB, link-badger 2 KB, pdf.worker.mjs 2.35 MB (separate on-demand file). pd-lib/ajv/@noble
+// are duplicated across the SW and sidepanel because MV3 gives them separate execution contexts with
+// no shared chunk. The lazy split (`base: "./"` for relative chunk URLs) is proven by the headed gate
+// (20/20 — the encrypted-decrypt + on-device-extraction specs load the chunk).
 import { copyFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,9 +26,14 @@ const alias = {
 
 // `format` is "es" for the service worker + extension pages, but "iife" for the declarative content
 // script — MV3 content_scripts run as CLASSIC scripts, not ES modules ([#69]).
-async function one(input, name, first, format = "es") {
+// `chunks: true` lets dynamic import()s split into on-demand chunks instead of being inlined. Only
+// safe for a full extension PAGE (module <script>), which can load a same-origin chunk under the MV3
+// default CSP (script-src 'self'); the service worker + classic content script CANNOT, so they stay
+// inlined. `base: "./"` keeps the emitted import paths relative so they resolve under chrome-extension://.
+async function one(input, name, first, format = "es", chunks = false) {
   await build({
     root,
+    base: "./",
     configFile: false,
     publicDir: first ? "public" : false,
     resolve: { alias },
@@ -39,7 +45,12 @@ async function one(input, name, first, format = "es") {
       rollupOptions: {
         input,
         external: ["node:zlib"],
-        output: { entryFileNames: `${name}.js`, format, inlineDynamicImports: true },
+        output: {
+          entryFileNames: `${name}.js`,
+          chunkFileNames: `${name}-[hash].js`,
+          format,
+          inlineDynamicImports: !chunks,
+        },
       },
     },
   });
@@ -47,9 +58,14 @@ async function one(input, name, first, format = "es") {
 
 await one(resolve(root, "src/service-worker.ts"), "service-worker", true);
 await one(resolve(root, "src/popup/popup.ts"), "popup", false);
-await one(resolve(root, "src/author/panel.ts"), "sidepanel", false);
+await one(resolve(root, "src/author/panel.ts"), "sidepanel", false, "es", true); // pdf.js → lazy chunk (#165)
 await one(resolve(root, "src/options.ts"), "options", false);
-await one(resolve(root, "src/content/link-badger.ts"), "link-badger", false, "iife"); // classic script
+await one(
+  resolve(root, "src/content/link-badger.ts"),
+  "link-badger",
+  false,
+  "iife",
+); // classic script
 
 // The author panel extracts OM text with pdf.js, which needs its worker as a web-accessible resource
 // (the panel is a full page and CAN spawn the Worker the consumer service worker could not).
@@ -57,4 +73,6 @@ copyFileSync(
   resolve(root, "../js/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"),
   resolve(root, "dist/pdf.worker.mjs"),
 );
-console.log("built dist (service-worker + popup + sidepanel + pdf.worker, dynamic imports inlined)");
+console.log(
+  "built dist (service-worker + popup + sidepanel[+pdf.js lazy chunk] + options + pdf.worker)",
+);
