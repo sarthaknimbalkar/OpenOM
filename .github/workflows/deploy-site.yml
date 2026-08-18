@@ -1,0 +1,53 @@
+# Deploy the pinned namespace tree (site/) so the schema $id and JSON-LD @context
+# URLs actually resolve (#139). Cloudflare Pages is used deliberately: it honors the
+# committed site/_headers, which is what serves the extensionless /openom/ns/0.1 as
+# application/ld+json with open CORS — a plain static host would serve it as
+# octet-stream and break every JSON-LD processor.
+#
+# Inert until the account is wired: the deploy step self-skips unless both secrets
+# exist, so forks and the pre-deploy repo stay green. To go live, set repo secrets
+# CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID, create a Pages project named "openom",
+# then point verveliolabs.com/openom/* at it (custom domain / route).
+name: deploy-site
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/deploy-site.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify site/ is not stale before publishing
+        run: |
+          python spec/scripts/gen_site.py
+          git diff --exit-code -- site \
+            || (echo "::error::refusing to deploy a stale site/ — regenerate it"; exit 1)
+      - name: Deploy to Cloudflare Pages
+        if: ${{ env.CF_TOKEN != '' && env.CF_ACCOUNT != '' }}
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=openom --branch=main
+      - name: Note when unconfigured
+        if: ${{ env.CF_TOKEN == '' }}
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: echo "Cloudflare secrets not set — skipping deploy (see workflow header to enable)."
