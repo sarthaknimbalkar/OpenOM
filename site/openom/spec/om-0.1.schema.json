@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verveliolabs.com/openom/spec/om-0.1.schema.json",
+  "title": "openOM payload 0.1",
+  "description": "JSON Schema (2020-12) for the openOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]). The unprefixed top-level key space is RESERVED for the standard; non-standard/vendor fields belong under the `ext` object (#115) so they cannot collide with future core terms.",
+  "type": "object",
+  "required": ["@context", "@type", "specVersion", "assertedBy", "assertedDate", "meta"],
+  "properties": {
+    "@context": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "description": "schema.org + the openOM namespace https://verveliolabs.com/openom/ns/0.1 (vocabulary published at spec/context/openom-0.1.jsonld)."
+    },
+    "@type": { "const": "RealEstateListing" },
+    "specVersion": { "const": "0.1" },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217; default USD when absent ([OM-DD-002])."
+    },
+    "assertedBy": {
+      "type": "object",
+      "required": ["broker", "brokerage", "license"],
+      "properties": {
+        "broker": { "type": "string", "minLength": 1 },
+        "brokerage": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 },
+        "website": {
+          "type": "string",
+          "format": "uri",
+          "description": "OPTIONAL (#118). The asserting party's website — the identity anchor §10 layer-3 origin verification binds to. Reserved for the registry-era license↔domain↔key cross-check."
+        },
+        "licenseJurisdiction": {
+          "type": "string",
+          "description": "OPTIONAL (#118). ISO 3166-1/-2 code (e.g. US, US-CA) disambiguating the license number's authority space for worldwide use."
+        },
+        "licenseAuthority": {
+          "type": "string",
+          "description": "OPTIONAL (#118). Name of the issuing licensing authority."
+        }
+      }
+    },
+    "assertedDate": { "type": "string", "format": "date" },
+    "property": {
+      "type": "object",
+      "comment": "Multi-tenant/portfolio (#114): 0.1 describes a single property + single `lease`. A future version adds an OPTIONAL `leases[]` (and/or portfolio container) ADDITIVELY — `lease` is never removed/retyped — so the migration stays a minor, not a breaking ns/0.2.",
+      "properties": {
+        "propertyType": {
+          "type": "string",
+          "description": "OPTIONAL (#114). Extensible discriminator: retail | office | industrial | multifamily | land | mixed-use | hospitality | self-storage | other. Open string in 0.1; 0.2 may formalize the enum.",
+          "examples": ["retail", "office", "industrial", "multifamily", "land"]
+        },
+        "address": {
+          "type": "object",
+          "properties": {
+            "streetAddress": { "type": "string" },
+            "addressLocality": { "type": "string" },
+            "addressRegion": { "type": "string" },
+            "postalCode": { "type": "string" },
+            "addressCountry": { "type": "string", "pattern": "^[A-Z]{2}$" }
+          }
+        },
+        "geo": {
+          "type": "object",
+          "properties": {
+            "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+            "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+          }
+        },
+        "apn": { "type": "string" },
+        "buildingSF": { "type": "number", "exclusiveMinimum": 0 },
+        "lotAcres": { "type": "number", "exclusiveMinimum": 0 },
+        "yearBuilt": { "type": "integer" },
+        "yearRenovated": { "type": "integer" }
+      }
+    },
+    "deal": {
+      "type": "object",
+      "properties": {
+        "askingPrice": { "type": "number", "exclusiveMinimum": 0 },
+        "capRate": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "noi": { "type": "number" },
+        "noiType": { "enum": ["in-place", "pro-forma"] },
+        "noiAsOfDate": { "type": "string", "format": "date" },
+        "pricePerSF": { "type": "number", "exclusiveMinimum": 0 },
+        "status": { "enum": ["active", "under-contract", "sold", "withdrawn"] }
+      },
+      "comment": "capRate is a decimal fraction (0.0625 = 6.25%), not a percentage ([OM-CANON-007]).",
+      "if": { "required": ["noi"] },
+      "then": {
+        "required": ["noiType", "noiAsOfDate"],
+        "description": "noiType + noiAsOfDate REQUIRED whenever noi is present ([OM-DD] / OMV-E002)."
+      }
+    },
+    "lease": {
+      "type": "object",
+      "properties": {
+        "tenantEntity": { "type": "string" },
+        "guarantor": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "type": { "enum": ["corporate", "franchisee", "personal", "none"] }
+          }
+        },
+        "landlordResponsibilities": {
+          "type": "object",
+          "properties": {
+            "roof": { "type": "boolean" },
+            "structure": { "type": "boolean" },
+            "parking": { "type": "boolean" },
+            "hvac": { "type": "boolean" },
+            "taxes": { "type": "boolean" },
+            "insurance": { "type": "boolean" },
+            "cam": { "type": "boolean" }
+          }
+        },
+        "leaseTypeAsserted": {
+          "enum": ["N", "NN", "NNN", "absolute-net", "gross", "modified-gross"]
+        },
+        "commencement": { "type": "string", "format": "date" },
+        "expiration": { "type": "string", "format": "date" },
+        "termMonths": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Stated total lease term in months; cross-checked against expiration - commencement (OMW-W031)."
+        },
+        "remainingTermMonths": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Stated remaining term in months as of assertedDate; cross-checked against expiration - as_of (OMW-W030)."
+        },
+        "rentSchedule": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/rentPeriod" }
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "count": { "type": "integer", "minimum": 0 },
+              "lengthYears": { "type": "number", "exclusiveMinimum": 0 },
+              "escalation": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "required": ["supersedes"],
+      "properties": {
+        "sourceDocHash": { "$ref": "#/$defs/sha256OrNull" },
+        "supersedes": { "$ref": "#/$defs/sha256OrNull" },
+        "signature": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["alg", "keyId", "value"],
+              "properties": {
+                "alg": { "type": "string", "minLength": 1 },
+                "keyId": { "type": "string", "minLength": 1 },
+                "value": { "type": "string", "minLength": 1 }
+              }
+            }
+          ],
+          "description": "Reserved (#117, §11.1 layer-4). Either null/absent OR the {alg,keyId,value} envelope. 0.1 consumers MUST IGNORE a populated value (no trust weight); it is excluded from the integrity preimage ([OM-CANON-003]) so it stays additive. A value that is neither null nor the reserved shape is OMV-E003."
+        },
+        "imageRights": { "type": "string" }
+      }
+    },
+    "ext": {
+      "type": "object",
+      "description": "OPTIONAL (#115). The ONLY place non-standard/vendor fields belong — namespaced by vendor (e.g. `\"ext\": { \"acme\": { ... } }`) so they never collide with future core terms. 0.1 tools preserve it and MUST NOT interpret it."
+    }
+  },
+  "$defs": {
+    "sha256OrNull": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      ]
+    },
+    "rentPeriod": {
+      "type": "object",
+      "required": ["periodStart", "periodEnd", "annualRent"],
+      "properties": {
+        "periodStart": { "type": "string", "format": "date" },
+        "periodEnd": { "type": "string", "format": "date" },
+        "annualRent": { "type": "number", "minimum": 0 },
+        "monthlyRent": { "type": "number", "minimum": 0 },
+        "rentPSF": { "type": "number", "minimum": 0 },
+        "escalationFromPrior": { "type": "number" },
+        "abatement": { "oneOf": [{ "type": "null" }, { "type": "number" }] },
+        "source": {
+          "enum": ["asserted", "extracted", "verified"],
+          "description": "Per-field provenance ([OM-DD-004]). In 0.1 `source` is carried ONLY here on rentPeriod objects; scalar-field and options[] provenance is deferred to a future provenance-side-map minor (#44). Absent → assume `asserted`."
+        }
+      }
+    }
+  }
+}
