@@ -275,13 +275,15 @@ def om_extract_images(
     dest = Path(out_dir) if out_dir else Path(tempfile.mkdtemp(prefix="openom_img_"))
     data = _load_pdf(pdf)
     _enforce_page_limit(data)
-    result = _run_core(_extract_images, data, out_dir=dest)
+    # include_vector (#16): also rasterize vector-only pages (no raster images) so the manifest
+    # still carries a page's visual content. Off by default — rendering is heavier than extraction.
+    result = _run_core(_extract_images, data, out_dir=dest, render_vector_pages=include_vector)
     manifest = []
     for img in result["images"]:
         if img["error"] is not None:
             continue
         path = img["path"]
-        manifest.append({
+        entry = {
             "xref": img["xref"],
             "width": img["width"],
             "height": img["height"],
@@ -291,7 +293,11 @@ def om_extract_images(
             "bytes": Path(path).stat().st_size if path else 0,
             "contentHash": img["contentHash"],
             "path": path,
-        })
+        }
+        if img.get("source") == "rendered-page":  # tag synthetic page renders + their page number
+            entry["source"] = "rendered-page"
+            entry["page"] = img["page"]
+        manifest.append(entry)
     return {"manifest": manifest, "deduped": result["deduped"]}
 
 
