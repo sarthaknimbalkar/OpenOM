@@ -96,3 +96,62 @@ def test_vocabulary_covers_every_conformant_sample_term() -> None:
         _payload_terms(payload, used)
         missing = used - terms - _FORWARD_COMPAT_TERMS
         assert not missing, f"{name}: terms used on the wire but not in the vocabulary: {missing}"
+
+
+# [OM-LD-004] #111: every non-string term MUST carry an explicit datatype coercion, else a JSON-LD
+# consumer cannot tell a decimal from a string. Derive the expectation from the schema so the context
+# can never silently drift back to bare numeric/boolean/date terms.
+_TYPE_TO_XSD = {
+    "number": {"xsd:decimal", "xsd:double"},  # xsd:double allowed for geo coordinates (schema.org norm)
+    "integer": {"xsd:integer"},
+    "boolean": {"xsd:boolean"},
+}
+
+
+def _schema_typed_terms(node: Any, acc: dict[str, set[str]]) -> None:
+    """Map each property name → the set of scalar JSON types (and 'date') the schema declares for it,
+    including oneOf/anyOf/allOf branches."""
+
+    def note(name: str, d: dict[str, Any]) -> None:
+        t = d.get("type")
+        if t == "string" and d.get("format") == "date":
+            acc.setdefault(name, set()).add("date")
+        elif isinstance(t, str) and t in ("number", "integer", "boolean"):
+            acc.setdefault(name, set()).add(t)
+        for branch in ("oneOf", "anyOf", "allOf"):
+            for b in d.get(branch, []) or []:
+                if isinstance(b, dict):
+                    note(name, b)
+
+    if isinstance(node, dict):
+        props = node.get("properties")
+        if isinstance(props, dict):
+            for name, d in props.items():
+                if not name.startswith("@") and isinstance(d, dict):
+                    acc.setdefault(name, set())
+                    note(name, d)
+        for value in node.values():
+            _schema_typed_terms(value, acc)
+    elif isinstance(node, list):
+        for item in node:
+            _schema_typed_terms(item, acc)
+
+
+def test_typed_terms_carry_matching_datatype_coercion() -> None:
+    """[OM-LD-004]: unambiguously number/integer/boolean/date schema terms must be coerced in the
+    context (mixed oneOf terms like abatement are skipped — they cannot carry a single @type)."""
+    schema = json.loads(SCHEMA_FILE.read_text(encoding="utf-8"))
+    typed: dict[str, set[str]] = {}
+    _schema_typed_terms(schema, typed)
+    ctx = _context_map()
+    bad: dict[str, Any] = {}
+    for name, kinds in typed.items():
+        if len(kinds) != 1:
+            continue  # untyped or mixed-type (ambiguous) — no single coercion applies
+        (kind,) = tuple(kinds)
+        expected = {"xsd:date"} if kind == "date" else _TYPE_TO_XSD[kind]
+        mapping = ctx.get(name)
+        got = mapping.get("@type") if isinstance(mapping, dict) else None
+        if got not in expected:
+            bad[name] = {"json_type": kind, "expected": sorted(expected), "got": got}
+    assert not bad, f"terms missing/wrong @type coercion ([OM-LD-004]): {bad}"
