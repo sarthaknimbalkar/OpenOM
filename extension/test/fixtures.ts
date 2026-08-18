@@ -16,6 +16,11 @@ export const test = base.extend<{ context: BrowserContext; extensionId: string }
         `--load-extension=${DIST}`,
         "--host-resolver-rules=MAP broker.example.com 127.0.0.1, MAP attacker.net 127.0.0.1",
         "--ignore-certificate-errors",
+        // CI stability: headed Chromium under xvfb crashes ("browser has been closed") when the
+        // runner's tiny /dev/shm (64 MB) fills; route shared memory to /tmp and drop the sandbox
+        // (the CI user can't use it). Harmless locally.
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
       ],
     });
     await use(context);
