@@ -53,7 +53,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -c constraints.lock -e "core[dev]" -e "cli[dev]" -e "mcp[dev]"
       - name: ruff
-        run: ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests spec/matrix.py spec/__init__.py spec/tests
+        run: ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests spec/matrix.py spec/__init__.py spec/tests spec/scripts
       - name: mypy
         run: |
           mypy core/src
@@ -237,6 +237,9 @@ jobs:
           npm run typecheck
           npm run lint
           npm run coverage
+      - name: Build the embeddable badge widget + assert it is inference-free (#144)
+        working-directory: js
+        run: npm run build:widget
 
   cross-impl:
     # The anti-fork oracle: each implementation reads the other's golden PDFs.
