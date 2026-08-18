@@ -897,3 +897,45 @@ This appendix makes the §10 four-layer model testable. It binds the badge prece
 - **[OM-TRUST-008]** To assert `origin-verified`, a Consumer MUST satisfy all three conditions of the §10.1 "origin-verified" definition (valid HTTPS for host `H`; JSON-LD mirror on the same eTLD+1; mirror payload hash == embedded hash). All network fetches performed for this check MUST apply the SSRF range rules of [OM-SEC-001].
 - **[OM-TRUST-009]** When a Consumer is `origin-verified` and can fetch the origin's current mirror, it SHOULD compare the embedded `omspec:payloadHash` to the mirror's current payload hash; on mismatch (attacker A7, a superseded/stale file) it MUST surface a **stale-assertion** warning — registered as `OMW-W051 stale-payload` in the §H taxonomy (the meta/supersede warning band) — carrying both `assertedDate` values. This warning MUST NOT downgrade the integrity or origin badge; the served file is genuine, merely superseded.
 - **[OM-TRUST-010]** Domain-origin verification is **not** transitive: verifying domain `D` vouches only for payloads served from `D`. A Consumer MUST NOT extend an `origin-verified` result from one URL to a copy of the same payload retrieved from a different origin (re-run the check per origin).
+
+## §O. Web mirror, discovery & media type
+
+The durable value ("one extraction, infinite cheap consumption") and §10 layer-3 origin verification both
+depend on the embedded payload also being published as a JSON-LD **mirror** on the web. §AA.4 defines how a
+Consumer *matches* a mirror to a PDF; this section defines how the mirror is *published and discovered* so a
+third party can build a conformant crawler or origin check from the spec alone.
+
+### §O.1 Mirror publication
+
+- **[OM-WEB-001] Byte-identical mirror.** A Producer that publishes an OM on the web SHOULD serve the payload
+  as a JSON-LD document whose bytes are the **exact §C canonical (JCS) preimage** embedded in the PDF — i.e.
+  its §C integrity hash MUST equal the PDF's `omspec:payloadHash`. The mirror is the same assertion in a
+  crawlable place, never a re-serialization ([OM-CANON-008]).
+- **[OM-WEB-002] Same-origin.** The mirror MUST be served over valid HTTPS from the **same eTLD+1** as the
+  canonical PDF URL, because that binding is exactly what §AA.4 [OM-TRUST-008] verifies. A mirror on a
+  different origin cannot raise a Consumer above `integrity-ok/origin-unverified` ([OM-TRUST-010]).
+- **[OM-WEB-003] Currency.** When the origin supersedes a payload, its mirror MUST be updated so a Consumer's
+  stale-assertion check ([OM-TRUST-009], `OMW-W051`) reflects the current assertion.
+
+### §O.2 Discovery
+
+- **[OM-WEB-004] Page → payload.** A listing HTML page SHOULD advertise its mirror with BOTH
+  `<link rel="alternate" type="application/ld+json" href="…om.json">` (machine discovery) and an inline
+  `<script type="application/ld+json">…</script>` (crawler/structured-data ingestion). A conformant crawler
+  MUST treat the `link rel="alternate"` href as authoritative when both are present.
+- **[OM-WEB-005] PDF ↔ mirror.** From a canonical PDF URL, the mirror is discoverable at a well-known path on
+  the same origin: `/.well-known/openom/by-url?u=<percent-encoded-PDF-URL>` MAY redirect to the mirror, and a
+  Producer MAY additionally co-locate the mirror as the PDF URL with its extension replaced by `.om.json`.
+  A Consumer performing origin verification MUST apply the [OM-SEC-001] SSRF range rules to every such fetch.
+- **[OM-WEB-006] Registration.** `openom` is the registered `.well-known` URI suffix used by [OM-WEB-005];
+  registering it with IANA (RFC 8615) is a governance-roadmap deliverable (§L.4) with a named owner.
+
+### §O.3 Media type & profile
+
+- **[OM-WEB-007] Profile parameter.** The mirror (and, where the container allows, the embedded stream) SHOULD
+  be labeled `application/ld+json; profile="https://verveliolabs.com/openom/ns/0.1"` so content negotiation and
+  crawler filtering can identify an openOM payload without inspecting keys. A Consumer MUST NOT *require* the
+  profile parameter to be present (many static hosts cannot set it), but MUST honor it when negotiating.
+- **[OM-WEB-008] IANA registration (roadmap).** Registering a structured-suffix media type
+  `application/vnd.openom+json` (mirroring Factur-X's own registration) is a named §L governance deliverable;
+  until it is registered, `application/ld+json` + the §O.3 profile parameter is the normative discriminator.
