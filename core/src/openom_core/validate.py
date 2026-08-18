@@ -12,6 +12,7 @@ deterministic (code, path) order.
 from __future__ import annotations
 
 import datetime as dt
+from collections import OrderedDict
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -138,16 +139,37 @@ def validate(
     return report
 
 
+# Compiled-validator cache (#148): building a Draft202012Validator resolves the 2020-12 meta-schema
+# each time — the dominant cost of a hosted om_validate/om_embed. Callers pass the same schema
+# object (openom_core.schema.load_schema), so keying by id() gives a hot-path hit; a fresh dict
+# (tests) simply misses. Bounded so distinct schemas can't grow it unbounded.
+_VALIDATOR_CACHE: OrderedDict[int, jsonschema.Draft202012Validator] = OrderedDict()
+_VALIDATOR_CACHE_MAX = 8
+
+
+def _validator_for(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
+    key = id(schema)
+    cached = _VALIDATOR_CACHE.get(key)
+    if cached is not None:
+        _VALIDATOR_CACHE.move_to_end(key)
+        return cached
+    # format_checker makes `format: date` etc. ASSERTED, not annotation-only — parity with Track B's
+    # ajv-formats (mode: full). Without it a malformed assertedDate passes here but fails in JS
+    # ([OM-VAL-002]).
+    validator = jsonschema.Draft202012Validator(
+        dict(schema), format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER
+    )
+    _VALIDATOR_CACHE[key] = validator
+    if len(_VALIDATOR_CACHE) > _VALIDATOR_CACHE_MAX:
+        _VALIDATOR_CACHE.popitem(last=False)
+    return validator
+
+
 def _error_tier(
     payload: Mapping[str, Any], schema: Mapping[str, Any] | None, report: Report
 ) -> None:
     if schema is not None:
-        # format_checker makes `format: date` etc. ASSERTED, not annotation-only — parity with
-        # Track B's ajv-formats (mode: full). Without it a malformed assertedDate passes here
-        # but fails in JS: a silent cross-impl fork ([OM-VAL-002]).
-        validator = jsonschema.Draft202012Validator(
-            dict(schema), format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER
-        )
+        validator = _validator_for(schema)
         for err in sorted(validator.iter_errors(dict(payload)), key=str):
             report.errors.append(_map_schema_error(err))
     else:
