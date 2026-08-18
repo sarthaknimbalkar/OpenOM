@@ -1,6 +1,14 @@
 // MV3 build: each entry is a SELF-CONTAINED bundle (inlineDynamicImports), because a service worker
 // and extension pages cannot load vite's code-split dynamic chunks. Two single-input vite builds →
 // dist/service-worker.js + dist/popup.js; public/ (manifest, popup.html, popup.css) is copied once.
+//
+// Bundle ceiling (#150; #103 cited only the ~886 KB service worker): sidepanel.js is the real max at
+// ~1.17 MB (pd-lib + ajv-standalone + pdf.js text extraction + the schema-driven form); popup is
+// 16 KB (#102), options 4 KB, link-badger 2 KB, pdf.worker.mjs 2.35 MB (a separate on-demand file).
+// pd-lib/ajv/@noble are duplicated across the SW and sidepanel because MV3 gives them separate
+// execution contexts with no shared chunk. Splitting pdf.js out of the sidepanel as a lazy chunk was
+// tried and shrank it to ~788 KB (+378 KB on-demand), but the page failed to load the split chunk in
+// MV3 — deferred to a follow-up (needs the headed live gate green in CI first, #163).
 import { copyFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
