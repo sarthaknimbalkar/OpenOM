@@ -1,0 +1,16 @@
+{
+  "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
+  "@type": "RealEstateListing",
+  "specVersion": "0.1",
+  "assertedBy": { "broker": "Sam Example", "brokerage": "Example Multifamily Group", "license": "TX 000000" },
+  "assertedDate": "2026-08-19",
+  "property": {
+    "propertyType": "multifamily",
+    "address": { "streetAddress": "200 Example Ave", "addressLocality": "Sampletown", "addressRegion": "TX", "postalCode": "75000", "addressCountry": "US" },
+    "yearBuilt": 1998,
+    "units": 40,
+    "occupancy": 0.95
+  },
+  "deal": { "askingPrice": 8000000, "capRate": 0.06, "noi": 480000, "noiType": "in-place", "noiAsOfDate": "2026-06-30", "pricePerUnit": 200000, "status": "active" },
+  "meta": { "sourceDocHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "supersedes": null }
+}

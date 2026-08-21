@@ -72,7 +72,9 @@
         "buildingSF": { "type": "number", "exclusiveMinimum": 0 },
         "lotAcres": { "type": "number", "exclusiveMinimum": 0 },
         "yearBuilt": { "type": "integer" },
-        "yearRenovated": { "type": "integer" }
+        "yearRenovated": { "type": "integer" },
+        "units": { "type": "integer", "minimum": 1, "description": "OPTIONAL. Total rentable units (multifamily / mixed-use)." },
+        "occupancy": { "type": "number", "minimum": 0, "maximum": 1, "description": "OPTIONAL. Occupancy as a decimal fraction (0.95 = 95%), matching the capRate fraction convention." }
       }
     },
     "deal": {
@@ -84,6 +86,7 @@
         "noiType": { "enum": ["in-place", "pro-forma"] },
         "noiAsOfDate": { "type": "string", "format": "date" },
         "pricePerSF": { "type": "number", "exclusiveMinimum": 0 },
+        "pricePerUnit": { "type": "number", "exclusiveMinimum": 0, "description": "OPTIONAL. Asking price per unit (multifamily analog of pricePerSF)." },
         "status": { "enum": ["active", "under-contract", "sold", "withdrawn"] }
       },
       "comment": "capRate is a decimal fraction (0.0625 = 6.25%), not a percentage ([OM-CANON-007]).",
