@@ -11,11 +11,11 @@
 // This is why a connector pull sits on the deterministic side of the cardinal rule and can demote the
 // on-device model to a fallback (`pickDraftSource` prefers deterministic sources).
 //
-// SCOPE: this is the generic, reusable scaffold only. It is NOT yet wired into the review panel, and
-// no concrete Buildout connector is included here - that adapter (OAuth/MCP) + the panel wiring are
-// the "finish it" step, gated on where the pull runs (decision memo §3.2 Q1) and the Buildout API
-// shape (Q2). `partialPayloadToFields` is dependency-free so it can move to /js if a CLI/hosted
-// run-location is chosen.
+// SCOPE: the generic, reusable scaffold. The concrete Buildout connector (`connectors/buildout.ts` +
+// the MCP-HTTP client `connectors/buildout-http.ts`) and the panel wiring are now built - author mode
+// offers a Buildout pull when configured (options page) on a Buildout listing tab, with on-device as
+// the fallback. The only remaining Q2 unknown is the real MCP's exact tool/field names, isolated to
+// the mapper. `partialPayloadToFields` is dependency-free so it can move to /js for a CLI/hosted run.
 import type {
   Extractor,
   ExtractionResult,

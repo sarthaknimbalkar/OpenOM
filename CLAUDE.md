@@ -131,9 +131,10 @@ oracle runs in CI (now manual, `workflow_dispatch`).
 
 **Free/paid boundary locked (Q2, 2026-08-17 - handoff §15.1):** everything deterministic +
 self-hostable is free MIT (spec CC-BY-4.0); the sole paid product is Vervelio-hosted **inference
-extraction**, a service **separate** from the open server, **built in M3**; Vervelio also runs a
-free public deterministic MCP. The cardinal rule is unchanged - no inference in `/core`, `/mcp`,
-or consumer `/js`, ever.
+extraction**, a service **separate** from the open server, **built in M3**. The deterministic MCP is
+free and **self-hostable** (`pip install openom-mcp` → `om-mcp` stdio); any hosted HTTP instance is
+**access-gated** (the openom.app one is behind Cloudflare Access - not an open endpoint). The cardinal
+rule is unchanged - no inference in `/core`, `/mcp`, or consumer `/js`, ever.
 
 **M3 gate [OM-DoD-004] met** (2026-08-17, deterministic-only scope). Built in `/mcp`: hosted
 Streamable HTTP transport (`build_http_app`/`main_http`), SSRF-hardened `url` fetch
