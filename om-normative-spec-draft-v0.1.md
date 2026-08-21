@@ -95,7 +95,7 @@ Extends OM-VER-002 (published `@context` URLs are immutable; breaking changes sh
 
 ### §G.2 Trademark policy
 
-The name selected in §15 Q1 (placeholder "OpenOM") and the "Vervelio" name and logo are trademarks of Vervelio, distinct from the copyright licenses of §G. Trademark rights are **not** granted by MIT or CC-BY-4.0.
+The name "openOM" and the "Vervelio" name and logo are trademarks of Vervelio, distinct from the copyright licenses of §G. Trademark rights are **not** granted by MIT or CC-BY-4.0.
 
 - **[OM-LIC-007]** **Conformance claim.** A party MAY state that an implementation is "OpenOM 0.1 conformant" only if it satisfies every applicable `MUST`/`MUST NOT` for the role(s) it claims (OM-CONF-001) and reproduces the conformance vectors for those roles (§B). The claim MUST name the `specVersion` and the role(s) (Producer/Consumer/Validator). A false or unqualified conformance claim is prohibited use of the mark.
 
@@ -232,7 +232,7 @@ Governance exists to make change to a *published* contract safe, attributable, a
 ### §L.7 Intellectual-property policy
 
 - **[OM-GOV-019]** **Contribution terms.** Every contribution MUST carry a **Developer Certificate of Origin (DCO)** `Signed-off-by` line. By contributing, the contributor licenses code contributions under **MIT** and specification/vocabulary/vector contributions under **CC-BY-4.0** (§G), and grants a non-exclusive, royalty-free **patent license** to any of their patent claims necessarily infringed by their contribution as merged. No contributor may later assert such patents against conformant implementations of the version their contribution shipped in.
-- **[OM-GOV-020]** **Trademark & conformance mark.** "OpenOM" (working title, §15 Q1) and the Vervelio marks are Vervelio's. The **specification and code are freely usable** under §G, but the *names/marks* MAY be used to describe conformance ("OpenOM 0.1 conformant") only by implementations that pass the conformance suite (§B) for the role(s) they claim (§A [OM-CONF-004]); they MUST NOT be used to imply endorsement of a non-conformant product or to name a fork. Forking the open spec is permitted under §G; using the marks for the fork is not. This anti-capture rule is the counterpart to the MIT/CC-BY openness: the standard is free to implement, the *name* certifies conformance.
+- **[OM-GOV-020]** **Trademark & conformance mark.** "openOM" and the Vervelio marks are Vervelio's. The **specification and code are freely usable** under §G, but the *names/marks* MAY be used to describe conformance ("OpenOM 0.1 conformant") only by implementations that pass the conformance suite (§B) for the role(s) they claim (§A [OM-CONF-004]); they MUST NOT be used to imply endorsement of a non-conformant product or to name a fork. Forking the open spec is permitted under §G; using the marks for the fork is not. This anti-capture rule is the counterpart to the MIT/CC-BY openness: the standard is free to implement, the *name* certifies conformance.
 
 ---
 
@@ -427,7 +427,7 @@ A fictional single-tenant **NNN** retail asset: 9,100 SF, built 2019, in-place N
 
 ```json
 {
-  "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
+  "@context": ["https://schema.org", "https://openom.app/ns/0.1"],
   "@type": "RealEstateListing",
   "specVersion": "0.1",
   "currency": "USD",
@@ -459,7 +459,7 @@ A fictional single-tenant **NNN** retail asset: 9,100 SF, built 2019, in-place N
 Keys sorted by UTF-16 code unit at every level; no whitespace; ECMAScript number formatting. **Two subtleties that break naive implementations are visible here:** `geo.latitude` `42.0` canonicalizes to `42` and `longitude` `-83.0` to `-83` (integer-valued numbers lose the fraction), and `rentPSF` `12.70` canonicalizes to `12.7` and `escalationFromPrior` `0.10` to `0.1` (trailing zeros dropped) - per [OM-CANON-006], Producers MUST NOT depend on trailing-zero formatting for equality. The result is **1441 bytes**, one line (wrapped here only for display):
 
 ```text
-{"@context":["https://schema.org","https://verveliolabs.com/openom/ns/0.1"],"@type":"RealEstateListing","assertedBy":{"broker":"Jane Example","brokerage":"Example Net Lease Advisors","license":"MI 6501-000000"},"assertedDate":"2026-08-15","currency":"USD","deal":{"askingPrice":1850000,"capRate":0.0625,"noi":115625,"noiAsOfDate":"2026-06-30","noiType":"in-place","status":"active"},"lease":{"commencement":"2019-05-01","expiration":"2034-04-30","guarantor":{"name":"Example Retail Corp.","type":"corporate"},"landlordResponsibilities":{"cam":false,"hvac":false,"insurance":false,"parking":false,"roof":false,"structure":false,"taxes":false},"leaseTypeAsserted":"NNN","options":[{"count":4,"escalation":"10% per option","lengthYears":5}],"rentSchedule":[{"annualRent":115625,"periodEnd":"2029-04-30","periodStart":"2024-05-01","rentPSF":12.7,"source":"asserted"},{"annualRent":127188,"escalationFromPrior":0.1,"periodEnd":"2034-04-30","periodStart":"2029-05-01","rentPSF":13.98,"source":"asserted"}],"tenantEntity":"Example Retail Stores, LLC"},"meta":{"sourceDocHash":"sha256:9f2c4e1a7b6d3c8e5f0a1b2c3d4e5f60718293a4b5c6d7e8f9012345678abcd0","supersedes":null},"property":{"address":{"addressCountry":"US","addressLocality":"Sampleville","addressRegion":"MI","postalCode":"48000","streetAddress":"1000 Example Rd"},"apn":"00-000-000-000","buildingSF":9100,"geo":{"latitude":42,"longitude":-83},"lotAcres":1.25,"yearBuilt":2019},"specVersion":"0.1"}
+{"@context":["https://schema.org","https://openom.app/ns/0.1"],"@type":"RealEstateListing","assertedBy":{"broker":"Jane Example","brokerage":"Example Net Lease Advisors","license":"MI 6501-000000"},"assertedDate":"2026-08-15","currency":"USD","deal":{"askingPrice":1850000,"capRate":0.0625,"noi":115625,"noiAsOfDate":"2026-06-30","noiType":"in-place","status":"active"},"lease":{"commencement":"2019-05-01","expiration":"2034-04-30","guarantor":{"name":"Example Retail Corp.","type":"corporate"},"landlordResponsibilities":{"cam":false,"hvac":false,"insurance":false,"parking":false,"roof":false,"structure":false,"taxes":false},"leaseTypeAsserted":"NNN","options":[{"count":4,"escalation":"10% per option","lengthYears":5}],"rentSchedule":[{"annualRent":115625,"periodEnd":"2029-04-30","periodStart":"2024-05-01","rentPSF":12.7,"source":"asserted"},{"annualRent":127188,"escalationFromPrior":0.1,"periodEnd":"2034-04-30","periodStart":"2029-05-01","rentPSF":13.98,"source":"asserted"}],"tenantEntity":"Example Retail Stores, LLC"},"meta":{"sourceDocHash":"sha256:9f2c4e1a7b6d3c8e5f0a1b2c3d4e5f60718293a4b5c6d7e8f9012345678abcd0","supersedes":null},"property":{"address":{"addressCountry":"US","addressLocality":"Sampleville","addressRegion":"MI","postalCode":"48000","streetAddress":"1000 Example Rd"},"apn":"00-000-000-000","buildingSF":9100,"geo":{"latitude":42,"longitude":-83},"lotAcres":1.25,"yearBuilt":2019},"specVersion":"0.1"}
 ```
 
 ### O.3 Integrity hash (§C)
@@ -473,7 +473,7 @@ This value goes in XMP `omspec:payloadHash` (§D.2) - never inside the payload (
 
 ### O.4 XMP marker written to the PDF (§D.2)
 ```xml
-<rdf:Description rdf:about="" xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#">
+<rdf:Description rdf:about="" xmlns:omspec="https://openom.app/ns/0.1#">
   <omspec:specName>OpenOM</omspec:specName>
   <omspec:specVersion>0.1</omspec:specVersion>
   <omspec:payloadFilename>om.json</omspec:payloadFilename>
@@ -494,7 +494,7 @@ The catalog `/Names /EmbeddedFiles` name tree references this `/Filespec`, and t
 
 ### O.6 `om_read(url)` output (§I)
 ```json
-{ "payload": { "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"], "specVersion": "0.1", "deal": { "askingPrice": 1850000, "capRate": 0.0625, "noi": 115625, "noiType": "in-place" } },
+{ "payload": { "@context": ["https://schema.org", "https://openom.app/ns/0.1"], "specVersion": "0.1", "deal": { "askingPrice": 1850000, "capRate": 0.0625, "noi": 115625, "noiType": "in-place" } },
   "verification": { "hashValid": true, "originVerified": null, "signatureValid": null } }
 ```
 (`originVerified` is `null` when read from a path or an unmirrored URL; `true`/`false` only when consumer mode has a domain to check against, §10 layer 3. `signatureValid` is `null` forever in 0.1, §10 layer 4.)
@@ -514,7 +514,7 @@ The Producer replaces the single `om.json` in place and updates `omspec:supersed
 
 The payload is JSON-LD (§7b); this appendix specifies the published `@context` document, the term→IRI mapping, and how Consumers MAY expand/frame it - and, load-bearingly, how JSON-LD processing relates to canonicalization (§C).
 
-- **[OM-LD-001]** The custom namespace `https://verveliolabs.com/openom/ns/0.1` (placeholder until §15 Q1) MUST resolve to a JSON-LD `@context` document served as `application/ld+json`. Its terms are **immutable** once published ([OM-VER-002]); a breaking change ships under `.../ns/0.2`.
+- **[OM-LD-001]** The custom namespace `https://openom.app/ns/0.1` MUST resolve to a JSON-LD `@context` document served as `application/ld+json`. Its terms are **immutable** once published ([OM-VER-002]); a breaking change ships under `.../ns/0.2`.
 - **[OM-LD-002] Canonicalization operates on the compact authored form, not the expanded graph.** The §C JCS bytes and the integrity hash are computed over the payload document **exactly as authored** (a compact JSON-LD object with an `@context` array). Consumers MUST NOT expand, flatten, or re-frame a payload before hashing or hash comparison, and MUST NOT treat an expanded document as canonical. Expansion and framing (below) are read-side conveniences only.
 - **[OM-LD-003]** A Consumer performing JSON-LD expansion MUST fetch remote contexts as inert JSON under the §J range rules ([OM-SEC-001], [OM-SEC-004]) and SHOULD pin/cache the `0.1` context (its terms cannot change, so an offline copy is authoritative). A Consumer that does **not** do graph processing MUST still read the payload as plain JSON keyed by the term names in §E - JSON-LD conformance is not required to consume OpenOM.
 - **[OM-LD-004]** Custom terms MUST be defined in the context with explicit datatypes where non-string: numeric ratios (`capRate`, `escalationFromPrior`) as `xsd:decimal`, monetary values as `xsd:decimal`, dates as `xsd:date`, booleans as `xsd:boolean`. `rentSchedule` MUST be defined as an ordered list (`"@container": "@list"`) so array order (chronology, [OM-CANON-002]) is preserved under expansion.
@@ -526,7 +526,7 @@ The payload is JSON-LD (§7b); this appendix specifies the published `@context` 
   "@context": {
     "@version": 1.1,
     "schema": "https://schema.org/",
-    "om": "https://verveliolabs.com/openom/ns/0.1#",
+    "om": "https://openom.app/ns/0.1#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
 
     "RealEstateListing": "schema:RealEstateListing",
@@ -579,16 +579,16 @@ The payload is JSON-LD (§7b); this appendix specifies the published `@context` 
 ### P.2 Expansion (worked, informative)
 Expanding the `deal` node of §O.1 replaces terms with IRIs and typed values:
 ```json
-[ { "https://verveliolabs.com/openom/ns/0.1#askingPrice": [ { "@value": "1850000", "@type": "http://www.w3.org/2001/XMLSchema#decimal" } ],
-    "https://verveliolabs.com/openom/ns/0.1#capRate":     [ { "@value": "0.0625", "@type": "http://www.w3.org/2001/XMLSchema#decimal" } ],
-    "https://verveliolabs.com/openom/ns/0.1#noiType":     [ { "@value": "in-place" } ] } ]
+[ { "https://openom.app/ns/0.1#askingPrice": [ { "@value": "1850000", "@type": "http://www.w3.org/2001/XMLSchema#decimal" } ],
+    "https://openom.app/ns/0.1#capRate":     [ { "@value": "0.0625", "@type": "http://www.w3.org/2001/XMLSchema#decimal" } ],
+    "https://openom.app/ns/0.1#noiType":     [ { "@value": "in-place" } ] } ]
 ```
 The expanded form is a graph for interop tools; it is **not** hashed ([OM-LD-002]).
 
 ### P.3 Framing (worked, informative)
 A buy-side agent that wants a flat deal-screen frames the payload:
 ```json
-{ "@context": "https://verveliolabs.com/openom/ns/0.1",
+{ "@context": "https://openom.app/ns/0.1",
   "@type": "RealEstateListing",
   "deal": { "askingPrice": {}, "capRate": {}, "noiType": {} },
   "assertedBy": { "broker": {}, "license": {} } }
@@ -933,7 +933,7 @@ third party can build a conformant crawler or origin check from the spec alone.
 ### §O.3 Media type & profile
 
 - **[OM-WEB-007] Profile parameter.** The mirror (and, where the container allows, the embedded stream) SHOULD
-  be labeled `application/ld+json; profile="https://verveliolabs.com/openom/ns/0.1"` so content negotiation and
+  be labeled `application/ld+json; profile="https://openom.app/ns/0.1"` so content negotiation and
   crawler filtering can identify an openOM payload without inspecting keys. A Consumer MUST NOT *require* the
   profile parameter to be present (many static hosts cannot set it), but MUST honor it when negotiating.
 - **[OM-WEB-008] IANA registration (roadmap).** Registering a structured-suffix media type

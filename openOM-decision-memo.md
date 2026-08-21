@@ -204,13 +204,13 @@ dependency - just product integration work.
 `openom.app` has been acquired. Decision: **use it as the site / front-door only - do NOT migrate the
 canonical namespace.**
 
-- **Canonical machine namespace stays `https://verveliolabs.com/openom/...`** - the schema `$id`, the
+- **Canonical machine namespace stays `https://openom.app/...`** - the schema `$id`, the
   JSON-LD `@context`, and every payload's `@context` are pinned there and remain unchanged. This
   deliberately avoids regenerating the anti-fork keystone (all expected hashes + golden PDFs) and
   keeps the CLAUDE.md-locked namespace intact.
 - **`openom.app` is the human front-door**: the docs site, the verify tool, marketing, and the
   eventual hosted deterministic MCP. Serve the same `site/` tree there (in addition to
-  verveliolabs.com), with `verveliolabs.com/openom/*` remaining the authoritative host where the
+  verveliolabs.com), with `openom.app/*` remaining the authoritative host where the
   namespace URLs resolve.
 - **No repo/spec churn**: only the deploy target + docs framing change (see
   `.github/workflows/deploy-site.yml`). Operationally: point GoDaddy DNS for openom.app at the
