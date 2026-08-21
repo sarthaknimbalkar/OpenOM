@@ -64,6 +64,12 @@ def _docs_index() -> str:
   <h1>openOM docs</h1>
   <p>Machine-readable, broker-asserted data embedded in CRE offering memoranda —
      extracted once at the source, consumed cheaply everywhere. Pick your on-ramp:</p>
+  <div class="card" style="border-color:#065f46;background:#ecfdf5;">
+    <h3 style="margin-top:0;">🤖 Building an AI agent for CRE? Start here</h3>
+    <p>Ground your agent in <b>verified facts, not guesses</b> — a deterministic read of a
+       broker-asserted, hash-verified opinion instead of a hallucination-prone re-parse of the PDF.
+       <a href="/openom/docs/grounding-ai.html"><b>Grounding AI agents in openOM →</b></a></p>
+  </div>
   <div class="cards">
     <div class="card">
       <h3>Broker / author</h3>
@@ -298,11 +304,67 @@ def _verify_tool() -> str:
     return _page("Verify a PDF", body)
 
 
+def _grounding_ai() -> str:
+    body = """
+  <h1>Grounding AI agents in openOM</h1>
+  <p>General-purpose AI extraction of an offering memorandum <b>hallucinates</b> — it will
+     confidently invent an NOI, a cap rate, or a lease term that looks right and isn't. In CRE that
+     is a liability, not a convenience. openOM removes the guess: for an openOM-enabled OM your agent
+     reads a <b>broker-asserted, hash-verified</b> payload deterministically — no vision parse, no
+     re-extraction, no hallucination.</p>
+
+  <h2>The one thing to get right: it's an opinion, not a fact</h2>
+  <p>An OM is an <b>advertisement</b> — the broker's <b>opinion of value</b>, agreed to by the seller
+     before publication. So openOM tells your agent <i>who</i> asserted a figure, that it is
+     <i>unaltered</i>, and <i>as of when</i> — <b>never that it is true</b>. Ground the model on
+     <i>"the broker asserted NOI = $143,750, unaltered, as of 2026-05-31"</i>, never <i>"NOI is
+     $143,750."</i> <b>Verified means provenance, not truth.</b> Underwriting still happens at the
+     deal desk off the broker-of-record file.</p>
+
+  <h2>Connect the deterministic MCP server</h2>
+  <p>openOM ships a deterministic <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/mcp">MCP
+     server</a> — six read/validate/inspect tools, <b>zero inference, no API key, no per-call
+     cost</b>. Point your MCP client at it (stdio locally, or a hosted deterministic instance):</p>
+  <pre><code>{ "mcpServers": { "openom": { "command": "om-mcp" } } }</code></pre>
+  <p>Then the agent uses:</p>
+  <ul>
+    <li><code>om_read</code> — the broker-asserted payload + <code>verification.hashValid</code>
+        (unaltered since embed). A hash-mismatched payload is returned as null — never trust it.</li>
+    <li><code>om_validate</code> — schema + internal-consistency (NOI÷price vs cap rate, rent-schedule
+        math). Validity means well-formed and self-consistent, <b>not</b> that the opinion is right.</li>
+    <li><code>om_inspect</code> · <code>om_extract_text</code> · <code>om_extract_images</code> —
+        classify, and pull text/images for the OMs that aren't openOM-enabled yet.</li>
+  </ul>
+
+  <h2>Tell your agent how to treat it (system-prompt snippet)</h2>
+  <pre><code>When an openOM payload is present, use it as the broker's ASSERTED OPINION, not fact.
+- Attribute every figure: "&lt;assertedBy&gt; asserts &lt;field&gt; = &lt;value&gt;, as of &lt;assertedDate&gt;".
+- If verification.hashValid is not true, do NOT use the payload — it may be altered.
+- Never state an OM figure as verified truth; it is an advertisement / opinion of value.
+- For OMs with no openOM payload, extraction is a guess — flag it as unverified.</code></pre>
+
+  <h2>Why this beats re-extraction</h2>
+  <ul>
+    <li><b>No hallucination</b> — the figure is transcribed once at the source and hash-locked.</li>
+    <li><b>Defensible</b> — provenance (who/unaltered/as-of-when) is exactly what credit committees
+        and compliance need; "the AI guessed" is not.</li>
+    <li><b>Free + instant</b> — a deterministic read, not a per-document inference bill.</li>
+    <li><b>Honest by design</b> — the badge/labels never say "verified" to mean "true".</li>
+  </ul>
+  <p><small>Cold-start reality: most OMs aren't openOM-enabled yet, so your agent still needs an
+     extractor for those — treat that output as an unverified guess, and prefer openOM-enabled OMs as
+     the trusted path. See the <a href="/openom/docs/quickstart-developer.html">developer
+     quick-start</a> and the <a href="/openom/verify/">verify tool</a>.</small></p>
+"""
+    return _page("Grounding AI agents", body)
+
+
 def docs_pages() -> dict[str, str]:
     """Return ``{relative_path_under_site: html}`` for the whole docs tree. Deterministic."""
     return {
         "openom/verify/index.html": _verify_tool(),
         "openom/docs/index.html": _docs_index(),
+        "openom/docs/grounding-ai.html": _grounding_ai(),
         "openom/docs/quickstart-broker.html": _quickstart_broker(),
         "openom/docs/quickstart-portal.html": _quickstart_portal(),
         "openom/docs/quickstart-developer.html": _quickstart_developer(),
