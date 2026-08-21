@@ -9,9 +9,9 @@ export type ReadState = "absent" | "present" | "hash-mismatch" | "encrypted";
 export interface ReadVerification {
   /** True = unaltered since embed; false = mismatch; null = no reference hash to check. */
   readonly hashValid: boolean | null;
-  /** §10 layer 3 — null until consumer mode has a domain to check ([OM-PROF-004]). */
+  /** §10 layer 3 - null until consumer mode has a domain to check ([OM-PROF-004]). */
   readonly originVerified: boolean | null;
-  /** §10 layer 4 — null forever in 0.1 ([OM-TRUST-002]). */
+  /** §10 layer 4 - null forever in 0.1 ([OM-TRUST-002]). */
   readonly signatureValid: boolean | null;
 }
 
@@ -29,16 +29,16 @@ const UNVERIFIED: ReadVerification = {
 };
 
 /**
- * Read and verify an openOM payload from PDF bytes — the deterministic read orchestration seam
+ * Read and verify an openOM payload from PDF bytes - the deterministic read orchestration seam
  * (§D.2.2 [OM-XMP-005]): detect (XMP `omspec:payloadHash`) → extract (`om.json` via `/AF` →
  * `/Filespec` → `/EF`) → decompress → recompute the §C hash and compare.
  *
  * Uses **pdf-lib** for structure (it parses object streams / compressed xref, [OM-XMP-006]) and a
- * runtime-agnostic inflate — Node's `zlib` (bounded, bomb-capped) or the platform `DecompressionStream`
- * (browser / MV3 service worker) — so the SAME reader runs in Node, the browser, and the extension
+ * runtime-agnostic inflate - Node's `zlib` (bounded, bomb-capped) or the platform `DecompressionStream`
+ * (browser / MV3 service worker) - so the SAME reader runs in Node, the browser, and the extension
  * with **no pdf.js worker** dependency. The payload bytes are hashed EXACTLY as received
  * (`verifyIntegrity`), never re-canonicalized ([OM-CANON-008]); a hash mismatch still returns the
- * payload with `hashValid: false` ([OM-VAL-006]) — the caller MUST NOT trust it.
+ * payload with `hashValid: false` ([OM-VAL-006]) - the caller MUST NOT trust it.
  */
 export async function readPayloadFromBytes(
   pdfBytes: Uint8Array,
@@ -54,7 +54,7 @@ export async function readPayloadFromBytes(
   } catch (e) {
     // Encrypted or otherwise unparseable by pdf-lib (which can't decrypt streams). Report the distinct
     // `encrypted` state (vs `absent`) so the UI can say "can't read (encrypted)" ([#72]). An OPT-IN
-    // pdf.js decrypt fallback (Node tooling, empty-password PDFs) is used only when provided — it is
+    // pdf.js decrypt fallback (Node tooling, empty-password PDFs) is used only when provided - it is
     // NOT bundled into the deterministic path, so the MV3 service worker carries no pdf.js ([#106]).
     const encrypted =
       e instanceof pdfLib.EncryptedPDFError || /encrypt/i.test(String((e as Error)?.message ?? ""));
@@ -114,7 +114,7 @@ const readXmpPayloadHash = (doc: import("pdf-lib").PDFDocument, pdfLib: PdfLib) 
 /**
  * Read one omspec marker property directly from PDF bytes (loads the PDF itself). Used by the embed
  * path to carry provenance forward (#5/#166). Returns null on an unreadable/encrypted PDF or a
- * missing property — never throws.
+ * missing property - never throws.
  */
 export async function readMarkerProp(pdfBytes: Uint8Array, prop: string): Promise<string | null> {
   try {

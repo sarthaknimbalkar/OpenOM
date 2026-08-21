@@ -1,4 +1,4 @@
-"""Cross-implementation rejection conformance (§C.1) — the rejection half of the anti-fork
+"""Cross-implementation rejection conformance (§C.1) - the rejection half of the anti-fork
 oracle. Both implementations MUST reject each malformed input with the SAME OM-IO-* code; the
 JS side runs the identical manifest (js/test/rejections.test.ts). The happy-path vectors prove
 byte-identity; these prove the two engines agree on what to REFUSE.

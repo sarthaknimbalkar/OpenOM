@@ -5,7 +5,7 @@ Committed for reproducibility. Run with the repo venv:  .venv/Scripts/python.exe
 
 Each fixture has a known text string on page 1 (exercises STREAM decryption) and one outline/bookmark
 whose title is a known string (exercises STRING decryption). All are encrypted with an EMPTY user
-password + a nonempty owner password (permission encryption — the real-corpus case):
+password + a nonempty owner password (permission encryption - the real-corpus case):
   enc-aes128.pdf  V4/R4  AESV2 (AES-128)
   enc-aes256.pdf  V5/R6  AESV3 (AES-256)
   enc-rc4.pdf     V2/R4  RC4    (out-of-scope control -> decryptPdf must return null)
@@ -46,7 +46,7 @@ def main() -> None:
         # RC4 control: pikepdf refuses to encrypt metadata without AES, so opt out explicitly.
         ("enc-rc4", pikepdf.Encryption(owner="owner", user="", aes=False, R=4, metadata=False)),
     ]
-    # Force compressed object streams so the fixtures mirror real-producer OMs (ObjStm + xref streams) —
+    # Force compressed object streams so the fixtures mirror real-producer OMs (ObjStm + xref streams) -
     # the structure that a parse-before-decrypt approach silently corrupts. Without this the CI fixtures
     # are unrepresentative and an ObjStm regression slips through green tests (see #4 execution).
     for name, enc in variants:

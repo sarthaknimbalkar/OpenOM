@@ -4,7 +4,7 @@
 Errors (``OMV-E###``) come from JSON Schema plus the noi/signature rules; warnings
 (``OMW-W###``) are internal-consistency checks against configurable tolerances (§H.4
 [OM-ERR-014]); info (``OMI-I###``) is advisory context. Warnings/info NEVER block and MUST NOT
-mutate the payload. Tooling checks internal consistency only — market truth is out of scope
+mutate the payload. Tooling checks internal consistency only - market truth is out of scope
 forever. Every finding carries a requirement back-reference (§H.1) and findings are emitted in
 deterministic (code, path) order.
 """
@@ -65,7 +65,7 @@ _STRUCTURAL_RESP = ("roof", "structure", "parking", "hvac")
 
 @dataclass
 class Tolerances:
-    """Consistency tolerances (§H.4 [OM-ERR-002] — configurable)."""
+    """Consistency tolerances (§H.4 [OM-ERR-002] - configurable)."""
 
     cap_rate_abs: float = 0.005  # absolute, since cap rate is itself a small fraction
     monetary_rel: float = 0.01  # relative, for money/PSF cross-checks
@@ -126,7 +126,7 @@ def validate(
     tol = tolerances or Tolerances()
     # Reference date for term checks (OMW-W030): explicit as_of, else the payload's assertedDate,
     # so the check is internal-consistency (§H.6) and deterministic rather than wall-clock.
-    # processing_date is the wall-clock-free "now" for OMW-W032 — set ONLY when a caller passes
+    # processing_date is the wall-clock-free "now" for OMW-W032 - set ONLY when a caller passes
     # as_of; a validator never reads the system clock, so W032 is silent on the default path.
     processing_date = _date(as_of) if as_of else None
     as_of_date = processing_date if processing_date else _date(payload.get("assertedDate"))
@@ -141,7 +141,7 @@ def validate(
 
 
 # Compiled-validator cache (#148): building a Draft202012Validator resolves the 2020-12 meta-schema
-# each time — the dominant cost of a hosted om_validate/om_embed. Callers pass the same schema
+# each time - the dominant cost of a hosted om_validate/om_embed. Callers pass the same schema
 # object (openom_core.schema.load_schema), so keying by id() gives a hot-path hit; a fresh dict
 # (tests) simply misses. Bounded so distinct schemas can't grow it unbounded.
 _VALIDATOR_CACHE: OrderedDict[int, jsonschema.Draft202012Validator] = OrderedDict()
@@ -154,7 +154,7 @@ def _validator_for(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator
     if cached is not None:
         _VALIDATOR_CACHE.move_to_end(key)
         return cached
-    # format_checker makes `format: date` etc. ASSERTED, not annotation-only — parity with Track B's
+    # format_checker makes `format: date` etc. ASSERTED, not annotation-only - parity with Track B's
     # ajv-formats (mode: full). Without it a malformed assertedDate passes here but fails in JS
     # ([OM-VAL-002]).
     validator = jsonschema.Draft202012Validator(
@@ -178,7 +178,7 @@ def _error_tier(
 
 
 def _map_schema_error(err: jsonschema.ValidationError) -> Finding:
-    """Map one jsonschema error to a stable §H code — path-based, matching Track B's mapError."""
+    """Map one jsonschema error to a stable §H code - path-based, matching Track B's mapError."""
     path = "/" + "/".join(str(p) for p in err.absolute_path)
     if path.startswith("/meta/signature"):
         # #117: null OR the reserved {alg,keyId,value} shape; anything else is OMV-E003.
@@ -197,7 +197,7 @@ def _schema_free_checks(payload: Mapping[str, Any], report: Report) -> None:
     deal = payload.get("deal") or {}
     if "noi" in deal and (deal.get("noiType") is None or deal.get("noiAsOfDate") is None):
         report.errors.append(_mk("OMV-E002", "/deal", "noi present without noiType/noiAsOfDate"))
-    # #117: null OR the reserved {alg,keyId,value} shape (accepted then ignored); else OMV-E003 —
+    # #117: null OR the reserved {alg,keyId,value} shape (accepted then ignored); else OMV-E003 -
     # checked here too so the schema-free path matches the schema tier.
     sig = (payload.get("meta") or {}).get("signature")
     if sig is not None and not (
@@ -219,14 +219,14 @@ def _warning_tier(
     _date_sanity_checks(payload, deal, lease, processing_date, warn)
     _self_supersede_check(payload, warn)
 
-    # OMW-W061 (#119): currency absent on an EXPLICITLY non-US property — the silent-USD default is
+    # OMW-W061 (#119): currency absent on an EXPLICITLY non-US property - the silent-USD default is
     # likely wrong. The plain-absent case stays info (OMI-I001); this targets the real footgun and
     # skips the common US omission. (currency becomes REQUIRED next major.)
     if payload.get("currency") is None:
         country = (prop.get("address") or {}).get("addressCountry")
         if isinstance(country, str) and country.upper() not in ("US", ""):
             warn(_mk("OMW-W061", "/currency",
-                     "currency absent on a non-US property; assumed USD — confirm the currency"))
+                     "currency absent on a non-US property; assumed USD - confirm the currency"))
 
     cap = _num(deal.get("capRate"))
     noi = _num(deal.get("noi"))
@@ -355,7 +355,7 @@ def _self_supersede_check(payload: Mapping[str, Any], warn: Any) -> None:
 
     The integrity hash covers ``meta.supersedes`` itself, so ``supersedes == hash(full payload)``
     is an unreachable fixpoint. The meaningful, deterministic reading is: ``supersedes`` equals
-    the hash of *this* payload with the ``supersedes`` pointer removed — i.e. the payload
+    the hash of *this* payload with the ``supersedes`` pointer removed - i.e. the payload
     supersedes content byte-identical to itself (a no-op re-embed).
     """
     meta = payload.get("meta") or {}

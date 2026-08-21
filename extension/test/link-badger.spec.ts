@@ -2,8 +2,8 @@ import { expect, test } from "./fixtures.js";
 
 const BROKER = "https://broker.example.com:8443";
 
-// The content script runs on a REAL (non-extension) page — the harness listing served over the
-// host-resolved HTTPS domain — so this drives the actual injected DOM markers (#69).
+// The content script runs on a REAL (non-extension) page - the harness listing served over the
+// host-resolved HTTPS domain - so this drives the actual injected DOM markers (#69).
 test("link-badging: enable the site, then only openOM links get honest markers", async ({ context, extensionId }) => {
   // 1. Opt this domain in via the popup per-site toggle (also exercises linkbadge:toggle).
   const popup = await context.newPage();

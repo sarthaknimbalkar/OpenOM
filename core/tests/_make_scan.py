@@ -25,7 +25,7 @@ def make_scanned(pdf_bytes: bytes, dpi: int = 150) -> bytes:
 
 def make_ocr_scanned(pdf_bytes: bytes, dpi: int = 150) -> bytes:
     """A scan WITH an OCR text layer (#6): each page is a full-page raster with an INVISIBLE
-    (render mode 3) searchable text layer over it — the classic OCR'd-scan structure that must
+    (render mode 3) searchable text layer over it - the classic OCR'd-scan structure that must
     classify 'scanned' even though its text is extractable."""
     src = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     out = pymupdf.open()

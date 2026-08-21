@@ -4,7 +4,7 @@
 A ``PdfRef`` is exactly one of ``{path}`` / ``{url}`` / ``{blobId}``. On **stdio** only ``path`` is
 allowed (url/blobId → OM-IO-008). On **http** ``path`` is rejected (no client filesystem, §6d) and
 ``url``/``blobId`` are resolved via the injected SafeFetcher / BlobStore. The deterministic tool
-bodies are unchanged — only how they obtain the input bytes.
+bodies are unchanged - only how they obtain the input bytes.
 """
 
 from __future__ import annotations

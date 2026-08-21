@@ -3,7 +3,7 @@
 
 Deterministic logic over a pluggable ``KeyStore`` (+ the ``CounterStore`` seam from ratelimit.py for
 quota accounting). The hosted deploy binds a real KV/DB + Redis; ``InMemoryKeyStore`` is the
-test/self-host impl. No inference — this is the paid instance's access layer over the
+test/self-host impl. No inference - this is the paid instance's access layer over the
 same deterministic engine.
 
 Security posture: the plaintext key (``omk_<token>``) is shown EXACTLY ONCE, at issue; only its
@@ -91,7 +91,7 @@ class ApiKeyManager:
         self, owner: str, *, quota_limit: int = 0, quota_window_seconds: int = 86_400
     ) -> tuple[str, ApiKeyRecord]:
         """Mint a new key for ``owner``. Returns (plaintext_shown_once, record). Store keeps only
-        the hash — the plaintext is unrecoverable after this call."""
+        the hash - the plaintext is unrecoverable after this call."""
         plaintext = KEY_PREFIX + self._rng()
         record = ApiKeyRecord(
             key_id="k_" + secrets.token_hex(8),

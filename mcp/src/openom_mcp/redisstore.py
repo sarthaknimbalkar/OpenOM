@@ -3,13 +3,13 @@
 
 Binds the ``CounterStore`` seam (ratelimit.py) to a Redis-compatible client so every server
 replica sharing one Redis enforces a single global count per window. ``incr`` = ``INCR`` then,
-only on the FIRST increment of a window, ``EXPIRE`` to arm the TTL — the standard atomic-counter
+only on the FIRST increment of a window, ``EXPIRE`` to arm the TTL - the standard atomic-counter
 idiom that works on real Redis and fakeredis alike. (A process crash in the microseconds between
 INCR and EXPIRE would leave one window key without a TTL; it is a distinct key per window index,
-so it never blocks the next window — it just lingers in memory.)
+so it never blocks the next window - it just lingers in memory.)
 
 The client is INJECTED (redis-py, fakeredis, or an Upstash/edge client): this module imports no
-redis package, so ``/mcp`` gains no hard runtime dependency — the hosted deploy passes a real
+redis package, so ``/mcp`` gains no hard runtime dependency - the hosted deploy passes a real
 client, tests pass a fake one. Deterministic and inference-free.
 """
 

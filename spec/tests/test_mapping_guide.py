@@ -70,7 +70,7 @@ def test_every_code_named_in_the_guide_is_real() -> None:
 
 
 def test_guide_states_omit_and_flag_convention() -> None:
-    # #62: ambiguity handling — omit-and-flag, never guess; NOI-basis ambiguity called out.
+    # #62: ambiguity handling - omit-and-flag, never guess; NOI-basis ambiguity called out.
     low = GUIDE.lower()
     assert "omit the field" in low
     assert "never guess" in low or "not guess" in low

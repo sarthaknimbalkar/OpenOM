@@ -1,4 +1,4 @@
-"""Task 9: image extraction — SMask/CMYK/dedupe/bomb-guard (spec §8b)."""
+"""Task 9: image extraction - SMask/CMYK/dedupe/bomb-guard (spec §8b)."""
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def test_smask_image_extracted_as_rgba(tmp_path: Path) -> None:
 
 
 def test_extract_synthetic_image(tmp_path: Path) -> None:
-    """A rasterized page yields an extractable sRGB image — no corpus needed (runs in CI)."""
+    """A rasterized page yields an extractable sRGB image - no corpus needed (runs in CI)."""
     manifest = extract_images(make_scanned(make_text_pdf()), out_dir=tmp_path)
     ok = [d for d in manifest["images"] if d["error"] is None]
     assert ok, "expected at least one extractable image"
@@ -165,7 +165,7 @@ def test_render_vector_pages_skips_pages_that_already_have_rasters() -> None:
 
 # --- #7: exotic image-codec coverage (CCITT G4 + JPEG2000) ---------------------------------------
 def _ccitt_g4_pdf(w: int = 64, h: int = 48) -> bytes:
-    """A PDF whose only image is a real /CCITTFaxDecode (Group-4 fax) XObject — the encoding a
+    """A PDF whose only image is a real /CCITTFaxDecode (Group-4 fax) XObject - the encoding a
     scanned/faxed B&W OM page uses. Extracts the raw G4 codestream from a libtiff group4 TIFF."""
     im = Image.new("1", (w, h), 1)
     for y in range(h):
@@ -248,7 +248,7 @@ def test_extracts_jpeg2000_image() -> None:
 
 
 def test_inline_image_page_captured_by_vector_render_fallback() -> None:
-    """Inline images aren't XObjects, so get_images (and thus plain extraction) misses them — but a
+    """Inline images aren't XObjects, so get_images (and thus plain extraction) misses them - but a
     page carrying one has no raster XObject, so the #16 render_vector_pages fallback captures it."""
     assert extract_images(_inline_image_pdf())["images"] == []  # not seen without the fallback
     rendered = extract_images(_inline_image_pdf(), render_vector_pages=True)["images"]
@@ -256,20 +256,20 @@ def test_inline_image_page_captured_by_vector_render_fallback() -> None:
 
 
 def _thumb_corr(a: Image.Image, b: Image.Image, n: int = 16) -> float:
-    """Correlation of two images downscaled to n×n grayscale — ~1.0 means the SAME picture,
+    """Correlation of two images downscaled to n×n grayscale - ~1.0 means the SAME picture,
     tolerant of the resampling differences between two independent renderers."""
     import numpy as np
 
     ga = np.asarray(a.convert("L").resize((n, n))).astype(float).ravel()
     gb = np.asarray(b.convert("L").resize((n, n))).astype(float).ravel()
-    if ga.std() < 1e-6 or gb.std() < 1e-6:  # a flat image — fall back to mean closeness
+    if ga.std() < 1e-6 or gb.std() < 1e-6:  # a flat image - fall back to mean closeness
         return 1.0 - abs(ga.mean() - gb.mean()) / 255.0
     return float(np.corrcoef(ga, gb)[0, 1])
 
 
 @pytest.mark.parametrize("builder", [_ccitt_g4_pdf, _jpx_pdf])
 def test_image_decode_agrees_with_independent_renderer(builder, tmp_path: Path) -> None:
-    """#167: a DIFFERENTIAL cross-check on the exotic codecs — our PyMuPDF-based extract_images and
+    """#167: a DIFFERENTIAL cross-check on the exotic codecs - our PyMuPDF-based extract_images and
     an independent renderer (pdfium via pypdfium2, not poppler) must decode the same full-page image
     to the same picture. Catches a single-decoder codec bug a self-consistent test would miss."""
     pypdfium2 = pytest.importorskip("pypdfium2")

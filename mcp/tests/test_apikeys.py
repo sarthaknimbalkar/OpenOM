@@ -1,6 +1,6 @@
 """#52 API-key lifecycle (issue/verify/rotate/revoke + per-key quota) and #51 distributed limiter.
 All logic is deterministic over injected clock + in-memory store/counters, so the algorithm is
-proven without a live Redis/KV — the hosted deploy binds real backends to the same seams.
+proven without a live Redis/KV - the hosted deploy binds real backends to the same seams.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ def test_issue_returns_plaintext_once_and_stores_only_the_hash() -> None:
     assert plaintext.startswith(KEY_PREFIX)
     assert record.key_hash == hash_key(plaintext)
     assert record.owner == "acme" and record.status == "active"
-    # The store never holds the plaintext — only its hash resolves a record.
+    # The store never holds the plaintext - only its hash resolves a record.
     assert mgr.store.get_by_hash(hash_key(plaintext)) is record
 
 
@@ -116,7 +116,7 @@ def test_distributed_limiter_is_per_principal() -> None:
 
 def test_distributed_limiter_shares_one_store_across_instances() -> None:
     # Two limiter instances (simulating two server replicas) over ONE counter store enforce a single
-    # global limit — the whole point of #51.
+    # global limit - the whole point of #51.
     clock = Clock(0.0)
     store = InMemoryCounterStore(now=clock)
     a = DistributedRateLimiter(store, limit=2, window_seconds=60, now=clock)

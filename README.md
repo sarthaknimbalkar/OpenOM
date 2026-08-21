@@ -11,7 +11,7 @@ toolchain is MIT, the specification is CC-BY-4.0 (see [License](#license)).
 
 ## Why
 
-Every downstream consumer of an OM — CRM, underwriting model, portal, LLM agent — re-extracts
+Every downstream consumer of an OM - CRM, underwriting model, portal, LLM agent - re-extracts
 the same facts from the same PDF, badly and repeatedly. openOM moves the extraction to the
 **source**: the broker (or their tool) embeds a signed, versioned payload once, using the
 [Factur-X](https://en.wikipedia.org/wiki/Factur-X) / PDF/A-3 attachment mechanism. The PDF
@@ -21,17 +21,17 @@ inference.
 ## The one rule that governs everything
 
 **Deterministic core, inference at the edges.** The engine, MCP server, and consumer tooling
-contain **zero LLM/inference calls, ever** — no keys, no per-call cost, fully testable. Any
+contain **zero LLM/inference calls, ever** - no keys, no per-call cost, fully testable. Any
 LLM-assisted mapping runs client-side / on-device in the authoring layer only. This boundary is
 enforced mechanically in CI (the `boundary` job fails if an inference/network client ever
 enters the `core`/`cli`/`mcp` dependency tree).
 
 ## Assertions, not facts
 
-An OM is an **advertisement** — a broker's **opinion of value**, which the seller agreed to before
+An OM is an **advertisement** - a broker's **opinion of value**, which the seller agreed to before
 it was published. So every payload is an identified party's **opinion as of a date** (`assertedBy` +
 `assertedDate` are always required), and openOM records **who** asserted it, that it is
-**unaltered**, and **as of when** — it never claims the opinion is *true*. **Verified means
+**unaltered**, and **as of when** - it never claims the opinion is *true*. **Verified means
 provenance, not truth.** Tooling checks *internal consistency* (NOI ÷ price vs cap rate,
 rent-schedule math, date arithmetic) and **never** market truth. Schema errors block; consistency
 warnings never do.
@@ -40,11 +40,11 @@ warnings never do.
 
 | Path | What |
 |------|------|
-| [`core/`](core/) | Python library — deterministic PDF/data verbs (embed, read, inspect, extract, validate). The heart of the standard. Zero inference deps. |
+| [`core/`](core/) | Python library - deterministic PDF/data verbs (embed, read, inspect, extract, validate). The heart of the standard. Zero inference deps. |
 | [`cli/`](cli/) | The `om` command over `core`. |
 | [`spec/`](spec/) | JSON Schema, sample payloads, `@context`/vocabulary, and the conformance **vectors** (JCS oracles + golden PDFs). **The product.** |
-| [`mcp/`](mcp/) | Deterministic MCP server — the 6-tool surface (`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`) over `core`. stdio (M1); hosted HTTP is M3. |
-| [`js/`](js/) | TypeScript reference implementation (`openom-js`) — embed/read/validate/verify/decrypt — powering the extension + web/Node consumers. Byte-parity with `core`. |
+| [`mcp/`](mcp/) | Deterministic MCP server - the 6-tool surface (`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`) over `core`. stdio (M1); hosted HTTP is M3. |
+| [`js/`](js/) | TypeScript reference implementation (`openom-js`) - embed/read/validate/verify/decrypt - powering the extension + web/Node consumers. Byte-parity with `core`. |
 | [`extension/`](extension/) | MV3 Chrome extension: consumer mode (detect/verify/badge/publish) + author mode (capture/review/assert/embed, on-device extraction). |
 | [`process/`](process/) | Extraction/mapping playbook (`SKILL.md` + agent-instructions) for authoring clients. No code. |
 | `fixtures/` | Seeded-defect + producer-diverse fixtures (committed for CI); the full real-OM corpus is confidential (gitignored). |
@@ -89,7 +89,7 @@ mode is the toolbar popup; author mode opens from the popup's **“Embed a paylo
 ## No-browser distribution
 
 - **CI / server-side:** the [openom-embed GitHub Action](.github/actions/openom-embed/) embeds or
-  validates payloads in a broker's pipeline, and the `om` CLI does the same locally — no browser, no
+  validates payloads in a broker's pipeline, and the `om` CLI does the same locally - no browser, no
   inference.
 - **Verify without installing anything:** the hosted, fully client-side tool at `…/openom/verify/`
   reads a PDF in your browser and shows its openOM state (bytes never leave your machine).
@@ -114,7 +114,7 @@ the threat model.
 
 ## Status
 
-**Pre-1.0, active development — the full toolchain is shipped and green.** Implemented: `core`
+**Pre-1.0, active development - the full toolchain is shipped and green.** Implemented: `core`
 (embed/read/inspect/extract/validate), `cli` (`om`), `mcp` (six deterministic tools, stdio +
 hosted Streamable HTTP), `js` (`openom-js`, byte-parity with `core`), `spec` (schema 0.1, vectors,
 `@context`, webhook envelope, codes registry), `process` (extraction playbook), and the two-persona

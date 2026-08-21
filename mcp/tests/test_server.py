@@ -1,4 +1,4 @@
-"""M1 /mcp server wiring — all seven tools registered + delegating to the pure bodies."""
+"""M1 /mcp server wiring - all seven tools registered + delegating to the pure bodies."""
 
 from __future__ import annotations
 

@@ -26,7 +26,7 @@ HYBRID_IMAGES_PER_PAGE = 3.0
 
 # #6: an OCR'd scan is a full-page raster with an INVISIBLE text layer over it (render mode 3/7).
 # When a majority of pages look like that, the document is a scan (the text is an OCR overlay, not
-# authored content) — regardless of how much text is extractable.
+# authored content) - regardless of how much text is extractable.
 OCR_OVERLAY_FRAC = 0.6
 _INVISIBLE_RENDER_MODES = {3, 7}  # PyMuPDF texttrace `type`: no fill/stroke ⇒ invisible
 
@@ -88,7 +88,7 @@ def classification_confidence(
     images_per_page: float,
     ocr_overlay_frac: float = 0.0,
 ) -> float:
-    """Normalized [0,1] margin from the decision surface — near a threshold ⇒ low confidence."""
+    """Normalized [0,1] margin from the decision surface - near a threshold ⇒ low confidence."""
 
     def clamp(x: float) -> float:
         return max(0.0, min(1.0, x))

@@ -1,9 +1,9 @@
 /**
- * openOM `/js` — TypeScript reference implementation.
+ * openOM `/js` - TypeScript reference implementation.
  *
  * Deterministic; zero inference (consumer-mode + shared engine). Public API for
  * canonicalization, integrity hashing, verification, hardened parsing, embed/read
- * (§D — read via pdf.js, write via pdf-lib), schema validation (§H, ajv), and the
+ * (§D - read via pdf.js, write via pdf-lib), schema validation (§H, ajv), and the
  * re-embed provenance warning.
  */
 export { canonicalize } from "./canonicalize.js";

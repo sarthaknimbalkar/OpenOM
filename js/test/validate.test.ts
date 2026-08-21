@@ -17,7 +17,7 @@ const sample = (name: string) =>
  * and `blocked = errorCount > 0` follow [OM-ERR-010]. Verified against the
  * committed spec/samples/.
  */
-describe("validatePayload — schema tier", () => {
+describe("validatePayload - schema tier", () => {
   test("valid-stnl passes with zero errors and blocked=false", () => {
     const r = validatePayload(sample("valid-stnl"), schema);
     expect(r.errors).toEqual([]);

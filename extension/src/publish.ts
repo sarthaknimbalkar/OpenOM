@@ -1,4 +1,4 @@
-// Consumer "Publish" — POST a §Y HMAC-signed, replay-protected envelope to a broker-configured
+// Consumer "Publish" - POST a §Y HMAC-signed, replay-protected envelope to a broker-configured
 // receiver. Reuses the A /js webhook core; deterministic (clock/id injected). SSRF-guarded target.
 
 import {
@@ -71,7 +71,7 @@ export interface RetryOpts {
 }
 
 /**
- * Deliver with bounded retry + exponential backoff on RETRIABLE failures (5xx / network) — §Y is
+ * Deliver with bounded retry + exponential backoff on RETRIABLE failures (5xx / network) - §Y is
  * built for this: the OpenOM-Event-Id stays stable across attempts (== envelope.id) while each retry
  * mints a fresh OpenOM-Delivery-Id and increments OpenOM-Delivery-Attempt ([#85]). 2xx/4xx are final.
  * The unsafe-target check runs ONCE up front (a bad target is not retriable).

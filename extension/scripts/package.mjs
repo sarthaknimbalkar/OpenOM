@@ -1,8 +1,8 @@
 // Package the built extension into a Chrome-Web-Store-ready zip ([#104]). Builds dist, then zips the
 // CONTENTS of dist/ (manifest.json at the zip root, as the store requires) into
-// openom-extension-<version>.zip. A local human step — not CI.
+// openom-extension-<version>.zip. A local human step - not CI.
 //
-// Self-contained ZIP writer (no dependency): entry names use FORWARD SLASHES on every platform — the
+// Self-contained ZIP writer (no dependency): entry names use FORWARD SLASHES on every platform - the
 // Windows `Compress-Archive`/.NET path wrote backslash separators, which the Chrome Web Store and Chrome
 // mishandle (resources not found). Deterministic: sorted entries + fixed DOS timestamps, so the same
 // dist/ always produces a byte-identical zip.
@@ -31,7 +31,7 @@ console.log("building…");
 execSync("node build.mjs", { cwd: root, stdio: "inherit" });
 if (existsSync(zipPath)) rmSync(zipPath);
 
-/** All files under dir, as { name (forward-slash, dist-relative), data } — sorted for reproducibility. */
+/** All files under dir, as { name (forward-slash, dist-relative), data } - sorted for reproducibility. */
 function collect(dir) {
   const out = [];
   const walk = (d) => {

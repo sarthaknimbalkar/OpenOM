@@ -1,4 +1,4 @@
-// openOM popup — renders the badge + payload card + publish controls from a DetectResult. The
+// openOM popup - renders the badge + payload card + publish controls from a DetectResult. The
 // render is a PURE function of data (no chrome calls), so it is unit-testable in jsdom; the runtime
 // bootstrap (query tab → message the service worker → wire buttons) is guarded at the bottom.
 
@@ -57,7 +57,7 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
   root.replaceChildren();
 
   const badge = el("div", `badge badge-${result.state}`);
-  badge.setAttribute("role", "status"); // #71 — announce the trust state to assistive tech
+  badge.setAttribute("role", "status"); // #71 - announce the trust state to assistive tech
   badge.setAttribute("aria-label", `${result.label}. ${result.caption}`);
   badge.appendChild(el("strong", "badge-label", result.label));
   badge.appendChild(el("span", "badge-caption", result.caption));
@@ -119,7 +119,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
     if (!root) return;
     try {
       // Target URL: a ?url= deep-link (used by the harness + as a shareable check link), else the
-      // active tab. The pipeline runs identically for both — only the source of the URL differs.
+      // active tab. The pipeline runs identically for both - only the source of the URL differs.
       const override = new URLSearchParams(location.search).get("url");
       let url = override ?? undefined;
       let tabId: number | undefined;
@@ -152,7 +152,7 @@ function wireButtons(root: HTMLElement, result: DetectResult): void {
   const secret = () => (root.querySelector("input.wh-secret") as HTMLInputElement | null)?.value ?? "";
   const status = document.createElement("p");
   status.className = "status";
-  status.setAttribute("aria-live", "polite"); // #71 — announce publish/test-fire outcomes
+  status.setAttribute("aria-live", "polite"); // #71 - announce publish/test-fire outcomes
   root.appendChild(status);
 
   const args = () => ({
@@ -201,7 +201,7 @@ function wireButtons(root: HTMLElement, result: DetectResult): void {
   });
 }
 
-/** Open the author-mode side panel to embed a payload (#76). Requires a user gesture — the click. */
+/** Open the author-mode side panel to embed a payload (#76). Requires a user gesture - the click. */
 function wireOpenAuthor(root: HTMLElement): void {
   root.querySelector(".open-author")?.addEventListener("click", () => {
     void (async () => {

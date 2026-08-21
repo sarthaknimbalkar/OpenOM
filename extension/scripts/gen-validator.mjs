@@ -3,7 +3,7 @@
 // MV3's content-security policy forbids `unsafe-eval`, so ajv's runtime `new Function` compile
 // cannot run in the service worker ([OM-DoD-006]). This precompiles spec/om-0.1.schema.json to
 // plain CommonJS at build time (ajv standalone codegen); vite inlines it plus its format tables and
-// runtime helpers — all ordinary JS, zero eval. The options MUST match js/src/validate.ts compile()
+// runtime helpers - all ordinary JS, zero eval. The options MUST match js/src/validate.ts compile()
 // so client-side schema validation is bit-for-bit the same as the deterministic core ([OM-VAL-002]).
 //
 // Output is a generated artifact (git-ignored, regenerated every build), consumed via src/validator.ts.

@@ -1,5 +1,5 @@
 """#51/#52: the Redis-backed CounterStore, proven against fakeredis so the algorithm is verified
-without a live server — the hosted deploy swaps in a real redis-py client at the same seam."""
+without a live server - the hosted deploy swaps in a real redis-py client at the same seam."""
 
 from __future__ import annotations
 

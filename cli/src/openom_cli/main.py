@@ -38,8 +38,8 @@ SPEC_VERSION = "0.1"
 def _force_utf8(stream: object) -> None:
     """Emit UTF-8 on a text stream regardless of the OS console codepage (#18).
 
-    On Windows with a legacy codepage (cp1252) — the default on Python < 3.15 or under
-    ``PYTHONUTF8=0`` — the em-dashes / middots in help text and any non-ASCII in JSON output
+    On Windows with a legacy codepage (cp1252) - the default on Python < 3.15 or under
+    ``PYTHONUTF8=0`` - the em-dashes / middots in help text and any non-ASCII in JSON output
     mojibake or raise UnicodeEncodeError. Reconfiguring to UTF-8 fixes it everywhere. Text layer
     only: the binary ``embed --out -`` path writes ``sys.stdout.buffer`` and is unaffected.
     """
@@ -48,7 +48,7 @@ def _force_utf8(stream: object) -> None:
         return  # e.g. a test harness replaced stdout with a plain object
     try:
         reconfigure(encoding="utf-8")
-    except (ValueError, OSError):  # detached / already-written stream — best-effort
+    except (ValueError, OSError):  # detached / already-written stream - best-effort
         pass
 
 
@@ -56,7 +56,7 @@ for _std in (sys.stdout, sys.stderr):
     _force_utf8(_std)
 
 app = typer.Typer(
-    help="openOM deterministic engine — embed/read/inspect/validate/check/extract."
+    help="openOM deterministic engine - embed/read/inspect/validate/check/extract."
 )
 
 _F = TypeVar("_F", bound=Callable[..., Any])
@@ -356,7 +356,7 @@ def extract(
     ] = False,
 ) -> None:
     # Written filenames are img_<xref>.png / page_<n>.png (both integers), so no untrusted path
-    # component can escape out_dir — path traversal is not reachable from payload/PDF content.
+    # component can escape out_dir - path traversal is not reachable from payload/PDF content.
     data = _read_bytes(pdf)
     _emit(_extract_images(data, out_dir=out_dir, render_vector_pages=render_vector_pages))
 
@@ -366,7 +366,7 @@ def version() -> None:
     """Print the tool + spec versions."""
     try:
         tool_version = _pkg_version("openom-cli")
-    except PackageNotFoundError:  # pragma: no cover — running from a source tree
+    except PackageNotFoundError:  # pragma: no cover - running from a source tree
         tool_version = "0.0.0-dev"
     _emit({"tool": "openom-cli", "toolVersion": tool_version, "specVersion": SPEC_VERSION})
 

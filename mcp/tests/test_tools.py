@@ -1,4 +1,4 @@
-"""M1 /mcp stdio tool surface (spec §I) — deterministic, path input, no network."""
+"""M1 /mcp stdio tool surface (spec §I) - deterministic, path input, no network."""
 
 from __future__ import annotations
 

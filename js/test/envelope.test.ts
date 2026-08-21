@@ -65,7 +65,7 @@ describe("verifyEnvelopePayloadHash (§Y receiver hash-binding, #120)", () => {
   });
 });
 
-describe("envelope schema — no drift between /js and /spec", () => {
+describe("envelope schema - no drift between /js and /spec", () => {
   test("ENVELOPE_SCHEMA equals the published spec/webhook-envelope-0.1.schema.json", () => {
     const specPath = join(
       dirname(fileURLToPath(import.meta.url)),

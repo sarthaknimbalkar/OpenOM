@@ -1,7 +1,7 @@
 {
   "name": "openom-js",
   "version": "0.1.0",
-  "description": "openOM TypeScript reference implementation (/js) — canonicalization, embed/read, validate. Deterministic; zero inference.",
+  "description": "openOM TypeScript reference implementation (/js) - canonicalization, embed/read, validate. Deterministic; zero inference.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/src/index.js",

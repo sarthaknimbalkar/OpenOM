@@ -2,10 +2,10 @@
 """Structured operational logging for the HOSTED MCP transport (#152).
 
 The deterministic core is silent by design, but the M3 hosted server is a network service and needs
-diagnosability — request outcomes, rate-limit rejections, SSRF blocks, blob lifecycle. This logs to
+diagnosability - request outcomes, rate-limit rejections, SSRF blocks, blob lifecycle. This logs to
 stderr as `key=value` events (grep/ship-friendly) confined to the transport/security/blob layers; it
 NEVER touches the deterministic tool bodies (the cardinal boundary, §V) and emits NO telemetry off
-box (§M — local operational logging, not egress). Level controlled by OPENOM_MCP_LOG
+box (§M - local operational logging, not egress). Level controlled by OPENOM_MCP_LOG
 (default INFO); set to a higher level or CRITICAL to quiet it.
 """
 

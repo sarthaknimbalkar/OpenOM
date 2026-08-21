@@ -1,4 +1,4 @@
-# `<openom-badge>` — embeddable trust badge
+# `<openom-badge>` - embeddable trust badge
 
 A drop-in web component that shows the openOM verification state for a PDF, for portals and listing
 sites that want the §AA badge next to a deal without shipping the browser extension (#144).
@@ -30,12 +30,12 @@ The badge fetches the PDF bytes itself, so the PDF host must allow the fetch (sa
 
 | State                  | Shown                       | Means                                                                     |
 | ---------------------- | --------------------------- | ------------------------------------------------------------------------- |
-| `absent` / `encrypted` | _nothing_                   | not an openOM PDF (or unreadable) — no false reassurance, no nag          |
-| `hash-mismatch`        | ⚠ **Altered payload**       | embedded data doesn't match its hash — do not trust                       |
+| `absent` / `encrypted` | _nothing_                   | not an openOM PDF (or unreadable) - no false reassurance, no nag          |
+| `hash-mismatch`        | ⚠ **Altered payload**       | embedded data doesn't match its hash - do not trust                       |
 | `integrity-ok`         | ✓ **Unaltered since embed** | integrity checks out; **not** proof of authorship (never says "verified") |
 | `origin-verified`      | ✓✓ **Origin-verified**      | the domain vouches for this exact payload (HTTPS + matching mirror)       |
 
-A fetch/parse error fails **closed** to `absent` (renders nothing) — an error is not evidence of
+A fetch/parse error fails **closed** to `absent` (renders nothing) - an error is not evidence of
 tampering. Only static `honestLabel` copy is rendered; no payload-derived text touches the DOM, so a
 malicious payload has no XSS surface.
 

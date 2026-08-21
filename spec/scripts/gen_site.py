@@ -3,7 +3,7 @@
 
 WHY: payloads carry ``"@context": [..., "https://openom.app/ns/0.1"]``
 and the schemas pin absolute ``$id`` URLs. A JSON-LD processor dereferences that
-context URL and a ``$ref``/``$id`` resolver fetches the schemas — so if those URLs
+context URL and a ``$ref``/``$id`` resolver fetches the schemas - so if those URLs
 do not serve the *exact committed bytes* with the right content-type and CORS, the
 web half of the standard is inert. This script mirrors the ``spec/`` artifacts into
 a deploy root (``site/``) at the exact paths the URLs pin, keeping ``spec/`` the
@@ -78,7 +78,7 @@ def _landing_html() -> str:
   <p>Machine-readable, broker-asserted data for commercial-real-estate offering
      memoranda. Published by <a href="https://verveliolabs.com">Vervelio Labs</a>.
      Spec + toolchain: <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a>.</p>
-  <p><strong>New here? <a href="/docs/">Read the docs</a></strong> — per-persona
+  <p><strong>New here? <a href="/docs/">Read the docs</a></strong> - per-persona
      quick-starts, the field reference, and the validation-code catalog.</p>
   <h2>Resolvable artifacts</h2>
   <ul>
@@ -110,7 +110,7 @@ def _headers_file() -> str:
 
 
 def _htaccess_file() -> str:
-    """Apache/cPanel ``.htaccess`` — the same content-type + CORS rules for hosts that use Apache
+    """Apache/cPanel ``.htaccess`` - the same content-type + CORS rules for hosts that use Apache
     (e.g. GoDaddy Linux hosting) instead of a ``_headers``-style static host (Cloudflare/Netlify).
 
     ``<FilesMatch>`` is valid in .htaccess (unlike ``<Location>``): the extensionless JSON-LD

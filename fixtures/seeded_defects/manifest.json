@@ -1,5 +1,5 @@
 {
-  "description": "Seeded-defect corpus for the [OM-DoD-002] M1.x validator gate. Each case applies a small, labeled mutation to a clean base payload and MUST raise the expected §H consistency code(s) with zero false negatives. The base is internally consistent, so any expected code that appears is caused by the seeded defect. Deterministic; no PDFs, no confidential OMs — safe to commit.",
+  "description": "Seeded-defect corpus for the [OM-DoD-002] M1.x validator gate. Each case applies a small, labeled mutation to a clean base payload and MUST raise the expected §H consistency code(s) with zero false negatives. The base is internally consistent, so any expected code that appears is caused by the seeded defect. Deterministic; no PDFs, no confidential OMs - safe to commit.",
   "base": "spec/samples/valid-stnl.json",
   "cases": [
     { "name": "w010-cap-vs-noi", "expect": ["OMW-W010"],

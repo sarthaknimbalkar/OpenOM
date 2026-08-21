@@ -2,7 +2,7 @@
 """Generate the synthetic demo OM for the M4 process gate ([OM-DoD-005]).
 
 A small, entirely FICTIONAL single-tenant NNN offering memorandum (fictional broker/tenant/address/
-APN, no real deal — OM-VEC-017-clean), rendered as human-readable OM copy (NOT JSON) so the
+APN, no real deal - OM-VEC-017-clean), rendered as human-readable OM copy (NOT JSON) so the
 playbook's extraction step is a real reading task. The printed facts correspond to a known-good,
 warning-clean openOM payload (see process/example/expected-payload.json). Regenerate with:
     python process/example/build_example.py
@@ -23,7 +23,7 @@ OUT_SCANNED = Path(__file__).resolve().parent / "sample-om-scanned.pdf"
 
 LINES = [
     ("OFFERING MEMORANDUM", 20, True),
-    ("Placeholder Quick Service — Testville, TX", 14, True),
+    ("Placeholder Quick Service - Testville, TX", 14, True),
     ("Single-Tenant Net-Leased Investment (Fictional / Example Only)", 11, False),
     ("", 11, False),
     ("Presented by: Dana Sample, Placeholder Retail Advisors | License: TX 000000", 10, False),
@@ -71,7 +71,7 @@ def _text_doc() -> pymupdf.Document:
 
 
 def build() -> None:
-    """The native (text-layer) demo OM — the default extraction target."""
+    """The native (text-layer) demo OM - the default extraction target."""
     doc = _text_doc()
     doc.save(OUT)
     doc.close()
@@ -79,7 +79,7 @@ def build() -> None:
 
 
 def build_scanned() -> None:
-    """An image-only (no text layer) version of the same OM — classifies as ``scanned``, exercising
+    """An image-only (no text layer) version of the same OM - classifies as ``scanned``, exercising
     the playbook's vision/OCR branch. Rasterize the text page, then place ONLY that image."""
     src = _text_doc()
     pix = src[0].get_pixmap(dpi=150)

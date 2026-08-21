@@ -1,6 +1,6 @@
 """M3 #47: TRUE HTTP round-trip over a real socket. Runs the Streamable HTTP app under uvicorn in a
 thread (so the session-manager lifespan actually starts) and drives it with the MCP client over
-real HTTP — exercising the principal middleware + SDK framing end-to-end. Proves the surface is
+real HTTP - exercising the principal middleware + SDK framing end-to-end. Proves the surface is
 served over HTTP and that a principal from a real Authorization header reaches the tool layer.
 """
 

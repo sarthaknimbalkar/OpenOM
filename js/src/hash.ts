@@ -6,8 +6,8 @@ import { sha256Hex } from "./crypto.js";
  *
  * Spec: §C.3 [OM-CANON-016]. The preimage is the payload with `meta.signature`
  * REMOVED (absent, not null) so a signature can be added later without
- * disturbing the hash ([OM-CANON-017]). Every other field — including
- * `meta.sourceDocHash` and `meta.supersedes` — is part of the preimage.
+ * disturbing the hash ([OM-CANON-017]). Every other field - including
+ * `meta.sourceDocHash` and `meta.supersedes` - is part of the preimage.
  *
  * @returns `"sha256:" + lowercase_hex(SHA-256(JCS(preimage)))` ([OM-CANON-003]).
  */
@@ -19,7 +19,7 @@ export function payloadHash(payload: unknown): string {
  * The exact bytes a Producer embeds as `om.json`: the JCS of the payload with
  * `meta.signature` removed ([OM-CANON-016]). These are hashed to produce
  * `payloadHash`, so storing them means a Consumer's byte-recompute of the
- * stored stream equals `omspec:payloadHash` directly ([OM-CANON-008]) — the
+ * stored stream equals `omspec:payloadHash` directly ([OM-CANON-008]) - the
  * single source of truth shared by embed and hashing.
  */
 export function preimageBytes(payload: unknown): Uint8Array {
@@ -28,7 +28,7 @@ export function preimageBytes(payload: unknown): Uint8Array {
 
 /**
  * Return a shallow-cloned payload with `meta.signature` removed if present.
- * Only `meta.signature` is excluded from the preimage — no other field
+ * Only `meta.signature` is excluded from the preimage - no other field
  * ([OM-CANON-017]).
  */
 function stripSignature(payload: unknown): unknown {

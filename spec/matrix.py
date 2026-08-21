@@ -7,7 +7,7 @@ Two axes:
 - **Pathologies** (synthesizable, committed, CI-checkable): messy rent schedule, CMYK/SMask
   images, flattened scan, empty payload, hash mismatch. Each has a deterministic generator here.
 - **Producers** (real provenance, from the confidential corpus under ``OMs/``): InDesign,
-  Word, Buildout, scanned — detected from each PDF's ``/Producer`` metadata. These are local;
+  Word, Buildout, scanned - detected from each PDF's ``/Producer`` metadata. These are local;
   ``OMs/`` is git-ignored, so CI checks only the pathology axis.
 
 Modes:
@@ -90,7 +90,7 @@ def _gen_cmyk_smask() -> bytes:
 
 
 def _gen_flattened_scan() -> bytes:
-    """An image-only (rasterized) page — no text layer."""
+    """An image-only (rasterized) page - no text layer."""
     src = pymupdf.open()
     out = pymupdf.open()
     try:
@@ -138,7 +138,7 @@ def _classify_producer(pdf_bytes: bytes) -> str:
     try:
         with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
             producer = str(pdf.docinfo.get("/Producer", "")) + str(pdf.docinfo.get("/Creator", ""))
-    except Exception:  # noqa: BLE001 — unreadable corpus file is simply unclassified
+    except Exception:  # noqa: BLE001 - unreadable corpus file is simply unclassified
         return "other"
     p = producer.lower()
     if "indesign" in p:
@@ -164,7 +164,7 @@ def scan_corpus() -> dict[str, list[str]]:
         try:
             if _inspect(data)["class"] == "scanned":
                 buckets["scanned"].append(rel)
-        except Exception:  # noqa: BLE001 — unreadable corpus file is simply unclassified
+        except Exception:  # noqa: BLE001 - unreadable corpus file is simply unclassified
             pass
     return buckets
 
@@ -192,7 +192,7 @@ def main() -> int:
 
     require_corpus = args.assert_full or (not args.assert_synthetic and OMS.exists())
     pathologies = build_pathologies()
-    buckets = scan_corpus() if require_corpus else {}  # the corpus scan is heavy — skip when unused
+    buckets = scan_corpus() if require_corpus else {}  # the corpus scan is heavy - skip when unused
 
     print("PATHOLOGY axis (synthetic):")
     for name in PATHOLOGIES:

@@ -4,7 +4,7 @@
 The fetcher is deterministic and fully injectable: the DNS ``resolver`` (host -> IPs) and the
 connection ``opener`` (pinned-IP connect) are constructor parameters, so the range/redirect/pin
 logic is tested offline. The default opener uses httpx and connects to the *pinned validated IP*
-(resolve-then-pin) to mitigate DNS rebinding — no re-resolution between the block-list check and
+(resolve-then-pin) to mitigate DNS rebinding - no re-resolution between the block-list check and
 the connection.
 """
 
@@ -17,7 +17,7 @@ from urllib.parse import urljoin, urlparse
 
 from .tools import ToolError
 
-# Blocked address ranges ([OM-SEC-001]) — private, loopback, link-local (incl. cloud metadata
+# Blocked address ranges ([OM-SEC-001]) - private, loopback, link-local (incl. cloud metadata
 # 169.254.169.254), CGNAT, and IPv6 ULA/loopback. Verbatim from the spec.
 _BLOCKED = [
     ipaddress.ip_network(n)

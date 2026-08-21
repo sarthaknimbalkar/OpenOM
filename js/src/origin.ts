@@ -8,11 +8,11 @@ import { integrityHashOfBytes } from "./verify.js";
 // origin.test.ts (co.uk, github.io) guard the behavior we depend on.
 
 /**
- * Domain-origin verification — the §10.1 L3 check, consumer-mode. Proves "the entity controlling
+ * Domain-origin verification - the §10.1 L3 check, consumer-mode. Proves "the entity controlling
  * this domain vouches for this exact payload": the source and its JSON-LD mirror are HTTPS, served
  * from the same registrable domain (eTLD+1), and the mirror's canonical hash equals the embedded
  * `omspec:payloadHash`. A rehost to another domain (A5) degrades gracefully to `origin-unverified`
- * — never an error ([OM-TRUST-005]). Deterministic; the mirror fetch is injected.
+ * - never an error ([OM-TRUST-005]). Deterministic; the mirror fetch is injected.
  */
 
 export interface OriginResult {

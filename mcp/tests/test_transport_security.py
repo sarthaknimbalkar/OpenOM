@@ -1,6 +1,6 @@
 """M3 #48: HTTP-layer transport security. With DNS-rebinding protection enabled + an allowed-hosts
 list, a spoofed Host is rejected (421) and a disallowed Origin is rejected (403) BEFORE reaching
-the MCP handler — the browser-DNS-rebinding defense. Off by default (self-host), so this configures
+the MCP handler - the browser-DNS-rebinding defense. Off by default (self-host), so this configures
 it explicitly. Orthogonal to the outbound SSRF ruleset (fetch.py).
 """
 
@@ -51,7 +51,7 @@ def _post(url: str, headers: dict[str, str]) -> httpx.Response:
 
 def test_spoofed_host_rejected_421(secured_base: str) -> None:
     r = _post(secured_base, {"Host": "evil.example"})
-    assert r.status_code == 421  # Invalid Host header — blocked before the MCP handler
+    assert r.status_code == 421  # Invalid Host header - blocked before the MCP handler
 
 
 def test_disallowed_origin_rejected_403(secured_base: str) -> None:

@@ -30,7 +30,7 @@
   <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
 
   <h1>Quick-start · portal / consumer</h1>
-  <p>Goal: read and trust openOM data on PDFs you host or receive — with an honest badge,
+  <p>Goal: read and trust openOM data on PDFs you host or receive - with an honest badge,
      never overclaiming.</p>
   <h2>Drop-in badge (one script tag)</h2>
   <pre><code>&lt;script src="https://openom.app/widget/openom-badge.js" defer&gt;&lt;/script&gt;
@@ -44,7 +44,7 @@ const r = await readPayloadFromBytes(pdfBytes);
 if (r.state === "present" &amp;&amp; r.verification.hashValid) useIt(r.payload);</code></pre>
   <p>Change notifications: verify webhook deliveries with the
      <a href="https://github.com/sarthaknimbalkar/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
-     — signature → envelope → payloadHash binding, in that order.</p>
+     - signature → envelope → payloadHash binding, in that order.</p>
 
 </body>
 </html>

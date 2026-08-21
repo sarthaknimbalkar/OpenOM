@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""openOM MCP tool implementations (spec §I) — pure, deterministic, inference-free.
+"""openOM MCP tool implementations (spec §I) - pure, deterministic, inference-free.
 
 These are the transport-independent tool bodies; ``server.py`` wires them to the MCP server
 (stdio for M1). Each tool takes a ``PdfRef`` ({"path": ...} on stdio) and returns the §I.2
@@ -82,7 +82,7 @@ def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
                 _LIMITER.check(_current_principal.get() or "")
             return fn(*args, **kwargs)
         except ToolError as exc:
-            _log_failure(fn, exc.code)  # #152 — observe rate-limit/SSRF/IO rejections (hosted only)
+            _log_failure(fn, exc.code)  # #152 - observe rate-limit/SSRF/IO rejections (hosted only)
             return _envelope(exc)
         except PayloadTooLargeError as exc:
             return _envelope(ToolError("OM-IO-BOMB", str(exc)))
@@ -103,7 +103,7 @@ def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
 
 def _log_failure(fn: Callable[..., Any], code: str) -> None:
     """Observe a mapped tool rejection on the HOSTED transport (#152). No-op on stdio (trusted-
-    local); never logs request content — just the tool name, error code, and principal."""
+    local); never logs request content - just the tool name, error code, and principal."""
     if _RESOLVER is None or _RESOLVER.transport != "http":
         return
     import logging
@@ -143,7 +143,7 @@ def set_resolver(resolver: PdfResolver | None) -> None:
 
 
 def set_rate_limiter(limiter: Any) -> None:
-    """Install the per-principal rate limiter (http wires this; None disables — stdio default)."""
+    """Install the per-principal rate limiter (http wires this; None disables - stdio default)."""
     global _LIMITER
     _LIMITER = limiter
 
@@ -236,10 +236,10 @@ def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
 
 @_guard
 def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
-    """Read the broker-asserted openOM payload from a PDF — the cheap consumer path (§I OM-MCP-011).
+    """Read the broker-asserted openOM payload from a PDF - the cheap consumer path (§I OM-MCP-011).
 
     The payload is an ADVERTISEMENT: the broker's opinion of value, asserted by `assertedBy` as of
-    `assertedDate`. `verification.hashValid: true` means the payload is UNALTERED since embed — NOT
+    `assertedDate`. `verification.hashValid: true` means the payload is UNALTERED since embed - NOT
     that its figures are true. Ground on it as "the broker asserted X, unaltered, as of when," never
     as verified fact. A hash-mismatched payload is returned as null (never as trusted).
     """
@@ -284,7 +284,7 @@ def om_extract_images(
     data = _load_pdf(pdf)
     _enforce_page_limit(data)
     # include_vector (#16): also rasterize vector-only pages (no raster images) so the manifest
-    # still carries a page's visual content. Off by default — rendering is heavier than extraction.
+    # still carries a page's visual content. Off by default - rendering is heavier than extraction.
     result = _run_core(_extract_images, data, out_dir=dest, render_vector_pages=include_vector)
     manifest = []
     for img in result["images"]:
@@ -311,9 +311,9 @@ def om_extract_images(
 
 @_guard
 def om_validate(payload: Any, tolerances: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Validate an openOM payload — two-tier report (§I OM-MCP-014). A report is success even with
+    """Validate an openOM payload - two-tier report (§I OM-MCP-014). A report is success even with
     errors. Checks the payload's INTERNAL consistency (schema + arithmetic like NOI÷price vs cap
-    rate) — it does NOT check market truth. Validity means well-formed and self-consistent, never
+    rate) - it does NOT check market truth. Validity means well-formed and self-consistent, never
     that the broker's asserted opinion of value is correct.
     """
     tol = None
@@ -353,7 +353,7 @@ def om_embed(
 
     resolver = _resolver()
     if resolver.transport == "http" and resolver.blobstore is not None:
-        # No client filesystem on the hosted transport — return the result as a TTL blob.
+        # No client filesystem on the hosted transport - return the result as a TTL blob.
         stored = resolver.blobstore.put_result(out_bytes, _current_principal.get() or "")
         pdf_out = {"blobId": stored["blobId"], "presignedGet": stored["presignedGet"]}
     else:

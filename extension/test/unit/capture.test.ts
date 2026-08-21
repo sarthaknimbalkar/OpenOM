@@ -18,7 +18,7 @@ const MISMATCH: ReadResult = { ...PRESENT, state: "hash-mismatch" };
 
 const bytes = new Uint8Array([1, 2, 3]);
 
-describe("captureFromBytes — prior payload drives reprice", () => {
+describe("captureFromBytes - prior payload drives reprice", () => {
   test("plain PDF → prior is null", async () => {
     const c = await captureFromBytes(bytes, async () => ABSENT);
     expect(c.bytes).toBe(bytes);

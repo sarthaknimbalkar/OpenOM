@@ -1,6 +1,6 @@
 # openom-js
 
-The TypeScript reference implementation of the **openOM** standard — canonicalization, embed/read,
+The TypeScript reference implementation of the **openOM** standard - canonicalization, embed/read,
 verify, schema + consistency validation, in-browser decryption, and the §Y webhook helpers. Deterministic
 and **inference-free**; byte-for-byte parity with the Python core (a cross-implementation oracle enforces
 it). Powers the openOM browser extension and any Node/web consumer.

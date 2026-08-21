@@ -16,7 +16,7 @@ describe("profileComplete (#97)", () => {
   });
 });
 
-describe("assertEmbeddable (#98) — defense-in-depth", () => {
+describe("assertEmbeddable (#98) - defense-in-depth", () => {
   const S = schema as Record<string, unknown>;
   test("throws on a schema-invalid payload", () => {
     expect(() => assertEmbeddable({ currency: "usd" }, S, precompiledValidate)).toThrow(/refusing to embed/);

@@ -1,4 +1,4 @@
-// Deterministic per-page text extraction via pdf.js — the ONLY input author-mode inference reads
+// Deterministic per-page text extraction via pdf.js - the ONLY input author-mode inference reads
 // ([OM-DoD-007] M5b-2). Worker-AGNOSTIC: it never references `chrome` or configures a worker, so it
 // is a clean /js module reused unchanged in Node (tests) and the browser panel (which owns worker
 // setup). No inference here; pdf.js is already a /js dependency.
@@ -9,7 +9,7 @@ export interface PageText {
 }
 
 /**
- * Point pdf.js at its worker (a plain URL string — this stays worker-agnostic and never touches
+ * Point pdf.js at its worker (a plain URL string - this stays worker-agnostic and never touches
  * `chrome`; the browser caller supplies the extension URL). Sets it on the SAME pdf.js module instance
  * `extractPageText` imports, so a browser page (which requires a real worker) can run extraction.
  */
@@ -21,7 +21,7 @@ export async function setPdfWorkerSrc(src: string): Promise<void> {
 export interface PageTextResult {
   /** Extracted pages (1..min(totalPages, maxPages)). */
   pages: PageText[];
-  /** The document's TRUE page count — so the caller can tell it read only a prefix (never silent). */
+  /** The document's TRUE page count - so the caller can tell it read only a prefix (never silent). */
   totalPages: number;
 }
 
@@ -49,7 +49,7 @@ export async function extractPageText(bytes: Uint8Array, maxPages = 40): Promise
 /**
  * Reconstruct rough page layout from pdf.js text items ([#103]): group items into lines by their
  * y-position, order lines top→bottom and items left→right. A flat space-join destroys tables (rent
- * schedules, financial summaries) — the fields extraction most needs — so we keep line + column
+ * schedules, financial summaries) - the fields extraction most needs - so we keep line + column
  * structure the model can read. Deterministic; item positions come from the text transform.
  */
 function layoutText(items: Array<{ str?: string; transform?: number[] }>): string {

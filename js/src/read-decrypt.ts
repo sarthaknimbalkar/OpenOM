@@ -1,5 +1,5 @@
 // OPT-IN pdf.js decrypt fallback for readPayloadFromBytes ([#106]). pdf.js can decrypt empty-password
-// PDFs, but it (a) needs a Worker — unavailable in an MV3 service worker — and (b) is ~1MB. So it is
+// PDFs, but it (a) needs a Worker - unavailable in an MV3 service worker - and (b) is ~1MB. So it is
 // NOT bundled into the deterministic read path; callers that want it (Node tooling reading an
 // empty-password-encrypted OM) pass this explicitly. In the browser, encrypted OMs simply report the
 // `encrypted` state instead. Zero inference.
@@ -24,7 +24,7 @@ function safeParse(bytes: Uint8Array): Record<string, unknown> | null {
   }
 }
 
-/** Read a payload via pdf.js — for PDFs pdf-lib can't load (empty-password encrypted). See file note. */
+/** Read a payload via pdf.js - for PDFs pdf-lib can't load (empty-password encrypted). See file note. */
 export const pdfjsDecryptRead: DecryptRead = async (pdfBytes, encrypted = false) => {
   try {
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");

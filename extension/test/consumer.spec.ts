@@ -4,7 +4,7 @@ import { expect, test } from "./fixtures.js";
 const BROKER = "https://broker.example.com:8443";
 const ATTACKER = "https://attacker.net:8443";
 
-// Open the popup as a deep-link to a target URL — the full pipeline (SW re-fetch → read →
+// Open the popup as a deep-link to a target URL - the full pipeline (SW re-fetch → read →
 // verifyOrigin over the real HTTPS server → badge → card) runs identically to the active-tab path.
 async function openPopup(context: BrowserContext, extensionId: string, targetUrl: string): Promise<Page> {
   const page = await context.newPage();
@@ -61,7 +61,7 @@ test("publish test-fire → receiver validates the HMAC signature", async ({ con
   await expect(page.locator(".status")).toContainText("200");
 
   // The browser-side POST hit broker.example.com (host-resolver-mapped to 127.0.0.1); read the
-  // receiver's record over loopback directly — Playwright's Node request context does NOT honor the
+  // receiver's record over loopback directly - Playwright's Node request context does NOT honor the
   // browser's --host-resolver-rules, so the hostname wouldn't resolve here.
   const check = await page.request.get("https://127.0.0.1:8443/last-hook", {
     ignoreHTTPSErrors: true,

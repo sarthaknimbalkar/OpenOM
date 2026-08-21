@@ -1,4 +1,4 @@
-"""M3 Task 6 — the remote gate [OM-DoD-004]. Proves: the Streamable HTTP app builds and a real
+"""M3 Task 6 - the remote gate [OM-DoD-004]. Proves: the Streamable HTTP app builds and a real
 in-process MCP session serves the full tool surface; the transport-aware I/O behaviors (path
 rejected on http, url via SafeFetcher, blob upload→read round-trip, TTL + delete-on-completion,
 rate-limit OM-IO-014, foreign-principal OM-IO-007); and the principal middleware. Fully offline.

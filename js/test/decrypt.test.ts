@@ -20,7 +20,7 @@ const payload = JSON.parse(
 ) as Record<string, unknown>;
 const fix = (name: string): Uint8Array => new Uint8Array(readFileSync(join(fixDir, name)));
 
-/** First outline title of a decrypted PDF — proves STRING decryption (bookmark titles are encrypted). */
+/** First outline title of a decrypted PDF - proves STRING decryption (bookmark titles are encrypted). */
 async function firstOutlineTitle(bytes: Uint8Array): Promise<string | null> {
   const doc = await PDFDocument.load(bytes);
   const outlines = doc.catalog.lookup(PDFName.of("Outlines"));
@@ -31,7 +31,7 @@ async function firstOutlineTitle(bytes: Uint8Array): Promise<string | null> {
   return title instanceof PDFString || title instanceof PDFHexString ? title.decodeText() : null;
 }
 
-describe("decryptPdf — V4/R4 AES-128 (#4)", () => {
+describe("decryptPdf - V4/R4 AES-128 (#4)", () => {
   test("decrypts an empty-password AES-128 PDF (stream + string)", async () => {
     const out = await decryptPdf(fix("enc-aes128.pdf"));
     expect(out).not.toBeNull();
@@ -51,7 +51,7 @@ describe("decryptPdf — V4/R4 AES-128 (#4)", () => {
   });
 });
 
-describe("decryptPdf — V5/R6 AES-256 (#4)", () => {
+describe("decryptPdf - V5/R6 AES-256 (#4)", () => {
   test("decrypts an empty-password AES-256 PDF (stream + string)", async () => {
     const out = await decryptPdf(fix("enc-aes256.pdf"));
     expect(out).not.toBeNull();
@@ -70,7 +70,7 @@ describe("decryptPdf — V5/R6 AES-256 (#4)", () => {
   });
 });
 
-describe("decryptPdf — out-of-scope ⇒ null (#4 fallback to #107)", () => {
+describe("decryptPdf - out-of-scope ⇒ null (#4 fallback to #107)", () => {
   test("returns null for an RC4-encrypted PDF", async () => {
     expect(await decryptPdf(fix("enc-rc4.pdf"))).toBeNull();
   });
@@ -92,9 +92,9 @@ describe("decryptPdf — out-of-scope ⇒ null (#4 fallback to #107)", () => {
   });
 });
 
-describe("decryptPdf — malformed input fuzz never throws/hangs (#132)", () => {
+describe("decryptPdf - malformed input fuzz never throws/hangs (#132)", () => {
   // A crafted/corrupt encrypted OM must fail SAFE: decryptPdf returns null (or, rarely, valid bytes),
-  // never throwing or hanging — the caller falls back to the #107 CLI path. Deterministic byte flips
+  // never throwing or hanging - the caller falls back to the #107 CLI path. Deterministic byte flips
   // across the /Encrypt-carrying tail of each fixture (seeded positions, no Math.random).
   for (const name of ["enc-aes128.pdf", "enc-aes256.pdf"]) {
     // Generous timeout: each corrupted AES-256 attempt runs the full R6 Algorithm-2.B derivation

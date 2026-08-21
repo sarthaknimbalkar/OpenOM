@@ -56,7 +56,7 @@ def test_idempotent_nth_embed_hash_equals_single_direct(base_pdf: bytes) -> None
 def test_reprice_sets_supersedes(base_pdf: bytes) -> None:
     v1 = _sample()
     v2 = copy.deepcopy(v1)
-    v2["deal"]["askingPrice"] = 1795000  # a price reduction — the common re-embed event
+    v2["deal"]["askingPrice"] = 1795000  # a price reduction - the common re-embed event
 
     e1 = embed(base_pdf, v1, asserted_date="2026-08-15")
     e2 = embed(e1, v2, asserted_date="2026-09-01")
@@ -142,7 +142,7 @@ def test_source_doc_hash_preserved_across_reprice(base_pdf: bytes) -> None:
     repriced_payload = copy.deepcopy(_sample())
     repriced_payload["deal"]["askingPrice"] = repriced_payload["deal"]["askingPrice"] + 100000
     second = embed(first, repriced_payload, asserted_date="2026-08-19")
-    # supersedes advances, but sourceDocHash is the stable original — NOT hash_bytes(first).
+    # supersedes advances, but sourceDocHash is the stable original - NOT hash_bytes(first).
     assert _marker(second)["sourceDocHash"] == origin
     assert _marker(second)["sourceDocHash"] != hash_bytes(first)
     assert read(second).source_doc_hash == origin

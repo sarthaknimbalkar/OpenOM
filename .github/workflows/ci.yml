@@ -1,10 +1,10 @@
 name: ci
 
-# The gate ([OM-VEC-002], #110) — full jobs defined below. MANUAL by design: this workflow runs only
+# The gate ([OM-VEC-002], #110) - full jobs defined below. MANUAL by design: this workflow runs only
 # when dispatched (Actions tab or `gh workflow run ci.yml`), NOT automatically on push/PR. The
 # deterministic invariants (no-inference boundary, JCS drift, cross-impl anti-fork oracle, python/js
-# suites, the openom-embed Action) are verified LOCALLY before pushing — see CONTRIBUTING.md
-# "Verification gates" — and this workflow reproduces them on demand. Auto-triggers are intentionally
+# suites, the openom-embed Action) are verified LOCALLY before pushing - see CONTRIBUTING.md
+# "Verification gates" - and this workflow reproduces them on demand. Auto-triggers are intentionally
 # off (repo owner runs gates manually); re-add a `push:`/`pull_request:` block here to restore them.
 
 on:
@@ -62,7 +62,7 @@ jobs:
         run: pytest mcp -q --cov=openom_mcp --cov-report=term-missing --cov-fail-under=85
       - name: pytest (spec matrix)
         run: python -m pytest spec/tests -q
-      - name: fixture matrix — pathology axis (§B.3, [OM-DoD-001](e))
+      - name: fixture matrix - pathology axis (§B.3, [OM-DoD-001](e))
         run: python -m spec.matrix --assert-synthetic
 
   boundary:
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: core + cli — no inference AND no network client
+      - name: core + cli - no inference AND no network client
         shell: bash
         run: |
           python -m pip install --upgrade pip
@@ -88,7 +88,7 @@ jobs:
             exit 1
           fi
           echo "core/cli: deterministic + network-free"
-      - name: mcp — no inference (network is permitted for the explicit fetch, §M)
+      - name: mcp - no inference (network is permitted for the explicit fetch, §M)
         shell: bash
         run: |
           pip install -c constraints.lock -e mcp
@@ -119,13 +119,13 @@ jobs:
           python core/scripts/gen_vectors.py
           python core/scripts/gen_fuzz_corpus.py
           git diff --exit-code -- spec/vectors/expected spec/vectors/payloads spec/vectors/rejections spec/vectors/fuzz \
-            || (echo "::error::vector/fuzz regeneration is not a no-op — a canonical hash moved"; exit 1)
+            || (echo "::error::vector/fuzz regeneration is not a no-op - a canonical hash moved"; exit 1)
       - name: Regenerate the hosted namespace tree and assert no drift (#139)
         shell: bash
         run: |
           python spec/scripts/gen_site.py
           git diff --exit-code -- site \
-            || (echo "::error::site/ is stale vs spec/ — run: python spec/scripts/gen_site.py"; exit 1)
+            || (echo "::error::site/ is stale vs spec/ - run: python spec/scripts/gen_site.py"; exit 1)
 
   sbom:
     # Software Bill of Materials for the deterministic tree (supply-chain audit, §M).
@@ -160,23 +160,23 @@ jobs:
         if: needs.detect.outputs.has_py == 'true'
         with:
           python-version: "3.11"
-      - name: pip-audit (openOM's pinned runtime deps — informational)
+      - name: pip-audit (openOM's pinned runtime deps - informational)
         if: needs.detect.outputs.has_py == 'true'
         run: |
           python -m pip install --upgrade pip pip-audit
           # Audit constraints.lock (openOM's DECLARED pinned deps), not the whole env (which carries
           # ambient pip/setuptools/wheel this project neither ships nor depends on). pip-audit hits the
           # LIVE advisory DB, so a newly-published transitive advisory with no fix yet would otherwise
-          # block every unrelated PR — surface it, let Dependabot PR the bump. The hard supply-chain
+          # block every unrelated PR - surface it, let Dependabot PR the bump. The hard supply-chain
           # gate below is the SHIPPED artifact (the npm bundle), which is deterministic.
           echo "::group::pip-audit (advisory)"
-          pip-audit -r constraints.lock --desc || echo "::warning::pip-audit found advisories — triage + Dependabot"
+          pip-audit -r constraints.lock --desc || echo "::warning::pip-audit found advisories - triage + Dependabot"
           echo "::endgroup::"
       - uses: actions/setup-node@v4
         if: needs.detect.outputs.has_js == 'true'
         with:
           node-version: "20"
-      - name: npm audit — SHIPPED deps block on high/critical; dev tooling is informational
+      - name: npm audit - SHIPPED deps block on high/critical; dev tooling is informational
         if: needs.detect.outputs.has_js == 'true'
         shell: bash
         run: |
@@ -184,7 +184,7 @@ jobs:
           npm --prefix extension ci
           # The gate: what actually ships to users (the npm package + the extension bundle) must have
           # zero high/critical advisories. Dev-only test tooling (vitest/vite) is surfaced but not
-          # blocking — Dependabot PRs those upgrades on its own schedule.
+          # blocking - Dependabot PRs those upgrades on its own schedule.
           npm --prefix js audit --omit=dev --audit-level=high
           npm --prefix extension audit --omit=dev --audit-level=high
           echo "::group::dev-dependency advisories (informational)"
@@ -227,7 +227,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -c constraints.lock -e core -e cli
-      - name: check — a valid payload passes (strict)
+      - name: check - a valid payload passes (strict)
         uses: ./.github/actions/openom-embed
         with:
           command: check
@@ -235,7 +235,7 @@ jobs:
           schema: spec/om-0.1.schema.json
           strict: "true"
           install: "false"
-      - name: embed — produce an openOM PDF
+      - name: embed - produce an openOM PDF
         uses: ./.github/actions/openom-embed
         with:
           command: embed
@@ -244,7 +244,7 @@ jobs:
           out: out.openom.pdf
           asserted-date: "2026-08-18"
           install: "false"
-      - name: check — the embedded PDF round-trips
+      - name: check - the embedded PDF round-trips
         uses: ./.github/actions/openom-embed
         with:
           command: check
@@ -270,9 +270,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -c constraints.lock -e "core[dev]"
           cd js && npm ci && npm run build
-      - name: JS side — read Track A goldens (A->B) + emit JS-embedded PDFs (B->A)
+      - name: JS side - read Track A goldens (A->B) + emit JS-embedded PDFs (B->A)
         run: node js/scripts/crossimpl.mjs "$RUNNER_TEMP/ximpl"
-      - name: Python side — read JS-embedded PDFs (B->A) + byte-identity
+      - name: Python side - read JS-embedded PDFs (B->A) + byte-identity
         run: pytest core -q -m cross_impl
         env:
           OPENOM_XIMPL_DIR: ${{ runner.temp }}/ximpl

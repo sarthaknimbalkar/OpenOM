@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 const BROKER = "https://broker.example.com:8443";
 
 // The panel document is a plain extension page; the live gate drives it via the ?url= deep-link
-// (same pattern the consumer popup uses) rather than the OS side panel — a faithful, hermetic path.
+// (same pattern the consumer popup uses) rather than the OS side panel - a faithful, hermetic path.
 async function openPanel(
   context: BrowserContext,
   extensionId: string,
@@ -131,7 +131,7 @@ test("reprice → new payload supersedes the prior hash, one om.json remains", a
 });
 
 // ---- M5b-2: on-device extraction. A FAKE LanguageModel global (injected before load) exercises the
-// REAL on-device.ts adapter — the actual Gemini Nano model cannot run in CI Chromium, so the gate
+// REAL on-device.ts adapter - the actual Gemini Nano model cannot run in CI Chromium, so the gate
 // proves the ARCHITECTURE (egress-zero + pre-fill), never a real model. Surfaced, not faked. ----
 const FAKE_MODEL = () => {
   (globalThis as unknown as { LanguageModel: unknown }).LanguageModel = {

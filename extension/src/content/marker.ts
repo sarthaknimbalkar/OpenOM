@@ -1,4 +1,4 @@
-// The injected link-badge pill (#69). A PURE function of the verified badge state — content scripts
+// The injected link-badge pill (#69). A PURE function of the verified badge state - content scripts
 // can't load popup.css, so styles are inline design-token hex values. §AA UI-honesty: it claims ONLY
 // the verified state, and `absent`/`encrypted`/`signature-verified` produce NO marker (never mark a
 // non-openOM / unreadable PDF). Type-only BadgeState import → erased, so this file adds no bundle weight.

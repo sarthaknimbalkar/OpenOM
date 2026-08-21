@@ -7,7 +7,7 @@ import { consistencyFindings } from "../src/consistency.js";
 /**
  * CROSS-IMPLEMENTATION consistency conformance (#42). The JS engine runs the SAME
  * fixtures/seeded_defects/manifest.json the Python gate ([OM-DoD-002], core/tests/
- * test_consistency.py) runs — one corpus, both engines — so every §H warning/info code is
+ * test_consistency.py) runs - one corpus, both engines - so every §H warning/info code is
  * reproduced identically and the parity is vector-locked, not merely mirrored by hand.
  */
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");

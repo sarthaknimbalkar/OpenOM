@@ -3,7 +3,7 @@
 
 ``RateLimiter`` is the interface; ``InMemoryRateLimiter`` is a fixed-window counter with an injected
 clock (deterministic in tests). Over-limit raises ToolError OM-IO-014 with ``retry_after`` seconds.
-Rate limiting only bounds resource use — it never weakens a correctness/verification guarantee.
+Rate limiting only bounds resource use - it never weakens a correctness/verification guarantee.
 ``DistributedRateLimiter`` (#51) implements the same interface over a shared ``CounterStore`` (Redis
 INCR/EXPIRE or a Durable Object), so a multi-instance deploy enforces one global limit per
 principal; ``InMemoryCounterStore`` fakes that store for tests/self-host.
@@ -21,7 +21,7 @@ from .tools import ToolError
 
 
 class CounterStore(Protocol):
-    """A shared atomic counter — the one primitive a distributed limiter/quota needs (#51).
+    """A shared atomic counter - the one primitive a distributed limiter/quota needs (#51).
 
     ``incr`` increments the counter at ``key``, sets a TTL of ``ttl_seconds`` on the FIRST increment
     (so windows self-expire), and returns the new value. Redis ``INCR``+``EXPIRE`` and a Durable

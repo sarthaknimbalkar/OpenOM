@@ -1,7 +1,7 @@
 name: release
 
 # Tag-triggered publish (#137): push a v* tag to publish the Python packages to PyPI (Trusted
-# Publishing — no stored token) and openom-js to npm (with provenance). Deterministic, inference-free
+# Publishing - no stored token) and openom-js to npm (with provenance). Deterministic, inference-free
 # packages. Bump versions in the pyproject.toml / package.json BEFORE tagging.
 on:
   push:

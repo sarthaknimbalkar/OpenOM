@@ -1,4 +1,4 @@
-"""M3 #50: S3BlobStore owner-binding, verified offline against a mocked S3 (moto) — no network, no
+"""M3 #50: S3BlobStore owner-binding, verified offline against a mocked S3 (moto) - no network, no
 MinIO. Proves ownership is SERVER-bound (a raw client PUT without metadata cannot forge/omit it),
 foreign principals get OM-IO-007, missing/deleted → OM-IO-006. Skips where moto is absent; #53
 wires moto into CI so this runs there.

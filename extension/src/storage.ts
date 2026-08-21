@@ -1,4 +1,4 @@
-// Device-local settings for consumer mode. `chrome.storage.local` ONLY — never `sync` (secrets
+// Device-local settings for consumer mode. `chrome.storage.local` ONLY - never `sync` (secrets
 // must not leave the device; [OM-SEC-003]). The webhook signing secret is wrapped at rest (#126,
 // secret-store.ts) so chrome.storage never holds it in plaintext.
 import {

@@ -33,7 +33,7 @@ def corpus_dir(request: pytest.FixtureRequest) -> Path:
 # The M1 fixture matrix (2026-08-16 corpus characterization).
 NATIVE_OM = "O'Reilly Auto Parts/O'Reilly Auto Parts - Statesboro, GA - 15 Yr NN with 6% Inc.pdf"
 HYBRID_OM = "Family Dollar/Family Dollar - East Camp Dallas, TX.pdf"  # the CMYK doc
-# A genuinely scanned (image-only, ~0.14 text coverage) OM in the corpus — real scanned proof.
+# A genuinely scanned (image-only, ~0.14 text coverage) OM in the corpus - real scanned proof.
 SCANNED_OM = (
     "O'Reilly Auto Parts/O'Reilly Auto Parts - Marietta, GA - SUPER HUB - "
     "14,400 Square Feet - All Brick - Outstanding Location - 15 Year NN Lease.pdf"
@@ -65,7 +65,7 @@ def scanned_om() -> bytes:
 
 # Committed producer-diverse fixtures (#130): ALWAYS present (unlike the gitignored corpus), so the
 # non-destructive gate runs in CI with producer diversity. These are structural stand-ins (object
-# streams / linearized / image-only), NOT corpus replacements — the CMYK/classification tests keep
+# streams / linearized / image-only), NOT corpus replacements - the CMYK/classification tests keep
 # using the real corpus fixtures above (and skip in CI, since they need specific real OMs).
 _PRODUCERS = Path(__file__).resolve().parent / "fixtures" / "producers"
 

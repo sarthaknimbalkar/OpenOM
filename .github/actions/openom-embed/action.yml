@@ -1,4 +1,4 @@
-# openOM GitHub Action (#145): embed or validate openOM payloads in a broker's CI pipeline —
+# openOM GitHub Action (#145): embed or validate openOM payloads in a broker's CI pipeline -
 # "from I-have-OM-PDFs to they're-openOM-enabled" without a browser. Wraps the deterministic CLI
 # (openom-cli over openom-core); zero inference, no keys, no network calls beyond pip.
 name: openOM

@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { newDraft, fieldsWithoutEvidence } from "../../src/author/draft.js";
 import { applyExtraction } from "../../src/author/extract/apply.js";
 
-describe("applyExtraction — fold extraction into the draft", () => {
+describe("applyExtraction - fold extraction into the draft", () => {
   test("sets fields + evidence; evidence clears the no-evidence flag", () => {
     const d = applyExtraction(newDraft(), {
       fields: [{ path: "/deal/capRate", value: 0.0575, evidence: { page: 1, quote: "Cap Rate 5.75%" } }],

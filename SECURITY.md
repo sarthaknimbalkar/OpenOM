@@ -33,7 +33,7 @@ constraints below are security properties, not just style:
 |---|---|---|
 | Web page → extension content script | The page's DOM/links (attacker-controlled) | Content script is thin; it only asks the service worker for read-only badge state, and only on user-opted-in domains. |
 | Content script → service worker | Messages from the hostile-page world | SW validates `sender.id === chrome.runtime.id` and confines content-script senders to `linkbadge:enabled`/`linkbadge:verify` (never fetch/embed/settings). |
-| Extension → network (PDF re-fetch, origin mirror, webhook) | URLs derived from page content | `assertSafeUrl` — https only + reject private/loopback/link-local/CGNAT/metadata IP literals in every inet_aton + IPv6 form. |
+| Extension → network (PDF re-fetch, origin mirror, webhook) | URLs derived from page content | `assertSafeUrl` - https only + reject private/loopback/link-local/CGNAT/metadata IP literals in every inet_aton + IPv6 form. |
 | Internet → hosted `/mcp` HTTP transport | The uploaded/fetched PDF | SSRF resolve-then-pin (`fetch.py`), untrusted parse isolated in a killable, memory-bounded subprocess (`guard.py`), per-principal rate limit, page ceiling. |
 | Webhook receiver ← extension | The signed delivery | HMAC-SHA256 signature (constant-time verify) + the receiver MUST re-check `payloadHash` binds the payload (`verifyEnvelopePayloadHash`). |
 
