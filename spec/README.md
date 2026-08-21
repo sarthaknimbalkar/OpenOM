@@ -2,6 +2,10 @@
 
 The versioned contract every implementation conforms to — **CC-BY-4.0** (see [LICENSE](LICENSE)).
 
+> **Posture.** An openOM payload is an **advertisement** — a broker's **opinion of value**, agreed
+> to by the seller before publication. The spec proves *who* asserted it, that it is *unaltered*, and
+> *as of when*; it never asserts the opinion is true. **Verified means provenance, not truth.**
+
 - `om-0.1.schema.json` — the payload JSON Schema (2020-12).
 - `context/openom-0.1.jsonld` — JSON-LD `@context` / vocabulary (datatype-coerced per [OM-LD-004]).
 - `codes.json` — canonical finding-code registry (code → requirement + severity); both cores drift-lock to it.

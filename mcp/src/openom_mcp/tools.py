@@ -236,7 +236,13 @@ def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
 
 @_guard
 def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
-    """Read-only: the cheap consumer path (§I OM-MCP-011)."""
+    """Read the broker-asserted openOM payload from a PDF — the cheap consumer path (§I OM-MCP-011).
+
+    The payload is an ADVERTISEMENT: the broker's opinion of value, asserted by `assertedBy` as of
+    `assertedDate`. `verification.hashValid: true` means the payload is UNALTERED since embed — NOT
+    that its figures are true. Ground on it as "the broker asserted X, unaltered, as of when," never
+    as verified fact. A hash-mismatched payload is returned as null (never as trusted).
+    """
     result = _run_core(_read, _load_pdf(pdf))
     # A hash-mismatched payload MUST be surfaced as null, never as trusted (OM-MCP-011).
     trusted = result.present and result.hash_valid is not False
@@ -305,7 +311,11 @@ def om_extract_images(
 
 @_guard
 def om_validate(payload: Any, tolerances: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Validator role: two-tier report (§I OM-MCP-014). A report is success even with errors."""
+    """Validate an openOM payload — two-tier report (§I OM-MCP-014). A report is success even with
+    errors. Checks the payload's INTERNAL consistency (schema + arithmetic like NOI÷price vs cap
+    rate) — it does NOT check market truth. Validity means well-formed and self-consistent, never
+    that the broker's asserted opinion of value is correct.
+    """
     tol = None
     if tolerances:
         tol = Tolerances(
