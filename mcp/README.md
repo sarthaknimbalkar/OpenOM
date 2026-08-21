@@ -29,4 +29,13 @@ Add to your client's MCP config (e.g. Claude Desktop `claude_desktop_config.json
 instance; point your client's HTTP-MCP connector at its URL (published once live). Two-tier
 validation: schema errors block, consistency warnings never do; market truth is out of scope.
 
+## Grounding an AI agent
+
+Treat an openOM payload as the broker's **asserted opinion**, not fact: attribute every figure to
+`assertedBy` as of `assertedDate`, don't use a payload whose `verification.hashValid` isn't true,
+and never present an OM figure as verified truth (an OM is an advertisement / opinion of value). The
+full guide — MCP config, tool usage, and a system-prompt snippet — is
+**[Grounding AI agents in openOM](../site/openom/docs/grounding-ai.html)** (served at
+`…/openom/docs/grounding-ai.html`).
+
 Tests: `pytest mcp -q`.
