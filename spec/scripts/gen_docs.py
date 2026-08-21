@@ -544,13 +544,12 @@ def _grounding_ai() -> str:
   <h2>Connect the deterministic MCP server</h2>
   <p>openOM ships a deterministic <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/mcp">MCP
      server</a> - six read/validate/inspect tools, <b>zero inference, no API key, no per-call
-     cost</b>. It is <b>free and self-hostable</b>: run it locally over stdio.</p>
-  <pre><code># pip install openom-mcp, then point your MCP client at it:
+     cost</b>. Use the free hosted endpoint, or self-host over stdio:</p>
+  <pre><code>// Hosted (Streamable HTTP) - free, deterministic:
+{ "mcpServers": { "openom": { "url": "https://mcp.openom.app/mcp" } } }
+
+// Self-host (stdio) - pip install openom-mcp:
 { "mcpServers": { "openom": { "command": "om-mcp" } } }</code></pre>
-  <p>The same server also runs over Streamable HTTP (<code>om-mcp-http</code>) for a hosted
-     deployment. Any public instance you connect to should be <b>access-gated</b> (Cloudflare Access
-     service token or equivalent) - the open server holds no secrets, but a public HTTP endpoint is
-     an open door you own; don't run one unauthenticated.</p>
   <p>Then the agent uses:</p>
   <ul>
     <li><code>om_read</code> - the broker-asserted payload + <code>verification.hashValid</code>
