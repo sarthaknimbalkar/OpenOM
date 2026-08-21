@@ -11,7 +11,7 @@ import { payloadHash } from "./hash.js";
 
 export const ENVELOPE_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://openom.app/openom/spec/webhook-envelope-0.1.schema.json",
+  $id: "https://openom.app/spec/webhook-envelope-0.1.schema.json",
   title: "openOM webhook envelope 0.1",
   description:
     "The §Y change-notification webhook envelope a consumer POSTs to a broker-configured receiver ([OM-HOOK-002]). Signed per §Y (OpenOM-Signature); this schema validates the JSON body a receiver parses. Human-readable mirror is spec Part II §5b.",

@@ -224,7 +224,7 @@ The §8 "site-only, keep namespace at verveliolabs.com" decision was **reversed*
 ownership was confirmed: the owner holds both `verveliolabs.com` (the company domain, with its own
 email/site) and `openom.app` (fresh, dedicated). Contorting the company apex to also serve
 `/openom/*` was the wrong shape. So the canonical namespace was **migrated to openom.app**: schema
-`$id`, JSON-LD `@context`, and the XMP marker namespace now anchor at `https://openom.app/openom/...`
+`$id`, JSON-LD `@context`, and the XMP marker namespace now anchor at `https://openom.app/...`
 (the `/openom/` path prefix was kept for a minimal change). Vectors + golden PDFs were regenerated
 and both implementations re-verified byte-identical. Deploy attaches **openom.app only**;
 verveliolabs.com is untouched. See DEPLOY.md.

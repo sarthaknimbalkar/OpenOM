@@ -1,1 +1,115 @@
-<!doctype html><meta http-equiv="refresh" content="0; url=/openom/">
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>openOM namespace 0.1</title>
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 44rem; margin: 3rem auto;
+            padding: 0 1rem; color: #111; }
+    code { background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; }
+    small { color: #666; }
+    h1 { margin-bottom: 0.2rem; }
+  </style>
+</head>
+<body>
+  <h1>openOM</h1>
+  <p>Machine-readable, broker-asserted data for commercial-real-estate offering
+     memoranda. Published by <a href="https://verveliolabs.com">Vervelio Labs</a>.
+     Spec + toolchain: <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a>.</p>
+  <p><strong>New here? <a href="/docs/">Read the docs</a></strong> — per-persona
+     quick-starts, the field reference, and the validation-code catalog.</p>
+  <h2>Resolvable artifacts</h2>
+  <ul>
+      <li><a href="/ns/0.1">/ns/0.1</a> <small>(application/ld+json)</small></li>
+      <li><a href="/spec/om-0.1.schema.json">/spec/om-0.1.schema.json</a> <small>(application/schema+json)</small></li>
+      <li><a href="/spec/webhook-envelope-0.1.schema.json">/spec/webhook-envelope-0.1.schema.json</a> <small>(application/schema+json)</small></li>
+  </ul>
+  <h2>Vocabulary (v0.1)</h2>
+  <p>Terms in the <code>om:</code> namespace
+     (<code>https://openom.app/ns/0.1#</code>). schema.org terms are re-used where one
+     exists; see the JSON-LD context for the full mapping.</p>
+  <ul>
+      <li><code>om:abatement</code></li>
+      <li><code>om:address</code></li>
+      <li><code>om:addressCountry</code></li>
+      <li><code>om:addressLocality</code></li>
+      <li><code>om:addressRegion</code></li>
+      <li><code>om:alg</code></li>
+      <li><code>om:annualRent</code></li>
+      <li><code>om:apn</code></li>
+      <li><code>om:askingPrice</code></li>
+      <li><code>om:assertedBy</code></li>
+      <li><code>om:assertedDate</code></li>
+      <li><code>om:broker</code></li>
+      <li><code>om:brokerage</code></li>
+      <li><code>om:buildingSF</code></li>
+      <li><code>om:cam</code></li>
+      <li><code>om:capRate</code></li>
+      <li><code>om:commencement</code></li>
+      <li><code>om:count</code></li>
+      <li><code>om:currency</code></li>
+      <li><code>om:deal</code></li>
+      <li><code>om:escalation</code></li>
+      <li><code>om:escalationFromPrior</code></li>
+      <li><code>om:expiration</code></li>
+      <li><code>om:ext</code></li>
+      <li><code>om:geo</code></li>
+      <li><code>om:guarantor</code></li>
+      <li><code>om:hvac</code></li>
+      <li><code>om:imageRights</code></li>
+      <li><code>om:insurance</code></li>
+      <li><code>om:keyId</code></li>
+      <li><code>om:landlordResponsibilities</code></li>
+      <li><code>om:latitude</code></li>
+      <li><code>om:lease</code></li>
+      <li><code>om:leaseTypeAsserted</code></li>
+      <li><code>om:lengthYears</code></li>
+      <li><code>om:license</code></li>
+      <li><code>om:licenseAuthority</code></li>
+      <li><code>om:licenseJurisdiction</code></li>
+      <li><code>om:longitude</code></li>
+      <li><code>om:lotAcres</code></li>
+      <li><code>om:meta</code></li>
+      <li><code>om:monthlyRent</code></li>
+      <li><code>om:name</code></li>
+      <li><code>om:noi</code></li>
+      <li><code>om:noiAsOfDate</code></li>
+      <li><code>om:noiType</code></li>
+      <li><code>om:occupancy</code></li>
+      <li><code>om:om</code></li>
+      <li><code>om:options</code></li>
+      <li><code>om:parking</code></li>
+      <li><code>om:periodEnd</code></li>
+      <li><code>om:periodStart</code></li>
+      <li><code>om:postalCode</code></li>
+      <li><code>om:pricePerSF</code></li>
+      <li><code>om:pricePerUnit</code></li>
+      <li><code>om:property</code></li>
+      <li><code>om:propertyType</code></li>
+      <li><code>om:remainingTermMonths</code></li>
+      <li><code>om:rentPSF</code></li>
+      <li><code>om:rentSchedule</code></li>
+      <li><code>om:roof</code></li>
+      <li><code>om:schema</code></li>
+      <li><code>om:signature</code></li>
+      <li><code>om:source</code></li>
+      <li><code>om:sourceDocHash</code></li>
+      <li><code>om:specVersion</code></li>
+      <li><code>om:status</code></li>
+      <li><code>om:streetAddress</code></li>
+      <li><code>om:structure</code></li>
+      <li><code>om:supersedes</code></li>
+      <li><code>om:taxes</code></li>
+      <li><code>om:tenantEntity</code></li>
+      <li><code>om:termMonths</code></li>
+      <li><code>om:type</code></li>
+      <li><code>om:units</code></li>
+      <li><code>om:value</code></li>
+      <li><code>om:website</code></li>
+      <li><code>om:xsd</code></li>
+      <li><code>om:yearBuilt</code></li>
+      <li><code>om:yearRenovated</code></li>
+  </ul>
+</body>
+</html>

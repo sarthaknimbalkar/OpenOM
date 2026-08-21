@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 
 import pikepdf
 
-OMSPEC_NS = "https://openom.app/openom/ns/0.1#"
+OMSPEC_NS = "https://openom.app/ns/0.1#"
 OMSPEC_PREFIX = "omspec"
 SPEC_NAME = "openOM"
 

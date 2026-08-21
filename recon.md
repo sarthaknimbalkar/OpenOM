@@ -78,7 +78,7 @@ _What is actually built and shipping today. Grouped by layer; each item is real,
   quick-starts + a field reference and validation-code catalog **generated from** the schema and
   codes registry (cannot drift), + a hosted client-side "verify a PDF" tool.
 - **Governance / stewardship** — published under Vervelio Labs (neutral), MIT toolchain +
-  CC-BY-4.0 spec; namespace `https://openom.app/openom/...`.
+  CC-BY-4.0 spec; namespace `https://openom.app/...`.
 
 ### 1.2 The trust model (§AA — the reason anyone believes a payload)
 
