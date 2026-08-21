@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Assemble the static hosting tree that serves openOM's pinned namespace URLs.
 
-WHY: payloads carry ``"@context": [..., "https://openom.app/openom/ns/0.1"]``
+WHY: payloads carry ``"@context": [..., "https://openom.app/ns/0.1"]``
 and the schemas pin absolute ``$id`` URLs. A JSON-LD processor dereferences that
 context URL and a ``$ref``/``$id`` resolver fetches the schemas — so if those URLs
 do not serve the *exact committed bytes* with the right content-type and CORS, the
@@ -31,17 +31,14 @@ SITE = ROOT / "site"
 # The neutral steward's pinned base. Kept here (not spread across files) so a
 # version/host change is one edit; the resolve-check reads it back from the specs.
 BASE = "https://openom.app"
-PREFIX = "openom"
 
-# url-path (under BASE) -> (source file in spec/, content-type served).
-# The url-path is also the on-disk path under site/ (a static host maps 1:1).
+# url-path (under BASE) -> (source file in spec/, content-type served). The domain is dedicated to
+# openOM, so paths are bare (no / prefix): the namespace is BASE/ns/0.1 etc. The url-path is
+# also the on-disk path under site/ (a static host maps 1:1).
 ARTIFACTS: dict[str, tuple[Path, str]] = {
-    f"{PREFIX}/ns/0.1": (SPEC / "context" / "openom-0.1.jsonld", "application/ld+json"),
-    f"{PREFIX}/spec/om-0.1.schema.json": (
-        SPEC / "om-0.1.schema.json",
-        "application/schema+json",
-    ),
-    f"{PREFIX}/spec/webhook-envelope-0.1.schema.json": (
+    "ns/0.1": (SPEC / "context" / "openom-0.1.jsonld", "application/ld+json"),
+    "spec/om-0.1.schema.json": (SPEC / "om-0.1.schema.json", "application/schema+json"),
+    "spec/webhook-envelope-0.1.schema.json": (
         SPEC / "webhook-envelope-0.1.schema.json",
         "application/schema+json",
     ),
@@ -49,7 +46,7 @@ ARTIFACTS: dict[str, tuple[Path, str]] = {
 
 
 def _landing_html() -> str:
-    """A minimal, dependency-free vocabulary landing served to browsers at /openom/.
+    """A minimal, dependency-free vocabulary landing served to browsers at /.
 
     Machines get JSON; humans following the namespace URL get orientation + links.
     """
@@ -81,7 +78,7 @@ def _landing_html() -> str:
   <p>Machine-readable, broker-asserted data for commercial-real-estate offering
      memoranda. Published by <a href="https://verveliolabs.com">Vervelio Labs</a>.
      Spec + toolchain: <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a>.</p>
-  <p><strong>New here? <a href="/{PREFIX}/docs/">Read the docs</a></strong> — per-persona
+  <p><strong>New here? <a href="/docs/">Read the docs</a></strong> — per-persona
      quick-starts, the field reference, and the validation-code catalog.</p>
   <h2>Resolvable artifacts</h2>
   <ul>
@@ -89,7 +86,7 @@ def _landing_html() -> str:
   </ul>
   <h2>Vocabulary (v0.1)</h2>
   <p>Terms in the <code>om:</code> namespace
-     (<code>{BASE}/{PREFIX}/ns/0.1#</code>). schema.org terms are re-used where one
+     (<code>{BASE}/ns/0.1#</code>). schema.org terms are re-used where one
      exists; see the JSON-LD context for the full mapping.</p>
   <ul>
 {rows}
@@ -144,19 +141,13 @@ def generate() -> None:
         dest = SITE / path
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(src.read_bytes())  # byte-exact mirror; spec/ is the source
-    (SITE / PREFIX / "index.html").write_text(_landing_html(), "utf-8", newline="\n")
     for rel, page_html in docs_pages().items():
         dest = SITE / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page_html, "utf-8", newline="\n")
+    (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
     (SITE / ".htaccess").write_text(_htaccess_file(), "utf-8", newline="\n")  # Apache/GoDaddy
-    # A bare deploy root should not 404; point it at the namespace landing.
-    (SITE / "index.html").write_text(
-        f'<!doctype html><meta http-equiv="refresh" content="0; url=/{PREFIX}/">\n',
-        "utf-8",
-        newline="\n",
-    )
 
 
 if __name__ == "__main__":

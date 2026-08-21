@@ -4,7 +4,7 @@
  * Shape follows §7e / §E; values are invented.
  */
 export const SAMPLE_STNL = {
-  "@context": ["https://schema.org", "https://openom.app/openom/ns/0.1"],
+  "@context": ["https://schema.org", "https://openom.app/ns/0.1"],
   "@type": "RealEstateListing",
   specVersion: "0.1",
   currency: "USD",

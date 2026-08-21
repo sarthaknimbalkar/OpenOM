@@ -1,7 +1,7 @@
 {
   "@context": [
     "https://schema.org",
-    "https://openom.app/openom/ns/0.1"
+    "https://openom.app/ns/0.1"
   ],
   "@type": "RealEstateListing",
   "specVersion": "0.1",
@@ -69,6 +69,6 @@
     ]
   },
   "meta": {
-    "supersedes": "sha256:2fb964d7994a7e8cddf25bc5ec2710d6712e410c76eabc8b809dfbf0ffada9b0"
+    "supersedes": "sha256:5e665f4c397949816e16f013fcc48fe1deb1f2c0a25431146aaf1d4a64859964"
   }
 }

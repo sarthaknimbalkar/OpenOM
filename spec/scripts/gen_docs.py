@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the per-persona docs site pages (#141), served under /openom/docs/.
+"""Generate the per-persona docs site pages (#141), served under /docs/.
 
 WHY: the single Python quick-start serves none of the three real audiences — a
 broker wanting to publish an OM, a portal integrator wanting to consume, and a
@@ -52,7 +52,7 @@ def _page(title: str, body: str) -> str:
   </style>
 </head>
 <body>
-  <nav class="crumbs"><a href="/openom/">openOM</a> · <a href="/openom/docs/">docs</a></nav>
+  <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
 {body}
 </body>
 </html>
@@ -68,35 +68,35 @@ def _docs_index() -> str:
     <h3 style="margin-top:0;">🤖 Building an AI agent for CRE? Start here</h3>
     <p>Ground your agent in <b>verified facts, not guesses</b> — a deterministic read of a
        broker-asserted, hash-verified opinion instead of a hallucination-prone re-parse of the PDF.
-       <a href="/openom/docs/grounding-ai.html"><b>Grounding AI agents in openOM →</b></a></p>
+       <a href="/docs/grounding-ai.html"><b>Grounding AI agents in openOM →</b></a></p>
   </div>
   <div class="cards">
     <div class="card">
       <h3>Broker / author</h3>
       <p>You have OM PDFs and want them to carry structured, verifiable data.</p>
-      <p><a href="/openom/docs/quickstart-broker.html">10-minute quick-start →</a></p>
+      <p><a href="/docs/quickstart-broker.html">10-minute quick-start →</a></p>
     </div>
     <div class="card">
       <h3>Portal / consumer</h3>
       <p>You want to read and trust openOM data on PDFs you receive or host.</p>
-      <p><a href="/openom/docs/quickstart-portal.html">10-minute quick-start →</a></p>
+      <p><a href="/docs/quickstart-portal.html">10-minute quick-start →</a></p>
     </div>
     <div class="card">
       <h3>Implementer / developer</h3>
       <p>You are building against the standard in your own language or pipeline.</p>
-      <p><a href="/openom/docs/quickstart-developer.html">10-minute quick-start →</a></p>
+      <p><a href="/docs/quickstart-developer.html">10-minute quick-start →</a></p>
     </div>
   </div>
   <h2>Reference</h2>
   <ul>
-    <li><a href="/openom/docs/schema-reference.html">Payload field reference</a>
+    <li><a href="/docs/schema-reference.html">Payload field reference</a>
         — generated from the JSON Schema.</li>
-    <li><a href="/openom/docs/codes.html">Validation code catalog</a>
+    <li><a href="/docs/codes.html">Validation code catalog</a>
         — every error/warning/info code the validator emits.</li>
-    <li><a href="/openom/verify/">Verify a PDF</a>
+    <li><a href="/verify/">Verify a PDF</a>
         — drop a PDF and check its openOM state, entirely in your browser.</li>
-    <li><a href="/openom/spec/om-0.1.schema.json">Raw JSON Schema</a> ·
-        <a href="/openom/ns/0.1">JSON-LD context</a></li>
+    <li><a href="/spec/om-0.1.schema.json">Raw JSON Schema</a> ·
+        <a href="/ns/0.1">JSON-LD context</a></li>
   </ul>
   <p><small>An OM is an <b>advertisement</b> — a broker's <b>opinion of value</b>, agreed to by the
      seller before publication. openOM records who asserted it, unaltered, and as of when; it never
@@ -126,7 +126,7 @@ om validate deal.json                 # schema errors block; consistency warning
   <p>Every payload needs <code>assertedBy</code> + <code>assertedDate</code> and an
      <code>noiType</code> (<code>in-place</code> or <code>pro-forma</code>). Re-embedding
      <em>replaces</em> (never stacks) and records <code>meta.supersedes</code>.</p>
-  <p>Next: the <a href="/openom/docs/schema-reference.html">field reference</a> for exactly
+  <p>Next: the <a href="/docs/schema-reference.html">field reference</a> for exactly
      what goes in <code>deal.json</code>.</p>
 """
     return _page("Broker quick-start", body)
@@ -138,7 +138,7 @@ def _quickstart_portal() -> str:
   <p>Goal: read and trust openOM data on PDFs you host or receive — with an honest badge,
      never overclaiming.</p>
   <h2>Drop-in badge (one script tag)</h2>
-  <pre><code>&lt;script src="https://openom.app/openom/widget/openom-badge.js" defer&gt;&lt;/script&gt;
+  <pre><code>&lt;script src="https://openom.app/widget/openom-badge.js" defer&gt;&lt;/script&gt;
 &lt;openom-badge src="https://cdn.example.com/deal.pdf"&gt;&lt;/openom-badge&gt;</code></pre>
   <p>The badge re-fetches the bytes and runs the deterministic read/verify path. It shows
      <em>Unaltered since embed</em> for integrity, <em>Origin-verified</em> only when a
@@ -160,8 +160,8 @@ def _quickstart_developer() -> str:
   <p>Goal: build against the standard and stay byte-compatible with the reference cores.</p>
   <h2>The contract</h2>
   <ul>
-    <li><a href="/openom/spec/om-0.1.schema.json">Payload schema</a> (JSON Schema 2020-12) and the
-        <a href="/openom/ns/0.1">JSON-LD context</a>.</li>
+    <li><a href="/spec/om-0.1.schema.json">Payload schema</a> (JSON Schema 2020-12) and the
+        <a href="/ns/0.1">JSON-LD context</a>.</li>
     <li>Canonicalization is <strong>RFC 8785 (JCS)</strong>; the integrity hash is SHA-256 over the
         canonical bytes. This is the anti-fork keystone — two conformant implementations MUST produce
         byte-identical canonical JSON and the same hash.</li>
@@ -175,7 +175,7 @@ npm  install openom-js       # TypeScript: byte-parity with the Python core</cod
   <h2>Validation model</h2>
   <p>Two tiers: <strong>schema errors block</strong>; <strong>consistency warnings never block</strong>;
      market truth is out of scope forever. See the
-     <a href="/openom/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
+     <a href="/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
 """
     return _page("Developer quick-start", body)
 
@@ -275,7 +275,7 @@ def _verify_tool() -> str:
   <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
   <div id="badge" style="margin:1rem 0;"></div>
   <pre id="out" hidden></pre>
-  <script src="/openom/widget/openom-badge.js" defer></script>
+  <script src="/widget/openom-badge.js" defer></script>
   <script>
     const f = document.getElementById("f");
     const out = document.getElementById("out");
@@ -299,7 +299,7 @@ def _verify_tool() -> str:
   </script>
   <p><small>Origin verification (the domain-vouch layer) needs a hosted mirror and isn't available
      for a local file; this tool shows integrity only. For a live page, use the
-     <a href="/openom/docs/quickstart-portal.html">embeddable badge</a>.</small></p>
+     <a href="/docs/quickstart-portal.html">embeddable badge</a>.</small></p>
 """
     return _page("Verify a PDF", body)
 
@@ -353,8 +353,8 @@ def _grounding_ai() -> str:
   </ul>
   <p><small>Cold-start reality: most OMs aren't openOM-enabled yet, so your agent still needs an
      extractor for those — treat that output as an unverified guess, and prefer openOM-enabled OMs as
-     the trusted path. See the <a href="/openom/docs/quickstart-developer.html">developer
-     quick-start</a> and the <a href="/openom/verify/">verify tool</a>.</small></p>
+     the trusted path. See the <a href="/docs/quickstart-developer.html">developer
+     quick-start</a> and the <a href="/verify/">verify tool</a>.</small></p>
 """
     return _page("Grounding AI agents", body)
 
@@ -362,12 +362,12 @@ def _grounding_ai() -> str:
 def docs_pages() -> dict[str, str]:
     """Return ``{relative_path_under_site: html}`` for the whole docs tree. Deterministic."""
     return {
-        "openom/verify/index.html": _verify_tool(),
-        "openom/docs/index.html": _docs_index(),
-        "openom/docs/grounding-ai.html": _grounding_ai(),
-        "openom/docs/quickstart-broker.html": _quickstart_broker(),
-        "openom/docs/quickstart-portal.html": _quickstart_portal(),
-        "openom/docs/quickstart-developer.html": _quickstart_developer(),
-        "openom/docs/schema-reference.html": _schema_reference(),
-        "openom/docs/codes.html": _codes_catalog(),
+        "verify/index.html": _verify_tool(),
+        "docs/index.html": _docs_index(),
+        "docs/grounding-ai.html": _grounding_ai(),
+        "docs/quickstart-broker.html": _quickstart_broker(),
+        "docs/quickstart-portal.html": _quickstart_portal(),
+        "docs/quickstart-developer.html": _quickstart_developer(),
+        "docs/schema-reference.html": _schema_reference(),
+        "docs/codes.html": _codes_catalog(),
     }
