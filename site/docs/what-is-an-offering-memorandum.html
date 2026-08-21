@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What is an offering memorandum (OM)? - definition, contents &amp; data</title>
+  <meta name="description" content="An offering memorandum (OM) is the marketing document a broker uses to offer a commercial real estate asset for sale: the property, the deal terms, the tenancy, and the broker&#x27;s opinion of value. Learn what an OM contains, why its data is an assertion rather than a fact, and how openOM makes it machine-readable and verifiable." />
+  <link rel="canonical" href="https://openom.app/docs/what-is-an-offering-memorandum" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="openOM" />
+  <meta property="og:title" content="What is an offering memorandum (OM)? - definition, contents &amp; data" />
+  <meta property="og:description" content="An offering memorandum (OM) is the marketing document a broker uses to offer a commercial real estate asset for sale: the property, the deal terms, the tenancy, and the broker&#x27;s opinion of value. Learn what an OM contains, why its data is an assertion rather than a fact, and how openOM makes it machine-readable and verifiable." />
+  <meta property="og:url" content="https://openom.app/docs/what-is-an-offering-memorandum" />
+  <meta property="og:image" content="https://openom.app/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="What is an offering memorandum (OM)? - definition, contents &amp; data" />
+  <meta name="twitter:description" content="An offering memorandum (OM) is the marketing document a broker uses to offer a commercial real estate asset for sale: the property, the deal terms, the tenancy, and the broker&#x27;s opinion of value. Learn what an OM contains, why its data is an assertion rather than a fact, and how openOM makes it machine-readable and verifiable." />
+  <meta name="twitter:image" content="https://openom.app/og.png" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "What is an offering memorandum (OM)?", "description": "An offering memorandum (OM) is the marketing document a broker uses to offer a commercial real estate asset for sale: the property, the deal terms, the tenancy, and the broker's opinion of value. Learn what an OM contains, why its data is an assertion rather than a fact, and how openOM makes it machine-readable and verifiable.", "url": "https://openom.app/docs/what-is-an-offering-memorandum", "inLanguage": "en", "author": {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}, "publisher": {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}, "isPartOf": {"@type": "WebSite", "name": "openOM", "url": "https://openom.app/"}, "about": "commercial real estate offering memorandum machine-readable data standard"}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "openOM", "item": "https://openom.app/"}, {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://openom.app/docs/"}, {"@type": "ListItem", "position": 3, "name": "What is an offering memorandum?", "item": "https://openom.app/docs/what-is-an-offering-memorandum"}]}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is an offering memorandum in commercial real estate?", "acceptedAnswer": {"@type": "Answer", "text": "An offering memorandum (OM) is the marketing document a CRE broker prepares to offer a property for sale: it presents the property, the deal terms (asking price, cap rate, NOI), the tenancy, and the broker's opinion of value, usually as a designed PDF."}}, {"@type": "Question", "name": "Is the data in an offering memorandum verified or true?", "acceptedAnswer": {"@type": "Answer", "text": "No. An OM is an advertisement - a broker's opinion of value the seller agreed to before publication. Its figures are assertions as of a date, not independently verified market truth. openOM records who asserted the data, that it is unaltered, and as of when; verified means provenance, not truth."}}, {"@type": "Question", "name": "What is the difference between an offering memorandum and a broker opinion of value?", "acceptedAnswer": {"@type": "Answer", "text": "An offering memorandum is the full marketing package used to sell a property; the broker's opinion of value is the price/valuation view expressed within it. Every headline figure in an OM (price, cap rate, NOI) reflects that opinion."}}, {"@type": "Question", "name": "How do you extract data from an offering memorandum PDF reliably?", "acceptedAnswer": {"@type": "Answer", "text": "Instead of re-parsing the PDF per consumer, openOM embeds a machine-readable, broker-asserted, hash-verified payload in the OM itself (and mirrors it as JSON-LD), so any tool or AI agent reads the same verified data deterministically."}}]}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "DefinedTerm", "name": "Offering memorandum", "alternateName": ["OM", "offering memo", "CRE offering memorandum"], "description": "An offering memorandum (OM) is the marketing document a broker uses to offer a commercial real estate asset for sale: the property, the deal terms, the tenancy, and the broker's opinion of value. Learn what an OM contains, why its data is an assertion rather than a fact, and how openOM makes it machine-readable and verifiable.", "url": "https://openom.app/docs/what-is-an-offering-memorandum"}</script>
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 2.5rem auto;
+            padding: 0 1rem; color: #111; }
+    a { color: #065f46; }
+    code { background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #0b1021; color: #e6edf3; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+    pre code { background: none; color: inherit; padding: 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+    th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #e5e7eb;
+              vertical-align: top; }
+    th { background: #f9fafb; }
+    nav.crumbs { font-size: 0.9em; margin-bottom: 1.5rem; }
+    .cards { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+    @media (min-width: 40rem) { .cards { grid-template-columns: 1fr 1fr 1fr; } }
+    .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.1rem; }
+    .card h3 { margin: 0 0 0.3rem; }
+    .sev-error { color: #7f1d1d; font-weight: 600; }
+    .sev-warning { color: #92400e; }
+    .sev-info { color: #374151; }
+    .req { color: #b91c1c; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
+
+  <h1>What is an offering memorandum (OM)?</h1>
+  <p>An <b>offering memorandum</b> (OM, sometimes "offering memo" or "deal book") is the marketing
+     document a commercial real estate (CRE) broker prepares to offer a property for sale to
+     prospective buyers. It presents the asset, the deal terms, the tenancy, and the broker's
+     <b>opinion of value</b> - typically as a designed PDF of 10-40 pages.</p>
+
+  <h2>What an offering memorandum contains</h2>
+  <ul>
+    <li><b>The property</b> - address, asset type, building and lot size, year built.</li>
+    <li><b>The deal</b> - asking price, capitalization (cap) rate, and net operating income (NOI).</li>
+    <li><b>The tenancy</b> - tenant(s), lease type (e.g. NNN), term, and the rent schedule.</li>
+    <li><b>Broker context</b> - location, market, and investment-highlight narrative.</li>
+  </ul>
+
+  <h2>Why OM data is an <em>assertion</em>, not a fact</h2>
+  <p>An OM is an <b>advertisement</b>: a broker's opinion of value that the seller agreed to before
+     publication. The NOI may be in-place or pro-forma; the cap rate follows from a chosen price. So
+     every figure is <b>an identified party's opinion as of a date</b> - not independently verified
+     market truth. Any system that consumes OM data honestly must record <b>who</b> asserted it, that
+     it is <b>unaltered</b>, and <b>as of when</b> - and must never claim the opinion is true.
+     <b>Verified means provenance, not truth.</b></p>
+
+  <h2>The problem: OM data is trapped in the PDF</h2>
+  <p>Because the OM ships as a designed PDF, every downstream party - buyers, brokers, portals, lenders,
+     and AI agents - re-extracts the same numbers by hand or with error-prone parsing. The work is
+     repeated thousands of times and each copy can drift or be misread.</p>
+
+  <h2>How openOM makes an offering memorandum machine-readable</h2>
+  <p><a href="/">openOM</a> is an open (MIT) standard that embeds a <b>machine-readable,
+     broker-asserted, hash-verified</b> data payload inside the OM PDF (via the same mechanism as
+     Factur-X / PDF/A-3), and mirrors it as JSON-LD on the web. The data is extracted <b>once at the
+     source</b> and consumed cheaply everywhere - with its provenance intact.</p>
+
+  <h3>openOM vs. manual OM extraction</h3>
+  <table>
+    <thead><tr><th></th><th>Manual / AI re-extraction</th><th>openOM</th></tr></thead>
+    <tbody>
+      <tr><td>Where extraction happens</td><td>Every consumer, every time</td>
+          <td>Once, at the source</td></tr>
+      <tr><td>Provenance</td><td>Lost - who asserted what is unknown</td>
+          <td>Recorded - assertedBy + assertedDate</td></tr>
+      <tr><td>Integrity</td><td>Unverifiable</td><td>Hash-verified (RFC 8785 + SHA-256)</td></tr>
+      <tr><td>AI reliability</td><td>Hallucination-prone re-parse</td>
+          <td>Deterministic read of a verified payload</td></tr>
+      <tr><td>Cost at scale</td><td>Repeated per document</td><td>Near-zero downstream</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li><b>Brokers:</b> <a href="/docs/quickstart-broker.html">publish a verifiable OM →</a></li>
+    <li><b>Portals / consumers:</b> <a href="/docs/quickstart-portal.html">read and trust openOM data →</a></li>
+    <li><b>AI builders:</b> <a href="/docs/grounding-ai.html">ground your agent in verified OM facts →</a></li>
+    <li><b>Verify one now:</b> <a href="/verify/">check an OM PDF in your browser →</a></li>
+  </ul>
+  <p><small>openOM is published by <a href="https://verveliolabs.com">Vervelio Labs</a>. The engine is
+     deterministic and inference-free; every payload is an assertion, never a fact.</small></p>
+
+</body>
+</html>

@@ -14,6 +14,7 @@ party's opinion as of a date - assertions, never facts.
 ## Docs
 
 - [Documentation home](https://openom.app/docs/): per-persona quick-starts and reference.
+- [What is an offering memorandum?](https://openom.app/docs/what-is-an-offering-memorandum): the definition, an OM's contents, and why its data is an assertion not a fact.
 - [Grounding AI agents in openOM](https://openom.app/docs/grounding-ai): read verified OM facts via MCP instead of hallucination-prone PDF extraction.
 - [Broker quick-start](https://openom.app/docs/quickstart-broker): publish an OM carrying verifiable data.
 - [Portal quick-start](https://openom.app/docs/quickstart-portal): read and trust openOM data.
