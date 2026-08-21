@@ -7,7 +7,13 @@
 # Inert until the account is wired: the deploy step self-skips unless both secrets
 # exist, so forks and the pre-deploy repo stay green. To go live, set repo secrets
 # CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID, create a Pages project named "openom",
-# then point verveliolabs.com/openom/* at it (custom domain / route).
+# then attach the domains below (custom domains / routes).
+#
+# Domains (decision 2026-08-21): the CANONICAL machine namespace stays
+# verveliolabs.com/openom/* — the schema $id and @context are pinned there and must
+# resolve there (unchanged). openom.app is the human FRONT-DOOR (docs, verify tool,
+# marketing, and the eventual hosted MCP). Serve this same site/ tree on both custom
+# domains; verveliolabs.com/openom/* is the authoritative host for ns/0.1 + the schemas.
 name: deploy-site
 
 on:
