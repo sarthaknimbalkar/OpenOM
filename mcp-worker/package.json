@@ -1,0 +1,21 @@
+{
+  "name": "openom-mcp-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public, deterministic, read-only openOM MCP server on Cloudflare Workers (om_read + om_validate via openom-js). Zero inference; serverless; not the home box.",
+  "scripts": {
+    "gen": "node scripts/gen-validator.mjs",
+    "predeploy": "node scripts/gen-validator.mjs",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "openom-js": "file:../js",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

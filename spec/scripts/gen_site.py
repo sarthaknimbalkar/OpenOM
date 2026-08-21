@@ -304,9 +304,9 @@ _LANDING_BODY = """<body>
       <div class="card2 mcp reveal">
         <div class="kicker">MCP server</div>
         <h4>Plug it into any assistant</h4>
-        <p class="sub">Six deterministic tools. No inference on our side - your model, your subscription. Free, hosted or self-hostable.</p>
+        <p class="sub">Six deterministic tools. No inference on our side - your model, your subscription. Free; hosted grounding endpoint + fully self-hostable.</p>
         <div class="chips"><span class="chip">om_read</span><span class="chip">om_inspect</span><span class="chip">om_validate</span><span class="chip">om_embed</span><span class="chip">om_extract_text</span><span class="chip">om_extract_images</span></div>
-        <div class="endpoint">free hosted endpoint &middot; https://mcp.openom.app/mcp &middot; or self-host: om-mcp (stdio)</div>
+        <div class="endpoint">public grounding endpoint (om_read + om_validate, serverless) &middot; https://mcp.openom.app/mcp &middot; self-host om-mcp for all six</div>
         <ul>
           <li><b>One call, whole deal.</b> om_read returns the payload - price, cap, NOI, rent schedule - instantly.</li>
           <li><b>Hash-verified.</b> Tampered payloads fail loudly before your model ever sees them.</li>
@@ -623,10 +623,11 @@ def _llms_file() -> str:
         "",
         "## Machine artifacts",
         "",
-        "- Deterministic MCP server (free, no API key, zero inference): free hosted endpoint at"
-        " https://mcp.openom.app/mcp (Streamable HTTP), or self-host via `pip install openom-mcp` +"
-        " `om-mcp` (stdio). Tools om_read / om_validate / om_inspect / om_extract_text /"
-        " om_extract_images / om_embed for grounding an AI agent in verified OM data.",
+        "- Deterministic MCP (free, no API key, zero inference). Public serverless grounding endpoint"
+        " at https://mcp.openom.app/mcp (Streamable HTTP) exposes om_read + om_validate - read a"
+        " verified OM payload (base64 or an https URL) and validate one. For the full six-tool surface"
+        " (om_inspect / om_extract_text / om_extract_images / om_embed too), self-host via"
+        " `pip install openom-mcp` then `om-mcp` (stdio) or `om-mcp-http`.",
         f"- [JSON-LD context]({BASE}/ns/0.1): the openOM 0.1 vocabulary.",
         f"- [JSON Schema]({BASE}/spec/om-0.1.schema.json): the openOM 0.1 payload schema.",
         f"- [Webhook envelope schema]({BASE}/spec/webhook-envelope-0.1.schema.json).",

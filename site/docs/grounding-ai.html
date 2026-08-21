@@ -102,12 +102,15 @@
 
   <h2>Connect the deterministic MCP server</h2>
   <p>openOM ships a deterministic <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/mcp">MCP
-     server</a> - six read/validate/inspect tools, <b>zero inference, no API key, no per-call
-     cost</b>. Use the free hosted endpoint, or self-host over stdio:</p>
-  <pre><code>// Hosted (Streamable HTTP) - free, deterministic:
+     server</a>, <b>zero inference, no API key, no per-call cost</b>. The free <b>public grounding
+     endpoint</b> (serverless Cloudflare Worker) exposes the two read-side tools - <code>om_read</code>
+     (read a verified payload from PDF bytes or an https URL) and <code>om_validate</code>. For the
+     full six-tool surface (<code>om_inspect</code>, <code>om_extract_text</code>,
+     <code>om_extract_images</code>, <code>om_embed</code> too), self-host:</p>
+  <pre><code>// Public grounding endpoint (Streamable HTTP) - om_read + om_validate:
 { "mcpServers": { "openom": { "url": "https://mcp.openom.app/mcp" } } }
 
-// Self-host (stdio) - pip install openom-mcp:
+// Self-host the full six tools (stdio) - pip install openom-mcp:
 { "mcpServers": { "openom": { "command": "om-mcp" } } }</code></pre>
   <p>Then the agent uses:</p>
   <ul>
