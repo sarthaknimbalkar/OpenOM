@@ -6,8 +6,13 @@ build-backend = "hatchling.build"
 name = "openom-mcp"
 version = "0.1.0"
 description = "openOM MCP server - deterministic tool surface over openom-core. Zero inference, ever."
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
+keywords = [
+  "openom", "mcp", "model-context-protocol", "offering-memorandum", "commercial-real-estate",
+  "cre", "proptech", "json-ld", "open-standard", "ai-agents",
+]
 dependencies = ["openom-core", "mcp>=2.0", "httpx>=0.27", "uvicorn>=0.30"]
 
 [project.optional-dependencies]
@@ -16,6 +21,11 @@ dev = [
   "fakeredis>=2.20",  # exercise RedisCounterStore without a live server (#51/#52)
 ]
 r2 = ["boto3>=1.34"]  # S3BlobStore (R2) adapter - runtime extra for a real deployment
+
+[project.urls]
+Homepage = "https://openom.app"
+Documentation = "https://openom.app/docs/grounding-ai"
+Repository = "https://github.com/sarthaknimbalkar/OpenOM"
 
 [project.scripts]
 om-mcp = "openom_mcp.server:main"
