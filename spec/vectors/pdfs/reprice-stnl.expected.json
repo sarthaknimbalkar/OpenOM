@@ -1,11 +1,11 @@
 {
   "assertedDate": "2026-08-15",
   "payload": "payloads/reprice-stnl.json",
-  "payloadHash": "sha256:2b18868eb39fef38fa395f69134e2ab353d53e65e909df0812fbec3999abcc8a",
+  "payloadHash": "sha256:e939aa3972fe331a2772403c558869eb515461f614e8151602d6cb0fdf7f679c",
   "xmp": {
     "assertedDate": "2026-08-15",
     "payloadFilename": "om.json",
-    "payloadHash": "sha256:2b18868eb39fef38fa395f69134e2ab353d53e65e909df0812fbec3999abcc8a",
+    "payloadHash": "sha256:e939aa3972fe331a2772403c558869eb515461f614e8151602d6cb0fdf7f679c",
     "specName": "openOM",
     "specVersion": "0.1"
   }

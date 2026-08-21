@@ -10,7 +10,7 @@ portal badge can never disagree with the extension. No inference, no keys, no pe
 ## Use it
 
 ```html
-<script src="https://verveliolabs.com/openom/widget/openom-badge.js" defer></script>
+<script src="https://openom.app/openom/widget/openom-badge.js" defer></script>
 
 <!-- integrity badge: proves the payload is unaltered since embed -->
 <openom-badge src="https://cdn.example.com/listings/123/deal.pdf"></openom-badge>

@@ -78,4 +78,4 @@ def test_golden_pdf_wire_format(name: str) -> None:
         assert ef.F.Subtype == pikepdf.Name("/application/ld+json")  # [OM-EMB-004]
         raw = bytes(pdf.Root.Metadata.read_bytes())
         assert b"omspec:payloadHash" in raw  # conformant, namespaced marker (not unqualified)
-        assert b"https://verveliolabs.com/openom/ns/0.1#" in raw
+        assert b"https://openom.app/openom/ns/0.1#" in raw

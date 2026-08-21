@@ -1,11 +1,11 @@
 {
   "assertedDate": "2026-08-15",
   "payload": "payloads/sample-stnl.json",
-  "payloadHash": "sha256:757669867ac6b7b4974790371cb1e961cb8361bb896321cbe1ed2c78bf0ce7c1",
+  "payloadHash": "sha256:2b0c35451c24fcf4e35a12e2937b993c3bdd76d4b1f46078dd54bde6ed4e0c84",
   "xmp": {
     "assertedDate": "2026-08-15",
     "payloadFilename": "om.json",
-    "payloadHash": "sha256:757669867ac6b7b4974790371cb1e961cb8361bb896321cbe1ed2c78bf0ce7c1",
+    "payloadHash": "sha256:2b0c35451c24fcf4e35a12e2937b993c3bdd76d4b1f46078dd54bde6ed4e0c84",
     "specName": "openOM",
     "specVersion": "0.1"
   }

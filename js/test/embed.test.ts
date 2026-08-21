@@ -70,7 +70,7 @@ describe("embedPayload", () => {
     const xmp = new TextDecoder().decode(out); // Metadata stream is uncompressed UTF-8
     expect(xmp).toContain("http://www.aiim.org/pdfa/ns/extension/");
     expect(xmp).toContain(
-      "<pdfaSchema:namespaceURI>https://verveliolabs.com/openom/ns/0.1#</pdfaSchema:namespaceURI>",
+      "<pdfaSchema:namespaceURI>https://openom.app/openom/ns/0.1#</pdfaSchema:namespaceURI>",
     );
     expect(xmp).toContain("<pdfaSchema:prefix>omspec</pdfaSchema:prefix>");
     for (const name of ["specName", "payloadHash", "assertedDate", "supersedes"]) {
