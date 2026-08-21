@@ -25,11 +25,10 @@ Add to your client's MCP config (e.g. Claude Desktop `claude_desktop_config.json
 
 ## Hosted HTTP
 
-`om-mcp-http` serves Streamable HTTP on `:8080`. The deterministic server is free and self-hostable;
-any hosted HTTP instance should be **access-gated** (e.g. Cloudflare Access with a service token) -
-never run one unauthenticated. Point your client's HTTP-MCP connector at your instance's URL with the
-gate's credentials. Two-tier validation: schema errors block, consistency warnings never do; market
-truth is out of scope.
+`om-mcp-http` serves Streamable HTTP on `:8080`. A free public hosted instance runs at
+`https://mcp.openom.app/mcp` (rate-limited); or self-host and point your client's HTTP-MCP connector at
+your own URL. Two-tier validation: schema errors block, consistency warnings never do; market truth is
+out of scope.
 
 ## Grounding an AI agent
 
