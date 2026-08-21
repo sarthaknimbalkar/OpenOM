@@ -8,6 +8,13 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
 ## [Unreleased]
 
 ### Added
+- Thin, common-denominator investment-property fields so a multifamily / mixed-use OM's headline is
+  representable without deep underwriting schema (decision memo §2): `property.units` (integer unit
+  count), `property.occupancy` (decimal fraction 0–1, matching the `capRate` convention), and
+  `deal.pricePerUnit` (multifamily analog of `pricePerSF`). All OPTIONAL and additive (§F) — older
+  payloads remain valid; `@context` coercions added (`units` → xsd:integer, `occupancy`/
+  `pricePerUnit` → xsd:decimal); documented in `process/mapping-guide.md`; new `valid-multifamily`
+  conformance sample. Deliberately NOT a rent-roll/T-12 module (underwriting is a deal-desk activity).
 - Optional lease fields `lease.termMonths` (stated total term) and `lease.remainingTermMonths`
   (stated remaining term as of assertedDate) — inputs for the date/term consistency checks
   OMW-W031 and OMW-W030. Additive/minor (§F); older payloads remain valid.

@@ -54,12 +54,15 @@ Payload path → where it typically appears in an OM → notes.
 | `property.apn` | Property details | Assessor parcel number, as printed. |
 | `property.buildingSF` | Property details / "±X SF" | Number only. |
 | `property.lotAcres` / `.yearBuilt` / `.yearRenovated` | Property details | Omit if absent. |
+| `property.units` | Cover / property summary ("40 units") | Integer unit count (multifamily / mixed-use). Omit if absent. |
+| `property.occupancy` | Cover / rent-roll summary ("95% occupied") | **Decimal fraction: 95% → 0.95** (matches capRate). Omit if absent. |
 | `deal.askingPrice` | Cover / financial summary ("Offering Price") | Bare number, major units. |
 | `deal.capRate` | Financial summary ("Cap Rate 6.25%") | **Decimal fraction: 6.25% → 0.0625.** |
 | `deal.noi` | Financial summary ("NOI") | Bare number. |
 | `deal.noiType` | Financials ("in-place" vs "pro forma") | Enum in-place\|pro-forma; required with `noi`. Set/confirmed at gate. |
 | `deal.noiAsOfDate` | Rent roll date / "as of" | Required with `noi`. |
 | `deal.pricePerSF` | Financial summary | Should equal askingPrice÷buildingSF. |
+| `deal.pricePerUnit` | Financial summary ("$/unit") | Multifamily analog of pricePerSF; should equal askingPrice÷units. |
 | `deal.status` | Marketing status | Enum active\|under-contract\|sold\|withdrawn. |
 | `lease.tenantEntity` | Lease abstract / tenant summary | Legal entity name as printed. |
 | `lease.guarantor.name` / `.type` | Lease abstract | `type` ∈ corporate\|franchisee\|personal\|none. |
