@@ -56,8 +56,14 @@ const chosen = await pickDraftSource([src, extractorSource(onDeviceExtractor, "O
   your MCP is stdio-only rather than HTTP/OAuth-web-flow, host the connector in a Node/CLI companion
   instead — the interface above is identical either way.
 
-## What's still needed to ship a Buildout connector
+## Reference Buildout connector (Q2 decided by design)
 
-Only the **Q2** facts: your Buildout MCP's tool/resource names, their field shapes, and its transport
-(HTTP vs stdio). Drop those into the `fetch` mapping above and pick the run-location; everything else
-(the seam, the deterministic mapper, the picker, the gate) is already built and tested.
+`connectors/buildout.ts` is a complete, tested reference: `makeBuildoutConnector(client)` maps a
+`BuildoutListing` → a partial openOM payload (percent→fraction conversions, omit-if-absent, human-only
+identity excluded). The wire call is an injected `BuildoutClient`, so transport is irrelevant (HTTP/
+OAuth MCP, stdio client, or a hosted proxy all fit).
+
+**What's left to make it live** is only reconciliation, not design: rename the `BuildoutListing`
+fields + adjust units to match your real Buildout MCP response, implement `BuildoutClient` against
+your MCP (the transport), and pick the run-location. The seam, mapper, picker, gate, and mapping are
+all built and tested.
