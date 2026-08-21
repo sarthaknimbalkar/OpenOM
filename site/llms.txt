@@ -1,0 +1,30 @@
+# openOM
+
+> An open (MIT) standard and toolchain that embeds machine-readable, broker-asserted,
+> hash-verified data inside commercial real estate (CRE) offering memorandum (OM) PDFs,
+> and mirrors the same payload as JSON-LD on the web. Extract once at the source; consume
+> cheaply everywhere. Published by Vervelio Labs.
+
+An offering memorandum is an advertisement - a broker's opinion of value, agreed to by the
+seller before publication. openOM records who asserted the data, that it is unaltered, and
+as of when. Verified means provenance (who / unaltered / as-of-when), NOT that the opinion
+is true. The engine is deterministic and inference-free; every payload is an identified
+party's opinion as of a date - assertions, never facts.
+
+## Docs
+
+- [Documentation home](https://openom.app/docs/): per-persona quick-starts and reference.
+- [Grounding AI agents in openOM](https://openom.app/docs/grounding-ai): read verified OM facts via MCP instead of hallucination-prone PDF extraction.
+- [Broker quick-start](https://openom.app/docs/quickstart-broker): publish an OM carrying verifiable data.
+- [Portal quick-start](https://openom.app/docs/quickstart-portal): read and trust openOM data.
+- [Developer quick-start](https://openom.app/docs/quickstart-developer): build against the standard.
+- [Field reference](https://openom.app/docs/schema-reference): every payload field, from the schema.
+- [Validation code catalog](https://openom.app/docs/codes): every error/warning/info code.
+- [Verify a PDF](https://openom.app/verify/): check an openOM PDF in the browser.
+
+## Machine artifacts
+
+- [JSON-LD context](https://openom.app/ns/0.1): the openOM 0.1 vocabulary.
+- [JSON Schema](https://openom.app/spec/om-0.1.schema.json): the openOM 0.1 payload schema.
+- [Webhook envelope schema](https://openom.app/spec/webhook-envelope-0.1.schema.json).
+- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript, MIT.

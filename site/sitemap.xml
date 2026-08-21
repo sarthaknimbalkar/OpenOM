@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://openom.app/</loc></url>
+  <url><loc>https://openom.app/docs/</loc></url>
+  <url><loc>https://openom.app/docs/codes</loc></url>
+  <url><loc>https://openom.app/docs/grounding-ai</loc></url>
+  <url><loc>https://openom.app/docs/quickstart-broker</loc></url>
+  <url><loc>https://openom.app/docs/quickstart-developer</loc></url>
+  <url><loc>https://openom.app/docs/quickstart-portal</loc></url>
+  <url><loc>https://openom.app/docs/schema-reference</loc></url>
+  <url><loc>https://openom.app/verify/</loc></url>
+  <url><loc>https://openom.app/ns/0.1</loc></url>
+  <url><loc>https://openom.app/spec/om-0.1.schema.json</loc></url>
+  <url><loc>https://openom.app/spec/webhook-envelope-0.1.schema.json</loc></url>
+</urlset>

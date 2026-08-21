@@ -21,14 +21,81 @@ from pathlib import Path
 SPEC = Path(__file__).resolve().parent.parent
 
 
-def _page(title: str, body: str) -> str:
-    """Wrap page body in the shared, dependency-free shell (matches the ns landing)."""
+SITE = "https://openom.app"
+ORG = {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}
+
+
+def _jsonld(*objs: dict | None) -> str:
+    """Render schema.org objects as JSON-LD <script> blocks (SEO/AEO/GEO structured data)."""
+    import json as _json
+
+    return "\n".join(
+        f'  <script type="application/ld+json">{_json.dumps(o, ensure_ascii=False)}</script>'
+        for o in objs
+        if o
+    )
+
+
+def _breadcrumb(canonical: str, title: str) -> dict:
+    items = [{"@type": "ListItem", "position": 1, "name": "openOM", "item": SITE + "/"}]
+    if canonical != "/":
+        items.append({"@type": "ListItem", "position": 2, "name": "Docs", "item": SITE + "/docs/"})
+        if canonical != "/docs/":
+            items.append(
+                {"@type": "ListItem", "position": 3, "name": title, "item": SITE + canonical}
+            )
+    return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": items}
+
+
+def _article(title: str, description: str, canonical: str) -> dict:
+    return {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": title,
+        "description": description,
+        "url": SITE + canonical,
+        "inLanguage": "en",
+        "author": ORG,
+        "publisher": ORG,
+        "isPartOf": {"@type": "WebSite", "name": "openOM", "url": SITE + "/"},
+        "about": "commercial real estate offering memorandum machine-readable data standard",
+    }
+
+
+def _faqpage(qas: list[tuple[str, str]]) -> dict:
+    return {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
+            for q, a in qas
+        ],
+    }
+
+
+def _page(title: str, body: str, *, description: str = "", canonical: str = "/", jsonld: str = "") -> str:
+    """Wrap page body in the shared shell with full SEO/AEO/GEO metadata: description, canonical,
+    Open Graph, Twitter card, and JSON-LD structured data. Dependency-free; deterministic."""
+    url = SITE + canonical
+    desc = html.escape(description)
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{html.escape(title)} · openOM docs</title>
+  <meta name="description" content="{desc}" />
+  <link rel="canonical" href="{url}" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="openOM" />
+  <meta property="og:title" content="{html.escape(title)}" />
+  <meta property="og:description" content="{desc}" />
+  <meta property="og:url" content="{url}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{html.escape(title)}" />
+  <meta name="twitter:description" content="{desc}" />
+{jsonld}
   <style>
     body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 2.5rem auto;
             padding: 0 1rem; color: #111; }}
@@ -104,7 +171,47 @@ def _docs_index() -> str:
      deterministic and inference-free; every payload is an identified party's opinion as of a date -
      assertions, never facts.</small></p>
 """
-    return _page("Overview", body)
+    faq = [
+        (
+            "What is openOM?",
+            "openOM is an open standard that embeds machine-readable, broker-asserted data inside a "
+            "commercial real estate offering memorandum (OM) PDF and mirrors it as JSON-LD, so "
+            "buyers, portals, and AI agents read the deal once, verified, without re-extraction.",
+        ),
+        (
+            "Is openOM offering-memorandum data verified as true?",
+            "No. An offering memorandum is an advertisement, the broker's opinion of value. openOM "
+            "proves who asserted the data, that it is unaltered, and as of when. Verified means "
+            "provenance, not truth.",
+        ),
+        (
+            "How do I read openOM data from a PDF?",
+            "Read it deterministically with openom-js or openom-core, the om CLI, or the openOM MCP "
+            "server. No AI, no keys, no per-document cost; the embedded om.json is hash-verified.",
+        ),
+        (
+            "Does openOM use AI or LLMs?",
+            "No. The engine is deterministic and inference-free. AI assists only the broker at "
+            "authoring time, on-device; reading and verifying never use AI.",
+        ),
+        (
+            "How do I add openOM data to my offering memoranda?",
+            "Use the browser extension author mode or the om CLI to review, assert, and embed a "
+            "payload. The output PDF stays visually identical.",
+        ),
+    ]
+    desc = (
+        "openOM is an open standard for machine-readable, broker-asserted, hash-verified data in "
+        "commercial real estate offering memoranda (OMs), mirrored as JSON-LD for buyers, portals, "
+        "and AI agents."
+    )
+    return _page(
+        "Overview",
+        body,
+        description=desc,
+        canonical="/docs/",
+        jsonld=_jsonld(_article("openOM documentation", desc, "/docs/"), _breadcrumb("/docs/", "Docs"), _faqpage(faq)),
+    )
 
 
 def _quickstart_broker() -> str:
@@ -129,7 +236,8 @@ om validate deal.json                 # schema errors block; consistency warning
   <p>Next: the <a href="/docs/schema-reference.html">field reference</a> for exactly
      what goes in <code>deal.json</code>.</p>
 """
-    return _page("Broker quick-start", body)
+    _d = 'Turn an offering memorandum PDF into an openOM PDF carrying verifiable, broker-asserted data, via the browser extension or the om CLI. The output is visually identical.'
+    return _page("Broker quick-start", body, description=_d, canonical="/docs/quickstart-broker", jsonld=_jsonld(_article("Broker quick-start", _d, "/docs/quickstart-broker"), _breadcrumb("/docs/quickstart-broker", "Broker quick-start")))
 
 
 def _quickstart_portal() -> str:
@@ -151,7 +259,8 @@ if (r.state === "present" &amp;&amp; r.verification.hashValid) useIt(r.payload);
      <a href="https://github.com/sarthaknimbalkar/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
      - signature → envelope → payloadHash binding, in that order.</p>
 """
-    return _page("Portal quick-start", body)
+    _d = 'Read and trust openOM data on offering memoranda you host or receive: the drop-in <openom-badge> widget and the openom-js reader, with an honest trust badge.'
+    return _page("Portal quick-start", body, description=_d, canonical="/docs/quickstart-portal", jsonld=_jsonld(_article("Portal quick-start", _d, "/docs/quickstart-portal"), _breadcrumb("/docs/quickstart-portal", "Portal quick-start")))
 
 
 def _quickstart_developer() -> str:
@@ -177,7 +286,8 @@ npm  install openom-js       # TypeScript: byte-parity with the Python core</cod
      market truth is out of scope forever. See the
      <a href="/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
 """
-    return _page("Developer quick-start", body)
+    _d = 'Build against the openOM standard: JSON Schema, JSON-LD @context, RFC 8785 canonicalization, conformance vectors, and byte-parity Python and TypeScript reference implementations.'
+    return _page("Developer quick-start", body, description=_d, canonical="/docs/quickstart-developer", jsonld=_jsonld(_article("Developer quick-start", _d, "/docs/quickstart-developer"), _breadcrumb("/docs/quickstart-developer", "Developer quick-start")))
 
 
 def _resolve(schema: dict, node: dict) -> dict:
@@ -236,7 +346,8 @@ def _schema_reference() -> str:
     </tbody>
   </table>
 """
-    return _page("Field reference", body)
+    _d = 'openOM 0.1 payload field reference, generated from the JSON Schema: every property, type, and requirement for commercial real estate offering-memorandum data.'
+    return _page("Field reference", body, description=_d, canonical="/docs/schema-reference", jsonld=_jsonld(_article("Field reference", _d, "/docs/schema-reference"), _breadcrumb("/docs/schema-reference", "Field reference")))
 
 
 def _codes_catalog() -> str:
@@ -262,7 +373,8 @@ def _codes_catalog() -> str:
     </tbody>
   </table>
 """
-    return _page("Code catalog", body)
+    _d = 'openOM validation code catalog: every schema error, consistency warning, and info code the validator emits, with its requirement clause.'
+    return _page("Code catalog", body, description=_d, canonical="/docs/codes", jsonld=_jsonld(_article("Code catalog", _d, "/docs/codes"), _breadcrumb("/docs/codes", "Code catalog")))
 
 
 def _verify_tool() -> str:
@@ -301,7 +413,8 @@ def _verify_tool() -> str:
      for a local file; this tool shows integrity only. For a live page, use the
      <a href="/docs/quickstart-portal.html">embeddable badge</a>.</small></p>
 """
-    return _page("Verify a PDF", body)
+    _d = 'Verify an openOM offering-memorandum PDF entirely in your browser: check its embedded, unaltered, broker-asserted data. Bytes never leave your machine.'
+    return _page("Verify a PDF", body, description=_d, canonical="/verify/", jsonld=_jsonld(_article("Verify a PDF", _d, "/verify/"), _breadcrumb("/verify/", "Verify a PDF")))
 
 
 def _grounding_ai() -> str:
@@ -356,7 +469,8 @@ def _grounding_ai() -> str:
      the trusted path. See the <a href="/docs/quickstart-developer.html">developer
      quick-start</a> and the <a href="/verify/">verify tool</a>.</small></p>
 """
-    return _page("Grounding AI agents", body)
+    _d = "Ground your commercial real estate AI agent in verified facts: read an offering memorandum's broker-asserted, hash-verified openOM payload deterministically via MCP instead of hallucination-prone PDF extraction."
+    return _page("Grounding AI agents", body, description=_d, canonical="/docs/grounding-ai", jsonld=_jsonld(_article("Grounding AI agents", _d, "/docs/grounding-ai"), _breadcrumb("/docs/grounding-ai", "Grounding AI agents"), _faqpage([('Can I ground an AI agent on offering memorandum data?', 'Yes. Point your MCP client at the openOM server and read a broker-asserted, hash-verified payload via om_read: deterministic ground truth instead of hallucination-prone PDF extraction.'), ('How does openOM reduce AI hallucination in commercial real estate?', 'It replaces per-document AI extraction with one at-source, hash-verified, broker-asserted fact attributed to a named party as of a date, so the model cites provenance instead of guessing.')])))
 
 
 def docs_pages() -> dict[str, str]:
