@@ -127,7 +127,7 @@ gate (`fixtures/seeded_defects` + `core/tests/test_consistency.py`). The cross-i
 oracle runs in CI (now manual, `workflow_dispatch`).
 
 **Name locked (Q1):** **openOM**, published by **Vervelio Labs**; namespace
-`https://verveliolabs.com/openom/...`. GitHub slug stays `sarthaknimbalkar/OpenOM`.
+`https://openom.app/...`. GitHub slug stays `sarthaknimbalkar/OpenOM`.
 
 **Free/paid boundary locked (Q2, 2026-08-17 - handoff §15.1):** everything deterministic +
 self-hostable is free MIT (spec CC-BY-4.0); the sole paid product is Vervelio-hosted **inference
