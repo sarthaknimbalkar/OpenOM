@@ -1,5 +1,8 @@
 # Deploying openOM (site + domain)
 
+> **Chosen host: Cloudflare Pages** (decided 2026-08-21) — free, CI-driven, honors `site/_headers`.
+> The `.htaccess`/GoDaddy path below is kept only as a portable fallback.
+
 What this covers: making the **site live** — the docs, the verify tool, the grounding page, and the
 **resolvable namespace** (`…/openom/ns/0.1` + the schemas, #139) — on **openom.app** (front-door) and
 **verveliolabs.com** (canonical namespace host). This is account/DNS work; it is **operational**, not
