@@ -52,3 +52,7 @@ js/test-results/
 *.htm
 *_files/
 .playwright-mcp/
+om-normative-spec-draft-v0.1.md
+om-standard-handoff-v4-updated.md
+recon.md
+openOM-decision-memo.md
