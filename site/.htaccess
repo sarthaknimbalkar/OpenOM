@@ -1,0 +1,13 @@
+# openOM namespace headers for Apache / cPanel hosts (e.g. GoDaddy Linux hosting).
+# Cloudflare Pages / Netlify use _headers instead; both are generated so the site is
+# host-portable. Keep in sync with _headers via gen_site.py.
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Cache-Control "public, max-age=3600"
+</IfModule>
+<FilesMatch "^0\.1$">
+  ForceType application/ld+json
+</FilesMatch>
+<FilesMatch "\.schema\.json$">
+  ForceType application/schema+json
+</FilesMatch>
