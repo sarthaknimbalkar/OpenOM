@@ -2,6 +2,7 @@
 // webhook, and the §15 Q8 opt-ins. Everything is chrome.storage.local ONLY (never sync). The render
 // is a pure function of the stored values; the runtime bootstrap loads + saves. Uses the shared
 // design system (popup.css). No inference.
+import { wordmark } from "./wordmark.js";
 import { getProfile, setProfile, type BrokerProfile } from "./author/profile.js";
 import { getWebhook, setWebhook, getSettings, setSettings, getBuildoutConfig, setBuildoutConfig, type Settings, type Webhook, type BuildoutConfig } from "./storage.js";
 
@@ -41,7 +42,7 @@ export interface OptionsView {
 /** Render the settings form (pure). Controls expose stable classes the bootstrap reads on save. */
 export function renderOptions(root: HTMLElement, v: OptionsView): void {
   root.replaceChildren();
-  root.appendChild(el("h1", "title", "openOM settings"));
+  root.appendChild(wordmark("settings"));
 
   const prof = el("section", "profile");
   prof.appendChild(el("h2", undefined, "Reviewing broker"));
