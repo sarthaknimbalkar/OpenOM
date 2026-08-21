@@ -2,6 +2,7 @@
 // render is a PURE function of data (no chrome calls), so it is unit-testable in jsdom; the runtime
 // bootstrap (query tab → message the service worker → wire buttons) is guarded at the bottom.
 
+import { wordmark } from "../wordmark.js";
 import { envelopeText, publishWithRetry, testFire } from "../publish.js";
 import type { DetectResult } from "../service-worker.js";
 import { getWebhook, setWebhook, type Webhook } from "../storage.js";
@@ -55,6 +56,7 @@ function renderCard(result: DetectResult): HTMLElement {
 
 export function renderPopup(root: HTMLElement, result: DetectResult, webhook: Webhook | null): void {
   root.replaceChildren();
+  root.appendChild(wordmark());
 
   const badge = el("div", `badge badge-${result.state}`);
   badge.setAttribute("role", "status"); // #71 - announce the trust state to assistive tech

@@ -3,6 +3,7 @@
 // that reads the clock (assertedDate) and touches chrome.* / the DOM runtime; every transform it calls
 // (capture / draft / finalize / repriceDiff / assertAndEmbed) is pure and unit-tested. The workflow
 // validates the FINALIZED-shape payload (what would be embedded), so the Assert gate is honest.
+import { wordmark } from "../wordmark.js";
 import {
   extractPageText,
   integrityHashOfBytes,
@@ -61,7 +62,7 @@ const validate = (p: Record<string, unknown>): ValidationReport =>
 /** Entry screen: capture the current tab's PDF, or pick a local file. */
 export function renderCaptureScreen(root: HTMLElement): void {
   root.replaceChildren();
-  root.appendChild(el("h1", "title", "openOM - embed a payload"));
+  root.appendChild(wordmark("embed a payload"));
   root.appendChild(
     el(
       "p",

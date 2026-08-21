@@ -46,6 +46,29 @@ h3 {
 h1 {
   font-size: 18px;
 }
+/* Brand wordmark: open + highlighted OM (matches the openom.app header). */
+.wordmark {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.wordmark .om {
+  background: var(--hl);
+  color: var(--hl-ink);
+  padding: 1px 5px 2px;
+  border-radius: 3px;
+}
+.wordmark .sub {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-left: 6px;
+}
 h2 {
   font-size: 14px;
   color: var(--ink-soft);
@@ -233,25 +256,35 @@ summary {
 }
 
 /* Buttons */
+/* Primary action = the site's yellow highlight with an ink border (brand-consistent). */
 button {
   font: inherit;
+  font-weight: 700;
   cursor: pointer;
-  border: 1px solid var(--navy);
+  border: 1.5px solid var(--hl);
   border-radius: 6px;
   padding: 6px 12px;
-  background: var(--navy);
-  color: var(--paper);
+  background: var(--hl);
+  color: var(--hl-ink);
+  transition: transform 0.1s ease;
+}
+button:hover {
+  transform: translateY(-1px);
 }
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
 }
+/* Secondary actions = ghost (transparent + ink border), matching the site's .btn.ghost. */
 button.rm-rent,
 button.add-rent,
 [data-action="copy"],
 [data-action="download"] {
-  background: var(--paper);
-  color: var(--navy);
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+  font-weight: 600;
 }
 button#assert,
 .extract-btn,
