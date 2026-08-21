@@ -52,6 +52,42 @@ export async function setWebhook(w: Webhook): Promise<void> {
   await chrome.storage.local.set({ [KEY_WEBHOOK]: stored });
 }
 
+/** Buildout MCP connector config (author-mode deterministic ingestion). The token is a secret and
+ * is wrapped at rest exactly like the webhook secret (#126); never persisted in plaintext. */
+export interface BuildoutConfig {
+  endpoint: string;
+  token: string;
+  toolName?: string;
+}
+
+interface StoredBuildout {
+  endpoint: string;
+  toolName?: string;
+  enc?: WrappedSecret;
+  token?: string; // legacy/no-crypto fallback only
+}
+
+const KEY_BUILDOUT = "openom.buildout";
+
+export async function getBuildoutConfig(): Promise<BuildoutConfig | null> {
+  const r = await chrome.storage.local.get(KEY_BUILDOUT);
+  const s = r[KEY_BUILDOUT] as StoredBuildout | undefined;
+  if (!s || !s.endpoint) return null;
+  const token = s.enc && secretCryptoAvailable() ? await unwrapSecret(s.enc) : (s.token ?? "");
+  return { endpoint: s.endpoint, token, toolName: s.toolName };
+}
+
+export async function setBuildoutConfig(c: BuildoutConfig | null): Promise<void> {
+  if (!c || !c.endpoint) {
+    await chrome.storage.local.remove(KEY_BUILDOUT);
+    return;
+  }
+  const stored: StoredBuildout = secretCryptoAvailable()
+    ? { endpoint: c.endpoint, toolName: c.toolName, enc: await wrapSecret(c.token) }
+    : { endpoint: c.endpoint, toolName: c.toolName, token: c.token };
+  await chrome.storage.local.set({ [KEY_BUILDOUT]: stored });
+}
+
 export async function getSettings(): Promise<Settings> {
   const r = await chrome.storage.local.get(KEY_SETTINGS);
   return {

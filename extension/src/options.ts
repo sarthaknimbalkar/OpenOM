@@ -3,7 +3,7 @@
 // is a pure function of the stored values; the runtime bootstrap loads + saves. Uses the shared
 // design system (popup.css). No inference.
 import { getProfile, setProfile, type BrokerProfile } from "./author/profile.js";
-import { getWebhook, setWebhook, getSettings, setSettings, type Settings, type Webhook } from "./storage.js";
+import { getWebhook, setWebhook, getSettings, setSettings, getBuildoutConfig, setBuildoutConfig, type Settings, type Webhook, type BuildoutConfig } from "./storage.js";
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
   const n = document.createElement(tag);
@@ -35,6 +35,7 @@ export interface OptionsView {
   profile: BrokerProfile;
   webhook: Webhook;
   settings: Settings;
+  buildout: BuildoutConfig;
 }
 
 /** Render the settings form (pure). Controls expose stable classes the bootstrap reads on save. */
@@ -70,6 +71,24 @@ export function renderOptions(root: HTMLElement, v: OptionsView): void {
   );
   root.appendChild(set);
 
+  const bo = el("section", "buildout");
+  bo.appendChild(el("h2", undefined, "Buildout ingestion (author mode)"));
+  bo.appendChild(
+    el(
+      "p",
+      "hint",
+      "Connect your Buildout MCP to draft a payload from your own structured listing data instead " +
+        "of reading the PDF. On a Buildout listing tab, author mode pulls the record directly (no OCR). " +
+        "Deterministic; you still review and assert every field.",
+    ),
+  );
+  bo.append(
+    field("MCP endpoint URL", textInput("o-bo-endpoint", v.buildout.endpoint)),
+    field("Access token", textInput("o-bo-token", v.buildout.token, true)),
+    field("Listing tool name (optional)", textInput("o-bo-tool", v.buildout.toolName ?? "")),
+  );
+  root.appendChild(bo);
+
   const save = el("button", "o-save", "Save settings") as HTMLButtonElement;
   save.id = "save";
   root.appendChild(save);
@@ -87,6 +106,7 @@ if (typeof chrome !== "undefined" && chrome.storage?.local) {
       profile: (await getProfile()) ?? { broker: "", brokerage: "", license: "" },
       webhook: (await getWebhook()) ?? { url: "", secret: "" },
       settings: await getSettings(),
+      buildout: (await getBuildoutConfig()) ?? { endpoint: "", token: "" },
     });
     const val = (cls: string) => (root.querySelector(`.${cls}`) as HTMLInputElement | null)?.value ?? "";
     const checked = (cls: string) => (root.querySelector(`.${cls}`) as HTMLInputElement | null)?.checked ?? false;
@@ -101,6 +121,12 @@ if (typeof chrome !== "undefined" && chrome.storage?.local) {
         proactiveDetection: checked("o-proactive"),
         linkBadgingDomains: [...new Set(domainList)],
       });
+      const boEndpoint = val("o-bo-endpoint").trim();
+      await setBuildoutConfig(
+        boEndpoint
+          ? { endpoint: boEndpoint, token: val("o-bo-token"), toolName: val("o-bo-tool").trim() || undefined }
+          : null,
+      );
       const status = root.querySelector(".status");
       if (status) status.textContent = "Saved.";
     });
