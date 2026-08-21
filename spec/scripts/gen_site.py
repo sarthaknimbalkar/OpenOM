@@ -112,6 +112,31 @@ def _headers_file() -> str:
     return "\n".join(blocks)
 
 
+def _htaccess_file() -> str:
+    """Apache/cPanel ``.htaccess`` — the same content-type + CORS rules for hosts that use Apache
+    (e.g. GoDaddy Linux hosting) instead of a ``_headers``-style static host (Cloudflare/Netlify).
+
+    ``<FilesMatch>`` is valid in .htaccess (unlike ``<Location>``): the extensionless JSON-LD
+    context file is named ``0.1`` and the schemas end ``.schema.json``, so basename matching covers
+    the tree from one root file. ``ForceType`` sets the type; ``mod_headers`` adds CORS.
+    """
+    return (
+        "# openOM namespace headers for Apache / cPanel hosts (e.g. GoDaddy Linux hosting).\n"
+        "# Cloudflare Pages / Netlify use _headers instead; both are generated so the site is\n"
+        "# host-portable. Keep in sync with _headers via gen_site.py.\n"
+        "<IfModule mod_headers.c>\n"
+        '  Header set Access-Control-Allow-Origin "*"\n'
+        '  Header set Cache-Control "public, max-age=3600"\n'
+        "</IfModule>\n"
+        '<FilesMatch "^0\\.1$">\n'
+        "  ForceType application/ld+json\n"
+        "</FilesMatch>\n"
+        '<FilesMatch "\\.schema\\.json$">\n'
+        "  ForceType application/schema+json\n"
+        "</FilesMatch>\n"
+    )
+
+
 def generate() -> None:
     if SITE.exists():
         shutil.rmtree(SITE)
@@ -125,6 +150,7 @@ def generate() -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page_html, "utf-8", newline="\n")
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
+    (SITE / ".htaccess").write_text(_htaccess_file(), "utf-8", newline="\n")  # Apache/GoDaddy
     # A bare deploy root should not 404; point it at the namespace landing.
     (SITE / "index.html").write_text(
         f'<!doctype html><meta http-equiv="refresh" content="0; url=/{PREFIX}/">\n',
@@ -135,4 +161,4 @@ def generate() -> None:
 
 if __name__ == "__main__":
     generate()
-    print(f"wrote {SITE} ({len(ARTIFACTS)} artifacts + landing + _headers)")
+    print(f"wrote {SITE} ({len(ARTIFACTS)} artifacts + landing + _headers + .htaccess)")

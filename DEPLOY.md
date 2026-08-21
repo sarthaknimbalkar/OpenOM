@@ -9,6 +9,34 @@ The `site/` tree is already generated and drift-locked; `.github/workflows/deplo
 it to **Cloudflare Pages** (chosen because it honors `site/_headers`, which serves the extensionless
 `ns/0.1` as `application/ld+json` with CORS — a plain host would break JSON-LD).
 
+## Hosting options — you are NOT locked to Cloudflare
+
+The only hard requirement is a host that can set **`Content-Type: application/ld+json`** + open
+**CORS** on the extensionless `ns/0.1` path (and `application/schema+json` on the schemas). The tree
+ships **both** header configs so it's host-portable:
+
+| Host | Works? | Uses | Notes |
+|------|:------:|------|-------|
+| Cloudflare Pages | ✅ | `site/_headers` | free, CLI/Git deploy, auto-TLS — the wired default |
+| Netlify | ✅ | `site/_headers` | same file; drag-and-drop or Git deploy, free |
+| **GoDaddy** (Linux / cPanel hosting) | ✅ | `site/.htaccess` | upload the `site/` folder via cPanel File Manager / FTP; Apache reads `.htaccess`. Needs a paid hosting plan; no CI deploy |
+| GoDaddy **Website Builder** | ❌ | — | locked builder — can't upload files or set headers |
+| GitHub Pages | ⚠️ | — | can't set content-type for the extensionless `ns/0.1` |
+
+You can also **keep the domain registered at GoDaddy** and point its DNS at any of the free hosts —
+you don't have to move to Cloudflare to use openom.app. The GoDaddy-hosting path below is only if you
+specifically want to host *on* GoDaddy.
+
+### GoDaddy cPanel hosting (if you host on GoDaddy)
+1. Buy a GoDaddy **Web Hosting** (Linux/cPanel) plan for the domain.
+2. `python spec/scripts/gen_site.py` locally to (re)build `site/`.
+3. In cPanel → File Manager (or FTP), upload the **contents of `site/`** into `public_html/`
+   (including the hidden `.htaccess` — enable "show hidden files").
+4. Confirm `mod_headers` is enabled (it is on GoDaddy Linux hosting); the `.htaccess` sets the
+   content-types + CORS. Re-upload whenever `site/` changes — there's no CI path for this host.
+
+The rest of this doc (Cloudflare) is the recommended, free, CI-driven path.
+
 ## Domain reality (decision 2026-08-21, memo §8)
 
 - **Canonical namespace stays `https://verveliolabs.com/openom/...`** — the schema `$id` + `@context`
