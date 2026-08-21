@@ -41,6 +41,8 @@ import { buildForm, type FormCallbacks } from "./form.js";
 import { applyExtraction } from "./extract/apply.js";
 import { onDeviceExtractor } from "./extract/on-device.js";
 import { extractorSource, pickDraftSource } from "./extract/source.js";
+import { buildoutRefFromUrl } from "./extract/connectors/buildout-http.js";
+import { loadBuildoutSource } from "./extract/connectors/load.js";
 import { localDateISO } from "./clock.js";
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
@@ -205,7 +207,19 @@ async function startReview(
   // Draft source (M5b-2 / #166): prefer a deterministic structured connector (e.g. a Buildout MCP
   // pull), else the on-device Prompt API - else a manual-entry note. Connectors are prepended to this
   // list when configured (see extract/CONNECTORS.md); with none, this is the on-device path unchanged.
+  // When Buildout is configured AND the active tab is a Buildout listing, offer that deterministic
+  // pull first; any failure (no tab access, not configured, not a listing URL) is swallowed so the
+  // on-device path is byte-identical to before.
+  let buildoutSource = null;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const ref = buildoutRefFromUrl(tab?.url);
+    if (ref) buildoutSource = await loadBuildoutSource(ref);
+  } catch {
+    buildoutSource = null;
+  }
   const source = await pickDraftSource([
+    ...(buildoutSource ? [buildoutSource] : []),
     extractorSource(onDeviceExtractor, "on-device AI"),
   ]);
   if (source) {

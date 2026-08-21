@@ -9,12 +9,15 @@ describe("renderOptions (#70)", () => {
       profile: { broker: "Jane", brokerage: "Acme", license: "CA-1" },
       webhook: { url: "https://h/x", secret: "shh" },
       settings: { proactiveDetection: false, linkBadgingDomains: ["buildout.com"] },
+      buildout: { endpoint: "https://mcp.buildout.example/mcp", token: "tok" },
     });
     expect((root.querySelector(".o-broker") as HTMLInputElement).value).toBe("Jane");
     expect((root.querySelector(".o-wh-url") as HTMLInputElement).value).toBe("https://h/x");
     expect((root.querySelector(".o-wh-secret") as HTMLInputElement).type).toBe("password");
     expect((root.querySelector(".o-linkbadging-domains") as HTMLTextAreaElement).value).toBe("buildout.com");
     expect((root.querySelector(".o-proactive") as HTMLInputElement).checked).toBe(false);
+    expect((root.querySelector(".o-bo-endpoint") as HTMLInputElement).value).toBe("https://mcp.buildout.example/mcp");
+    expect((root.querySelector(".o-bo-token") as HTMLInputElement).type).toBe("password");
     expect(root.querySelector("#save")).not.toBeNull();
   });
 });
