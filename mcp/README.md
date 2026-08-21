@@ -25,9 +25,11 @@ Add to your client's MCP config (e.g. Claude Desktop `claude_desktop_config.json
 
 ## Hosted HTTP
 
-`om-mcp-http` serves Streamable HTTP on `:8080`. Vervelio runs a free public deterministic
-instance; point your client's HTTP-MCP connector at its URL (published once live). Two-tier
-validation: schema errors block, consistency warnings never do; market truth is out of scope.
+`om-mcp-http` serves Streamable HTTP on `:8080`. The deterministic server is free and self-hostable;
+any hosted HTTP instance should be **access-gated** (e.g. Cloudflare Access with a service token) -
+never run one unauthenticated. Point your client's HTTP-MCP connector at your instance's URL with the
+gate's credentials. Two-tier validation: schema errors block, consistency warnings never do; market
+truth is out of scope.
 
 ## Grounding an AI agent
 

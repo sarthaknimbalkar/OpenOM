@@ -9,11 +9,10 @@
 # CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID, create a Pages project named "openom",
 # then attach the domains below (custom domains / routes).
 #
-# Domains (decision 2026-08-21): the CANONICAL machine namespace stays
-# verveliolabs.com/openom/* - the schema $id and @context are pinned there and must
-# resolve there (unchanged). openom.app is the human FRONT-DOOR (docs, verify tool,
-# marketing, and the eventual hosted MCP). Serve this same site/ tree on both custom
-# domains; verveliolabs.com/openom/* is the authoritative host for ns/0.1 + the schemas.
+# Domains (decision 2026-08-21, superseded): the CANONICAL machine namespace was migrated to
+# openom.app - the schema $id and @context are pinned at https://openom.app/... (bare paths, e.g.
+# ns/0.1) and must resolve there. openom.app is both the human FRONT-DOOR (docs, verify tool,
+# marketing) and the authoritative host for ns/0.1 + the schemas. Deploy attaches openom.app only.
 name: deploy-site
 
 on:
