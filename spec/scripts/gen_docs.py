@@ -101,6 +101,7 @@ def _page(
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
   <meta name="author" content="Vervelio Labs" />
   <meta name="theme-color" content="#0b1021" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="openOM" />
   <meta property="og:title" content="{og_title}" />
