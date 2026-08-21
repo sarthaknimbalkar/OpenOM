@@ -27,7 +27,7 @@ DATE = "2026-08-15"
 
 _SAMPLE = json.loads((SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8"))
 _MINIMAL = {
-    "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
+    "@context": ["https://schema.org", "https://openom.app/openom/ns/0.1"],
     "@type": "RealEstateListing",
     "specVersion": "0.1",
     "assertedBy": {"broker": "A", "brokerage": "B", "license": "C"},

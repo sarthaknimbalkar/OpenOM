@@ -63,7 +63,7 @@ def _gen_messy_schedule() -> bytes:
 def _gen_empty_payload() -> bytes:
     """A minimal required-only payload (no optional facts)."""
     minimal = {
-        "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
+        "@context": ["https://schema.org", "https://openom.app/openom/ns/0.1"],
         "@type": "RealEstateListing",
         "specVersion": "0.1",
         "assertedBy": {"broker": "A", "brokerage": "B", "license": "C"},

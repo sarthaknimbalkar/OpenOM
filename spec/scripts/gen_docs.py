@@ -138,7 +138,7 @@ def _quickstart_portal() -> str:
   <p>Goal: read and trust openOM data on PDFs you host or receive — with an honest badge,
      never overclaiming.</p>
   <h2>Drop-in badge (one script tag)</h2>
-  <pre><code>&lt;script src="https://verveliolabs.com/openom/widget/openom-badge.js" defer&gt;&lt;/script&gt;
+  <pre><code>&lt;script src="https://openom.app/openom/widget/openom-badge.js" defer&gt;&lt;/script&gt;
 &lt;openom-badge src="https://cdn.example.com/deal.pdf"&gt;&lt;/openom-badge&gt;</code></pre>
   <p>The badge re-fetches the bytes and runs the deterministic read/verify path. It shows
      <em>Unaltered since embed</em> for integrity, <em>Origin-verified</em> only when a

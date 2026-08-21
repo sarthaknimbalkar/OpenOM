@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Assemble the static hosting tree that serves openOM's pinned namespace URLs.
 
-WHY: payloads carry ``"@context": [..., "https://verveliolabs.com/openom/ns/0.1"]``
+WHY: payloads carry ``"@context": [..., "https://openom.app/openom/ns/0.1"]``
 and the schemas pin absolute ``$id`` URLs. A JSON-LD processor dereferences that
 context URL and a ``$ref``/``$id`` resolver fetches the schemas — so if those URLs
 do not serve the *exact committed bytes* with the right content-type and CORS, the
@@ -30,7 +30,7 @@ SITE = ROOT / "site"
 
 # The neutral steward's pinned base. Kept here (not spread across files) so a
 # version/host change is one edit; the resolve-check reads it back from the specs.
-BASE = "https://verveliolabs.com"
+BASE = "https://openom.app"
 PREFIX = "openom"
 
 # url-path (under BASE) -> (source file in spec/, content-type served).
