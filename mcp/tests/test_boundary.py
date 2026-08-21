@@ -6,11 +6,10 @@ complements the dependency-level `boundary` CI job (pip-freeze) with an import-g
 from __future__ import annotations
 
 import asyncio
-import importlib
-import pkgutil
+import json
+import subprocess
 import sys
 
-import openom_mcp
 from openom_mcp import server
 from openom_mcp.extraction import InferenceExtractor, payment_required
 from openom_mcp.tools import ToolError
@@ -43,7 +42,20 @@ def test_only_deterministic_tools_registered() -> None:
 
 
 def test_mcp_imports_no_model_client() -> None:
-    for module in pkgutil.iter_modules(openom_mcp.__path__, "openom_mcp."):
-        importlib.import_module(module.name)
-    leaked = INFERENCE_LIBS & set(sys.modules)
-    assert not leaked, f"an inference client was imported by /mcp: {sorted(leaked)}"
+    # Import the whole /mcp graph in an ISOLATED subprocess (-I) so sys.modules starts clean. This
+    # measures exactly what importing /mcp pulls in - immune to an inference SDK that another test
+    # (or a dev's shared env) already loaded into this process. An inference lib that isn't
+    # installed can never be imported by /mcp, so its absence is a pass; a leak fails.
+    code = (
+        "import importlib, pkgutil, sys, json; import openom_mcp\n"
+        "for m in pkgutil.iter_modules(openom_mcp.__path__, 'openom_mcp.'):\n"
+        "    importlib.import_module(m.name)\n"
+        f"libs = {sorted(INFERENCE_LIBS)!r}\n"
+        "print(json.dumps(sorted(set(libs) & set(sys.modules))))\n"
+    )
+    out = subprocess.run(  # noqa: S603 - fixed argv, our own interpreter
+        [sys.executable, "-I", "-c", code], capture_output=True, text=True
+    )
+    assert out.returncode == 0, out.stderr
+    leaked = json.loads(out.stdout.strip().splitlines()[-1])
+    assert not leaked, f"an inference client was imported by /mcp: {leaked}"
