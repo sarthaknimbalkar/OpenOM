@@ -99,6 +99,8 @@ def _page(
   <meta name="description" content="{desc}" />
   <link rel="canonical" href="{url}" />
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta name="author" content="Vervelio Labs" />
+  <meta name="theme-color" content="#0b1021" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="openOM" />
   <meta property="og:title" content="{og_title}" />
@@ -369,7 +371,34 @@ def _schema_reference() -> str:
   </table>
 """
     _d = 'openOM 0.1 payload field reference, generated from the JSON Schema: every property, type, and requirement for commercial real estate offering-memorandum data.'
-    return _page("Field reference", body, description=_d, canonical="/docs/schema-reference", jsonld=_jsonld(_article("Field reference", _d, "/docs/schema-reference"), _breadcrumb("/docs/schema-reference", "Field reference")), seo_title="openOM payload field reference (JSON Schema)")
+    _dataset = {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": "openOM 0.1 offering-memorandum data schema",
+        "description": _d,
+        "url": SITE + "/docs/schema-reference",
+        "license": "https://opensource.org/licenses/MIT",
+        "creator": ORG,
+        "publisher": ORG,
+        "keywords": [
+            "commercial real estate", "offering memorandum", "CRE", "JSON Schema", "JSON-LD",
+            "open standard",
+        ],
+        "isAccessibleForFree": True,
+        "distribution": [
+            {
+                "@type": "DataDownload",
+                "encodingFormat": "application/schema+json",
+                "contentUrl": SITE + "/spec/om-0.1.schema.json",
+            },
+            {
+                "@type": "DataDownload",
+                "encodingFormat": "application/ld+json",
+                "contentUrl": SITE + "/ns/0.1",
+            },
+        ],
+    }
+    return _page("Field reference", body, description=_d, canonical="/docs/schema-reference", jsonld=_jsonld(_article("Field reference", _d, "/docs/schema-reference"), _breadcrumb("/docs/schema-reference", "Field reference"), _dataset), seo_title="openOM payload field reference (JSON Schema)")
 
 
 def _codes_catalog() -> str:

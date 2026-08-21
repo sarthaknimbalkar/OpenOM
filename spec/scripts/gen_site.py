@@ -104,6 +104,9 @@ def _landing_html() -> str:
   <meta name="description" content="{desc}" />
   <link rel="canonical" href="{BASE}/" />
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta name="author" content="Vervelio Labs" />
+  <meta name="theme-color" content="#0b1021" />
+  <link rel="alternate" type="application/ld+json" href="{BASE}/ns/0.1" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="openOM" />
   <meta property="og:title" content="openOM - verifiable data for CRE offering memoranda" />
@@ -270,6 +273,38 @@ def _llms_file() -> str:
     return "\n".join(lines)
 
 
+def _not_found_html() -> str:
+    """Branded 404 (Cloudflare Pages serves /404.html for unknown paths). noindex - it must never
+    rank - but it keeps a lost visitor oriented with links back into the site."""
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Not found - openOM</title>
+  <meta name="robots" content="noindex, follow" />
+  <meta name="theme-color" content="#0b1021" />
+  <style>
+    body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 40rem; margin: 4rem auto;
+            padding: 0 1rem; color: #111; }}
+    a {{ color: #065f46; }}
+    h1 {{ font-size: 2.5rem; margin-bottom: 0.2rem; }}
+  </style>
+</head>
+<body>
+  <h1>404</h1>
+  <p>That page isn't here. Try:</p>
+  <ul>
+    <li><a href="/">openOM home</a></li>
+    <li><a href="/docs/">Documentation</a></li>
+    <li><a href="/docs/what-is-an-offering-memorandum">What is an offering memorandum?</a></li>
+    <li><a href="/verify/">Verify a PDF</a></li>
+  </ul>
+</body>
+</html>
+"""
+
+
 def generate() -> None:
     if SITE.exists():
         shutil.rmtree(SITE)
@@ -283,6 +318,7 @@ def generate() -> None:
         dest.write_text(page_html, "utf-8", newline="\n")
     (SITE / "og.png").write_bytes((SPEC / "assets" / "og.png").read_bytes())  # social share card
     (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
+    (SITE / "404.html").write_text(_not_found_html(), "utf-8", newline="\n")  # Pages custom 404
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
     (SITE / ".htaccess").write_text(_htaccess_file(), "utf-8", newline="\n")  # Apache/GoDaddy
     (SITE / "robots.txt").write_text(_robots_file(), "utf-8", newline="\n")  # AEO/GEO/AIO crawlers
