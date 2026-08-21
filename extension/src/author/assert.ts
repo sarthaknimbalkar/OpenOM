@@ -7,7 +7,7 @@ import type { BrokerProfile } from "./profile.js";
 import type { ValidationReport } from "openom-js";
 
 /** Spec constants stamped at assertion — boilerplate, not broker-entered facts (§E). */
-const CONTEXT = ["https://schema.org", "https://openom.app/openom/ns/0.1"];
+const CONTEXT = ["https://schema.org", "https://openom.app/ns/0.1"];
 
 /**
  * Produce the payload the broker asserts: stamp the spec constants, `assertedBy` from the profile,

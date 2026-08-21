@@ -19,7 +19,7 @@ Regenerate the vectors (must be a no-op = no drift): `python core/scripts/gen_ve
 
 ## Hosted namespace (the URLs must resolve)
 
-Payloads carry `"@context": ["https://schema.org", "https://openom.app/openom/ns/0.1"]`
+Payloads carry `"@context": ["https://schema.org", "https://openom.app/ns/0.1"]`
 and the schemas pin absolute `$id`s under the same base. A JSON-LD processor dereferences that
 context URL and a `$ref`/`$id` resolver fetches the schemas, so those URLs **must serve the exact
 committed bytes** with the right content-type and open CORS — otherwise the web half of the standard
@@ -44,5 +44,5 @@ curated. All of it is under the same CI drift gate as the artifacts above.
 
 Deployment (Cloudflare Pages, chosen because its `site/_headers` sets the content-type for the
 extensionless `ns/0.1`) is wired in `.github/workflows/deploy-site.yml` — inert until
-`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets and the `openom.app/openom/*` route
+`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` secrets and the `openom.app/*` route
 exist. After deploy, verify live: `OPENOM_SITE_BASE=https://openom.app pytest spec/tests/test_site.py -k live`.

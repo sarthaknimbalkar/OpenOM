@@ -25,7 +25,7 @@ function xmpPacket(props: Record<string, string>): Uint8Array {
   const xml = `<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-  <rdf:Description rdf:about="" xmlns:omspec="https://openom.app/openom/ns/0.1#">
+  <rdf:Description rdf:about="" xmlns:omspec="https://openom.app/ns/0.1#">
 ${lines}
   </rdf:Description>
  </rdf:RDF>

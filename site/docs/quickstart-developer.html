@@ -27,14 +27,14 @@
   </style>
 </head>
 <body>
-  <nav class="crumbs"><a href="/openom/">openOM</a> · <a href="/openom/docs/">docs</a></nav>
+  <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
 
   <h1>Quick-start · implementer / developer</h1>
   <p>Goal: build against the standard and stay byte-compatible with the reference cores.</p>
   <h2>The contract</h2>
   <ul>
-    <li><a href="/openom/spec/om-0.1.schema.json">Payload schema</a> (JSON Schema 2020-12) and the
-        <a href="/openom/ns/0.1">JSON-LD context</a>.</li>
+    <li><a href="/spec/om-0.1.schema.json">Payload schema</a> (JSON Schema 2020-12) and the
+        <a href="/ns/0.1">JSON-LD context</a>.</li>
     <li>Canonicalization is <strong>RFC 8785 (JCS)</strong>; the integrity hash is SHA-256 over the
         canonical bytes. This is the anti-fork keystone — two conformant implementations MUST produce
         byte-identical canonical JSON and the same hash.</li>
@@ -48,7 +48,7 @@ npm  install openom-js       # TypeScript: byte-parity with the Python core</cod
   <h2>Validation model</h2>
   <p>Two tiers: <strong>schema errors block</strong>; <strong>consistency warnings never block</strong>;
      market truth is out of scope forever. See the
-     <a href="/openom/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
+     <a href="/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
 
 </body>
 </html>

@@ -42,7 +42,7 @@ The rest of this doc (Cloudflare) is the recommended, free, CI-driven path.
 
 ## Domain reality (updated 2026-08-21 — migrated to openom.app; supersedes memo §8)
 
-The canonical namespace is now **`https://openom.app/openom/...`** — the schema `$id`, the JSON-LD
+The canonical namespace is now **`https://openom.app/...`** — the schema `$id`, the JSON-LD
 `@context`, and the XMP marker namespace all resolve there. `openom.app` is a fresh, dedicated domain
 (verveliolabs.com is the company domain — left untouched). So you attach **only `openom.app`** to the
 Pages project; it serves the whole `site/` tree (namespace + docs + verify). `verveliolabs.com` is
@@ -109,19 +109,17 @@ It verifies `site/` isn't stale, builds the badge widget into the tree, and runs
 ## Verify it worked
 ```bash
 # canonical namespace resolves with the right content-type:
-curl -sI https://openom.app/openom/ns/0.1 | grep -i content-type   # application/ld+json
-curl -s  https://openom.app/openom/spec/om-0.1.schema.json | head
+curl -sI https://openom.app/ns/0.1 | grep -i content-type   # application/ld+json
+curl -s  https://openom.app/spec/om-0.1.schema.json | head
 # pages:
-#   https://openom.app/openom/docs/         (docs)
-#   https://openom.app/openom/verify/       (verify tool)
-#   https://openom.app/openom/docs/grounding-ai.html
+#   https://openom.app/docs/         (docs)
+#   https://openom.app/verify/       (verify tool)
+#   https://openom.app/docs/grounding-ai.html
 ```
 Then run the opt-in live check: `OPENOM_SITE_BASE=https://openom.app pytest spec/tests/test_site.py -k live`.
 
-> Note the `/openom/` path prefix: the tree is built under it, so URLs are `openom.app/openom/...`
-> (slightly redundant on a dedicated domain). Dropping it to bare `openom.app/docs` is a further
-> namespace change (regenerates vectors again) — worth doing before wide adoption if the pretty URLs
-> matter; kept for now as the minimal migration.
+> URLs are bare on the dedicated domain: `openom.app/ns/0.1`, `openom.app/spec/…`,
+> `openom.app/docs/`, `openom.app/verify/` (the `/openom/` path prefix was dropped).
 
 ## What this does NOT solve (separate items)
 - **Buildout MCP ingestion** — needs your Buildout client/server, not the domain.
