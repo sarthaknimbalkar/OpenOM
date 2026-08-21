@@ -28,10 +28,13 @@ enters the `core`/`cli`/`mcp` dependency tree).
 
 ## Assertions, not facts
 
-Every payload is an identified party's **opinion as of a date** — `assertedBy` + `assertedDate`
-are always required. Tooling checks *internal consistency* (NOI ÷ price vs cap rate, rent-schedule
-math, date arithmetic) and **never** market truth. Schema errors block; consistency warnings
-never do.
+An OM is an **advertisement** — a broker's **opinion of value**, which the seller agreed to before
+it was published. So every payload is an identified party's **opinion as of a date** (`assertedBy` +
+`assertedDate` are always required), and openOM records **who** asserted it, that it is
+**unaltered**, and **as of when** — it never claims the opinion is *true*. **Verified means
+provenance, not truth.** Tooling checks *internal consistency* (NOI ÷ price vs cap rate,
+rent-schedule math, date arithmetic) and **never** market truth. Schema errors block; consistency
+warnings never do.
 
 ## Repository layout
 

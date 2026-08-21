@@ -40,12 +40,16 @@ export function honestLabel(state: BadgeState): { label: string; caption: string
     case "integrity-ok":
       return {
         label: "Unaltered since embed",
-        caption: "Integrity checks out; origin not yet confirmed. Not proof of authorship.",
+        caption:
+          "Unaltered since embed; origin not yet confirmed. The broker's opinion of value — " +
+          "not proof of authorship, and not a claim the figures are true.",
       };
     case "origin-verified":
       return {
         label: "Origin-verified",
-        caption: "This domain vouches for this exact payload (HTTPS + matching mirror).",
+        caption:
+          "This domain vouches for this exact payload (HTTPS + matching mirror) — it attests the " +
+          "broker's asserted opinion, not that the figures are true.",
       };
     case "signature-verified":
       return { label: "Signature-verified", caption: "Reserved; not available in 0.1." };
