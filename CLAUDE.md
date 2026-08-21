@@ -132,9 +132,10 @@ oracle runs in CI (now manual, `workflow_dispatch`).
 **Free/paid boundary locked (Q2, 2026-08-17 - handoff §15.1):** everything deterministic +
 self-hostable is free MIT (spec CC-BY-4.0); the sole paid product is Vervelio-hosted **inference
 extraction**, a service **separate** from the open server, **built in M3**. The deterministic MCP is
-free: a **public hosted endpoint** at `https://mcp.openom.app/mcp` (rate-limited, on the gx10 box) and
-**self-hostable** (`pip install openom-mcp` → `om-mcp` stdio). The cardinal rule is unchanged - no
-inference in `/core`, `/mcp`, or consumer `/js`, ever.
+free: a **public serverless grounding endpoint** at `https://mcp.openom.app/mcp` (a Cloudflare Worker,
+`/mcp-worker`, exposing `om_read` + `om_validate` via byte-parity `/js`), plus the full six-tool
+surface **self-hostable** (`pip install openom-mcp` → `om-mcp` stdio / `om-mcp-http`). The cardinal
+rule is unchanged - no inference in `/core`, `/mcp`, `/mcp-worker`, or consumer `/js`, ever.
 
 **M3 gate [OM-DoD-004] met** (2026-08-17, deterministic-only scope). Built in `/mcp`: hosted
 Streamable HTTP transport (`build_http_app`/`main_http`), SSRF-hardened `url` fetch
@@ -235,10 +236,12 @@ covered in-browser as well as via the CLI (100% corpus coverage from either surf
   SEO/AEO/GEO/AIO complete (per-page meta/canonical/OG, JSON-LD Article/FAQ/Dataset/DefinedTermSet,
   robots.txt allowing AI crawlers, sitemap.xml, llms.txt, og.png, favicon). Post-deploy guards:
   `test_site.py` live mode + `extension` `npm run test:live` (headless Playwright against openom.app).
-- **Hosted MCP** is self-hosted on the **gx10** box (`om-mcp-http` + `cloudflared` systemd services),
-  exposed via a Cloudflare Tunnel as a **free public rate-limited endpoint** at
-  `https://mcp.openom.app/mcp`. (It was briefly Access-gated, then reopened per owner decision; the
-  durable public home should eventually be a Cloudflare Worker, not the home box.) See DEPLOY.md.
+- **Public MCP is now a Cloudflare Worker** (`/mcp-worker`) at `https://mcp.openom.app/mcp` -
+  serverless, deterministic, read-only: `om_read` (PDF bytes or https URL) + `om_validate` via
+  byte-parity `/js`, eval-free ajv standalone validator (Workers forbid eval like MV3). It went
+  Access-gated on gx10 → reopened public → **migrated off the home box to the Worker** (owner
+  decision, 2026-08-22); the gx10 tunnel is stopped. Full six-tool surface (extract/embed/inspect)
+  is self-host via `om-mcp`/`om-mcp-http`. See DEPLOY.md + the gx10 auto-memory.
 - **Buildout ingestion activated** (decision memo §3.1): `extension/src/author/extract/connectors/`
   (`buildout.ts` mapper + `buildout-http.ts` MCP-HTTP client + `load.ts` factory), config in the options
   page (endpoint + secret-store token), wired into `panel.ts` (offered on a Buildout listing tab;

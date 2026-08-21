@@ -25,10 +25,11 @@ Add to your client's MCP config (e.g. Claude Desktop `claude_desktop_config.json
 
 ## Hosted HTTP
 
-`om-mcp-http` serves Streamable HTTP on `:8080`. A free public hosted instance runs at
-`https://mcp.openom.app/mcp` (rate-limited); or self-host and point your client's HTTP-MCP connector at
-your own URL. Two-tier validation: schema errors block, consistency warnings never do; market truth is
-out of scope.
+`om-mcp-http` serves Streamable HTTP on `:8080`. The free **public grounding endpoint** at
+`https://mcp.openom.app/mcp` is a serverless Cloudflare Worker (`/mcp-worker`) exposing the read-side
+`om_read` + `om_validate` via the byte-parity `/js` core; run `om-mcp-http` yourself for the full
+six-tool surface (extract/embed/inspect). Two-tier validation: schema errors block, consistency
+warnings never do; market truth is out of scope.
 
 ## Grounding an AI agent
 

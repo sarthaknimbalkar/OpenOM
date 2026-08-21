@@ -1,0 +1,13 @@
+name = "openom-mcp"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Bundling: the ajv standalone validator (validator.cjs) requires ajv runtime helpers; pdfjs-dist is
+# only a dynamic encrypted-PDF fallback in openom-js and is not shipped to the Worker (encrypted OMs
+# return an "encrypted" state instead). Everything else in the read/validate path is pure JS.
+[build]
+command = "node scripts/gen-validator.mjs"
+
+[observability]
+enabled = true
