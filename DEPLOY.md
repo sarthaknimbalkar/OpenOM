@@ -65,20 +65,25 @@ need through the dev phase, so you never have to recreate it. Store it in `.env`
 `CLOUDFLARE_API_TOKEN`; 30-day expiry + rotation is fine.
 
 **Account permissions** - scope: Include → *Hello@vervelio.com's Account* (`bece798de11ebbbdb4313edf3f3078aa`):
-- **Cloudflare Pages · Edit** - create + deploy the docs/namespace site *(needed NOW)*
+- **Cloudflare Pages · Edit** - create + deploy the docs/namespace site *(in use)*
+- **Cloudflare Tunnel · Edit** - the self-hosted MCP endpoint (gx10) + any future self-hosted service *(in use)*
 - **Workers Scripts · Edit** - deploy the hosted deterministic MCP (`om-mcp-http`) as a Worker *(later)*
 - **Workers R2 Storage · Edit** - the MCP blob store (R2 uploads, ≤24h TTL) *(later)*
 - **Workers KV Storage · Edit** - distributed rate-limit/quota counters + API-key store (#51/#52) *(later)*
 - **D1 · Edit** - optional alternative store for API keys *(later, if chosen)*
 - **Account Settings · Read** - resolve account id / general
 
-**Zone permissions** - scope: Include → *All zones from account* (or just `openom.app`):
-- **DNS · Edit** - custom-domain records, an MCP subdomain, verification records *(needed NOW for the custom domain)*
-- **Zone · Read** - read zone info
+**Zone permissions** - scope: Include → *All zones from account* (covers openom.app + any future domain):
+- **DNS · Edit** - custom-domain records, the MCP subdomain, tunnel CNAMEs, verification records *(in use)*
+- **Zone · Read** - read zone info *(in use)*
 - **Workers Routes · Edit** - bind the MCP Worker to a route/subdomain *(later)*
+- **SSL and Certificates · Edit** - custom hostnames / origin certs *(later)*
+- **Cache Purge · Purge** - purge the edge cache after a deploy *(later)*
 
-Strictly for the **site deploy today** you only need **Pages·Edit + DNS·Edit + Zone·Read**; the rest
-future-proof the token so it also covers the hosted MCP + R2/KV without a remake.
+This is the **complete** Cloudflare surface openOM will ever need - set it once (30-day dev-phase
+expiry + rotation is fine) and never revisit. Strictly for the **static site deploy** you only need
+Pages·Edit + DNS·Edit + Zone·Read; the **gx10 MCP endpoint** additionally needs Cloudflare Tunnel·Edit;
+the rest future-proof the token for the hosted Worker + R2/KV/D1 without a remake.
 
 ### 2. GitHub secrets (activates the deploy workflow)
 Repo → Settings → Secrets and variables → Actions → add:
