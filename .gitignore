@@ -47,3 +47,7 @@ coverage/
 extension/*.zip
 
 js/test-results/
+
+# marketing mock (Rule 2 — never commit)
+*.htm
+*_files/
