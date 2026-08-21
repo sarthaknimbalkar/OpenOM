@@ -211,6 +211,9 @@ jobs:
       - name: Build the embeddable badge widget + assert it is inference-free (#144)
         working-directory: js
         run: npm run build:widget
+      - name: Widget artifact is fresh (deployed spec/assets/openom-badge.js matches the build)
+        working-directory: js
+        run: node scripts/check-widget-artifact.mjs
 
   action:
     # Exercise the openom-embed GitHub Action end-to-end (#145) against locally-built packages
