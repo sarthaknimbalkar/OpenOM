@@ -45,6 +45,299 @@ ARTIFACTS: dict[str, tuple[Path, str]] = {
 }
 
 
+_LANDING_CSS = """
+    :root{
+      --page:#EDEEE9; --paper:#FBFAF5; --ink:#171A20; --ink-soft:#4B5160;
+      --navy:#0F1D30; --machine:#9CC0EA; --machine-dim:#5E7CA6; --machine-key:#7E97BC;
+      --hl:#FFDE59; --hl-ink:#20180a; --ok:#3BAE6A; --rule:#D6D7CF; --maxw:1120px;
+      --serif:'Source Serif 4',Georgia,serif; --sans:'Schibsted Grotesk',system-ui,sans-serif;
+      --mono:'Spline Sans Mono',ui-monospace,monospace;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{background:var(--page);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+    a{color:inherit}
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+    .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+    /* .reveal is a no-op: content is always visible (never gated on JS/scroll) */
+    .reveal{opacity:1;transform:none}
+    .bar{border-bottom:1px solid var(--rule)}
+    .bar-in{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+    .wordmark{font-weight:800;font-size:20px;letter-spacing:-.02em}
+    .wordmark .om{background:var(--hl);padding:1px 6px 2px;border-radius:3px}
+    .bar-meta{display:flex;gap:10px;align-items:center}
+    .pill{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;border:1px solid var(--rule);border-radius:999px;padding:4px 11px;color:var(--ink-soft);background:var(--paper)}
+    .pill.dark{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+    .hero{padding:72px 0 30px}
+    .hero h1{font-size:clamp(38px,5.6vw,64px);font-weight:800;letter-spacing:-.03em;line-height:1.02;max-width:15ch}
+    .hero h1 .mark{background:linear-gradient(transparent 62%,var(--hl) 62%)}
+    .hero p.lede{margin-top:22px;font-size:clamp(17px,1.9vw,20px);color:var(--ink-soft);max-width:56ch}
+    .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px;align-items:center}
+    .btn{font-family:var(--sans);font-weight:700;font-size:15.5px;text-decoration:none;padding:13px 22px;border-radius:8px;border:1.5px solid var(--ink);transition:transform .12s ease;display:inline-block}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:var(--hl);border-color:var(--hl);color:var(--hl-ink)}
+    .btn.ghost{background:transparent;color:var(--ink)}
+    .spec-link{font-family:var(--mono);font-size:13px;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;margin-left:6px}
+    .stage{padding:44px 0 40px}
+    .stage-note{display:flex;justify-content:center;margin-bottom:14px}
+    .stage-note span{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+    .docpair{position:relative;display:grid;grid-template-columns:1fr 1fr;border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(15,29,48,.45);border:1px solid #cfd0c8}
+    .doc-h{background:var(--paper);padding:38px 36px 32px}
+    .doc-h .om-eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.28em;color:#8a8676}
+    .doc-h h2{font-family:var(--serif);font-weight:700;font-size:clamp(22px,2.5vw,30px);line-height:1.12;margin-top:10px;letter-spacing:-.01em}
+    .doc-h .addr{font-family:var(--mono);font-size:12.5px;color:#77735f;margin-top:6px}
+    .photo{margin:20px 0;height:110px;border-radius:6px;background:linear-gradient(115deg,#2c3a4d,#3f5670 45%,#5f7c99 75%,#8aa5bd);position:relative;overflow:hidden}
+    .photo b{position:absolute;right:10px;bottom:8px;font-family:var(--mono);font-weight:500;font-size:10px;letter-spacing:.14em;color:rgba(255,255,255,.75)}
+    .terms{width:100%;border-collapse:collapse;font-size:14.5px}
+    .terms td{padding:9px 2px;border-bottom:1px solid #E4E1D4;vertical-align:baseline}
+    .terms td:first-child{color:#77735f;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;width:44%}
+    .terms td:last-child{font-weight:700;font-variant-numeric:tabular-nums}
+    .doc-h .foot{margin-top:18px;font-family:var(--mono);font-size:10.5px;color:#a09c88;letter-spacing:.05em}
+    .doc-m{background:var(--navy);color:var(--machine);padding:38px 34px 32px;font-family:var(--mono);font-size:13px;line-height:1.72}
+    .doc-m .m-eyebrow{font-size:10.5px;letter-spacing:.28em;color:var(--machine-dim);text-transform:uppercase}
+    .doc-m pre{margin-top:16px;white-space:pre-wrap;word-break:break-word}
+    .k{color:var(--machine-key)}.s{color:#CFE0F4}.n{color:#F0F4FA;font-weight:600}.p{color:var(--machine-dim)}
+    .ok-line{margin-top:16px;padding-top:14px;border-top:1px dashed #2A3E5B;color:var(--ok);font-size:12px;display:flex;gap:8px;align-items:center}
+    .ok-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+    .seam-badge{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:7px 12px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+    .try{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;margin-top:22px}
+    .try .hint{font-family:var(--mono);font-size:12px;color:var(--ink-soft);width:100%;text-align:center;margin-bottom:2px}
+    .math{background:var(--navy);color:#E8EEF6;padding:58px 0 62px}
+    .math .eyebrow{color:var(--machine-dim)}
+    .math-grid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:30px;border-left:1px solid #24374F}
+    .math-cell{padding:8px 30px;border-right:1px solid #24374F}
+    .math-cell .big{font-family:var(--mono);font-weight:600;font-size:clamp(26px,3vw,36px);letter-spacing:-.02em;color:#fff}
+    .math-cell .big em{font-style:normal;color:var(--hl)}
+    .math-cell p{margin-top:8px;font-size:14.5px;color:#9FB2C9;max-width:30ch}
+    .how{padding:84px 0 70px}
+    .how h3,.surf h3,.trust h3,.faq-sec h3{font-size:clamp(27px,3.4vw,40px);font-weight:800;letter-spacing:-.025em;margin-top:10px}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}
+    .step{background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:26px 24px}
+    .step .num{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--ink-soft)}
+    .step h4{font-size:20px;font-weight:700;margin-top:10px;letter-spacing:-.01em}
+    .step p{margin-top:8px;font-size:15px;color:var(--ink-soft)}
+    .step .tagline{margin-top:14px;display:inline-block;font-family:var(--mono);font-size:11.5px;background:#F0EEE3;border-radius:5px;padding:4px 8px;color:#6d6852}
+    .surf{padding:10px 0 84px}
+    .surf-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:38px}
+    .card2{border-radius:14px;padding:32px 30px;border:1px solid var(--rule)}
+    .card2.mcp{background:var(--navy);color:#DEE8F4;border-color:var(--navy)}
+    .card2.ext{background:var(--paper)}
+    .card2 .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase}
+    .card2.mcp .kicker{color:var(--machine-dim)}.card2.ext .kicker{color:var(--ink-soft)}
+    .card2 h4{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:10px}
+    .card2 p.sub{margin-top:8px;font-size:15px}
+    .card2.mcp p.sub{color:#9FB2C9}.card2.ext p.sub{color:var(--ink-soft)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+    .chip{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:6px;background:#1B2E47;color:var(--machine)}
+    .card2 ul{list-style:none;margin-top:20px;display:grid;gap:12px}
+    .card2 li{padding-left:24px;position:relative;font-size:15px}
+    .card2.mcp li{color:#C6D4E5}
+    .card2 li::before{content:"";position:absolute;left:0;top:8px;width:10px;height:10px;border-radius:2px;background:var(--hl)}
+    .card2 li b{font-weight:700}.card2.mcp li b{color:#fff}
+    .endpoint{margin-top:18px;font-family:var(--mono);font-size:12.5px;background:#1B2E47;border-radius:6px;padding:10px 12px;color:#CFE0F4;word-break:break-all}
+    .persona{margin-top:20px;border-top:1px dashed var(--rule);padding-top:16px}
+    .persona .p-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+    .persona h5{font-size:16.5px;font-weight:700;margin-top:6px}
+    .persona p{margin-top:5px;font-size:14.5px;color:var(--ink-soft)}
+    .clients{margin-top:22px;padding-top:16px;border-top:1px dashed #2A3E5B;font-family:var(--mono);font-size:12px;color:var(--machine-dim);line-height:2}
+    .trust{background:var(--ink);color:#EDEDE8;padding:78px 0 84px}
+    .trust .eyebrow{color:#8a8f9c}
+    .trust-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;margin-top:36px;background:#2b2f39;border:1px solid #2b2f39;border-radius:12px;overflow:hidden}
+    .trust-cell{background:var(--ink);padding:26px}
+    .trust-cell h5{font-size:17px;font-weight:700;letter-spacing:-.01em}
+    .trust-cell h5 .tick{color:var(--hl);margin-right:8px;font-family:var(--mono)}
+    .trust-cell p{margin-top:8px;font-size:14.5px;color:#A6AAB5}
+    .faq-sec{padding:78px 0 20px}
+    .faq-sec .eyebrow{color:var(--ink-soft)}
+    .faq-sec .items{margin-top:28px;border-top:1px solid var(--rule)}
+    .faq-sec details{border-bottom:1px solid var(--rule);padding:16px 2px}
+    .faq-sec summary{font-weight:700;font-size:17px;cursor:pointer;list-style:none}
+    .faq-sec summary::-webkit-details-marker{display:none}
+    .faq-sec details p{margin-top:10px;color:var(--ink-soft);font-size:15.5px}
+    .foot{padding:40px 0 34px}
+    .foot-inner{background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:52px 44px;display:flex;justify-content:space-between;align-items:center;gap:30px;flex-wrap:wrap}
+    .foot h3{font-size:clamp(24px,3vw,34px);font-weight:800;letter-spacing:-.02em;max-width:20ch}
+    .foot h3 .mark{background:linear-gradient(transparent 62%,var(--hl) 62%)}
+    .colophon{margin-top:26px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+    .colophon a{text-underline-offset:3px}
+    @media (max-width:920px){
+      .docpair{grid-template-columns:1fr}
+      .math-grid,.steps,.surf-grid,.trust-grid{grid-template-columns:1fr}
+      .math-cell{border-right:none;border-bottom:1px solid #24374F;padding:18px 24px}
+    }
+"""
+
+_LANDING_JS = """
+    document.querySelectorAll('.hl[data-k]').forEach(function(el){
+      var k=el.getAttribute('data-k');
+      el.addEventListener('mouseenter',function(){document.querySelectorAll('.hl[data-k="'+k+'"]').forEach(function(m){m.classList.add('lit')})});
+      el.addEventListener('mouseleave',function(){document.querySelectorAll('.hl[data-k="'+k+'"]').forEach(function(m){m.classList.remove('lit')})});
+    });
+"""
+
+_LANDING_BODY = """<body>
+  <header class="bar"><div class="wrap bar-in">
+    <div class="wordmark">open<span class="om">OM</span></div>
+    <div class="bar-meta">
+      <span class="pill">spec 0.1</span><span class="pill">MIT</span>
+      <span class="pill dark">MCP + Chrome</span>
+    </div>
+  </div></header>
+
+  <section class="hero"><div class="wrap">
+    <div class="eyebrow">An open standard for machine-readable offering memoranda</div>
+    <h1 style="margin-top:16px">Make your deal <span class="mark">legible</span> to the buy-side's AI.</h1>
+    <p class="lede">openOM embeds a broker-asserted data payload inside the offering memorandum itself.
+       The PDF looks exactly the same to people - and every AI assistant, CRM, and analyst can read the
+       whole deal in seconds.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="/docs/">Read the docs</a>
+      <a class="btn ghost" href="/verify/">Verify a PDF</a>
+      <a class="spec-link" href="/docs/schema-reference">read the spec &rarr;</a>
+    </div>
+  </div></section>
+
+  <section class="stage"><div class="wrap">
+    <div class="stage-note"><span>One file &middot; two readers</span></div>
+    <div class="docpair">
+      <div class="seam-badge">SAME PDF</div>
+      <div class="doc-h">
+        <div class="om-eyebrow">OFFERING MEMORANDUM</div>
+        <h2>Example Retail - Single-Tenant Net Lease</h2>
+        <div class="addr">1000 Example Rd &middot; Sampleville, MI 48000</div>
+        <div class="photo" aria-hidden="true"><b>PROPERTY PHOTO</b></div>
+        <table class="terms"><tbody>
+          <tr><td>Asking Price</td><td><span class="hl" data-k="price">$1,850,000</span></td></tr>
+          <tr><td>Cap Rate</td><td><span class="hl" data-k="cap">6.25%</span></td></tr>
+          <tr><td>NOI (in-place)</td><td><span class="hl" data-k="noi">$115,625</span></td></tr>
+          <tr><td>Lease Type</td><td><span class="hl" data-k="lease">Absolute NNN</span></td></tr>
+          <tr><td>Lease Expiration</td><td><span class="hl" data-k="exp">April 30, 2034</span></td></tr>
+          <tr><td>Options</td><td><span class="hl" data-k="opt">4 &times; 5 Years</span></td></tr>
+        </tbody></table>
+        <div class="foot">EXAMPLE NET LEASE ADVISORS &middot; CONFIDENTIAL &middot; SAMPLE</div>
+      </div>
+      <div class="doc-m">
+        <div class="m-eyebrow">Embedded payload &middot; om.json</div>
+<pre>{
+  <span class="k">"specVersion"</span><span class="p">:</span> <span class="s">"0.1"</span><span class="p">,</span>
+  <span class="k">"assertedBy"</span><span class="p">:</span> <span class="s">"Example Net Lease Advisors"</span><span class="p">,</span>
+  <span class="k">"assertedDate"</span><span class="p">:</span> <span class="s">"2026-08-15"</span><span class="p">,</span>
+  <span class="k">"askingPrice"</span><span class="p">:</span> <span class="hl" data-k="price"><span class="n">1850000</span></span><span class="p">,</span>
+  <span class="k">"capRate"</span><span class="p">:</span> <span class="hl" data-k="cap"><span class="n">0.0625</span></span><span class="p">,</span>
+  <span class="k">"noi"</span><span class="p">:</span> <span class="hl" data-k="noi"><span class="n">115625</span></span><span class="p">,</span>
+  <span class="k">"noiType"</span><span class="p">:</span> <span class="s">"in-place"</span><span class="p">,</span>
+  <span class="k">"leaseTypeAsserted"</span><span class="p">:</span> <span class="hl" data-k="lease"><span class="s">"NNN"</span></span><span class="p">,</span>
+  <span class="k">"expiration"</span><span class="p">:</span> <span class="hl" data-k="exp"><span class="s">"2034-04-30"</span></span><span class="p">,</span>
+  <span class="k">"options"</span><span class="p">:</span> <span class="hl" data-k="opt"><span class="s">"4 x 5yr"</span></span><span class="p">,</span>
+  <span class="k">"rentSchedule"</span><span class="p">:</span> <span class="s">[ &hellip; ]</span>
+}</pre>
+        <div class="ok-line"><span class="ok-dot"></span> hash verified &middot; math checks pass &middot; read in one call</div>
+      </div>
+    </div>
+    <div class="try">
+      <span class="hint">this exact PDF is real - download it, then drop it into the verifier</span>
+      <a class="btn primary" href="/sample/openom-sample.pdf" download>Download the sample OM</a>
+      <a class="btn ghost" href="/verify/">Verify it yourself &rarr;</a>
+    </div>
+  </div></section>
+
+  <section class="math"><div class="wrap">
+    <div class="eyebrow">The math</div>
+    <div class="math-grid">
+      <div class="math-cell reveal"><div class="big">40 pages &rarr; <em>~3k tokens</em></div>
+        <p>What an AI reads instead of running vision over the entire OM.</p></div>
+      <div class="math-cell reveal"><div class="big">1 extraction, <em>&infin; reads</em></div>
+        <p>The listing broker extracts once. Every buyer, lender, and agent downstream just reads.</p></div>
+      <div class="math-cell reveal"><div class="big"><em>0</em> API keys</div>
+        <p>The server runs no model. Your assistant does the reading - on your plan, not our meter.</p></div>
+    </div>
+  </div></section>
+
+  <section class="how"><div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h3>Three steps. Nothing about your OM changes.</h3>
+    <div class="steps">
+      <div class="step reveal"><div class="num">STEP 1</div><h4>Generate</h4>
+        <p>Export the OM exactly the way you already do - InDesign, Word, Buildout. Same design, same file.</p>
+        <span class="tagline">your workflow, untouched</span></div>
+      <div class="step reveal"><div class="num">STEP 2</div><h4>Embed</h4>
+        <p>Your AI drafts the data. You review every field, the validator checks the math, and you click <b>Assert &amp; Embed</b>.</p>
+        <span class="tagline">you approve every number</span></div>
+      <div class="step reveal"><div class="num">STEP 3</div><h4>Rehost</h4>
+        <p>Post the embedded file back where your OM lives. Every reader from now on gets the data layer for free.</p>
+        <span class="tagline">repriced? re-embed in one click</span></div>
+    </div>
+  </div></section>
+
+  <section class="surf" id="surfaces"><div class="wrap">
+    <div class="eyebrow">Two surfaces</div>
+    <h3>For every AI. For every human in the deal.</h3>
+    <div class="surf-grid">
+      <div class="card2 mcp reveal">
+        <div class="kicker">MCP server</div>
+        <h4>Plug it into any assistant</h4>
+        <p class="sub">Seven deterministic tools, hosted and local. No inference on our side - your model, your subscription.</p>
+        <div class="chips"><span class="chip">om_read</span><span class="chip">om_inspect</span><span class="chip">om_validate</span><span class="chip">om_embed</span><span class="chip">om_extract_text</span><span class="chip">om_extract_images</span></div>
+        <div class="endpoint">free hosted endpoint &middot; https://mcp.openom.app/mcp</div>
+        <ul>
+          <li><b>One call, whole deal.</b> om_read returns the payload - price, cap, NOI, rent schedule - instantly.</li>
+          <li><b>Hash-verified.</b> Tampered payloads fail loudly before your model ever sees them.</li>
+          <li><b>Validator built in.</b> Catches an OM contradicting its own math before it ships.</li>
+        </ul>
+        <div class="clients">WORKS IN - Claude &middot; ChatGPT &middot; Gemini &middot; Copilot &middot; Claude Code &middot; Cursor &middot; local models - any MCP client. <a href="/docs/grounding-ai" style="color:#9CC0EA">Grounding guide &rarr;</a></div>
+      </div>
+      <div class="card2 ext reveal">
+        <div class="kicker">Chrome extension</div>
+        <h4>Sees the data layer everywhere</h4>
+        <p class="sub">One extension, two jobs - whichever side of the deal you're on.</p>
+        <div class="persona"><div class="p-label">If you list</div><h5>Embed in one click</h5>
+          <p>It catches your OM as it downloads, drafts the fields, and opens a review panel. Approve, embed, rehost. A private on-device option means the document never leaves your machine. <a href="/docs/quickstart-broker">Broker guide &rarr;</a></p></div>
+        <div class="persona"><div class="p-label">If you buy</div><h5>Know before you read</h5>
+          <p>The icon lights up when a PDF carries a payload. Open the deal card - price, cap, NOI, term - in seconds. Then push it anywhere with a webhook. <a href="/docs/quickstart-portal">Portal guide &rarr;</a></p></div>
+      </div>
+    </div>
+  </div></section>
+
+  <section class="trust"><div class="wrap">
+    <div class="eyebrow">Built on a simple honesty</div>
+    <h3>Assertions, not scraped guesses.</h3>
+    <div class="trust-grid">
+      <div class="trust-cell reveal"><h5><span class="tick">&check;</span>Signed by the source</h5>
+        <p>Every payload names who asserted it and when - broker, brokerage, license, date - and carries a tamper-evident hash.</p></div>
+      <div class="trust-cell reveal"><h5><span class="tick">&check;</span>Checks its own math</h5>
+        <p>NOI &divide; price against the stated cap rate. Rent schedules that actually sum. Dates that add up. Flagged before embed, not after close.</p></div>
+      <div class="trust-cell reveal"><h5><span class="tick">&check;</span>Says which NOI</h5>
+        <p>In-place or pro-forma is a required field, not a footnote - the disclosure most deal arguments are actually about.</p></div>
+      <div class="trust-cell reveal"><h5><span class="tick">&check;</span>Takes no position on value</h5>
+        <p>The OM is your opinion of the deal - the standard keeps it that way. Verified means provenance, not truth.</p></div>
+    </div>
+  </div></section>
+
+  <section class="faq-sec"><div class="wrap">
+    <div class="eyebrow">Questions</div>
+    <h3>Frequently asked</h3>
+    <div class="items">
+__FAQ__
+    </div>
+  </div></section>
+
+  <section class="foot" id="footer"><div class="wrap">
+    <div class="foot-inner">
+      <h3>The next thousand readers of your OM <span class="mark">won't be human.</span></h3>
+      <div class="cta-row" style="margin-top:0">
+        <a class="btn primary" href="/docs/">Get started</a>
+        <a class="btn ghost" href="/docs/schema-reference">Read the spec</a>
+      </div>
+    </div>
+    <div class="colophon">
+      <span>An open standard published by <a href="https://verveliolabs.com">Vervelio Labs</a> &middot; MIT licensed</span>
+      <span>Inspired by Factur-X - the embedded-invoice standard that became European law</span>
+      <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
+    </div>
+  </div></section>
+"""
+
+
 def _landing_html() -> str:
     """A minimal, dependency-free vocabulary landing served to browsers at /.
 
@@ -52,13 +345,6 @@ def _landing_html() -> str:
     """
     ctx = json.loads((SPEC / "context" / "openom-0.1.jsonld").read_text("utf-8"))
     terms = sorted(k for k in ctx["@context"] if not k.startswith("@") and k[:1].islower())
-    rows = "\n".join(
-        f"      <li><code>om:{t}</code></li>" for t in terms if ":" not in t
-    )
-    links = "\n".join(
-        f'      <li><a href="/{p}">/{p}</a> <small>({ct})</small></li>'
-        for p, (_src, ct) in ARTIFACTS.items()
-    )
     desc = (
         "openOM is an open standard that embeds machine-readable, broker-asserted, "
         "hash-verified data inside commercial real estate offering memorandum PDFs, mirrored "
@@ -155,10 +441,11 @@ def _landing_html() -> str:
         f'  <script type="application/ld+json">{json.dumps(o, ensure_ascii=False)}</script>'
         for o in (org, website, software, faqpage, termset)
     )
-    faq_html = "\n".join(
-        f"    <details><summary>{q}</summary>\n    <p>{a}</p></details>" for q, a in faq
+    faq_html = chr(10).join(
+        f"      <details><summary>{q}</summary><p>{a}</p></details>" for q, a in faq
     )
-    return f"""<!doctype html>
+    css = _LANDING_CSS
+    head = f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -168,7 +455,7 @@ def _landing_html() -> str:
   <link rel="canonical" href="{BASE}/" />
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
   <meta name="author" content="Vervelio Labs" />
-  <meta name="theme-color" content="#0b1021" />
+  <meta name="theme-color" content="#171A20" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="alternate" type="application/ld+json" href="{BASE}/ns/0.1" />
   <meta property="og:type" content="website" />
@@ -183,94 +470,16 @@ def _landing_html() -> str:
   <meta name="twitter:title" content="openOM - verifiable data for CRE offering memoranda" />
   <meta name="twitter:description" content="{desc}" />
   <meta name="twitter:image" content="{BASE}/og.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 {jsonld}
-  <style>
-    body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 0 auto;
-            padding: 0 1rem 4rem; color: #111; }}
-    a {{ color: #065f46; }}
-    code {{ background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }}
-    small {{ color: #666; }}
-    header.hero {{ background: #0b1021; color: #e6edf3; margin: 0 -100vw 2rem;
-                   padding: 3.5rem 100vw 3rem; }}
-    header.hero h1 {{ font-size: 3rem; margin: 0 0 0.4rem; }}
-    header.hero h1 .om {{ color: #10b981; }}
-    header.hero p {{ font-size: 1.25rem; max-width: 40rem; margin: 0.4rem 0; }}
-    header.hero .sub {{ color: #94a3b8; font-size: 1rem; }}
-    .cta {{ display: inline-block; margin-top: 1rem; background: #10b981; color: #05261b;
-            font-weight: 600; padding: 0.6rem 1.1rem; border-radius: 8px; text-decoration: none; }}
-    .cta.ghost {{ background: transparent; color: #e6edf3; border: 1px solid #334155;
-                  margin-left: 0.5rem; }}
-    h2 {{ margin-top: 2.5rem; }}
-    .cards {{ display: grid; gap: 1rem; grid-template-columns: 1fr; }}
-    @media (min-width: 40rem) {{ .cards {{ grid-template-columns: 1fr 1fr; }} }}
-    .card {{ border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.1rem; }}
-    .card h3 {{ margin: 0 0 0.3rem; }}
-    details {{ border-bottom: 1px solid #e5e7eb; padding: 0.6rem 0; }}
-    summary {{ font-weight: 600; cursor: pointer; }}
-    details p {{ margin: 0.5rem 0 0; }}
-    .cols {{ columns: 2; }}
-  </style>
+  <style>{css}</style>
 </head>
-<body>
-  <header class="hero">
-    <h1>open<span class="om">OM</span></h1>
-    <p>Verifiable, machine-readable data for commercial real estate offering memoranda.</p>
-    <p class="sub">An open standard that embeds broker-asserted, hash-verified data inside the OM
-       PDF - extracted once at the source, consumed cheaply everywhere.</p>
-    <a class="cta" href="/docs/">Read the docs</a>
-    <a class="cta ghost" href="/verify/">Verify a PDF</a>
-  </header>
-
-  <p><b>openOM</b> is an open (MIT) standard and toolchain that embeds machine-readable,
-     broker-asserted, hash-verified data inside commercial real estate (CRE) offering memorandum
-     (OM) PDFs, and mirrors the same payload as JSON-LD on the web. One extraction at the source
-     replaces the same work repeated by every buyer, broker, portal, lender, and AI agent
-     downstream. Published by <a href="https://verveliolabs.com">Vervelio Labs</a>;
-     source on <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a>.</p>
-
-  <p><b>Verified means provenance, not truth.</b> An OM is an advertisement - a broker's opinion of
-     value the seller agreed to before publication. openOM records <i>who</i> asserted the data,
-     that it is <i>unaltered</i>, and <i>as of when</i>; it never claims the opinion is true. The
-     engine is deterministic and inference-free.</p>
-
-  <h2>Who it's for</h2>
-  <div class="cards">
-    <div class="card"><h3>Brokers &amp; authors</h3>
-      <p>Publish an OM that carries structured, verifiable data - visually identical output.</p>
-      <p><a href="/docs/quickstart-broker.html">Broker quick-start →</a></p></div>
-    <div class="card"><h3>Portals &amp; consumers</h3>
-      <p>Read and trust openOM data on OMs you host or receive, with an honest trust badge.</p>
-      <p><a href="/docs/quickstart-portal.html">Portal quick-start →</a></p></div>
-    <div class="card"><h3>Developers</h3>
-      <p>Build against the standard: JSON Schema, JSON-LD context, Python + TypeScript.</p>
-      <p><a href="/docs/quickstart-developer.html">Developer quick-start →</a></p></div>
-    <div class="card"><h3>AI builders</h3>
-      <p>Ground your CRE agent in verified facts via MCP instead of re-parsing PDFs.</p>
-      <p><a href="/docs/grounding-ai.html">Grounding AI agents →</a></p></div>
-  </div>
-
-  <h2>New to offering memoranda?</h2>
-  <p>Start with <a href="/docs/what-is-an-offering-memorandum.html">What is an offering
-     memorandum?</a> - the definition, what an OM contains, and why its data is an assertion.</p>
-
-  <h2>Frequently asked questions</h2>
-{faq_html}
-
-  <h2>Resolvable artifacts</h2>
-  <ul>
-{links}
-  </ul>
-
-  <h2>Vocabulary (v0.1)</h2>
-  <p>Terms in the <code>om:</code> namespace
-     (<code>{BASE}/ns/0.1#</code>). schema.org terms are re-used where one
-     exists; see the <a href="/ns/0.1">JSON-LD context</a> for the full mapping.</p>
-  <ul class="cols">
-{rows}
-  </ul>
-</body>
-</html>
 """
+    body = _LANDING_BODY.replace("__FAQ__", faq_html)
+    tail = "  <script>" + _LANDING_JS + "</script>"
+    return head + body + tail + chr(10) + "</body>" + chr(10) + "</html>" + chr(10)
 
 
 def _headers_file() -> str:
@@ -444,6 +653,10 @@ def generate() -> None:
         dest.write_text(page_html, "utf-8", newline="\n")
     (SITE / "og.png").write_bytes((SPEC / "assets" / "og.png").read_bytes())  # social share card
     (SITE / "favicon.ico").write_bytes((SPEC / "assets" / "favicon.ico").read_bytes())  # browser tab icon
+    sample_dir = SITE / "sample"
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    # A real openOM-embedded OM PDF visitors can download, open (looks like an OM), then verify.
+    (sample_dir / "openom-sample.pdf").write_bytes((SPEC / "assets" / "openom-sample.pdf").read_bytes())
     # Embeddable badge widget (window.openOM) - powers /verify/ and the <openom-badge> element in the
     # portal quick-start. Committed pre-built artifact (js/widget/dist is gitignored + built in the JS
     # CI job, not this Python drift job); rebuild via `npm --prefix js run build:widget` then refresh

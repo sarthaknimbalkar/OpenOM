@@ -6,5 +6,7 @@ line-length = 100
 select = ["E", "F", "I", "B", "UP", "W"]
 
 [lint.per-file-ignores]
-# gen_docs.py emits static HTML/URLs; wrapping literal <pre> and long links would corrupt output.
+# gen_docs.py / gen_site.py emit static HTML + CSS; wrapping literal <pre>, long links, and minified
+# CSS rules would corrupt output or hurt readability. (Both are pure HTML generators, not logic.)
 "spec/scripts/gen_docs.py" = ["E501"]
+"spec/scripts/gen_site.py" = ["E501"]

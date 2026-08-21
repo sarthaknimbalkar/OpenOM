@@ -449,6 +449,12 @@ def _verify_tool() -> str:
   <h1>Verify an openOM PDF</h1>
   <p>Drop or choose a PDF. It is read <strong>entirely in your browser</strong> - the bytes never
      leave your machine - and checked for an embedded, unaltered openOM payload.</p>
+  <div class="card" style="border-color:#065f46;background:#ecfdf5;">
+    <p style="margin:0;"><b>New here?</b> Download a
+       <a href="/sample/openom-sample.pdf" download><b>sample openOM PDF</b></a> - it looks like an
+       ordinary offering memorandum, but carries an embedded, broker-asserted data payload. Then drop
+       it back in below to watch it verify.</p>
+  </div>
   <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
   <div id="badge" style="margin:1rem 0;"></div>
   <pre id="out" hidden></pre>
