@@ -425,7 +425,20 @@ def _codes_catalog() -> str:
   </table>
 """
     _d = 'openOM validation code catalog: every schema error, consistency warning, and info code the validator emits, with its requirement clause.'
-    return _page("Code catalog", body, description=_d, canonical="/docs/codes", jsonld=_jsonld(_article("Code catalog", _d, "/docs/codes"), _breadcrumb("/docs/codes", "Code catalog")), seo_title="openOM validation codes - errors, warnings & info reference")
+    _dataset = {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": "openOM validation code catalog",
+        "description": _d,
+        "url": SITE + "/docs/codes",
+        "license": "https://opensource.org/licenses/MIT",
+        "creator": ORG,
+        "publisher": ORG,
+        "keywords": ["openOM", "validation", "JSON Schema", "offering memorandum", "data quality"],
+        "isAccessibleForFree": True,
+        "variableMeasured": [f"{code} ({meta['severity']})" for code, meta in codes.items()],
+    }
+    return _page("Code catalog", body, description=_d, canonical="/docs/codes", jsonld=_jsonld(_article("Code catalog", _d, "/docs/codes"), _breadcrumb("/docs/codes", "Code catalog"), _dataset), seo_title="openOM validation codes - errors, warnings & info reference")
 
 
 def _verify_tool() -> str:

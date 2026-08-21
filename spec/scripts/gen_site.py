@@ -91,9 +91,70 @@ def _landing_html() -> str:
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
         "publisher": {"@type": "Organization", "name": "Vervelio Labs"},
     }
+    faq = [
+        (
+            "What is openOM?",
+            "openOM is an open (MIT) standard and toolchain that embeds machine-readable, "
+            "broker-asserted, hash-verified data inside commercial real estate offering memorandum "
+            "PDFs, and mirrors the same payload as JSON-LD on the web. Data is extracted once at the "
+            "source and consumed cheaply everywhere.",
+        ),
+        (
+            "Is openOM data verified to be true?",
+            "No. An offering memorandum is an advertisement - a broker's opinion of value. openOM "
+            "records who asserted the data, that it is unaltered, and as of when. Verified means "
+            "provenance, not truth; openOM never claims the opinion is correct.",
+        ),
+        (
+            "Is openOM free?",
+            "Yes. The standard, schema, and reference toolchain are free and open source under the "
+            "MIT license (the spec under CC-BY-4.0). Everything deterministic is self-hostable at no "
+            "cost.",
+        ),
+        (
+            "How do I read openOM data with an AI agent?",
+            "Point your MCP client at an openOM server and read the broker-asserted, hash-verified "
+            "payload via om_read - a deterministic ground truth instead of hallucination-prone PDF "
+            "extraction.",
+        ),
+        (
+            "Does openOM use AI or inference?",
+            "The engine, server, and consumer tooling contain zero inference - they are fully "
+            "deterministic and testable. Optional AI assists only the authoring step, on-device or "
+            "client-side, and a human reviews every assertion before it is embedded.",
+        ),
+    ]
+    faqpage = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
+            for q, a in faq
+        ],
+    }
+    vocab_terms = [t for t in terms if ":" not in t]
+    termset = {
+        "@context": "https://schema.org",
+        "@type": "DefinedTermSet",
+        "name": "openOM vocabulary 0.1",
+        "url": BASE + "/ns/0.1",
+        "description": "The openOM 0.1 vocabulary for commercial real estate offering-memorandum data.",
+        "hasDefinedTerm": [
+            {
+                "@type": "DefinedTerm",
+                "name": f"om:{t}",
+                "inDefinedTermSet": BASE + "/ns/0.1",
+                "url": f"{BASE}/ns/0.1#{t}",
+            }
+            for t in vocab_terms
+        ],
+    }
     jsonld = "\n".join(
         f'  <script type="application/ld+json">{json.dumps(o, ensure_ascii=False)}</script>'
-        for o in (org, website, software)
+        for o in (org, website, software, faqpage, termset)
+    )
+    faq_html = "\n".join(
+        f"    <details><summary>{q}</summary>\n    <p>{a}</p></details>" for q, a in faq
     )
     return f"""<!doctype html>
 <html lang="en">
@@ -121,29 +182,85 @@ def _landing_html() -> str:
   <meta name="twitter:image" content="{BASE}/og.png" />
 {jsonld}
   <style>
-    body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 44rem; margin: 3rem auto;
-            padding: 0 1rem; color: #111; }}
-    code {{ background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; }}
+    body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 0 auto;
+            padding: 0 1rem 4rem; color: #111; }}
+    a {{ color: #065f46; }}
+    code {{ background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }}
     small {{ color: #666; }}
-    h1 {{ margin-bottom: 0.2rem; }}
+    header.hero {{ background: #0b1021; color: #e6edf3; margin: 0 -100vw 2rem; padding: 3.5rem 100vw 3rem; }}
+    header.hero h1 {{ font-size: 3rem; margin: 0 0 0.4rem; }}
+    header.hero h1 .om {{ color: #10b981; }}
+    header.hero p {{ font-size: 1.25rem; max-width: 40rem; margin: 0.4rem 0; }}
+    header.hero .sub {{ color: #94a3b8; font-size: 1rem; }}
+    .cta {{ display: inline-block; margin-top: 1rem; background: #10b981; color: #05261b;
+            font-weight: 600; padding: 0.6rem 1.1rem; border-radius: 8px; text-decoration: none; }}
+    .cta.ghost {{ background: transparent; color: #e6edf3; border: 1px solid #334155; margin-left: 0.5rem; }}
+    h2 {{ margin-top: 2.5rem; }}
+    .cards {{ display: grid; gap: 1rem; grid-template-columns: 1fr; }}
+    @media (min-width: 40rem) {{ .cards {{ grid-template-columns: 1fr 1fr; }} }}
+    .card {{ border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem 1.1rem; }}
+    .card h3 {{ margin: 0 0 0.3rem; }}
+    details {{ border-bottom: 1px solid #e5e7eb; padding: 0.6rem 0; }}
+    summary {{ font-weight: 600; cursor: pointer; }}
+    details p {{ margin: 0.5rem 0 0; }}
+    .cols {{ columns: 2; }}
   </style>
 </head>
 <body>
-  <h1>openOM</h1>
-  <p>Machine-readable, broker-asserted data for commercial-real-estate offering
-     memoranda. Published by <a href="https://verveliolabs.com">Vervelio Labs</a>.
-     Spec + toolchain: <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a>.</p>
-  <p><strong>New here? <a href="/docs/">Read the docs</a></strong> - per-persona
-     quick-starts, the field reference, and the validation-code catalog.</p>
+  <header class="hero">
+    <h1>open<span class="om">OM</span></h1>
+    <p>Verifiable, machine-readable data for commercial real estate offering memoranda.</p>
+    <p class="sub">An open standard that embeds broker-asserted, hash-verified data inside the OM
+       PDF - extracted once at the source, consumed cheaply everywhere.</p>
+    <a class="cta" href="/docs/">Read the docs</a>
+    <a class="cta ghost" href="/verify/">Verify a PDF</a>
+  </header>
+
+  <p><b>openOM</b> is an open (MIT) standard and toolchain that embeds machine-readable,
+     broker-asserted, hash-verified data inside commercial real estate (CRE) offering memorandum
+     (OM) PDFs, and mirrors the same payload as JSON-LD on the web. One extraction at the source
+     replaces the same work repeated by every buyer, broker, portal, lender, and AI agent
+     downstream. Published by <a href="https://verveliolabs.com">Vervelio Labs</a>;
+     source on <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a>.</p>
+
+  <p><b>Verified means provenance, not truth.</b> An OM is an advertisement - a broker's opinion of
+     value the seller agreed to before publication. openOM records <i>who</i> asserted the data,
+     that it is <i>unaltered</i>, and <i>as of when</i>; it never claims the opinion is true. The
+     engine is deterministic and inference-free.</p>
+
+  <h2>Who it's for</h2>
+  <div class="cards">
+    <div class="card"><h3>Brokers &amp; authors</h3>
+      <p>Publish an OM that carries structured, verifiable data - visually identical output.</p>
+      <p><a href="/docs/quickstart-broker.html">Broker quick-start →</a></p></div>
+    <div class="card"><h3>Portals &amp; consumers</h3>
+      <p>Read and trust openOM data on OMs you host or receive, with an honest trust badge.</p>
+      <p><a href="/docs/quickstart-portal.html">Portal quick-start →</a></p></div>
+    <div class="card"><h3>Developers</h3>
+      <p>Build against the standard: JSON Schema, JSON-LD context, Python + TypeScript.</p>
+      <p><a href="/docs/quickstart-developer.html">Developer quick-start →</a></p></div>
+    <div class="card"><h3>AI builders</h3>
+      <p>Ground your CRE agent in verified facts via MCP instead of re-parsing PDFs.</p>
+      <p><a href="/docs/grounding-ai.html">Grounding AI agents →</a></p></div>
+  </div>
+
+  <h2>New to offering memoranda?</h2>
+  <p>Start with <a href="/docs/what-is-an-offering-memorandum.html">What is an offering
+     memorandum?</a> - the definition, what an OM contains, and why its data is an assertion.</p>
+
+  <h2>Frequently asked questions</h2>
+{faq_html}
+
   <h2>Resolvable artifacts</h2>
   <ul>
 {links}
   </ul>
+
   <h2>Vocabulary (v0.1)</h2>
   <p>Terms in the <code>om:</code> namespace
      (<code>{BASE}/ns/0.1#</code>). schema.org terms are re-used where one
-     exists; see the JSON-LD context for the full mapping.</p>
-  <ul>
+     exists; see the <a href="/ns/0.1">JSON-LD context</a> for the full mapping.</p>
+  <ul class="cols">
 {rows}
   </ul>
 </body>
