@@ -21,7 +21,7 @@
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "fake-indexeddb": "^6.2.5",
-    "jsdom": "^25.0.0",
+    "jsdom": "^30.0.1",
     "selfsigned": "^2.4.1",
     "typescript": "^5.7.0",
     "vite": "^6.4.3",
