@@ -96,8 +96,8 @@ def _landing_html() -> str:
             "What is openOM?",
             "openOM is an open (MIT) standard and toolchain that embeds machine-readable, "
             "broker-asserted, hash-verified data inside commercial real estate offering memorandum "
-            "PDFs, and mirrors the same payload as JSON-LD on the web. Data is extracted once at the "
-            "source and consumed cheaply everywhere.",
+            "PDFs, and mirrors the same payload as JSON-LD on the web. Data is extracted "
+            "once at the source and consumed cheaply everywhere.",
         ),
         (
             "Is openOM data verified to be true?",
@@ -108,8 +108,8 @@ def _landing_html() -> str:
         (
             "Is openOM free?",
             "Yes. The standard, schema, and reference toolchain are free and open source under the "
-            "MIT license (the spec under CC-BY-4.0). Everything deterministic is self-hostable at no "
-            "cost.",
+            "MIT license (the spec under CC-BY-4.0). Everything deterministic is "
+            "self-hostable at no cost.",
         ),
         (
             "How do I read openOM data with an AI agent?",
@@ -138,7 +138,9 @@ def _landing_html() -> str:
         "@type": "DefinedTermSet",
         "name": "openOM vocabulary 0.1",
         "url": BASE + "/ns/0.1",
-        "description": "The openOM 0.1 vocabulary for commercial real estate offering-memorandum data.",
+        "description": (
+            "The openOM 0.1 vocabulary for commercial real estate offering-memorandum data."
+        ),
         "hasDefinedTerm": [
             {
                 "@type": "DefinedTerm",
@@ -187,14 +189,16 @@ def _landing_html() -> str:
     a {{ color: #065f46; }}
     code {{ background: #f4f4f5; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }}
     small {{ color: #666; }}
-    header.hero {{ background: #0b1021; color: #e6edf3; margin: 0 -100vw 2rem; padding: 3.5rem 100vw 3rem; }}
+    header.hero {{ background: #0b1021; color: #e6edf3; margin: 0 -100vw 2rem;
+                   padding: 3.5rem 100vw 3rem; }}
     header.hero h1 {{ font-size: 3rem; margin: 0 0 0.4rem; }}
     header.hero h1 .om {{ color: #10b981; }}
     header.hero p {{ font-size: 1.25rem; max-width: 40rem; margin: 0.4rem 0; }}
     header.hero .sub {{ color: #94a3b8; font-size: 1rem; }}
     .cta {{ display: inline-block; margin-top: 1rem; background: #10b981; color: #05261b;
             font-weight: 600; padding: 0.6rem 1.1rem; border-radius: 8px; text-decoration: none; }}
-    .cta.ghost {{ background: transparent; color: #e6edf3; border: 1px solid #334155; margin-left: 0.5rem; }}
+    .cta.ghost {{ background: transparent; color: #e6edf3; border: 1px solid #334155;
+                  margin-left: 0.5rem; }}
     h2 {{ margin-top: 2.5rem; }}
     .cards {{ display: grid; gap: 1rem; grid-template-columns: 1fr; }}
     @media (min-width: 40rem) {{ .cards {{ grid-template-columns: 1fr 1fr; }} }}
@@ -358,20 +362,21 @@ def _llms_file() -> str:
         "> and mirrors the same payload as JSON-LD on the web. Extract once at the source; consume",
         "> cheaply everywhere. Published by Vervelio Labs.",
         "",
-        "An offering memorandum is an advertisement - a broker's opinion of value, agreed to by the",
-        "seller before publication. openOM records who asserted the data, that it is unaltered, and",
-        "as of when. Verified means provenance (who / unaltered / as-of-when), NOT that the opinion",
-        "is true. The engine is deterministic and inference-free; every payload is an identified",
-        "party's opinion as of a date - assertions, never facts.",
+        "An offering memorandum is an advertisement - a broker's opinion of value, agreed to",
+        "by the seller before publication. openOM records who asserted the data, that it is",
+        "unaltered, and as of when. Verified means provenance (who / unaltered / as-of-when),",
+        "NOT that the opinion is true. The engine is deterministic and inference-free; every",
+        "payload is an identified party's opinion as of a date - assertions, never facts.",
         "",
         "## Docs",
         "",
         f"- [Documentation home]({BASE}/docs/): per-persona quick-starts and reference.",
         f"- [What is an offering memorandum?]({BASE}/docs/what-is-an-offering-memorandum): the"
         " definition, an OM's contents, and why its data is an assertion not a fact.",
-        f"- [Grounding AI agents in openOM]({BASE}/docs/grounding-ai): read verified OM facts via MCP"
-        " instead of hallucination-prone PDF extraction.",
-        f"- [Broker quick-start]({BASE}/docs/quickstart-broker): publish an OM carrying verifiable data.",
+        f"- [Grounding AI agents in openOM]({BASE}/docs/grounding-ai): read verified OM facts"
+        " via MCP instead of hallucination-prone PDF extraction.",
+        f"- [Broker quick-start]({BASE}/docs/quickstart-broker): publish an OM carrying"
+        " verifiable data.",
         f"- [Portal quick-start]({BASE}/docs/quickstart-portal): read and trust openOM data.",
         f"- [Developer quick-start]({BASE}/docs/quickstart-developer): build against the standard.",
         f"- [Field reference]({BASE}/docs/schema-reference): every payload field, from the schema.",
@@ -386,7 +391,7 @@ def _llms_file() -> str:
         f"- [JSON-LD context]({BASE}/ns/0.1): the openOM 0.1 vocabulary.",
         f"- [JSON Schema]({BASE}/spec/om-0.1.schema.json): the openOM 0.1 payload schema.",
         f"- [Webhook envelope schema]({BASE}/spec/webhook-envelope-0.1.schema.json).",
-        f"- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript,"
+        "- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript,"
         " MIT.",
         "",
     ]
@@ -396,7 +401,7 @@ def _llms_file() -> str:
 def _not_found_html() -> str:
     """Branded 404 (Cloudflare Pages serves /404.html for unknown paths). noindex - it must never
     rank - but it keeps a lost visitor oriented with links back into the site."""
-    return f"""<!doctype html>
+    return """<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -405,10 +410,10 @@ def _not_found_html() -> str:
   <meta name="robots" content="noindex, follow" />
   <meta name="theme-color" content="#0b1021" />
   <style>
-    body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 40rem; margin: 4rem auto;
-            padding: 0 1rem; color: #111; }}
-    a {{ color: #065f46; }}
-    h1 {{ font-size: 2.5rem; margin-bottom: 0.2rem; }}
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 40rem; margin: 4rem auto;
+            padding: 0 1rem; color: #111; }
+    a { color: #065f46; }
+    h1 { font-size: 2.5rem; margin-bottom: 0.2rem; }
   </style>
 </head>
 <body>

@@ -5,11 +5,11 @@
 > and mirrors the same payload as JSON-LD on the web. Extract once at the source; consume
 > cheaply everywhere. Published by Vervelio Labs.
 
-An offering memorandum is an advertisement - a broker's opinion of value, agreed to by the
-seller before publication. openOM records who asserted the data, that it is unaltered, and
-as of when. Verified means provenance (who / unaltered / as-of-when), NOT that the opinion
-is true. The engine is deterministic and inference-free; every payload is an identified
-party's opinion as of a date - assertions, never facts.
+An offering memorandum is an advertisement - a broker's opinion of value, agreed to
+by the seller before publication. openOM records who asserted the data, that it is
+unaltered, and as of when. Verified means provenance (who / unaltered / as-of-when),
+NOT that the opinion is true. The engine is deterministic and inference-free; every
+payload is an identified party's opinion as of a date - assertions, never facts.
 
 ## Docs
 
