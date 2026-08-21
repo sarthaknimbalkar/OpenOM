@@ -217,3 +217,14 @@ canonical namespace.**
   Cloudflare Pages project and attach both custom domains.
 - Revisit a full namespace migration to openom.app only if/when it's worth a versioned, breaking
   change (best decided before wide adoption; for now the split is intentional).
+
+### 8.1 Update (2026-08-21) — superseded: migrated to openom.app
+
+The §8 "site-only, keep namespace at verveliolabs.com" decision was **reversed** once domain
+ownership was confirmed: the owner holds both `verveliolabs.com` (the company domain, with its own
+email/site) and `openom.app` (fresh, dedicated). Contorting the company apex to also serve
+`/openom/*` was the wrong shape. So the canonical namespace was **migrated to openom.app**: schema
+`$id`, JSON-LD `@context`, and the XMP marker namespace now anchor at `https://openom.app/openom/...`
+(the `/openom/` path prefix was kept for a minimal change). Vectors + golden PDFs were regenerated
+and both implementations re-verified byte-identical. Deploy attaches **openom.app only**;
+verveliolabs.com is untouched. See DEPLOY.md.

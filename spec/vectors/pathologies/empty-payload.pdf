@@ -7,7 +7,7 @@ endobj
 << /AFRelationship /Data /EF << /F 6 0 R /UF 6 0 R >> /F (om.json) /Type /Filespec /UF (om.json) >>
 endobj
 3 0 obj
-<< /Subtype /XML /Type /Metadata /Length 3460 >>
+<< /Subtype /XML /Type /Metadata /Length 3568 >>
 stream
 <?xpacket begin="ï»¿" id="W5M0MpCehiHzreSzNTczkc9d"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
@@ -17,7 +17,7 @@ stream
     <rdf:Bag>
      <rdf:li rdf:parseType="Resource">
       <pdfaSchema:schema>openOM offering-memorandum payload marker</pdfaSchema:schema>
-      <pdfaSchema:namespaceURI>https://verveliolabs.com/openom/ns/0.1#</pdfaSchema:namespaceURI>
+      <pdfaSchema:namespaceURI>https://openom.app/openom/ns/0.1#</pdfaSchema:namespaceURI>
       <pdfaSchema:prefix>omspec</pdfaSchema:prefix>
       <pdfaSchema:property>
        <rdf:Seq>
@@ -63,12 +63,13 @@ stream
     </rdf:Bag>
    </pdfaExtension:schemas>
   </rdf:Description>
-  <rdf:Description xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#" rdf:about="">
+  <rdf:Description xmlns:omspec="https://openom.app/openom/ns/0.1#" rdf:about="">
    <omspec:specName>openOM</omspec:specName>
    <omspec:specVersion>0.1</omspec:specVersion>
    <omspec:payloadFilename>om.json</omspec:payloadFilename>
-   <omspec:payloadHash>sha256:5f338ad31dc75e9d75ac668e0b01015cffe00cd2a8c2960ac8b7063520190240</omspec:payloadHash>
+   <omspec:payloadHash>sha256:039bda66a94e5ff915eb32c56097dca04aee5cede4bfbbee4715c20106f627fd</omspec:payloadHash>
    <omspec:assertedDate>2026-08-15</omspec:assertedDate>
+   <omspec:sourceDocHash>sha256:853f321b15782ee24ea5a24749fff674460ed587b69909f7a497d5d0c3f90e37</omspec:sourceDocHash>
   </rdf:Description>
  </rdf:RDF>
 </x:xmpmeta>
@@ -84,10 +85,9 @@ endobj
 << /Count 1 /Kids [ 7 0 R ] /Type /Pages >>
 endobj
 6 0 obj
-<< /Params << /CheckSum <b62187560b7d1fa47bd73d5a66d9ada8> /Size 237 >> /Subtype /application#2fld+json /Type /EmbeddedFile /Length 179 /Filter /FlateDecode >>
+<< /Params << /CheckSum <ed48c3b2987a9481250039a539d5c9a0> /Size 231 >> /Subtype /application#2fld+json /Type /EmbeddedFile /Length 174 /Filter /FlateDecode >>
 stream
-xœE½
-1„ßek½;-DRùÛYYØˆEŒƒsIÈ®¢ˆïîA«efçæE3—¢à!dötÉlÚ–İ½mR9ÓàgŞQî>{äÆ¥¾MQOä¶kFtĞLdhÖ,V°ñ,>ÖËŒ"8-d^t,éŠ¢Ñ¹¾¾Â+ºP¼Cäª–ôş“+íSoÜ'Ãn:M4ÚClíã[FaœÀdâ-Å8ÃíÔô)*U¾?;µN"
+xœE½‚@„ßekşb®BÔÎÊÂÆXœ°"Ü]n—DBxw÷¢Ñngv¾É¬P5Ö0¾ÔzfG*M©éqÒ‰õD?Ó:4vJ´sß35”fI÷*^‚‚êñD¬Ïñ`¯‰Ğ3¶õj…‡·OôİËë#tĞZô84h(¨lò(}âYQÆÙ.ÎK‰NÈ:ôÑìĞ¶H Ì<‚‘Ãæ*æ`Paáö·K¤
 endstream
 endobj
 7 0 obj
@@ -105,12 +105,12 @@ xref
 0000000015 00000 n 
 0000000128 00000 n 
 0000000243 00000 n 
-0000003785 00000 n 
-0000003833 00000 n 
-0000003892 00000 n 
-0000004264 00000 n 
-0000004370 00000 n 
-trailer << /Root 1 0 R /Size 9 /ID [<625977ee442d369785540e16783b24b6><dcf5d1659ceed1311c8519307be6ce61>] >>
+0000003893 00000 n 
+0000003941 00000 n 
+0000004000 00000 n 
+0000004367 00000 n 
+0000004473 00000 n 
+trailer << /Root 1 0 R /Size 9 /ID [<da9b142aa98ac9b000bf6e13e9d0d262><792cee862006347abb6d32bccd3f9ce9>] >>
 startxref
-4419
+4522
 %%EOF

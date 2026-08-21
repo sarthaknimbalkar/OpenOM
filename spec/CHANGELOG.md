@@ -28,7 +28,7 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
   `OMI-I003` (a cross-check skipped for absent inputs).
 - **Published JSON-LD `@context` / vocabulary** (`spec/context/openom-0.1.jsonld`) — the term→IRI
   mappings that make an openOM payload valid JSON-LD: schema.org terms (address, geo, name) map to
-  schema.org IRIs; openOM terms map to `https://verveliolabs.com/openom/ns/0.1#`; date fields carry
+  schema.org IRIs; openOM terms map to `https://openom.app/openom/ns/0.1#`; date fields carry
   `xsd:date` coercion and `rentSchedule`/`options` are ordered `@list` containers. Vocabulary
   completeness is drift-locked to the schema by `spec/tests/test_context.py` (every schema property
   and every conformant-sample term must have a mapping).
@@ -70,7 +70,7 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
 - `additionalProperties` is intentionally left open across the schema: unknown OPTIONAL members
   are permitted for forward compatibility ([OM-VER-003]).
 - **Name lock (Q1):** the standard is **openOM**, published by Vervelio Labs. The `@context`,
-  XMP namespace, and schema `$id` are now anchored at `https://verveliolabs.com/openom/...`
+  XMP namespace, and schema `$id` are now anchored at `https://openom.app/openom/...`
   (was the `SPEC-DOMAIN-TBD` placeholder). Vectors + golden PDFs were regenerated once against
   the real namespace; cross-implementation byte-identity re-verified.
 

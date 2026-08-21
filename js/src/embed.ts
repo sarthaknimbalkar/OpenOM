@@ -160,7 +160,7 @@ const _PDFA_BLOCK = `  <rdf:Description rdf:about=""
     <rdf:Bag>
      <rdf:li rdf:parseType="Resource">
       <pdfaSchema:schema>openOM offering-memorandum payload marker</pdfaSchema:schema>
-      <pdfaSchema:namespaceURI>https://verveliolabs.com/openom/ns/0.1#</pdfaSchema:namespaceURI>
+      <pdfaSchema:namespaceURI>https://openom.app/openom/ns/0.1#</pdfaSchema:namespaceURI>
       <pdfaSchema:prefix>omspec</pdfaSchema:prefix>
       <pdfaSchema:property>
        <rdf:Seq>
@@ -194,7 +194,7 @@ function injectOmspecXmp(doc: PDFDocument, props: OmspecProps): void {
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="openOM 0.1">
  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 ${_PDFA_BLOCK}
-  <rdf:Description rdf:about="" xmlns:omspec="https://verveliolabs.com/openom/ns/0.1#">
+  <rdf:Description rdf:about="" xmlns:omspec="https://openom.app/openom/ns/0.1#">
 ${body}
   </rdf:Description>
  </rdf:RDF>
