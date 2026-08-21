@@ -380,6 +380,9 @@ def _llms_file() -> str:
         "",
         "## Machine artifacts",
         "",
+        "- Hosted MCP endpoint (free, deterministic, no API key): https://mcp.openom.app/mcp"
+        " - Streamable HTTP; tools om_read / om_validate / om_inspect / om_extract_text /"
+        " om_extract_images / om_embed for grounding an AI agent in verified OM data.",
         f"- [JSON-LD context]({BASE}/ns/0.1): the openOM 0.1 vocabulary.",
         f"- [JSON Schema]({BASE}/spec/om-0.1.schema.json): the openOM 0.1 payload schema.",
         f"- [Webhook envelope schema]({BASE}/spec/webhook-envelope-0.1.schema.json).",
