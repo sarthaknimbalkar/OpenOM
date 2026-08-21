@@ -103,6 +103,15 @@
     .step h4{font-size:20px;font-weight:700;margin-top:10px;letter-spacing:-.01em}
     .step p{margin-top:8px;font-size:15px;color:var(--ink-soft)}
     .step .tagline{margin-top:14px;display:inline-block;font-family:var(--mono);font-size:11.5px;background:#F0EEE3;border-radius:5px;padding:4px 8px;color:#6d6852}
+    .who{padding:0 0 30px}
+    .who-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px}
+    .pcard{display:block;text-decoration:none;color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:22px 20px;transition:transform .12s ease,box-shadow .12s ease}
+    .pcard:hover{transform:translateY(-2px);box-shadow:0 14px 28px -18px rgba(15,29,48,.45)}
+    .pcard h4{font-size:17px;font-weight:800;letter-spacing:-.01em}
+    .pcard p{margin-top:8px;font-size:14px;color:var(--ink-soft)}
+    .pcard .go{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--link)}
+    @media(max-width:920px){.who-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.who-grid{grid-template-columns:1fr}}
     .surf{padding:10px 0 84px}
     .surf-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:38px}
     .card2{border-radius:14px;padding:32px 30px;border:1px solid var(--rule)}
@@ -244,6 +253,25 @@
       <div class="step reveal"><div class="num">STEP 3</div><h4>Rehost</h4>
         <p>Post the embedded file back where your OM lives. Every reader from now on gets the data layer for free.</p>
         <span class="tagline">repriced? re-embed in one click</span></div>
+    </div>
+  </div></section>
+
+  <section class="who"><div class="wrap">
+    <div class="eyebrow">Who it's for</div>
+    <h3>Four ways in.</h3>
+    <div class="who-grid">
+      <a class="pcard" href="/docs/quickstart-broker"><h4>Brokers &amp; authors</h4>
+        <p>You have OM PDFs and want them to carry structured, verifiable data - visually identical output.</p>
+        <span class="go">Broker quick-start &rarr;</span></a>
+      <a class="pcard" href="/docs/quickstart-portal"><h4>Portals &amp; consumers</h4>
+        <p>Read and trust openOM data on OMs you host or receive, with an honest trust badge.</p>
+        <span class="go">Portal quick-start &rarr;</span></a>
+      <a class="pcard" href="/docs/quickstart-developer"><h4>Developers</h4>
+        <p>Build against the standard: JSON Schema, JSON-LD context, Python + TypeScript.</p>
+        <span class="go">Developer quick-start &rarr;</span></a>
+      <a class="pcard" href="/docs/grounding-ai"><h4>AI builders</h4>
+        <p>Ground your CRE agent in verified facts via MCP instead of re-parsing PDFs.</p>
+        <span class="go">Grounding AI &rarr;</span></a>
     </div>
   </div></section>
 
