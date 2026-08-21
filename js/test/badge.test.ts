@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { badgeState, FORBIDDEN, honestLabel } from "../src/badge.js";
 
-describe("badgeState — §AA strict precedence [OM-TRUST-001/002]", () => {
+describe("badgeState - §AA strict precedence [OM-TRUST-001/002]", () => {
   test("absent when no payload", () => {
     expect(
       badgeState({ present: false, hashValid: null, originVerified: false, signatureValid: null }),
@@ -39,7 +39,7 @@ describe("badgeState — §AA strict precedence [OM-TRUST-001/002]", () => {
   });
 });
 
-describe("honestLabel — UI-honesty [OM-TRUST-003]", () => {
+describe("honestLabel - UI-honesty [OM-TRUST-003]", () => {
   test("integrity-only copy uses no forbidden word", () => {
     const { label, caption } = honestLabel("integrity-ok");
     const text = `${label} ${caption}`.toLowerCase();

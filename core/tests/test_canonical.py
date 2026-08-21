@@ -119,7 +119,7 @@ def test_unpaired_surrogate_rejected() -> None:
 
 def test_es6_number_formatting_reference() -> None:
     """Independent oracle: assert rfc8785's output equals ES6 Number-to-String, hand-derived
-    from the ECMAScript rules (§C [OM-CANON-011]) — not circularly from rfc8785 itself.
+    from the ECMAScript rules (§C [OM-CANON-011]) - not circularly from rfc8785 itself.
 
     ES rule: use exponential form when the decimal exponent < -6 or >= 21; otherwise plain.
     All values here are within openOM's safe-number policy (|int value| <= 2^53-1).
@@ -151,7 +151,7 @@ def test_nesting_within_limit_ok() -> None:
 
 def test_nesting_over_limit_rejected() -> None:
     obj: Any = {"leaf": 1}
-    for _ in range(100):  # beyond MAX_DEPTH (64) — matches the JS parser's guard
+    for _ in range(100):  # beyond MAX_DEPTH (64) - matches the JS parser's guard
         obj = {"child": obj}
     with pytest.raises(CanonicalizationError) as ei:
         canonicalize(obj)

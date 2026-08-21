@@ -4,9 +4,9 @@
 Resolves the schema in a way that works BOTH in a pip-installed wheel and an editable/dev checkout,
 and caches the parsed dict so hosted callers do not re-read + re-parse it per request:
 
-  * wheel     — the schema is shipped as package data (force-included from /spec at build; see
+  * wheel     - the schema is shipped as package data (force-included from /spec at build; see
                 core/pyproject.toml) and read via importlib.resources.
-  * editable  — package data isn't materialized, so fall back to the repo's /spec single source.
+  * editable  - package data isn't materialized, so fall back to the repo's /spec single source.
 
 Returning the SAME cached object also lets the validator cache in validate.py key on its identity.
 """

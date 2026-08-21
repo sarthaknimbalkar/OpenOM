@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   // Headed Chromium under xvfb can transiently die in CI; a retry relaunches a fresh browser so a
-  // one-off crash doesn't fail the gate. Locally (no CI env) there are no retries — a failure is real.
+  // one-off crash doesn't fail the gate. Locally (no CI env) there are no retries - a failure is real.
   retries: process.env.CI ? 2 : 0,
   timeout: 30_000,
   webServer: {

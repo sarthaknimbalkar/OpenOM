@@ -30,7 +30,7 @@ for (const file of jsFiles(dist)) {
 }
 
 if (leaked) {
-  console.error("assert-no-inference FAILED — the consumer bundle must be inference-free (§6a).");
+  console.error("assert-no-inference FAILED - the consumer bundle must be inference-free (§6a).");
   process.exit(1);
 }
-console.log(`assert-no-inference OK — ${dist} is inference-free.`);
+console.log(`assert-no-inference OK - ${dist} is inference-free.`);

@@ -7,7 +7,7 @@ import { payloadHash } from "../../src/hash.js";
  * an injected `omspec:` XMP marker, so the production reader (`src/read.ts`) has
  * realistic input BEFORE Track A's `/spec/vectors/pdfs/` land and BEFORE the
  * conformant embed module is built (held until the contract freeze). This is
- * deliberately minimal — it is NOT §D-conformant embed (e.g. it does not fix
+ * deliberately minimal - it is NOT §D-conformant embed (e.g. it does not fix
  * `/EF /UF`, is not non-destructive, is not idempotent).
  */
 

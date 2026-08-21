@@ -9,7 +9,7 @@ import { readMarkerProp } from "../src/read.js";
 import { integrityHashOfBytes } from "../src/verify.js";
 
 /**
- * OMW-W051 re-embed provenance warning — parity with the Python core's reembed_warnings.
+ * OMW-W051 re-embed provenance warning - parity with the Python core's reembed_warnings.
  * A reprice whose assertedDate precedes the payload it supersedes warns (never blocks).
  * Note: assertedDate is part of the payload, so a reprice changes both the date and the hash.
  */

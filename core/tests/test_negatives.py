@@ -1,4 +1,4 @@
-"""#113: negative-state golden vectors — the FAILURE paths a conformant consumer must reproduce, not
+"""#113: negative-state golden vectors - the FAILURE paths a conformant consumer must reproduce, not
 just the L1 happy path. Reads spec/vectors/negatives/manifest.json (shared with the JS core) and
 asserts each golden yields its expected read outcome. In the Python core, JS `hash-mismatch` == a
 present payload with hash_valid False ([OM-VAL-006])."""

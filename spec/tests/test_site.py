@@ -2,18 +2,18 @@
 
 Two guarantees, both deterministic (no network in CI):
 
-1. **Drift** — the committed ``site/`` deploy tree is exactly what ``gen_site.py``
+1. **Drift** - the committed ``site/`` deploy tree is exactly what ``gen_site.py``
    produces from ``spec/``. If someone edits a schema but not the mirror, this fails,
    so the hosted artifact can never silently diverge from the source of truth.
 
-2. **Resolve-check** — every absolute ``$id`` and ``@context`` URL under the pinned
+2. **Resolve-check** - every absolute ``$id`` and ``@context`` URL under the pinned
    base that appears anywhere in ``spec/`` maps to a file in ``site/`` at the
    mirrored path, byte-identical to the artifact it names. A schema whose ``$id`` has
    no served file (or serves stale bytes) is exactly the "unresolvable namespace"
    the standard's web half dies on.
 
 An optional live mode (``OPENOM_SITE_BASE=https://…`` set) fetches each URL and
-diffs — for post-deploy verification, run manually; never in CI.
+diffs - for post-deploy verification, run manually; never in CI.
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ def test_site_matches_generator(tmp_path: Path) -> None:
     staging = tmp_path / "site"
     gen.SITE = staging  # redirect output; keep spec sources intact
     gen.generate()
-    assert SITE.exists(), "site/ is not committed — run: python spec/scripts/gen_site.py"
+    assert SITE.exists(), "site/ is not committed - run: python spec/scripts/gen_site.py"
     drift = _dir_equal(SITE, staging)
     assert not drift, "site/ is stale; run gen_site.py:\n" + "\n".join(drift)
 

@@ -40,7 +40,7 @@ def ssim(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def tiled_ssim_min(a: np.ndarray, b: np.ndarray, tile: int = 64) -> float:
-    """Worst-case SSIM over a grid of tiles — a localized change (a stamp in one corner) tanks
+    """Worst-case SSIM over a grid of tiles - a localized change (a stamp in one corner) tanks
     one tile even when the global SSIM stays ~1.0, so this is the honest visual-diff metric."""
     if a.shape != b.shape:
         return 0.0

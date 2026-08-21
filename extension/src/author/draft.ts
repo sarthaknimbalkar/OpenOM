@@ -1,7 +1,7 @@
 // The author draft: a working payload plus per-field evidence annotations, all pure and immutable so
 // the review panel and its tests stay deterministic. Evidence is broker-entered in B1 (M5b-2's
 // on-device extractor pre-fills it). Fields carry source "extracted" until the assert step promotes
-// them. No chrome, no clock, no /js — just data transforms over a JSON-pointer-addressed payload.
+// them. No chrome, no clock, no /js - just data transforms over a JSON-pointer-addressed payload.
 
 export interface FieldEvidence {
   page?: number;
@@ -20,7 +20,7 @@ export function newDraft(seed?: Record<string, unknown>): Draft {
 
 /**
  * Immutably set a JSON-pointer leaf, cloning containers along the path. A numeric token creates (or
- * keeps) an ARRAY, a non-numeric one an OBJECT — so `/lease/rentSchedule/0/annualRent` builds a real
+ * keeps) an ARRAY, a non-numeric one an OBJECT - so `/lease/rentSchedule/0/annualRent` builds a real
  * array, not `{"0":…}` ([#86]).
  */
 export function setField(d: Draft, path: string, value: unknown): Draft {
@@ -47,7 +47,7 @@ export function setEvidence(d: Draft, path: string, ev: FieldEvidence): Draft {
   return { payload: d.payload, evidence: { ...d.evidence, [path]: ev } };
 }
 
-/** Immutably append an item to the array at `path` (creating it if absent) — for the rent editor. */
+/** Immutably append an item to the array at `path` (creating it if absent) - for the rent editor. */
 export function appendArrayItem(d: Draft, path: string, item: unknown): Draft {
   const cur = resolve(d.payload, path);
   const arr = Array.isArray(cur) ? cur : [];
@@ -61,7 +61,7 @@ export function removeArrayItem(d: Draft, path: string, index: number): Draft {
   return setField(d, path, cur.filter((_, i) => i !== index));
 }
 
-/** Resolve a JSON-pointer path in the draft payload (undefined if absent) — seeds form controls. */
+/** Resolve a JSON-pointer path in the draft payload (undefined if absent) - seeds form controls. */
 export function getField(d: Draft, path: string): unknown {
   return resolve(d.payload, path);
 }
@@ -71,7 +71,7 @@ export function omissions(d: Draft, schemaPaths: string[]): string[] {
   return schemaPaths.filter((p) => resolve(d.payload, p) === undefined);
 }
 
-/** Leaf paths that carry a value but no citable evidence — flagged for the human, never blocked. */
+/** Leaf paths that carry a value but no citable evidence - flagged for the human, never blocked. */
 export function fieldsWithoutEvidence(d: Draft): string[] {
   return leaves(d.payload).map(([p]) => p).filter((p) => {
     const ev = d.evidence[p];

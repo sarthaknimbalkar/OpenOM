@@ -16,7 +16,7 @@ import type {
 // #166 groundwork: the draft-source seam that lets a deterministic structured connector (Buildout,
 // etc.) sit above the inference Extractor seam and take priority over it.
 
-describe("partialPayloadToFields — deterministic partial-payload → draft fields", () => {
+describe("partialPayloadToFields - deterministic partial-payload → draft fields", () => {
   test("maps machine fields to JSON pointers; skips structural + human-only members", () => {
     const partial = {
       "@context": ["x"],
@@ -62,7 +62,7 @@ describe("partialPayloadToFields — deterministic partial-payload → draft fie
   });
 });
 
-describe("pickDraftSource — deterministic connector wins over an inference extractor", () => {
+describe("pickDraftSource - deterministic connector wins over an inference extractor", () => {
   const fakeExtractor: Extractor = {
     kind: "on-device",
     available: async () => true,

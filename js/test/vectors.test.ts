@@ -8,7 +8,7 @@ import { sha256Hex } from "../src/crypto.js";
 /**
  * CROSS-IMPLEMENTATION PIN. Reproduces the frozen conformance vectors committed
  * by Track A at spec/vectors/ (feat/core @ 9aada7e). The vectors are the oracle
- * — neither implementation certifies itself (§B [OM-VEC-003], §T [OM-REF-001]).
+ * - neither implementation certifies itself (§B [OM-VEC-003], §T [OM-REF-001]).
  * `jcs_b64` is the exact canonical byte target; `jcs_sha256` is its digest.
  * A one-byte divergence here is a silent standard fork; it MUST fail loudly.
  */

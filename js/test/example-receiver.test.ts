@@ -3,7 +3,7 @@ import { buildEnvelope, signHeaders, type Verification } from "../src/webhook.js
 import { payloadHash } from "../src/hash.js";
 import { receiveWebhook } from "../examples/webhook-receiver.js";
 
-// #143: the reference webhook receiver is CI-verified — accepts a correctly-signed, hash-bound
+// #143: the reference webhook receiver is CI-verified - accepts a correctly-signed, hash-bound
 // envelope and rejects each footgun (bad signature, stale, malformed shape, payloadHash mismatch).
 const secret = "wh-secret";
 const now = 1_760_000_000;

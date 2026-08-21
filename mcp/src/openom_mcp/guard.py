@@ -4,8 +4,8 @@
 A network-facing server must not be taken down by a malicious PDF that hangs or exhausts memory in
 a C parser (pikepdf/PyMuPDF). ``bounded_call`` runs a parse in a **killable subprocess** with a
 wall-clock timeout (a Python thread cannot interrupt a hung C call) and a memory cap (RLIMIT_AS on
-POSIX). A timeout maps to ``OM-IO-003`` and any crash or in-child exception — INCLUDING a rejected
-memory limit, which is no longer swallowed (#123) — to ``OM-IO-010``, never a server takedown
+POSIX). A timeout maps to ``OM-IO-003`` and any crash or in-child exception - INCLUDING a rejected
+memory limit, which is no longer swallowed (#123) - to ``OM-IO-010``, never a server takedown
 ([OM-SEC-010], [OM-MCP-008]). Off-POSIX the in-process cap is impossible, so the deployment MUST
 bound memory (container/cgroup or a Windows Job Object); ``bounded_call`` warns once if it cannot.
 
@@ -27,7 +27,7 @@ from .tools import ToolError
 
 # Whether an in-process address-space cap (RLIMIT_AS) is even possible on this platform. Off-POSIX
 # (Windows) the `resource` module is absent, so the memory bound MUST come from the deployment
-# (a container/cgroup limit or a Windows Job Object) — see SECURITY.md's threat model (#123/#128).
+# (a container/cgroup limit or a Windows Job Object) - see SECURITY.md's threat model (#123/#128).
 _RESOURCE_AVAILABLE = importlib.util.find_spec("resource") is not None
 _warned_no_rlimit = False
 

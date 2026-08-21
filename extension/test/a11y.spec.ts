@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures.js";
 
 const BROKER = "https://broker.example.com:8443";
 
-// Real automated accessibility audit (#71) — WCAG 2.0/2.1 A + AA — against both surfaces. We gate on
+// Real automated accessibility audit (#71) - WCAG 2.0/2.1 A + AA - against both surfaces. We gate on
 // serious/critical violations (the ones that actually block assistive-tech users); the full report
 // is attached to the failure message for triage.
 async function audit(page: import("@playwright/test").Page) {

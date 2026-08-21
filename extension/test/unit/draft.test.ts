@@ -9,7 +9,7 @@ import {
   removeArrayItem,
 } from "../../src/author/draft.js";
 
-describe("draft model — immutable payload + per-field evidence", () => {
+describe("draft model - immutable payload + per-field evidence", () => {
   test("setField writes a JSON-pointer leaf without mutating the input", () => {
     const d0 = newDraft();
     const d1 = setField(d0, "/deal/capRate", 0.0575);

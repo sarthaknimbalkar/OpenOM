@@ -1,4 +1,4 @@
-"""M3 Task 8: S3/R2 BlobStore adapter — integration only. SKIPPED unless the OPENOM_R2_* env is set
+"""M3 Task 8: S3/R2 BlobStore adapter - integration only. SKIPPED unless the OPENOM_R2_* env is set
 (a real R2 bucket or a local MinIO), so CI stays offline. Run locally against MinIO to exercise the
 same interface LocalBlobStore proves in the gate: put -> get -> delete, plus foreign-principal 007.
 """
@@ -14,7 +14,7 @@ from openom_mcp.tools import ToolError
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("OPENOM_R2_BUCKET"),
-    reason="R2/MinIO env not set (OPENOM_R2_*) — integration-only",
+    reason="R2/MinIO env not set (OPENOM_R2_*) - integration-only",
 )
 
 

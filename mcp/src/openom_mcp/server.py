@@ -99,12 +99,12 @@ def build_http_app(
 
     Injects the http ``PdfResolver`` (SafeFetcher + BlobStore), the rate limiter, and a principal
     middleware that sets ``tools._current_principal`` from ``Authorization``/client IP per request.
-    Zero inference — the paid extraction service is a separate deployment ([OM-DoD-008]).
+    Zero inference - the paid extraction service is a separate deployment ([OM-DoD-008]).
 
     HTTP-layer transport security (#48): pass ``dns_rebinding_protection=True`` with
     ``allowed_hosts``/``allowed_origins`` for a public deployment (rejects spoofed Host/Origin,
     the browser-DNS-rebinding defense). Off by default so self-hosting on localhost is friction-free
-    — this is inbound protection and is orthogonal to the outbound SSRF ruleset in ``fetch.py``.
+    - this is inbound protection and is orthogonal to the outbound SSRF ruleset in ``fetch.py``.
     """
     from mcp.server.transport_security import TransportSecuritySettings
 
@@ -172,12 +172,12 @@ def principal_asgi(app: Any, extract: Any) -> Any:
     return middleware
 
 
-def main() -> None:  # pragma: no cover — blocking stdio loop, exercised out-of-process
+def main() -> None:  # pragma: no cover - blocking stdio loop, exercised out-of-process
     """Entry point (`om-mcp`): run the server over stdio."""
     mcp.run("stdio")
 
 
-def main_http() -> None:  # pragma: no cover — blocking server loop, exercised out-of-process
+def main_http() -> None:  # pragma: no cover - blocking server loop, exercised out-of-process
     """Entry point (`om-mcp-http`): run the deterministic Streamable HTTP server (M3)."""
     import uvicorn  # type: ignore[import-not-found]
 

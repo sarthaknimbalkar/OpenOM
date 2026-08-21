@@ -1,5 +1,5 @@
 // Defense-in-depth for the author:embed service-worker route ([#98]). The panel already gates embed
-// behind validation, but the embed seam must not trust its caller — refuse to embed a schema-invalid
+// behind validation, but the embed seam must not trust its caller - refuse to embed a schema-invalid
 // payload even if something messages author:embed directly. Deterministic; eval-free validator.
 import { validatePayload, type PrecompiledValidate } from "openom-js";
 

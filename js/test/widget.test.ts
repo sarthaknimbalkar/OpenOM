@@ -10,7 +10,7 @@ async function blankPdfBytes(): Promise<Uint8Array> {
   return doc.save();
 }
 
-// #144: the embeddable badge is honesty-critical — it must map provenance to the §AA state exactly
+// #144: the embeddable badge is honesty-critical - it must map provenance to the §AA state exactly
 // like the extension (shared openom-js core) and never overclaim. These cover the pure core; the DOM
 // shell is a thin wrapper that only renders these static strings.
 

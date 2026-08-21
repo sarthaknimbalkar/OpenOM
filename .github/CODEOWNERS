@@ -1,5 +1,5 @@
 # Default owner for everything in the repo.
 * @sarthaknimbalkar
 
-# Spec changes are contract changes — always reviewed.
+# Spec changes are contract changes - always reviewed.
 /spec/ @sarthaknimbalkar

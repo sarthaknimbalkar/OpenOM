@@ -1,6 +1,6 @@
 # openom-cli
 
-The `om` command over [`openom-core`](../core) — no UI, no inference; also the server-side path.
+The `om` command over [`openom-core`](../core) - no UI, no inference; also the server-side path.
 
 ```sh
 pip install openom-cli            # or, from a clone:  pip install -e "cli[dev]"
@@ -14,7 +14,7 @@ om check    out.pdf               # consistency only
 
 ## Watch-folder (server-side automation)
 
-Drop `<name>.pdf` + `<name>.json` pairs into a folder and get embedded OMs out — no UI:
+Drop `<name>.pdf` + `<name>.json` pairs into a folder and get embedded OMs out - no UI:
 
 ```sh
 om watch ./inbox --out ./outbox --asserted-date 2026-08-18 \

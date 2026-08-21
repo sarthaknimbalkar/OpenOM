@@ -40,8 +40,8 @@ for (const v of manifest.vectors) {
     console.log(`A->B ok   ${v.name}`);
   }
 
-  // B->A: JS writer embeds onto the structurally-rich golden PDF (#131) — a re-embed, so it exercises
-  // JS embed into a real AF/EF/XMP/object-stream document, not a fresh blank — for the Python reader.
+  // B->A: JS writer embeds onto the structurally-rich golden PDF (#131) - a re-embed, so it exercises
+  // JS embed into a real AF/EF/XMP/object-stream document, not a fresh blank - for the Python reader.
   const out = await embedPayload(new Uint8Array(golden), payload);
   writeFileSync(join(outDir, `${v.name}.pdf`), out);
 }

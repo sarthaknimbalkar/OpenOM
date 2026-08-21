@@ -1,6 +1,6 @@
 # openOM GitHub Action
 
-Embed or validate openOM payloads in a broker's CI pipeline — no browser, no inference. Wraps the
+Embed or validate openOM payloads in a broker's CI pipeline - no browser, no inference. Wraps the
 deterministic `om` CLI.
 
 ## Validate a payload on every push (the gate)
@@ -39,12 +39,12 @@ The output PDF is visually identical; re-embedding replaces (never stacks) and r
 | Input | For | Default | Notes |
 |-------|-----|---------|-------|
 | `command` | both | `check` | `embed` or `check` |
-| `pdf` | embed | — | input OM PDF |
-| `payload` | both | — | payload JSON |
+| `pdf` | embed | - | input OM PDF |
+| `payload` | both | - | payload JSON |
 | `input` | check | `payload` | payload JSON **or** an embedded PDF |
 | `out` | embed | `out.openom.pdf` | output path |
 | `asserted-date` | embed | today (UTC) | ISO-8601 |
-| `schema` | check | — | JSON Schema → error tier |
+| `schema` | check | - | JSON Schema → error tier |
 | `strict` | check | `false` | fail on warnings too |
 | `version` | both | latest | pip spec, e.g. `==0.1.0` |
 | `install` | both | `true` | set `false` if `om` is already on PATH |

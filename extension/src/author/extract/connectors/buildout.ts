@@ -1,15 +1,15 @@
 // Reference Buildout connector (decision memo §3.1; Q2 decided by design). It maps a Buildout
-// listing record onto a PARTIAL openOM payload — deterministic, no inference, no PDF. The concrete
+// listing record onto a PARTIAL openOM payload - deterministic, no inference, no PDF. The concrete
 // wire call is INJECTED as `BuildoutClient`, so transport is irrelevant here: an HTTP/OAuth MCP call,
 // a stdio MCP client, or a hosted author-service proxy all satisfy the same interface (memo §3.3 Q1).
 //
 // The `BuildoutListing` shape below is the openOM-optimal fit, not a copy of Buildout's live API. When
 // the real Buildout MCP is wired, the only change is reconciling FIELD NAMES + units in `getListing`
-// and in the mapping — the structure, the seam, the mapper, and the gate are all already in place.
+// and in the mapping - the structure, the seam, the mapper, and the gate are all already in place.
 import type { StructuredConnector } from "../source.js";
 
 /**
- * A Buildout listing record (assumed shape — reconcile names/units with the real MCP response).
+ * A Buildout listing record (assumed shape - reconcile names/units with the real MCP response).
  * All fields optional: the broker may not have every one, and we emit only what's present
  * (never guess). Rates/occupancy are assumed to arrive as PERCENTAGES (Buildout's UI convention)
  * and are converted to openOM's decimal-fraction convention here.
@@ -72,7 +72,7 @@ export function buildoutListingToPayload(
     pricePerSF: l.pricePerSqFt,
     pricePerUnit: l.pricePerUnit,
   });
-  // assertedBy / assertedDate / noiType are NOT imported — the human stamps them at the review gate.
+  // assertedBy / assertedDate / noiType are NOT imported - the human stamps them at the review gate.
   return compact({
     property: Object.keys(property).length ? property : undefined,
     deal: Object.keys(deal).length ? deal : undefined,

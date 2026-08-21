@@ -8,7 +8,7 @@ import { canonicalize } from "../src/canonicalize.js";
  * CROSS-IMPLEMENTATION REJECTION CONFORMANCE (§C.1). The shared manifest at
  * spec/vectors/rejections/ lists malformed inputs that BOTH implementations MUST reject with the
  * SAME OM-IO-* code. The Python core runs the identical manifest (core/tests/test_rejections.py).
- * Happy-path vectors prove byte-identity; these prove the engines agree on what to refuse — a
+ * Happy-path vectors prove byte-identity; these prove the engines agree on what to refuse - a
  * divergence here is a silent standard fork.
  */
 const vectorsDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "spec", "vectors");

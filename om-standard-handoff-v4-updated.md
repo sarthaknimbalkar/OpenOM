@@ -1,26 +1,26 @@
-# OM Structured Data Standard + Tooling — Handoff Document
+# OM Structured Data Standard + Tooling - Handoff Document
 
 **Version:** v6.1 (2026-08-16)
 **Publisher:** Vervelio
 **Audience:** Scott (business) + developer + Claude Code
 **Status:** Scoping complete; ready to begin Milestone 1. Decisions log §16.
-**Supersedes:** v0–v6.0. v6.0 took the document to standards-grade peak across a 28-appendix Part II. **v6.1 restores it to a *handoff*: the M1-essential normative core (§A–§E, §H–§J) stays inline; the ~60% institutional apparatus a standards body needs but an org of one does not yet — versioning, licensing/IP, privacy, governance, telemetry, diagrams, the worked example, the `@context` model, the ABNF grammar, conformance profiles, the reference harness, disclosure, and the §V–§AA conformance appendices — is parked intact in [`om-normative-spec-draft-v0.1.md`](om-normative-spec-draft-v0.1.md) until adoption. Shadow removed: the auto-generatable requirements index, glossary over-definitions, and thesis restatements. The four internal contradictions v6.0 briefly carried (OMW-W002, the tolerance table, the conformance schemes, disclosure/patent) are reconciled to one source of truth each.**
+**Supersedes:** v0–v6.0. v6.0 took the document to standards-grade peak across a 28-appendix Part II. **v6.1 restores it to a *handoff*: the M1-essential normative core (§A–§E, §H–§J) stays inline; the ~60% institutional apparatus a standards body needs but an org of one does not yet - versioning, licensing/IP, privacy, governance, telemetry, diagrams, the worked example, the `@context` model, the ABNF grammar, conformance profiles, the reference harness, disclosure, and the §V–§AA conformance appendices - is parked intact in [`om-normative-spec-draft-v0.1.md`](om-normative-spec-draft-v0.1.md) until adoption. Shadow removed: the auto-generatable requirements index, glossary over-definitions, and thesis restatements. The four internal contradictions v6.0 briefly carried (OMW-W002, the tolerance table, the conformance schemes, disclosure/patent) are reconciled to one source of truth each.**
 
 
 
-> **Document structure.** **Part I (§1–§16)** is the narrative handoff — the why, the strategy, the plan. **Part II** inlines only the **M1-essential normative core** (§A–§E, §H–§J; RFC 2119 keywords). The remaining normative appendices are drafted but **deferred until adoption** in [`om-normative-spec-draft-v0.1.md`](om-normative-spec-draft-v0.1.md) (see the scope note at the head of Part II). Where Part I and any normative section disagree, **the normative section wins.**
+> **Document structure.** **Part I (§1–§16)** is the narrative handoff - the why, the strategy, the plan. **Part II** inlines only the **M1-essential normative core** (§A–§E, §H–§J; RFC 2119 keywords). The remaining normative appendices are drafted but **deferred until adoption** in [`om-normative-spec-draft-v0.1.md`](om-normative-spec-draft-v0.1.md) (see the scope note at the head of Part II). Where Part I and any normative section disagree, **the normative section wins.**
 
 
-> **Name note:** "OpenOM" is a **working title, not locked.** The name sweep (§15 Q1) is P0 — it gates `@context`, PyPI/npm imports, and the org/domain reservation. Everything below uses "OpenOM"/`verveliolabs.com/openom` as placeholders.
+> **Name note:** "OpenOM" is a **working title, not locked.** The name sweep (§15 Q1) is P0 - it gates `@context`, PyPI/npm imports, and the org/domain reservation. Everything below uses "OpenOM"/`verveliolabs.com/openom` as placeholders.
 
 ---
 
 ## TL;DR (for Scott)
 
-- **What:** OpenOM is an open standard — MIT code, CC-BY spec (§G) — that embeds a small, broker-asserted data payload *inside* the OM PDF, using the same PDF/A-3 mechanism Factur-X uses for e-invoicing, and mirrors it as JSON-LD on the web. The broker asserts the deal's key facts once; every downstream party reads them instead of re-typing them out of a 40-page document.
-- **Why it matters (per deal):** Today four or more parties — buyer, buyer's broker/analyst, lender, appraiser — each independently re-extract the same facts, each burning ~30–80k tokens of vision-model work on one 40-page OM, and each ending with a slightly different version of the numbers. OpenOM collapses that into one ~20–60k-token extraction at the source and ~2–5k-token reads downstream — **roughly 10–25× less per consuming party** — and produces one attributable, tamper-evident version of the deal's own figures. It also catches the OM's own math errors before anyone else sees them (§9). See §2 for the full cost model.
-- **Why it lasts:** Token costs fall every year, so cheap extraction is the *hook, not the moat*. The durable value is **provenance** — a named party's dated, verifiable position on the deal (§10). That does not decay; if anything it compounds with adoption.
-- **The ask:** ~15 real OMs across producers — the fixture *matrix*, not a count (§14) — to build and test against; the name decision (§15 Q1); and the free-vs-paid call before Milestone 3 (§15 Q2).
+- **What:** OpenOM is an open standard - MIT code, CC-BY spec (§G) - that embeds a small, broker-asserted data payload *inside* the OM PDF, using the same PDF/A-3 mechanism Factur-X uses for e-invoicing, and mirrors it as JSON-LD on the web. The broker asserts the deal's key facts once; every downstream party reads them instead of re-typing them out of a 40-page document.
+- **Why it matters (per deal):** Today four or more parties - buyer, buyer's broker/analyst, lender, appraiser - each independently re-extract the same facts, each burning ~30–80k tokens of vision-model work on one 40-page OM, and each ending with a slightly different version of the numbers. OpenOM collapses that into one ~20–60k-token extraction at the source and ~2–5k-token reads downstream - **roughly 10–25× less per consuming party** - and produces one attributable, tamper-evident version of the deal's own figures. It also catches the OM's own math errors before anyone else sees them (§9). See §2 for the full cost model.
+- **Why it lasts:** Token costs fall every year, so cheap extraction is the *hook, not the moat*. The durable value is **provenance** - a named party's dated, verifiable position on the deal (§10). That does not decay; if anything it compounds with adoption.
+- **The ask:** ~15 real OMs across producers - the fixture *matrix*, not a count (§14) - to build and test against; the name decision (§15 Q1); and the free-vs-paid call before Milestone 3 (§15 Q2).
 - **Status:** Nothing built yet; repo initialized. First code is the deterministic PDF round-trip (embed → read) on 3 real OMs, with the cross-implementation round-trip test wired in from day one (§8a, §B).
 
 
@@ -34,37 +34,37 @@ Terms of art used in this handoff, grouped for navigation.
 
 | Term | Meaning |
 |---|---|
-| **OM** | Offering Memorandum — the marketing/deal PDF a listing broker produces for a property. |
-| **STNL** | Single-Tenant Net Lease — one tenant, net-lease structure. v0.1 scope. |
+| **OM** | Offering Memorandum - the marketing/deal PDF a listing broker produces for a property. |
+| **STNL** | Single-Tenant Net Lease - one tenant, net-lease structure. v0.1 scope. |
 | **N / NN / NNN** | Net-lease grades by how many expenses the tenant covers (taxes, insurance, maintenance). NNN = tenant covers all three. |
 | **absolute-net / gross / modified-gross** | Other `leaseTypeAsserted` values (§E). Absolute-net = tenant covers everything incl. roof/structure; gross = landlord covers operating expenses; modified-gross = split. |
-| **NOI** | Net Operating Income — income after operating expenses; the numerator of the cap rate. |
+| **NOI** | Net Operating Income - income after operating expenses; the numerator of the cap rate. |
 | **noiType** | Whether NOI is **in-place** (actual, current leases) or **pro-forma** (projected). The disclosure most accuracy disputes hinge on. |
 | **noiAsOfDate** | The date the asserted NOI is stated as of; required whenever `noi` is present (§E). |
 | **Cap rate** | NOI ÷ price. The core valuation ratio. |
-| **price/SF, rentPSF** | Price (or rent) per square foot — `askingPrice ÷ buildingSF`, `annualRent ÷ buildingSF`. Derivable; consistency-checked (§H). |
-| **rentSchedule** | The modeled, per-period rent object (start/end, annual/monthly rent, escalation, abatement) — the standard's differentiator (§6d, §7d). |
+| **price/SF, rentPSF** | Price (or rent) per square foot - `askingPrice ÷ buildingSF`, `annualRent ÷ buildingSF`. Derivable; consistency-checked (§H). |
+| **rentSchedule** | The modeled, per-period rent object (start/end, annual/monthly rent, escalation, abatement) - the standard's differentiator (§6d, §7d). |
 | **escalation / escalationFromPrior** | The step-up in rent between consecutive periods, as a decimal fraction (0.10 = 10%). |
 | **abatement** | A period of reduced or free rent within the schedule. |
 | **options (ROFR / ROFO)** | Renewal options (count × length × escalation); Right Of First Refusal / Right Of First Offer to purchase. |
 | **guarantor** | The entity backing the lease (corporate / personal / franchisee); distinct from the tenant entity. |
-| **landlordResponsibilities** | The boolean set (roof, structure, parking, HVAC, taxes, insurance, CAM) that makes lease type *derivable and disputable* — kills "everything is NNN." |
+| **landlordResponsibilities** | The boolean set (roof, structure, parking, HVAC, taxes, insurance, CAM) that makes lease type *derivable and disputable* - kills "everything is NNN." |
 | **buildingSF / lotAcres** | Gross building area (square feet) and land area (acres). |
 | **OSCRE / RESO** | CRE / residential real-estate data-standards bodies; OpenOM *aligns with* their vocabularies for credibility, does not adopt wholesale (§3). |
-| **Buildout / SharpLaunch / RCM / LightBox** | OM production & listing platforms — natural distribution partners (§5d), not competitors to the spec. |
+| **Buildout / SharpLaunch / RCM / LightBox** | OM production & listing platforms - natural distribution partners (§5d), not competitors to the spec. |
 
 ### Format, JSON-LD & PDF mechanics
 
 | Term | Meaning |
 |---|---|
-| **JSON-LD** | JSON for Linked Data — JSON with a shared vocabulary (`@context`) so machines agree on field meaning. |
+| **JSON-LD** | JSON for Linked Data - JSON with a shared vocabulary (`@context`) so machines agree on field meaning. |
 | **`@context`** | The URL(s) defining the vocabulary a JSON-LD payload uses (schema.org + our custom namespace). Published `@context` URLs are immutable (§F). |
 | **Factur-X / ZUGFeRD** | Franco-German e-invoicing standard: structured XML embedded in a PDF/A-3. The precedent we borrow the embedding mechanism from. |
-| **/AF, AFRelationship** | PDF "Associated Files" mechanism — how an attachment is bound to a document with a declared relationship (`Data`). |
+| **/AF, AFRelationship** | PDF "Associated Files" mechanism - how an attachment is bound to a document with a declared relationship (`Data`). |
 | **/Filespec, /EmbeddedFiles, /EF** | The PDF dictionaries that name and carry an embedded file: the file specification, the catalog name tree of embedded files, and the embedded-file stream reference (§D). |
 | **XMP** | PDF metadata block; we store spec name, version, payload filename, and payload hash here (§D.2). |
-| **/CheckSum** | The legacy PDF `/Params` field — an **MD5** digest of the uncompressed embedded bytes. **Not** the integrity mechanism; ignored for trust (§C, §D). |
-| **SMask** | Soft mask — the alpha/transparency channel of a PDF image; must be recombined to recover RGBA. |
+| **/CheckSum** | The legacy PDF `/Params` field - an **MD5** digest of the uncompressed embedded bytes. **Not** the integrity mechanism; ignored for trust (§C, §D). |
+| **SMask** | Soft mask - the alpha/transparency channel of a PDF image; must be recombined to recover RGBA. |
 | **Image XObject** | The PDF object type that holds a raster image; extraction locates + decompresses these (§8b). |
 | **CMYK / ICC / sRGB** | Print vs. profiled vs. standard-web color spaces; image extraction normalizes CMYK/ICC → sRGB (§8b). |
 | **PDF/A-3** | Archival PDF profile that permits arbitrary embedded files. Our embedding is PDF/A-3-*style* (relaxed conformance in v1). |
@@ -74,15 +74,15 @@ Terms of art used in this handoff, grouped for navigation.
 
 | Term | Meaning |
 |---|---|
-| **JCS (RFC 8785)** | JSON Canonicalization Scheme — the exact byte form of a payload (UTF-8, sorted keys, no whitespace, canonical numbers) that makes cross-implementation hashing well-defined (§C). |
-| **SHA-256 / integrity hash** | `sha256:<hex>` over the JCS bytes (signature key absent) — proves the payload is *unaltered since embed*; stored in XMP, not in the payload (§C). |
-| **sourceDocHash** | A distinct SHA-256 over the *original source PDF bytes* — answers "which document does this payload describe," not "has the payload changed" (§C). |
+| **JCS (RFC 8785)** | JSON Canonicalization Scheme - the exact byte form of a payload (UTF-8, sorted keys, no whitespace, canonical numbers) that makes cross-implementation hashing well-defined (§C). |
+| **SHA-256 / integrity hash** | `sha256:<hex>` over the JCS bytes (signature key absent) - proves the payload is *unaltered since embed*; stored in XMP, not in the payload (§C). |
+| **sourceDocHash** | A distinct SHA-256 over the *original source PDF bytes* - answers "which document does this payload describe," not "has the payload changed" (§C). |
 | **payloadHash** | The XMP-stored integrity hash used for detection and tamper-evidence (§D.2). |
 | **supersedes** | The prior `payloadHash` recorded on re-embed, so repricing *replaces* rather than stacks (§4, §D.3). |
 | **assertedBy / assertedDate** | The named party (broker / brokerage / license #) making the assertion, and the date it is stated as of. Both required (§7a). |
 | **source tag** | Per-field provenance: `asserted` (broker stated it) / `extracted` (pulled from doc, unreviewed) / `verified` (checked against an authoritative source) (§7a). |
-| **four-layer provenance** | Hash + self-asserted identity + domain-origin verification + reserved signature field — the resolved trust model; each layer proves exactly one thing (§10). |
-| **domain-origin verification** | Read-time proof that the OM and its JSON-LD mirror are served from a specific domain, via HTTPS/DNS — the web's own trust model. Free because consumer mode already has the URL (§10, layer 3). |
+| **four-layer provenance** | Hash + self-asserted identity + domain-origin verification + reserved signature field - the resolved trust model; each layer proves exactly one thing (§10). |
+| **domain-origin verification** | Read-time proof that the OM and its JSON-LD mirror are served from a specific domain, via HTTPS/DNS - the web's own trust model. Free because consumer mode already has the URL (§10, layer 3). |
 | **signature (reserved)** | The optional, empty-in-0.1 `meta.signature` field; cryptographic authorship is registry-era, required nowhere in 0.1 (§10, layer 4). |
 | **idempotent (re-embed)** | Re-running embed replaces the payload in place (never a second `om.json`), bumps `assertedDate`, sets `supersedes` (§4, §D.3). |
 | **specVersion / SemVer** | The payload's spec version, governed by Semantic Versioning: additive = minor, breaking = major + new `@context` URL (§F). |
@@ -90,27 +90,27 @@ Terms of art used in this handoff, grouped for navigation.
 | **Producer / Consumer / Validator** | The three conformance roles an implementation may claim; it is judged against each role it claims (§A, [OM-CONF-004]). |
 | **conformance vectors** | The committed test payloads, expected JCS/hash/report outputs, and golden PDFs in `/spec/vectors/` that every implementation must reproduce (§B). |
 | **error / warning taxonomy** | Stable, append-only codes: `OMV-E###` errors **block** embed; `OMW-W###` warnings **never** block (§H). |
-| **cross-implementation round-trip** | The named test that a payload embedded by `/js` (pdf-lib) reads byte-for-byte identically under `/core` (pikepdf) and vice versa — the bug that silently kills a standard (§8a, §B). |
+| **cross-implementation round-trip** | The named test that a payload embedded by `/js` (pdf-lib) reads byte-for-byte identically under `/core` (pikepdf) and vice versa - the bug that silently kills a standard (§8a, §B). |
 | **validator-as-trojan-horse** | Shipping the schema-independent consistency checker early, as standalone free value, to seed usage before embedding matters (§9). |
 
 ### Infrastructure, protocol & tooling
 
 | Term | Meaning |
 |---|---|
-| **MCP** | Model Context Protocol — the agent tool-access standard the server exposes; one deterministic server reaches every major client (§6b). |
+| **MCP** | Model Context Protocol - the agent tool-access standard the server exposes; one deterministic server reaches every major client (§6b). |
 | **stdio / Streamable HTTP** | The two MCP transports: local pipe (stdio) and hosted remote (Streamable HTTP), needed for ChatGPT/web reach (§6b). |
 | **FastMCP** | The Python library the thin MCP wrapper is built on. |
-| **MV3** | Manifest V3 — the current Chrome extension platform. |
-| **Prompt API / Gemini Nano** | Chrome's on-device model API used for free, private, local extraction — the document never leaves the machine (§5b path 1). |
+| **MV3** | Manifest V3 - the current Chrome extension platform. |
+| **Prompt API / Gemini Nano** | Chrome's on-device model API used for free, private, local extraction - the document never leaves the machine (§5b path 1). |
 | **Presigned upload** | A time-limited URL that lets a client upload a file directly to storage without server credentials. |
 | **blob / blob id / R2** | An uploaded file object, its identifier, and the object store (Cloudflare R2) holding it, subject to a retention TTL (§6d, §K). |
 | **HMAC** | Keyed hash used to sign the webhook body with a per-webhook shared secret so receivers can verify authenticity (§5b, §J). |
 | **webhook envelope / envelopeVersion** | The versioned JSON wrapper POSTed to a receiver's URL (event, timestamp, verification, payload); versions independently of `specVersion` (§5b, §F). |
-| **SSRF / DNS rebinding** | Server-Side Request Forgery and the rebinding variant — the re-fetch/webhook attack class the range rules and resolve-then-pin mitigate (§J). |
+| **SSRF / DNS rebinding** | Server-Side Request Forgery and the rebinding variant - the re-fetch/webhook attack class the range rules and resolve-then-pin mitigate (§J). |
 | **decompression bomb** | A small compressed payload/stream that expands enormously; capped by size + ratio limits before parsing (§J). |
 | **pikepdf / PyMuPDF / jsonschema / typer** | Python core libraries: PDF read-write, render/inspect/image extraction, schema validation, CLI. |
 | **pdf-lib / ajv / pdf.js** | JS subset libraries: PDF embed/read, JSON Schema validation, PDF text extraction. |
-| **DoD (definition-of-done)** | Per-milestone exit criteria; two-tier — a technical DoD that *gates* the milestone and an adoption DoD that is *tracked* but does not gate (§14). |
+| **DoD (definition-of-done)** | Per-milestone exit criteria; two-tier - a technical DoD that *gates* the milestone and an adoption DoD that is *tracked* but does not gate (§14). |
 
 ### Project entities
 
@@ -118,7 +118,7 @@ Terms of art used in this handoff, grouped for navigation.
 |---|---|
 | **Vervelio** | The neutral steward that publishes and governs the standard (§L). |
 | **Fortis** | First adopter and seed-corpus source; not the publisher. |
-| **Phil** | The reference consumer, wired in as an ordinary configured webhook — neutral in code, first-party in usage (§5b). |
+| **Phil** | The reference consumer, wired in as an ordinary configured webhook - neutral in code, first-party in usage (§5b). |
 | **OpenOM / omspec** | Working-title name (not locked) for the standard, and the RECOMMENDED XMP/vocabulary prefix. Name sweep is P0 (§15 Q1). |
 
 
@@ -126,50 +126,50 @@ Terms of art used in this handoff, grouped for navigation.
 
 ## 1. What this is
 
-An open standard + toolchain that embeds a machine-readable, broker-asserted data payload inside commercial real estate offering memorandum PDFs, and exposes the same payload as JSON-LD on the web. **The code (`/core`, `/cli`, `/mcp`, `/js`, `/extension`) is MIT; the specification text, JSON Schema, `@context`/vocabulary, and conformance vectors are CC-BY-4.0 attributed to Vervelio (§G)** — deliberately split so implementers can embed the schema and context without code-notice obligations while the standard's provenance stays clear. One assertion at the source, infinite cheap, consistent consumption downstream.
+An open standard + toolchain that embeds a machine-readable, broker-asserted data payload inside commercial real estate offering memorandum PDFs, and exposes the same payload as JSON-LD on the web. **The code (`/core`, `/cli`, `/mcp`, `/js`, `/extension`) is MIT; the specification text, JSON Schema, `@context`/vocabulary, and conformance vectors are CC-BY-4.0 attributed to Vervelio (§G)** - deliberately split so implementers can embed the schema and context without code-notice obligations while the standard's provenance stays clear. One assertion at the source, infinite cheap, consistent consumption downstream.
 
 Deliverables from one codebase:
-1. **Engine** — Python library + CLI (deterministic PDF/data verbs)
-2. **MCP server** — dual transport (stdio + hosted Streamable HTTP), works in any MCP client
-3. **Process layer** — Claude Skill + generic agent-instructions file (the extraction playbook)
-4. **JS subset** — TypeScript package: embed/read/validate, powering the Chrome extension
-5. **Chrome extension** — dual persona: author mode (broker embeds) + consumer mode (anyone detects, views, routes payloads)
+1. **Engine** - Python library + CLI (deterministic PDF/data verbs)
+2. **MCP server** - dual transport (stdio + hosted Streamable HTTP), works in any MCP client
+3. **Process layer** - Claude Skill + generic agent-instructions file (the extraction playbook)
+4. **JS subset** - TypeScript package: embed/read/validate, powering the Chrome extension
+5. **Chrome extension** - dual persona: author mode (broker embeds) + consumer mode (anyone detects, views, routes payloads)
 
 ---
 
-## 2. Vision & strategic thesis (the "why" — do not lose this)
+## 2. Vision & strategic thesis (the "why" - do not lose this)
 
-**The problem.** OMs are human-readable PDFs. Every consumer — buyer, buyer's broker, lender, analyst, LLM agents — re-extracts the same facts (price, cap rate, NOI, lease terms) from scratch. A 40-page OM through a vision model is ~30–80k tokens, slow, lossy. Multiply by every party on every deal. Worse, each re-extraction can read the document differently — there is no single, authoritative, attributable version of the deal's own numbers.
+**The problem.** OMs are human-readable PDFs. Every consumer - buyer, buyer's broker, lender, analyst, LLM agents - re-extracts the same facts (price, cap rate, NOI, lease terms) from scratch. A 40-page OM through a vision model is ~30–80k tokens, slow, lossy. Multiply by every party on every deal. Worse, each re-extraction can read the document differently - there is no single, authoritative, attributable version of the deal's own numbers.
 
 #### Problem quantification (the cost of re-extraction, per deal)
 
-Model one STNL deal — a ~40-page OM — with four independent downstream readers (buyer, buyer's broker/analyst, lender, appraiser; a conservative count). The status-quo cost is *multiplicative in parties*; OpenOM makes it *constant in the deal*.
+Model one STNL deal - a ~40-page OM - with four independent downstream readers (buyer, buyer's broker/analyst, lender, appraiser; a conservative count). The status-quo cost is *multiplicative in parties*; OpenOM makes it *constant in the deal*.
 
 | Axis | Status quo (re-extract, every party, every read) | With OpenOM |
 |---|---|---|
 | **Tokens** | ~30–80k per party for a vision pass over 40 pages × ~4 parties ≈ **120–320k tokens/deal**, repeated on every re-read | **~20–60k once** at the source (embedder) + **~2–5k per downstream read** |
-| **Per-party read** | a full ~50k-token vision pass, *every time* | a ~3k-token payload read — **roughly 10–25× less (≈16× at midpoint)** |
+| **Per-party read** | a full ~50k-token vision pass, *every time* | a ~3k-token payload read - **roughly 10–25× less (≈16× at midpoint)** |
 | **Latency** | a seconds-to-minutes vision pass blocks each agent before it can act | sub-second structured read |
 | **Consistency** | up to 4 independently-extracted readings of the same numbers; none authoritative | one canonical, SHA-256-verified version (§C) every party reads |
-| **Error surfacing** | the OM's own arithmetic faults (cap ≠ NOI÷price, rent-schedule sums, term math) surface late — in diligence, separately, per party | caught once at assertion by the consistency checker (§9, §H) before the OM ships |
+| **Error surfacing** | the OM's own arithmetic faults (cap ≠ NOI÷price, rent-schedule sums, term math) surface late - in diligence, separately, per party | caught once at assertion by the consistency checker (§9, §H) before the OM ships |
 
-The waste is that the *same document* is re-extracted by *every party* on *every deal*, forever — an O(parties × deals) cost. Embedding the payload once at the source collapses it to O(deals): one extraction, then near-free reads. As the deal is re-priced and re-circulated over its marketing life, the multiplier only grows — which is exactly the surface the idempotent re-embed (§4) and the ~2–5k `om_read` (§6c) are designed for.
+The waste is that the *same document* is re-extracted by *every party* on *every deal*, forever - an O(parties × deals) cost. Embedding the payload once at the source collapses it to O(deals): one extraction, then near-free reads. As the deal is re-priced and re-circulated over its marketing life, the multiplier only grows - which is exactly the surface the idempotent re-embed (§4) and the ~2–5k `om_read` (§6c) are designed for.
 
-**The move.** Embed a canonical, broker-asserted payload in the PDF itself, and mirror it as JSON-LD on the web. Precedent: Factur-X / ZUGFeRD — structured data embedded in PDF/A-3, which went from open spec to legal e-invoicing mandate. Same move for CRE OMs.
+**The move.** Embed a canonical, broker-asserted payload in the PDF itself, and mirror it as JSON-LD on the web. Precedent: Factur-X / ZUGFeRD - structured data embedded in PDF/A-3, which went from open spec to legal e-invoicing mandate. Same move for CRE OMs.
 
 ### The thesis, provenance-first
 
-1. **Provenance is the durable value: broker-asserted, attributable, tamper-evident.** The payload is a named party's stated position on the deal, tied to a date, carried inside the document and verifiable at its source. "Attributable + tamper-evident" here means: you can tell *who published it*, *when*, and *that it hasn't been altered since* — **not** that anyone signs it cryptographically (see §10 for exactly what each layer proves, and what it doesn't). This value does not decay.
+1. **Provenance is the durable value: broker-asserted, attributable, tamper-evident.** The payload is a named party's stated position on the deal, tied to a date, carried inside the document and verifiable at its source. "Attributable + tamper-evident" here means: you can tell *who published it*, *when*, and *that it hasn't been altered since* - **not** that anyone signs it cryptographically (see §10 for exactly what each layer proves, and what it doesn't). This value does not decay.
 
-2. **Token asymmetry is the immediate hook.** The listing broker pays extraction once (~20–60k tokens in their existing AI client, or free on-device via the extension). Every downstream agent forever reads a ~2–5k broker-asserted payload. *"Make your deal legible to the buy-side's AI."* Token costs fall every year, so this is the reason they *try* it — provenance is the reason it *lasts*.
+2. **Token asymmetry is the immediate hook.** The listing broker pays extraction once (~20–60k tokens in their existing AI client, or free on-device via the extension). Every downstream agent forever reads a ~2–5k broker-asserted payload. *"Make your deal legible to the buy-side's AI."* Token costs fall every year, so this is the reason they *try* it - provenance is the reason it *lasts*.
 
 3. **The spec is the product; the tool is a commodity.** What compounds: versioned schema, JSON Schema validator, vocabulary namespace, governance, conformance tests. Ship `omspec 0.1` *with* the tool.
 
-4. **Two-sided flywheel.** Author mode creates supply; consumer mode creates visible demand — buy-side tools lighting up on embedded OMs give listing brokers a reason to embed, and give buyers' brokers a reason to *ask* for embedded OMs.
+4. **Two-sided flywheel.** Author mode creates supply; consumer mode creates visible demand - buy-side tools lighting up on embedded OMs give listing brokers a reason to embed, and give buyers' brokers a reason to *ask* for embedded OMs.
 
-**End state.** (a) Agents check for the payload first; vision fallback only on unembedded docs. (b) The standard becomes the substrate for a distributed, free-market MLS — JSON-LD listing pages + embedded payloads, crawlable by anyone, no central gatekeeper. Consumer-mode "submit to index" means the registry builds itself from the demand side (§11). Prerequisite for that stage: stronger provenance (§10) — an open MLS with no origin verification is a spam magnet.
+**End state.** (a) Agents check for the payload first; vision fallback only on unembedded docs. (b) The standard becomes the substrate for a distributed, free-market MLS - JSON-LD listing pages + embedded payloads, crawlable by anyone, no central gatekeeper. Consumer-mode "submit to index" means the registry builds itself from the demand side (§11). Prerequisite for that stage: stronger provenance (§10) - an open MLS with no origin verification is a spam magnet.
 
-**Why now.** The window is open because three things are newly true: buy-side brokers, lenders, and analysts now routinely run OMs through LLM agents, so the payload finally has a reader; the embed mechanism is de-risked (Factur-X took the same PDF/A-3 pattern from open spec to legal e-invoicing mandate, §3); and on-device models (Chrome Prompt API / Gemini Nano) plus MCP make free, private, client-side extraction reachable across every major agent client (§5b path 1, §6b) — answering the confidentiality objection that once blocked broker adoption.
+**Why now.** The window is open because three things are newly true: buy-side brokers, lenders, and analysts now routinely run OMs through LLM agents, so the payload finally has a reader; the embed mechanism is de-risked (Factur-X took the same PDF/A-3 pattern from open spec to legal e-invoicing mandate, §3); and on-device models (Chrome Prompt API / Gemini Nano) plus MCP make free, private, client-side extraction reachable across every major agent client (§5b path 1, §6b) - answering the confidentiality objection that once blocked broker adoption.
 
 **Neutrality.** Published under Vervelio, not Fortis. Fortis = first adopter, seed corpus, reference consumer (via Phil).
 
@@ -177,22 +177,22 @@ The waste is that the *same document* is re-extracted by *every party* on *every
 
 ## 3. Landscape & positioning (who else, and why this is open)
 
-The first question any stakeholder asks is "who else does this, and why hasn't it been done?" Short answer: adjacent players standardize *data* or *extract* it — none **embed an attributable payload at the source and verify it at the point of consumption.** That gap is the wedge.
+The first question any stakeholder asks is "who else does this, and why hasn't it been done?" Short answer: adjacent players standardize *data* or *extract* it - none **embed an attributable payload at the source and verify it at the point of consumption.** That gap is the wedge.
 
 | Player | Category | What they do | What they don't do (our wedge) |
 |---|---|---|---|
-| **OSCRE** | Data-model standards body | Publishes the OSCRE Industry Data Model — reference data definitions/dictionaries for CRE, member-governed. | Defines *terms*, never binds them to a document instance: no embed, no per-document provenance, no point-of-consumption verification; access is membership-gated. We align field *names* with the IDM for credibility (§7b); we do not adopt the model wholesale. |
-| **RESO** | Data-model + API standards body | Data Dictionary + RESO Web API (OData) — the residential MLS interoperability layer. | Residential-first; models a listing as a *record in a queried database*, not an attributable artifact traveling inside the deal document. Nothing is embedded, nothing is provenance-verified at read time, CRE net-lease coverage is thin. We borrow names, not the transport. |
+| **OSCRE** | Data-model standards body | Publishes the OSCRE Industry Data Model - reference data definitions/dictionaries for CRE, member-governed. | Defines *terms*, never binds them to a document instance: no embed, no per-document provenance, no point-of-consumption verification; access is membership-gated. We align field *names* with the IDM for credibility (§7b); we do not adopt the model wholesale. |
+| **RESO** | Data-model + API standards body | Data Dictionary + RESO Web API (OData) - the residential MLS interoperability layer. | Residential-first; models a listing as a *record in a queried database*, not an attributable artifact traveling inside the deal document. Nothing is embedded, nothing is provenance-verified at read time, CRE net-lease coverage is thin. We borrow names, not the transport. |
 | **Buildout** | OM production + syndication | Generates the OM PDF and syndicates listings from a broker's CRM. | The structured data that *produced* the PDF stays in Buildout's database; the file that leaves carries none of it. No in-file payload, no portable assertion, no consumer-side verification. Natural embed-at-export partner (§5d), not a spec competitor. |
 | **SharpLaunch** | Marketing platform | Listing microsites + OM/flyer generation + email campaigns. | Same structural gap as Buildout: the site and the PDF are outputs; no machine-readable, attributable payload survives the file leaving the platform. |
 | **RCM (Real Capital Markets) / LightBox** | Investment-sales marketplace | Deal marketing, virtual deal rooms, and analytics for investment sales; now under LightBox. | A walled garden: deal data is portable only *within* RCM. Nothing is embedded in the OM for the open web; there is no neutral, cross-platform payload a non-RCM party can read. |
 | **Crexi / CoStar** | Aggregating marketplaces / data platforms | Aggregate listings and market data behind login and platform terms. | They *host and consume* listing data; they do not emit a portable, self-describing artifact a broker owns and rehosts anywhere. This is precisely the incumbent-capture risk (§12) that an open MIT spec under a neutral steward answers. |
 | **Dealpath** | Buy-side deal management | Ingests deal data into one firm's private pipeline/workspace. | Proprietary internal model; every firm re-ingests separately. Nothing is asserted *at the source* or shared across parties. A downstream **consumer** of our payload, not a producer of one. |
-| **Primer / V7 / document-AI platforms** | Document extraction | Pull structured fields *out of* PDFs into the operator's own store (auto-labeling, doc pipelines). | Extraction happens N times — once per consumer — unattributed, into walled gardens; no source-of-truth assertion, no provenance, results not portable. We move that one extraction to the source and make it a *named assertion* (§7a). |
+| **Primer / V7 / document-AI platforms** | Document extraction | Pull structured fields *out of* PDFs into the operator's own store (auto-labeling, doc pipelines). | Extraction happens N times - once per consumer - unattributed, into walled gardens; no source-of-truth assertion, no provenance, results not portable. We move that one extraction to the source and make it a *named assertion* (§7a). |
 | **Ad-hoc vision-model pipelines** (GPT/Claude/Gemini over the raw OM) | Per-read extraction | Re-extract facts from the 40-page PDF on every read (~30–80k tokens). | Highest per-read cost, non-deterministic across runs *and* across models, no attribution, no integrity check. This is exactly the fallback the embedded payload eliminates (§2 end-state (a)). |
 | **Factur-X / ZUGFeRD** | Embedded-data e-invoicing standard | Structured XML in PDF/A-3 for invoices; open spec that became an EU legal mandate. | Not real estate; an invoice is a settled fact, not a dated *opinion*, so there is no assertion/attribution semantics and no read-time origin-verification model. We borrow the embedding mechanism and the open-spec→mandate playbook (§2); we add opinion semantics (§7a) and domain-origin verification (§10). |
 
-The wedge on four axes — the capabilities that jointly define OpenOM and that no adjacent player combines (✓ = yes; ◐ = partial / adjacent only; ✗ = no):
+The wedge on four axes - the capabilities that jointly define OpenOM and that no adjacent player combines (✓ = yes; ◐ = partial / adjacent only; ✗ = no):
 
 | | Embeds payload **in the document** | **Attributable** (named party + date) | Verifiable **at point of consumption** | **Open & portable** (no login/license to read) | Models CRE **net-lease rent schedule** |
 |---|:--:|:--:|:--:|:--:|:--:|
@@ -205,7 +205,7 @@ The wedge on four axes — the capabilities that jointly define OpenOM and that 
 | Primer / V7 / document-AI | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Factur-X / ZUGFeRD | ✓ | ◐ (issuer, not opinion) | ✗ | ✓ | ✗ (invoices) |
 
-**Read the matrix as one sentence:** others standardize a vocabulary, *or* extract into a silo, *or* embed for a different domain — none **embed an attributable, opinion-typed payload at the source, verify it at the point of consumption, and leave it open and portable.** That intersection is the whole product.
+**Read the matrix as one sentence:** others standardize a vocabulary, *or* extract into a silo, *or* embed for a different domain - none **embed an attributable, opinion-typed payload at the source, verify it at the point of consumption, and leave it open and portable.** That intersection is the whole product.
 
 **Positioning stance:** OpenOM is the *interoperability layer*, not another extractor or platform. We're OSCRE-aligned on vocabulary, Factur-X-derived on mechanism, and neutral on governance (Vervelio). The thing that is ours and defensible: **attributable provenance embedded in the document + verified at the point of consumption**, plus the first properly modeled **rent schedule** (§6d).
 
@@ -218,8 +218,8 @@ The wedge on four axes — the capabilities that jointly define OpenOM and that 
 Design consequences:
 1. **Near-zero friction.** One command / one click / one agent instruction; slots behind existing OM producers unchanged.
 2. **Non-destructive embed.** Visually identical output; preserves quality, bookmarks, links; no content recompression.
-3. **Idempotent update semantics.** Price reductions are the most common re-embed event. Re-embed *replaces* the payload (never stacks), bumps `assertedDate`, records `supersedes` = prior payload hash. Repricing is a first-class operation — and note it involves **no signing step** (§10), so it stays a one-click op.
-4. **Survival rules.** The `/AF`+EmbeddedFiles attachment (§8a, §D) survives byte-preserving transport but is destroyed by any operation that re-writes the PDF's structure. Preserving vs destroying is not a judgment call — it is a property of whether the file's bytes (or at least its catalog, name tree, and streams) pass through intact. The matrix below is exhaustive for v0.1; **the single rule that follows from it is: rehost the embedded file itself; never re-export.** `om_inspect(url)` / `om_read(url)` re-verify survival at any point (normative: OM-FLOW-002).
+3. **Idempotent update semantics.** Price reductions are the most common re-embed event. Re-embed *replaces* the payload (never stacks), bumps `assertedDate`, records `supersedes` = prior payload hash. Repricing is a first-class operation - and note it involves **no signing step** (§10), so it stays a one-click op.
+4. **Survival rules.** The `/AF`+EmbeddedFiles attachment (§8a, §D) survives byte-preserving transport but is destroyed by any operation that re-writes the PDF's structure. Preserving vs destroying is not a judgment call - it is a property of whether the file's bytes (or at least its catalog, name tree, and streams) pass through intact. The matrix below is exhaustive for v0.1; **the single rule that follows from it is: rehost the embedded file itself; never re-export.** `om_inspect(url)` / `om_read(url)` re-verify survival at any point (normative: OM-FLOW-002).
 
    | Operation | Payload survives? | Why |
    |---|:--:|---|
@@ -232,14 +232,14 @@ Design consequences:
    | **Re-export / "Save as PDF" / "Print to PDF"** (any app) | ✗ | Produces a *new* document; `/AF`, `/EmbeddedFiles`, and XMP are not carried. |
    | **Flatten / "reduce file size" / aggressive optimizer** | ✗ | Optimizers routinely drop embedded-file streams and the name tree. |
    | **PDF → image → PDF, or OCR re-write** | ✗ | Rebuilds the file from rendered pages; attachments gone. |
-   | **Email/security-gateway CDR (content disarm & reconstruction)** | ✗ | Sanitizers strip embedded files *by design*; the most easily missed destroyer — treat any CDR'd channel as lossy and rehost from origin. |
+   | **Email/security-gateway CDR (content disarm & reconstruction)** | ✗ | Sanitizers strip embedded files *by design*; the most easily missed destroyer - treat any CDR'd channel as lossy and rehost from origin. |
    | "Save a copy" in some viewers (e.g. Preview re-save) | ⚠ verify | Viewer-dependent; MUST be verified with `om_inspect`, never assumed. |
 
    A Producer or Consumer MUST NOT assume survival across any ✗ or ⚠ row; the only guaranteed-durable action is rehosting the original embedded bytes.
 5. **Rehosted URL = crawl surface.** `om_read(url)` works for any agent; same payload emitted as JSON-LD in listing-page markup. This rehosted URL is also what makes **domain-origin verification** free (§10).
 
 ### Future scope: the in-document badge (parked, captured)
-Small visual mark on the OM (footer of page 2 or cover) — Factur-X logo convention. Opt-in flag only. Overlay stamp, spec name + version, possibly QR to public validator. Consumer-mode link badging (§5b) achieves much of this without modifying the document.
+Small visual mark on the OM (footer of page 2 or cover) - Factur-X logo convention. Opt-in flag only. Overlay stamp, spec name + version, possibly QR to public validator. Consumer-mode link badging (§5b) achieves much of this without modifying the document.
 
 ---
 
@@ -248,22 +248,22 @@ Small visual mark on the OM (footer of page 2 or cover) — Factur-X logo conven
 Four surfaces, lowest friction → deepest integration.
 
 ### 5a. CLI / watch folder (ships with engine, free)
-`om embed` in a script/CI, or a watcher on an "OM outbox" folder — coordinator exports into the folder, embedded file appears in "ready." Zero UI. Also the server-side path for platforms.
+`om embed` in a script/CI, or a watcher on an "OM outbox" folder - coordinator exports into the folder, embedded file appears in "ready." Zero UI. Also the server-side path for platforms.
 
-### 5b. Chrome extension (the human-facing surface — two personas)
+### 5b. Chrome extension (the human-facing surface - two personas)
 
 MV3. Shared foundation: `/js` subset (pdf-lib embed/read, ajv validate, pdf.js text), side panel UI, chrome.storage.sync settings.
 
-#### Consumer mode (ships first — fully deterministic, no inference)
+#### Consumer mode (ships first - fully deterministic, no inference)
 *Anyone browsing encounters an embedded OM; the extension detects, displays, verifies, routes.*
 
-- **Detection mechanics:** content scripts cannot inspect Chrome's built-in PDF viewer internals. Instead the extension knows the URL of the viewed PDF, re-fetches the same bytes itself (typically from HTTP cache — no real second download), and parses with the JS subset (EmbeddedFiles + /AF + XMP marker). Same UX, different plumbing. **Detection re-fetches bytes; it never scrapes the viewer.**
+- **Detection mechanics:** content scripts cannot inspect Chrome's built-in PDF viewer internals. Instead the extension knows the URL of the viewed PDF, re-fetches the same bytes itself (typically from HTTP cache - no real second download), and parses with the JS subset (EmbeddedFiles + /AF + XMP marker). Same UX, different plumbing. **Detection re-fetches bytes; it never scrapes the viewer.**
 - **Trigger:** tab URL is a PDF → auto-check (setting, with size cap) or check-on-panel-open. Toolbar badge: payload present / absent / hash-mismatch / **origin-verified** (§10).
-- **Payload card (side panel):** instant deal screen — address, price, cap, NOI + noiType, tenant, guarantor, remaining term, options — plus assertedBy/assertedDate, hash + origin verification status, validation warnings. The "40 pages → 4 seconds" demo moment.
-- **Publish (routing) — v1 is deliberately simple:**
-  - **Generic webhook:** POST payload JSON to any URL + optional bearer token. Covers Zapier/Make/n8n → every CRM, Sheets, Slack, Airtable — zero connectors built.
+- **Payload card (side panel):** instant deal screen - address, price, cap, NOI + noiType, tenant, guarantor, remaining term, options - plus assertedBy/assertedDate, hash + origin verification status, validation warnings. The "40 pages → 4 seconds" demo moment.
+- **Publish (routing) - v1 is deliberately simple:**
+  - **Generic webhook:** POST payload JSON to any URL + optional bearer token. Covers Zapier/Make/n8n → every CRM, Sheets, Slack, Airtable - zero connectors built.
   - **Copy JSON / download .json.**
-  - **No presets, by design.** Every brokerage has a different database; the webhook is the universal adapter. Users configure multiple named webhooks with a test-fire button. Phil is simply a webhook URL Fortis brokers configure — neutral in code, first-party in usage.
+  - **No presets, by design.** Every brokerage has a different database; the webhook is the universal adapter. Users configure multiple named webhooks with a test-fire button. Phil is simply a webhook URL Fortis brokers configure - neutral in code, first-party in usage.
   - **Webhook envelope + security contract** (receiving systems build against this; it versions independently of the spec via `envelopeVersion`, additive-only within a major, OM-VER-005). The **normative contract is §Y (OM-HOOK-###)**; the shape and the security summary here are its illustrative front door.
     ```json
     {
@@ -284,26 +284,26 @@ MV3. Shared foundation: `/js` subset (pdf-lib embed/read, ajv validate, pdf.js t
     - **Idempotency:** `id` (== `OpenOM-Event-Id`, a UUIDv4) is stable across all retries of one event; delivery is **at-least-once**, so receivers MUST treat a repeated `id` as a no-op.
     - **Secrets are device-local:** per-webhook shared secrets live in `chrome.storage.local`, never `chrome.storage.sync` (OM-SEC-003).
     - **Versioning:** `envelopeVersion` bumps independently of `specVersion`; receivers MUST tolerate unknown additive fields.
-  - **Future: "Submit to index"** — consumer extensions surface embedded OMs into the public registry (opt-in; hash- and origin-verified, later signature-verified). See §11.
+  - **Future: "Submit to index"** - consumer extensions surface embedded OMs into the public registry (opt-in; hash- and origin-verified, later signature-verified). See §11.
 - **Link-level detection (optional, per-domain opt-in):** content script badges PDF *links* on listing pages via an HTTP Range request on the file tail (cheap heuristic; confirmed on click). Opt-in, cache results.
-- **Local files:** require the user's "Allow access to file URLs" toggle — onboarding step, documented.
+- **Local files:** require the user's "Allow access to file URLs" toggle - onboarding step, documented.
 
-#### Author mode (ships second — needs extraction assist)
+#### Author mode (ships second - needs extraction assist)
 *Listing broker captures, extracts, reviews, asserts, embeds.*
 
 - **Capture:** download interception (buildout.com + user-added domains) → toast; context menu / toolbar on any PDF.
 - **Flow:** extract → **review/edit fields** → validate (errors block, warnings inform) → **Assert & Embed** → save for rehosting.
-- **Extraction paths (ship progressively; author mode / process layer ONLY — none of these run in `/core`, the open MCP server, or consumer mode, per §6a).** Every path drains into the *same* review panel, and the panel's output only becomes an assertion at Assert & Embed (§7a, OM-EXTP-003). The determinism boundary column states, unambiguously, where inference is permitted.
+- **Extraction paths (ship progressively; author mode / process layer ONLY - none of these run in `/core`, the open MCP server, or consumer mode, per §6a).** Every path drains into the *same* review panel, and the panel's output only becomes an assertion at Assert & Embed (§7a, OM-EXTP-003). The determinism boundary column states, unambiguously, where inference is permitted.
 
   | # | Path | Inference runs | Doc leaves device? | Network egress | Cost / tier | Accuracy | Precondition | Determinism boundary | Failure → fallback |
   |---|---|---|:--:|---|---|---|---|---|---|
-  | **0** | **Manual / review-only** | none | No | none | free | human-limited | always available | Fully deterministic — the panel is `/js` only. The floor that guarantees author mode always works with zero inference. | n/a (is the fallback) |
+  | **0** | **Manual / review-only** | none | No | none | free | human-limited | always available | Fully deterministic - the panel is `/js` only. The floor that guarantees author mode always works with zero inference. | n/a (is the fallback) |
   | **1** | **Local on-device** (Chrome Prompt API / Gemini Nano) | on device | **No** | **none** | free | good; weak on messy rent schedules (net = review panel + §9 warnings) | Prompt API present (verify at build, §15 Q6) | Inference is on-device, outside `/core`/server/consumer; answers the "won't upload my unreleased OM" objection (§12). | model unavailable / low-confidence → path 0 |
-  | **2** | **Hosted extraction** (Vervelio endpoint) | Vervelio server | **Yes** (presigned upload) | presigned PUT → Vervelio | commercial-tier candidate (§15 Q2) | best | account + upload consent | Separate commercial service — **never the open server** (§6a). Subject to retention (OM-PRIV-002) and SSRF/blob rules (OM-SEC-001/006). | upload/extract error → path 1 or 0 |
+  | **2** | **Hosted extraction** (Vervelio endpoint) | Vervelio server | **Yes** (presigned upload) | presigned PUT → Vervelio | commercial-tier candidate (§15 Q2) | best | account + upload consent | Separate commercial service - **never the open server** (§6a). Subject to retention (OM-PRIV-002) and SSRF/blob rules (OM-SEC-001/006). | upload/extract error → path 1 or 0 |
   | **3** | **Chat handoff** (broker's own AI subscription via MCP connector) | broker's own AI provider | **Yes** (to their provider, under their ToS) | to broker's AI, never through Vervelio (OM-PRIV-001) | broker's existing subscription | provider-dependent | deep-link + logged-in client (§15 Q6) | Their assistant drives our MCP tools; **we never drive their assistant** (no chat-UI puppeteering, §7 hard rule). | connector/link failure → path 1 or 0 |
 
   *The assistant drives the tool; we never drive the assistant.* The extension MUST disclose which path an action uses, and whether the document leaves the device, **before** it leaves (OM-EXTP-002, OM-PRIV-001).
-- **HARD RULE — no chat-UI puppeteering.** No injecting into / scraping logged-in ChatGPT/Claude sessions: ToS, fragility, account risk. Paths 1–3 achieve the outcome legitimately.
+- **HARD RULE - no chat-UI puppeteering.** No injecting into / scraping logged-in ChatGPT/Claude sessions: ToS, fragility, account risk. Paths 1–3 achieve the outcome legitimately.
 - **Review panel = the assertion gate.** Extraction output only *becomes* a broker assertion when a human reviews and clicks Assert & Embed.
 
 **Architecture impact:** the TS subset (embed/read/validate) is required (`/js`); extraction stays wherever inference lives.
@@ -328,7 +328,7 @@ One native integration = thousands of brokerages embedding at export. Approach a
 | JS subset | TS: embed/read/validate | Extension + web/Node consumers | npm |
 | Extension | MV3, consumer + author modes | Detect/view/publish + capture/review/embed | Chrome Web Store (Vervelio) |
 
-**Cardinal rule: the open server, the core, and consumer-mode JS stay deterministic — zero inference, ever.** No keys, no per-call costs, trivial hosting, testable. LLM mapping runs client-side or on-device, guided by the process layer. Hosted inference-included extraction, if offered, is a separate commercial service — never the open server.
+**Cardinal rule: the open server, the core, and consumer-mode JS stay deterministic - zero inference, ever.** No keys, no per-call costs, trivial hosting, testable. LLM mapping runs client-side or on-device, guided by the process layer. Hosted inference-included extraction, if offered, is a separate commercial service - never the open server.
 
 This rule is **normative and CI-enforced**, not aspirational: §V ([OM-ARCH-001..007]) fixes the exact deterministic layer set, forbids inference dependencies via a committed denylist scanned on every build, bounds network egress, and makes the edge→core dependency strictly one-directional. A build in which a deterministic package can reach an inference client through any path fails.
 
@@ -342,10 +342,10 @@ This rule is **normative and CI-enforced**, not aspirational: §V ([OM-ARCH-001.
 | Gemini (CLI) | stdio + remote | web-app connectors: verify |
 | Copilot (VS Code agent mode) | stdio + remote | |
 | Local LLMs (LM Studio, Continue, LibreChat…) | stdio | |
-| Chrome (extension) | n/a — JS subset; Prompt API / hosted / chat-handoff | §5b |
+| Chrome (extension) | n/a - JS subset; Prompt API / hosted / chat-handoff | §5b |
 
 ### 6c. Token model
-Server: zero inference, no keys. Client cost = context tokens on tool outputs; subscription users see normal usage limits, no API billing; extension local/consumer paths: zero tokens. Heavy op = one-time embedder extraction; consumers get ~2–5k `om_read`. Tools return compact outputs — text paginates, images return manifests + links.
+Server: zero inference, no keys. Client cost = context tokens on tool outputs; subscription users see normal usage limits, no API billing; extension local/consumer paths: zero tokens. Heavy op = one-time embedder extraction; consumers get ~2–5k `om_read`. Tools return compact outputs - text paginates, images return manifests + links.
 
 ### 6d. Remote file I/O
 Remote can't reach client filesystems: tools accept HTTPS URL or presigned upload (→ blob id); outputs as download links, payload inline. stdio: plain paths. Path-or-URL polymorphic. Blobs: R2. Retention policy needed (§15 Q4).
@@ -357,18 +357,18 @@ Remote can't reach client filesystems: tools accept HTTPS URL or presigned uploa
 ### 7a. Assertions, not facts
 An OM is an advocacy document: broker opinion of value + seller expectations. The payload encodes **assertions by an identified party as of a date**:
 - `assertedBy` (broker, brokerage, license #) + `assertedDate` **required**.
-- `noiType: "in-place" | "pro-forma"` **required** + `noiAsOfDate` — forces the disclosure most accuracy disputes are actually about.
-- Labels derivable, not asserted: `landlordResponsibilities` boolean set (roof, structure, parking, HVAC, taxes, insurance, CAM) makes lease type *derivable and disputable* — kills "everything is NNN."
+- `noiType: "in-place" | "pro-forma"` **required** + `noiAsOfDate` - forces the disclosure most accuracy disputes are actually about.
+- Labels derivable, not asserted: `landlordResponsibilities` boolean set (roof, structure, parking, HVAC, taxes, insurance, CAM) makes lease type *derivable and disputable* - kills "everything is NNN."
 - **Per-field provenance tag.** Each substantive field carries a `source` of `asserted` (broker stated it), `extracted` (pulled from the doc, unreviewed), or `verified` (checked against an authoritative source). This operationalizes "assertions, not facts" at the field level and lets consumers weight fields. Default on embed is `asserted` (the review gate makes it so).
 - Payloads SHOULD be human-reviewed before embed (extension review panel operationalizes).
 - Tooling checks internal consistency, never market truth (§9).
 
 ### 7b. Format & governance
-- **JSON-LD only** (XML dropped — no identified consumer).
+- **JSON-LD only** (XML dropped - no identified consumer).
 - `@context`: schema.org (`RealEstateListing`, `Offer`, `Place`, `PostalAddress`, `Organization`) + custom vocab (capRate, noi, rentSchedule, guarantor, options…). Rent schedules unmodeled anywhere else = the opportunity.
 - `"specVersion": "0.1"` + published JSON Schema.
 - Borrow RESO/OSCRE names for credibility; don't adopt wholesale.
-- Name TBD — reserve GitHub org + PyPI + npm + Chrome Web Store + domain as a set before code (§15 Q1, P0).
+- Name TBD - reserve GitHub org + PyPI + npm + Chrome Web Store + domain as a set before code (§15 Q1, P0).
 
 ### 7c. v0.1 scope (confirmed)
 STNL, N through NNN, retail/QSR/pharmacy. Multi-tenant/industrial/office later.
@@ -378,9 +378,9 @@ STNL, N through NNN, retail/QSR/pharmacy. Multi-tenant/industrial/office later.
 - **Deal:** asking price, cap rate, NOI + noiType + noiAsOfDate, price/SF, status.
 - **Lease:** tenant entity, guarantor + type, `landlordResponsibilities` booleans, asserted lease type, commencement, expiration, remaining term, **`rentSchedule`** (modeled below), escalations, options, ROFR/ROFO.
 - **Parties:** listing broker(s), brokerage, license #s, contact.
-- **Meta:** specVersion, assertedBy, assertedDate, sourceDocHash, supersedes, **`signature` (optional, reserved — see §10)**, imageRights (optional).
+- **Meta:** specVersion, assertedBy, assertedDate, sourceDocHash, supersedes, **`signature` (optional, reserved - see §10)**, imageRights (optional).
 
-**Modeled `rentSchedule`** (the differentiator — it must be a real object, not prose). Each period:
+**Modeled `rentSchedule`** (the differentiator - it must be a real object, not prose). Each period:
 ```json
 {
   "periodStart": "2024-05-01",
@@ -395,7 +395,7 @@ STNL, N through NNN, retail/QSR/pharmacy. Multi-tenant/industrial/office later.
 ```
 Rules: periods are contiguous and non-overlapping (a consistency warning fires otherwise, §9); `rentPSF` derivable from `annualRent ÷ buildingSF` (mismatch → warning); `escalationFromPrior` cross-checks against the prior period's `annualRent`.
 
-### 7e. Sample payload (illustrative — fictional deal)
+### 7e. Sample payload (illustrative - fictional deal)
 ```json
 {
   "@context": ["https://schema.org", "https://verveliolabs.com/openom/ns/0.1"],
@@ -451,7 +451,7 @@ The §7e payload is a **normative interop vector**, committed to `/spec/vectors/
 - Pragmatic v1: PDF/A-3-*style*, strict conformance later.
 - **Update semantics:** detect existing → replace attachment, update XMP, set `supersedes`. Never duplicate.
 - Consumer path: /AF + XMP → attachment → schema validate. Fallback: full extraction.
-- **Cross-implementation round-trip test:** pdf-lib output readable by pikepdf and vice versa, byte-for-byte payload fidelity. The kind of bug that silently kills a standard — named test from day one.
+- **Cross-implementation round-trip test:** pdf-lib output readable by pikepdf and vice versa, byte-for-byte payload fidelity. The kind of bug that silently kills a standard - named test from day one.
 
 ### 8b. Image extraction (settled: yes, no rendering)
 Raster images = Image XObjects; extraction = locate + decompress (PyMuPDF primary; poppler `pdfimages -list` cross-check). Handle: SMasks (→RGBA), CMYK/ICC→sRGB, tiled/striped images (InDesign), dedupe by xref, vector content (paths → render fallback only), scanned/flattened (full-page image per page). `om_inspect` classifies native/hybrid/scanned up front. Third-party photo licenses → imageRights field.
@@ -474,16 +474,16 @@ Python: pikepdf, PyMuPDF, jsonschema, typer, FastMCP. JS: pdf-lib, ajv, pdf.js.
 
 ### Validation: two tiers, hard boundary
 1. **Errors (block):** JSON Schema violations. (Schema ships in M2.)
-2. **Warnings (never block):** internal consistency — NOI ÷ price vs cap rate, rent-schedule sums and contiguity, date/term arithmetic, price/SF, continuity. Self-contradiction is data-quality regardless of opinion.
+2. **Warnings (never block):** internal consistency - NOI ÷ price vs cap rate, rent-schedule sums and contiguity, date/term arithmetic, price/SF, continuity. Self-contradiction is data-quality regardless of opinion.
 3. **Out of scope forever:** market truth (§10 Non-goals).
 
-**Validator as trojan horse — split, not deferred.** The consistency-warning tier is schema-independent and independently valuable (OMs fail their own math constantly). Ship it as a **standalone free checker early**, before anyone cares about embedding — it's the cold-start lever. The schema-error tier lands with M2 when the schema exists. Do not force an artificial "M1.5"; the two tiers simply mature on different milestones.
+**Validator as trojan horse - split, not deferred.** The consistency-warning tier is schema-independent and independently valuable (OMs fail their own math constantly). Ship it as a **standalone free checker early**, before anyone cares about embedding - it's the cold-start lever. The schema-error tier lands with M2 when the schema exists. Do not force an artificial "M1.5"; the two tiers simply mature on different milestones.
 
 Orchestration: inspect → extract → agent/on-device maps → human review → validate → embed → rehost → (consumer: detect → verify → publish).
 
 ---
 
-## 10. Trust / provenance — the four-layer model (resolved)
+## 10. Trust / provenance - the four-layer model (resolved)
 
 Provenance is the thesis (§2), so this section is load-bearing. The design deliberately **requires no cryptographic signing at day one or at re-embed.** Each layer proves exactly one thing; be honest about what each does *not* prove.
 
@@ -491,42 +491,42 @@ Provenance is the thesis (§2), so this section is load-bearing. The design deli
 |---|---|---|---|
 | **1. Embedded hash** (in XMP) | Day one | The payload has not been altered since embed; travels inside the file everywhere. | Who created it; that it wasn't re-embedded by someone else. |
 | **2. Self-asserted identity** (`assertedBy` + license + date) | Day one | The *claim of authorship* is on the record, tied to a named party and license #. | That the identity is real (nothing verifies the license by itself). Honestly labeled **unverified**. |
-| **3. Domain-origin verification** (read-time) | With consumer mode (M5a) | That the OM is published at, and its JSON-LD mirror served from, a specific domain — "asserted by whoever controls this domain," via HTTPS/DNS, the web's own trust model. Free, because consumer mode already has the URL. | The legal identity behind the domain; survives poorly if the file is rehosted elsewhere (which is arguably correct — verification is meaningful at origin). |
-| **4. Signature** (optional field, reserved) | Field reserved day one; verification is registry-era | Cryptographic authorship + integrity once a key infrastructure exists. | Nothing yet — reserved and empty in 0.1. |
+| **3. Domain-origin verification** (read-time) | With consumer mode (M5a) | That the OM is published at, and its JSON-LD mirror served from, a specific domain - "asserted by whoever controls this domain," via HTTPS/DNS, the web's own trust model. Free, because consumer mode already has the URL. | The legal identity behind the domain; survives poorly if the file is rehosted elsewhere (which is arguably correct - verification is meaningful at origin). |
+| **4. Signature** (optional field, reserved) | Field reserved day one; verification is registry-era | Cryptographic authorship + integrity once a key infrastructure exists. | Nothing yet - reserved and empty in 0.1. |
 
 **Why this design (the Scott-aligned reasoning):**
-- A signature proves *who* and *unaltered-since*, not *true*. It does nothing against the broker who mislabels the deal (the "ice-cream stand posted as a Walgreens" problem) — that is content falsehood, and **market truth is out of scope forever** (§ Non-goals). So signing is not the tool for the problem brokers worry about.
+- A signature proves *who* and *unaltered-since*, not *true*. It does nothing against the broker who mislabels the deal (the "ice-cream stand posted as a Walgreens" problem) - that is content falsehood, and **market truth is out of scope forever** (§ Non-goals). So signing is not the tool for the problem brokers worry about.
 - What actually deters the mislabeler is **attribution**: the claim is on the record under a named license (layer 2), and verifiable to a domain (layer 3). Accountability, not encryption.
-- Signing would add real friction to the **most common operation** — repricing/re-embed — because a private key would have to be present at every export/CI/watch-folder run. Hash recompute is free and already happening.
+- Signing would add real friction to the **most common operation** - repricing/re-embed - because a private key would have to be present at every export/CI/watch-folder run. Hash recompute is free and already happening.
 - The one thing we do now for the future: **reserve the optional `signature` field in the 0.1 schema.** It costs nothing today and avoids a breaking `@context` change later. Require nothing; build no verification; ship it `null`.
 
 **Roadmap.** Day one: layers 1–2, plus layer 3 as consumer mode ships. Registry era (§11): layer 4 graduates from reserved to verified, because an open index of valuable listings is where *impersonation* (dishonest identity) finally becomes a real threat that signatures actually solve.
 
-### §10.1 Attacker models — exactly what the four layers stop, and what they don't
+### §10.1 Attacker models - exactly what the four layers stop, and what they don't
 
 The four layers are only meaningful against named adversaries. Each row states a concrete capability, the layer(s) that defend, the **residual gap that remains in 0.1**, and when that gap closes. Layer numbers refer to the §10 table (1 = embedded hash, 2 = self-asserted identity, 3 = domain-origin verification, 4 = reserved signature).
 
 | # | Adversary & capability | Their goal | Defended by | Residual gap in 0.1 (honest) | Closes when |
 |---|---|---|---|---|---|
-| A1 | **Bit-flipper** — edits `om.json` bytes at rest or in transit, leaving the XMP hash untouched. | Silently change a number (price, cap, NOI). | **L1** — recomputed SHA-256 (§C) ≠ `omspec:payloadHash` → `hash-mismatch`. | None. This is the one attack a lone hash fully stops. | Shipped day one. |
-| A2 | **Re-embedder / hijacker** — takes a valid OM, strips the payload, embeds a *self-consistent* replacement with a matching fresh hash. | Substitute the whole assertion while passing L1. | **L2** records whatever identity they claim; **L3** flags it if the file is not served from the claimed origin. | Day one, nothing *cryptographic* stops a self-consistent re-embed; the deterrent is attribution + origin, not prevention. | L4 (signature) makes substitution detectable by key, registry era. |
-| A3 | **Impersonator** — asserts under another broker's name and license number they do not hold. | Borrow a reputable identity. | **L3** (only if they also control a matching origin domain — usually they don't); **L4** cryptographically, later. | **L2 does not defend** — `assertedBy` is self-asserted and MUST be labeled *unverified* (§AA). License-registry lookup is out of scope in 0.1. | L4 graduates + registry cross-checks license → domain → key (§11). |
-| A4 | **Content liar / mislabeler** — accurate attribution, false facts ("ice-cream stand posted as a Walgreens"; pro-forma dressed as in-place). | Misrepresent the deal itself. | **No layer.** Consistency warnings (§9, §H) catch only *self-contradiction* (cap ≠ NOI÷price, schedule sums). | **Permanent and intentional** — market truth is out of scope forever (Non-goals). Attribution (L2/L3) makes the lie *accountable*, not *impossible*. | Never (by design). Accountability, not prevention, is the answer. |
-| A5 | **Origin spoofer / rogue rehoster** — hosts a genuine broker's OM on an attacker-controlled domain. | Appear endorsed by the broker's brand at a look-alike URL. | **L3** — origin verification fails (host domain ≠ the payload's mirror domain); badge degrades to *origin-unverified*. | Rehosting-away-from-origin is expected and MUST degrade gracefully, not error (§AA OM-TRUST-004). L1/L2 still hold; the file is unaltered, just not vouched-for at that URL. | Correct as-is; L4 adds portable authorship independent of URL. |
-| A6 | **Downgrade / stripper** — removes the XMP marker (or the whole attachment) so consumers fall back to vision extraction. | Evade tamper detection by removing the thing that detects it. | **L1** cannot fire on an absent payload; detection reports *absent* (→ vision fallback), never *trusted*. | A stripped payload is indistinguishable from an OM that was never embedded; downgrade is not detectable in 0.1. | L4 + a signed, origin-served mirror lets a consumer notice "this domain published a payload for this deal, but this file has none." |
-| A7 | **Stale/replay server** — serves an older, superseded payload (e.g. the pre-reduction price) from a valid origin. | Keep a stale number circulating. | **L1/L2/L3 all pass** — the old payload is genuine, just outdated. `supersedes` + `assertedDate` expose it *only if* the reader fetches the origin mirror to compare. | Freshness is not enforced at read in 0.1. | §AA OM-TRUST-008 stale check (compare to origin mirror) + registry "latest" pointer, registry era. |
+| A1 | **Bit-flipper** - edits `om.json` bytes at rest or in transit, leaving the XMP hash untouched. | Silently change a number (price, cap, NOI). | **L1** - recomputed SHA-256 (§C) ≠ `omspec:payloadHash` → `hash-mismatch`. | None. This is the one attack a lone hash fully stops. | Shipped day one. |
+| A2 | **Re-embedder / hijacker** - takes a valid OM, strips the payload, embeds a *self-consistent* replacement with a matching fresh hash. | Substitute the whole assertion while passing L1. | **L2** records whatever identity they claim; **L3** flags it if the file is not served from the claimed origin. | Day one, nothing *cryptographic* stops a self-consistent re-embed; the deterrent is attribution + origin, not prevention. | L4 (signature) makes substitution detectable by key, registry era. |
+| A3 | **Impersonator** - asserts under another broker's name and license number they do not hold. | Borrow a reputable identity. | **L3** (only if they also control a matching origin domain - usually they don't); **L4** cryptographically, later. | **L2 does not defend** - `assertedBy` is self-asserted and MUST be labeled *unverified* (§AA). License-registry lookup is out of scope in 0.1. | L4 graduates + registry cross-checks license → domain → key (§11). |
+| A4 | **Content liar / mislabeler** - accurate attribution, false facts ("ice-cream stand posted as a Walgreens"; pro-forma dressed as in-place). | Misrepresent the deal itself. | **No layer.** Consistency warnings (§9, §H) catch only *self-contradiction* (cap ≠ NOI÷price, schedule sums). | **Permanent and intentional** - market truth is out of scope forever (Non-goals). Attribution (L2/L3) makes the lie *accountable*, not *impossible*. | Never (by design). Accountability, not prevention, is the answer. |
+| A5 | **Origin spoofer / rogue rehoster** - hosts a genuine broker's OM on an attacker-controlled domain. | Appear endorsed by the broker's brand at a look-alike URL. | **L3** - origin verification fails (host domain ≠ the payload's mirror domain); badge degrades to *origin-unverified*. | Rehosting-away-from-origin is expected and MUST degrade gracefully, not error (§AA OM-TRUST-004). L1/L2 still hold; the file is unaltered, just not vouched-for at that URL. | Correct as-is; L4 adds portable authorship independent of URL. |
+| A6 | **Downgrade / stripper** - removes the XMP marker (or the whole attachment) so consumers fall back to vision extraction. | Evade tamper detection by removing the thing that detects it. | **L1** cannot fire on an absent payload; detection reports *absent* (→ vision fallback), never *trusted*. | A stripped payload is indistinguishable from an OM that was never embedded; downgrade is not detectable in 0.1. | L4 + a signed, origin-served mirror lets a consumer notice "this domain published a payload for this deal, but this file has none." |
+| A7 | **Stale/replay server** - serves an older, superseded payload (e.g. the pre-reduction price) from a valid origin. | Keep a stale number circulating. | **L1/L2/L3 all pass** - the old payload is genuine, just outdated. `supersedes` + `assertedDate` expose it *only if* the reader fetches the origin mirror to compare. | Freshness is not enforced at read in 0.1. | §AA OM-TRUST-008 stale check (compare to origin mirror) + registry "latest" pointer, registry era. |
 
-**Precise definition of "origin-verified" (L3).** A payload is *origin-verified* for a given fetch **iff** all hold: (a) the PDF (or its JSON-LD mirror) was retrieved over **HTTPS with a valid certificate chain** for host `H`; (b) a JSON-LD mirror of the payload is served from the **same registrable domain** (eTLD+1) as `H`; and (c) the mirror's canonical payload hash (§C) **equals** the embedded `omspec:payloadHash`. L3 therefore proves "*the entity controlling this domain vouches for this exact payload*" — nothing about legal identity, and nothing that survives being copied to another domain (which is correct: the vouch is scoped to the origin). This is the web's own trust model (HTTPS/DNS), reused for free because consumer mode already holds the URL (§4, §5b).
+**Precise definition of "origin-verified" (L3).** A payload is *origin-verified* for a given fetch **iff** all hold: (a) the PDF (or its JSON-LD mirror) was retrieved over **HTTPS with a valid certificate chain** for host `H`; (b) a JSON-LD mirror of the payload is served from the **same registrable domain** (eTLD+1) as `H`; and (c) the mirror's canonical payload hash (§C) **equals** the embedded `omspec:payloadHash`. L3 therefore proves "*the entity controlling this domain vouches for this exact payload*" - nothing about legal identity, and nothing that survives being copied to another domain (which is correct: the vouch is scoped to the origin). This is the web's own trust model (HTTPS/DNS), reused for free because consumer mode already holds the URL (§4, §5b).
 
-**One-line contract for each layer (quotable in UI):** L1 = *"unchanged since embed."* L2 = *"claims to be — unverified."* L3 = *"this domain vouches for it."* L4 = *"cryptographically theirs"* (reserved, empty in 0.1). No layer says *"true."* The normative badge machine and UI honesty rules that enforce these one-liners are §AA.
+**One-line contract for each layer (quotable in UI):** L1 = *"unchanged since embed."* L2 = *"claims to be - unverified."* L3 = *"this domain vouches for it."* L4 = *"cryptographically theirs"* (reserved, empty in 0.1). No layer says *"true."* The normative badge machine and UI honesty rules that enforce these one-liners are §AA.
 
 ---
 
-## Non-goals (consolidated — do not re-litigate)
+## Non-goals (consolidated - do not re-litigate)
 
 These are settled and permanent unless a decision-log entry reverses them:
-- **Market truth.** Tooling never judges whether a deal's claims are accurate — only internal consistency. Consuming LLMs editorialize anyway; the spec takes no position.
-- **No inference in the open server, the core, or consumer mode — ever.** No keys in those layers.
+- **Market truth.** Tooling never judges whether a deal's claims are accurate - only internal consistency. Consuming LLMs editorialize anyway; the spec takes no position.
+- **No inference in the open server, the core, or consumer mode - ever.** No keys in those layers.
 - **No chat-UI puppeteering.** Never inject into or scrape logged-in ChatGPT/Claude sessions. Use MCP connectors / on-device / hosted paths.
 - **No viewer scraping.** Detection re-fetches PDF bytes; it never inspects the browser's PDF viewer internals.
 - **No re-export.** Rehost the embedded file itself; re-export destroys the attachment.
@@ -535,7 +535,7 @@ These are settled and permanent unless a decision-log entry reverses them:
 
 **Normative restatement (append-only IDs).** The bullets above are binding; these IDs let conformance tests and reviewers cite them.
 
-- **[OM-SCOPE-001]** Tooling MUST NOT assert or judge *market truth* — whether a deal's claims are accurate. `om_validate` and the standalone checker MUST restrict themselves to internal-consistency warnings (§9, §H); they MUST NOT emit a finding that asserts a value is wrong relative to the market.
+- **[OM-SCOPE-001]** Tooling MUST NOT assert or judge *market truth* - whether a deal's claims are accurate. `om_validate` and the standalone checker MUST restrict themselves to internal-consistency warnings (§9, §H); they MUST NOT emit a finding that asserts a value is wrong relative to the market.
 - **[OM-SCOPE-002]** `/core`, `/cli`, `/mcp` (open server), and consumer-mode `/js` MUST NOT contain, import, or invoke an inference client, and MUST NOT require API keys ([OM-DoD-008] enforces this in CI).
 - **[OM-SCOPE-003]** No implementation MAY inject into, script, or scrape a logged-in third-party chat session (ChatGPT/Claude/etc.). Extraction MUST use on-device, hosted, or MCP-connector paths only (§5b).
 - **[OM-SCOPE-004]** Detection MUST re-fetch PDF bytes and parse them (§5b, [OM-XMP-003]); it MUST NOT read the browser's built-in PDF-viewer internals.
@@ -546,14 +546,14 @@ These are settled and permanent unless a decision-log entry reverses them:
 ---
 
 ## 11. Adoption strategy summary
-1. **Provenance + embedder-pays-once** (§2) — durable value first, token asymmetry as the hook.
-2. **Validator as trojan horse** (§9) — standalone consistency checker seeds usage before embedding matters.
-3. **Consumer mode creates visible demand** (§5b) — buy-side lights up on embedded OMs; buyers' brokers start *asking*.
+1. **Provenance + embedder-pays-once** (§2) - durable value first, token asymmetry as the hook.
+2. **Validator as trojan horse** (§9) - standalone consistency checker seeds usage before embedding matters.
+3. **Consumer mode creates visible demand** (§5b) - buy-side lights up on embedded OMs; buyers' brokers start *asking*.
 4. **Extension makes authoring one click; local path removes the confidentiality objection** (§5b).
-5. **Publish/webhook makes payloads immediately useful** — into CRMs/Sheets/Phil day one.
-6. **Fortis seeds supply; Phil is the reference consumer** — wired in as an ordinary webhook.
+5. **Publish/webhook makes payloads immediately useful** - into CRMs/Sheets/Phil day one.
+6. **Fortis seeds supply; Phil is the reference consumer** - wired in as an ordinary webhook.
 7. **Buildout + peer integrations** (§5d).
-8. **Badges** — link-level (consumer mode, no doc changes) now-ish; in-document overlay later.
+8. **Badges** - link-level (consumer mode, no doc changes) now-ish; in-document overlay later.
 9. **Neutral governance under Vervelio**, OSCRE-aligned vocabulary (§3).
 
 ### Trust roadmap (see §10 for the model)
@@ -562,25 +562,25 @@ These are settled and permanent unless a decision-log entry reverses them:
 
 ### §11.1 Trust-roadmap graduation gates
 
-The layers and the registry graduate only when their preconditions are demonstrably met — otherwise the deferral decisions in §16 are being reversed by drift, not by decision.
+The layers and the registry graduate only when their preconditions are demonstrably met - otherwise the deferral decisions in §16 are being reversed by drift, not by decision.
 
 | Capability | MUST NOT ship until | Rationale (ties to §10) |
 |---|---|---|
-| **Layer 3 — domain-origin verification** | Consumer mode ships (M5a) AND the §10.1 origin definition is implemented and covered by §AA conformance cases (OM-TRUST-008/010). | It is the day-one *verification* path; shipping the badge without the precise check invites A5/A7 confusion. |
-| **Layer 4 — signature (reserved → verified)** | (a) A named key-infrastructure decision exists (who issues/rotates/revokes keys — brokerage? license authority? Vervelio CA?); (b) the `signature` field's canonical form is specified so signing does **not** change the integrity hash ([OM-CANON-003] already excludes `meta.signature`); (c) revocation + verification are defined; (d) a migration note ships (new context is *not* required — the field is additive within 0.1's context). | Signing solves impersonation (A3), which is only a *real* threat once an open index makes valuable listings worth impersonating; shipping it earlier adds friction to repricing for no threat reduction (§16). |
+| **Layer 3 - domain-origin verification** | Consumer mode ships (M5a) AND the §10.1 origin definition is implemented and covered by §AA conformance cases (OM-TRUST-008/010). | It is the day-one *verification* path; shipping the badge without the precise check invites A5/A7 confusion. |
+| **Layer 4 - signature (reserved → verified)** | (a) A named key-infrastructure decision exists (who issues/rotates/revokes keys - brokerage? license authority? Vervelio CA?); (b) the `signature` field's canonical form is specified so signing does **not** change the integrity hash ([OM-CANON-003] already excludes `meta.signature`); (c) revocation + verification are defined; (d) a migration note ships (new context is *not* required - the field is additive within 0.1's context). | Signing solves impersonation (A3), which is only a *real* threat once an open index makes valuable listings worth impersonating; shipping it earlier adds friction to repricing for no threat reduction (§16). |
 | **Registry / "submit to index"** | Layer 3 in production AND [OM-PRIV-003] consent model AND spam controls gated on hash + origin verification (later + signature). | "An open MLS with no origin verification is a spam magnet" (§2). Origin verification is the minimum bar; do not open the index below it. |
 
-**Adoption funnel (tracked, not gated — depends on parties outside our control).** The two-sided flywheel (§2) is measured, telemetry-free, by counting observable artifacts, not by phoning home ([OM-TEL-001]): (1) OMs embedded (supply); (2) distinct domains serving origin-verifiable payloads; (3) external tools/users reading payloads via `om_read`/consumer mode (demand); (4) buyers' brokers *asking* for embedded OMs (qualitative, reported by Fortis). Progression 1→3 is the flywheel turning; stall at (1) means demand (consumer mode, §5b) is the lever to pull, not more supply.
+**Adoption funnel (tracked, not gated - depends on parties outside our control).** The two-sided flywheel (§2) is measured, telemetry-free, by counting observable artifacts, not by phoning home ([OM-TEL-001]): (1) OMs embedded (supply); (2) distinct domains serving origin-verifiable payloads; (3) external tools/users reading payloads via `om_read`/consumer mode (demand); (4) buyers' brokers *asking* for embedded OMs (qualitative, reported by Fortis). Progression 1→3 is the flywheel turning; stall at (1) means demand (consumer mode, §5b) is the lever to pull, not more supply.
 
 ---
 
 ## 12. Risks & mitigations
 
-Each risk names a **testable gate** — a named test, CI check, or verifiable artifact — so "mitigated" is falsifiable, not asserted. Ordered highest-concern first; IDs are stable and append-only.
+Each risk names a **testable gate** - a named test, CI check, or verifiable artifact - so "mitigated" is falsifiable, not asserted. Ordered highest-concern first; IDs are stable and append-only.
 
 | ID | Risk | Mitigation | Testable gate | Owner |
 |---|---|---|---|---|
-| **OM-RISK-001** | **Cold-start — no supply, no demand** | Ship the standalone consistency validator first (value with zero embedding); consumer mode manufactures visible demand; Fortis seeds supply. | M1.x validator runs on any OM/payload in CI (§14 OM-DoD-002); adoption-DoD counter: ≥1 broker catches a real error pre-embed. | Scott + dev |
+| **OM-RISK-001** | **Cold-start - no supply, no demand** | Ship the standalone consistency validator first (value with zero embedding); consumer mode manufactures visible demand; Fortis seeds supply. | M1.x validator runs on any OM/payload in CI (§14 OM-DoD-002); adoption-DoD counter: ≥1 broker catches a real error pre-embed. | Scott + dev |
 | **OM-RISK-002** | **Cross-impl round-trip bug** (pdf-lib ↔ pikepdf payload drift) | Named cross-implementation round-trip test from day one (§8a); byte-for-byte payload fidelity in CI. | [OM-VEC-002] green on every commit; divergence = red build (§14 OM-DoD-001). | Dev |
 | **OM-RISK-003** | **Confidentiality objection** (won't upload unreleased OM) | On-device local extraction path (Prompt API); doc never leaves the machine. | M5b local path proven with a network-egress assertion = 0 bytes leave device during extraction (§14 OM-DoD-007); [OM-PRIV-001] path disclosure shown pre-send. | Dev |
 | **OM-RISK-004** | **Fixture skew** (all one producer → messy cases untested) | Spec a fixture *matrix* (producers × pathologies), not a count; block M1 exit until the matrix is filled. | Matrix coverage report lists every (producer × pathology) cell as filled; M1 exit gate refuses on any empty cell (§14 OM-DoD-001, [OM-VEC-004]). | Scott (sources) + dev |
@@ -622,9 +622,9 @@ Each parked item stays parked until its trigger fires; the trigger is the falsif
 
 ---
 
-## 14. Development plan (Claude Code handoff) — with definition-of-done
+## 14. Development plan (Claude Code handoff) - with definition-of-done
 
-Each milestone has a **technical DoD (gates the milestone)** and an **adoption DoD (tracked, does not gate — it depends on parties we don't control).**
+Each milestone has a **technical DoD (gates the milestone)** and an **adoption DoD (tracked, does not gate - it depends on parties we don't control).**
 
 **Repo layout:** `/core` (Python) · `/cli` · `/mcp` · `/process` · `/spec` · `/js` (TS subset) · `/extension` (MV3, consumer + author) · `/fixtures`.
 
@@ -632,13 +632,13 @@ Each milestone has a **technical DoD (gates the milestone)** and an **adoption D
 
 | Milestone | Technical DoD (gate) | Adoption DoD (tracked) |
 |---|---|---|
-| **M1 — round trip (stdio)** | inspect + extract_images + embed/read on 3 real OMs (native/hybrid/scanned); non-destructive, idempotent re-embed w/ `supersedes`, survival through download/re-upload; cross-impl round-trip test green. | 3 real Fortis OMs embedded and re-read successfully. |
-| **M1.x — standalone validator** | Consistency-warning checker (schema-independent) runs on any payload/OM; catches NOI/cap, schedule sums+contiguity, date math. | ≥1 broker runs it to catch a real error before caring about embedding. |
-| **M2 — schema + validate** | JSON Schema 0.1 published; two-tier validate (errors block / warnings inform); samples in `/spec`; per-field `source` tags; reserved `signature` field. | Schema referenced by an external reader. |
-| **M3 — remote transport** ✅ *(gate met 2026-08-17, deterministic-only)* | Streamable HTTP; URL + presigned upload; R2; link outputs. Free/paid line decided by here. | ChatGPT/web client reads a payload via hosted MCP. |
-| **M4 — process layer** ✅ *(gate met 2026-08-17; Claude half + client-agnostic instructions)* | SKILL.md + generic instructions; end-to-end in Claude + one non-Claude client. | A non-Claude client completes the full loop *(adoption-deferred)*. |
-| **M5a — extension consumer mode** ✅ *(gate met 2026-08-17; A=`/js` trust core + B=MV3 extension)* | `/js` read/validate (+ cross-impl test vs pikepdf); MV3 detection (re-fetch on viewed PDFs, toolbar badge); payload card; domain-origin verification; named-webhook publish (envelope + HMAC) + test-fire + copy/download. No model anywhere. Read path worker-free (pdf-lib + zlib/DecompressionStream) and validator eval-free (ajv standalone) for the MV3 CSP. | 10 real OMs embedded and read by an external tool/user via the extension *(live-user adoption pending)*. |
-| **M5b — extension author mode** ✅ *(gate met 2026-08-17; B1 deterministic + B2 on-device extraction)* | Side-panel review; local extraction via the on-device Prompt API (a browser global, isolated behind an Extractor seam); hosted path a throwing seam behind Q2; embed via `/js`. `chrome.downloads` interception deferred (capture is re-fetch + file picker). | A broker embeds an OM end-to-end without touching the CLI *(live-broker adoption pending)*. |
+| **M1 - round trip (stdio)** | inspect + extract_images + embed/read on 3 real OMs (native/hybrid/scanned); non-destructive, idempotent re-embed w/ `supersedes`, survival through download/re-upload; cross-impl round-trip test green. | 3 real Fortis OMs embedded and re-read successfully. |
+| **M1.x - standalone validator** | Consistency-warning checker (schema-independent) runs on any payload/OM; catches NOI/cap, schedule sums+contiguity, date math. | ≥1 broker runs it to catch a real error before caring about embedding. |
+| **M2 - schema + validate** | JSON Schema 0.1 published; two-tier validate (errors block / warnings inform); samples in `/spec`; per-field `source` tags; reserved `signature` field. | Schema referenced by an external reader. |
+| **M3 - remote transport** ✅ *(gate met 2026-08-17, deterministic-only)* | Streamable HTTP; URL + presigned upload; R2; link outputs. Free/paid line decided by here. | ChatGPT/web client reads a payload via hosted MCP. |
+| **M4 - process layer** ✅ *(gate met 2026-08-17; Claude half + client-agnostic instructions)* | SKILL.md + generic instructions; end-to-end in Claude + one non-Claude client. | A non-Claude client completes the full loop *(adoption-deferred)*. |
+| **M5a - extension consumer mode** ✅ *(gate met 2026-08-17; A=`/js` trust core + B=MV3 extension)* | `/js` read/validate (+ cross-impl test vs pikepdf); MV3 detection (re-fetch on viewed PDFs, toolbar badge); payload card; domain-origin verification; named-webhook publish (envelope + HMAC) + test-fire + copy/download. No model anywhere. Read path worker-free (pdf-lib + zlib/DecompressionStream) and validator eval-free (ajv standalone) for the MV3 CSP. | 10 real OMs embedded and read by an external tool/user via the extension *(live-user adoption pending)*. |
+| **M5b - extension author mode** ✅ *(gate met 2026-08-17; B1 deterministic + B2 on-device extraction)* | Side-panel review; local extraction via the on-device Prompt API (a browser global, isolated behind an Extractor seam); hosted path a throwing seam behind Q2; embed via `/js`. `chrome.downloads` interception deferred (capture is re-fetch + file picker). | A broker embeds an OM end-to-end without touching the CLI *(live-broker adoption pending)*. |
 
 ### §14.1 Measurable milestone exit criteria (gates)
 
@@ -649,8 +649,8 @@ Each gate below is the *machine-checkable* form of the corresponding Technical D
 - **[OM-DoD-003] M2 schema gate.** `/spec/om-0.1.schema.json` (2020-12) published; `om_validate` returns errors that block and warnings that don't ([OM-ERR-001]); every §B vector reproduces its expected code set exactly ([OM-VEC-003]); per-field `source` tags and the reserved `signature` field (rejected via OMV-E003 if populated) are enforced; the JSON-LD `@context` vocabulary is published and drift-locked to the schema (§15.1 / #13). *Verify:* `pytest core/tests/test_samples.py core/tests/test_vectors.py spec/tests/test_context.py` (schema-tier code-set reproduction + canonical vectors + vocabulary completeness).
 - **[OM-DoD-004] M3 remote gate.** Streamable HTTP transport serves the tool surface; PDF input accepted as path | HTTPS URL | blob-id; R2 wired with the [OM-PRIV-002] TTL + delete-on-completion proven; **all [OM-SEC-001] SSRF range cases refused** in an automated suite; the free/paid line (§15 Q2) is written down. *Verify:* `pytest mcp/tests/test_remote.py mcp/tests/test_ssrf.py`.
 - **[OM-DoD-005] M4 process gate.** `/process` SKILL.md + generic agent-instructions drive the full loop end-to-end in Claude **and** one non-Claude MCP client, each producing a payload that passes `om_validate` with zero errors. *Verify:* recorded transcript + resulting payload passes `om_validate` in CI.
-- **[OM-DoD-006] M5a consumer-mode gate.** ✅ *(met 2026-08-17.)* `/js` read/validate passes the cross-impl test against pikepdf ([OM-VEC-002]); MV3 detection re-fetches viewed PDFs (never scrapes the viewer) and drives the badge through all §AA states on labeled fixtures; the payload card renders; domain-origin verification meets the §10.1 definition; named-webhook publish sends an HMAC-signed, replay-protected envelope (§5b) with a working test-fire; **no inference dependency present in the consumer bundle** (import/graph assertion). The proof is the **live** real-browser Playwright gate (7/7 §AA states + publish HMAC over a self-signed HTTPS harness) — the mocked unit tests were green while two MV3-only defects (pdf.js worker, ajv `new Function`) still broke the product, so the live gate is the sole standard of proof (Rule 5). *Verify:* `npm --prefix js test && npm --prefix extension run test:consumer && node extension/scripts/assert-no-inference.mjs extension/dist`.
-- **[OM-DoD-007] M5b author-mode gate.** ✅ *(met 2026-08-17.)* Capture (re-fetch/file) → review panel (`process/review-contract.md`) → validate → Assert & Embed via `/js`; on-device extraction via the Prompt API behind an Extractor seam with a **network-egress assertion of 0 bytes** during extraction ([OM-PRIV-001]); hosted path a throwing seam behind §15 Q2; a broker completes an embed without touching the CLI. The **egress-zero proof is architecture-level**: the live gate injects a fake `LanguageModel` to exercise the real on-device adapter (the real model can't run in CI Chromium) and asserts 0 off-device requests during `extract()` — stated, not faked. `chrome.downloads` interception deferred (not required for the gate). *Verify:* `npm --prefix js test && npm --prefix extension run test:consumer && node extension/scripts/assert-no-inference.mjs extension/dist` (the extension gate runs the author + egress-zero cases).
+- **[OM-DoD-006] M5a consumer-mode gate.** ✅ *(met 2026-08-17.)* `/js` read/validate passes the cross-impl test against pikepdf ([OM-VEC-002]); MV3 detection re-fetches viewed PDFs (never scrapes the viewer) and drives the badge through all §AA states on labeled fixtures; the payload card renders; domain-origin verification meets the §10.1 definition; named-webhook publish sends an HMAC-signed, replay-protected envelope (§5b) with a working test-fire; **no inference dependency present in the consumer bundle** (import/graph assertion). The proof is the **live** real-browser Playwright gate (7/7 §AA states + publish HMAC over a self-signed HTTPS harness) - the mocked unit tests were green while two MV3-only defects (pdf.js worker, ajv `new Function`) still broke the product, so the live gate is the sole standard of proof (Rule 5). *Verify:* `npm --prefix js test && npm --prefix extension run test:consumer && node extension/scripts/assert-no-inference.mjs extension/dist`.
+- **[OM-DoD-007] M5b author-mode gate.** ✅ *(met 2026-08-17.)* Capture (re-fetch/file) → review panel (`process/review-contract.md`) → validate → Assert & Embed via `/js`; on-device extraction via the Prompt API behind an Extractor seam with a **network-egress assertion of 0 bytes** during extraction ([OM-PRIV-001]); hosted path a throwing seam behind §15 Q2; a broker completes an embed without touching the CLI. The **egress-zero proof is architecture-level**: the live gate injects a fake `LanguageModel` to exercise the real on-device adapter (the real model can't run in CI Chromium) and asserts 0 off-device requests during `extract()` - stated, not faked. `chrome.downloads` interception deferred (not required for the gate). *Verify:* `npm --prefix js test && npm --prefix extension run test:consumer && node extension/scripts/assert-no-inference.mjs extension/dist` (the extension gate runs the author + egress-zero cases).
 - **[OM-DoD-008] Standing gate (all milestones).** No inference dependency in `/core`, `/mcp`, or consumer-mode `/js`; tool outputs paginated/manifest-only; visual content unchanged absent an explicit badge flag. *Verify:* `node scripts/assert-no-inference.js core mcp extension/dist/consumer` runs in CI on every commit and is a required check.
 
 **Suggested first Claude Code prompt (M1):** "Read `/spec` and this handoff doc. Scaffold `/core` with pikepdf-based embed/read (EmbeddedFiles + /AF AFRelationship=Data + XMP block w/ spec name/version/hash), PyMuPDF-based inspect (native/hybrid/scanned classification) and image extraction (SMask recombine, xref dedupe, CMYK→sRGB). Idempotent re-embed with `supersedes` hash. pytest round-trip against `/fixtures`. No LLM calls anywhere in `/core`."
@@ -663,31 +663,31 @@ Each gate below is the *machine-checkable* form of the corresponding Technical D
 
 | # | Question | Priority | Blocks | Decide by | Default if unresolved by deadline | Owner |
 |---|---|---|---|---|---|---|
-| Q1 | **Name sweep** — GitHub org + PyPI + npm + Chrome Web Store + domain as a set. Candidates: OpenOM, omspec, ListingLD. | **P0** | `@context`, all imports, org reservation | **Before first `@context` publish or first import** (M1 scaffolding) | Keep working title "OpenOM" + `verveliolabs.com/openom`; do **not** publish `@context` or reserve packages until locked (blocking is correct here — no risky default). | Scott |
-| Q2 | **Free/paid boundary** — engine/MCP/extension local+consumer = free MIT; hosted inference extraction = commercial? | P0 | M3 (ideally settle at M1) | ~~Before M3 opens~~ | **RESOLVED 2026-08-17 (see §15.1).** Everything deterministic + self-hostable is free MIT; the sole paid product is **Vervelio-hosted inference extraction**, **built in M3** as a service separate from the open MCP server; Vervelio also runs a **free public deterministic MCP** instance alongside self-hosting. | Scott |
-| Q3 | **Fixture matrix** — which producers × which pathologies, concretely. | P1 | M1 exit | **Before M1 exit gate** ([OM-DoD-001]) | Use the §14 baseline matrix (InDesign/Word/Buildout/scanned × messy-schedule/CMYK-SMask/flattened/empty/hash-mismatch); expand as real OMs arrive. | Scott + dev |
-| Q4 | **Blob storage + retention** (R2) — expiry for unreleased OMs. | P1 | M3 | **With M3 remote gate** ([OM-DoD-004]) | Apply [OM-PRIV-002] conservative default: ≤24h TTL + delete-on-completion, single-use presigned URLs. | Dev |
-| Q5 | **Sidecar convention** — `om.json` beside `om.pdf`? | P2 | M5a (nice-to-have) | Before M5a ships (non-blocking) | Do not ship a sidecar convention in 0.1; the embedded file + JSON-LD mirror are the two supported surfaces. | Dev |
-| Q6 | **Build-time verifications** — Gemini web connectors · Prompt API limits + structured output · chat prefill deep-links per client · Web Store publishing under Vervelio · Prompt API on Edge. | P1 | M5a/M5b | **During M5a/M5b build** | Feature-detect at runtime and degrade to hosted/chat-handoff fallbacks (OM-RISK-011) where a capability is missing. | Dev |
+| Q1 | **Name sweep** - GitHub org + PyPI + npm + Chrome Web Store + domain as a set. Candidates: OpenOM, omspec, ListingLD. | **P0** | `@context`, all imports, org reservation | **Before first `@context` publish or first import** (M1 scaffolding) | Keep working title "OpenOM" + `verveliolabs.com/openom`; do **not** publish `@context` or reserve packages until locked (blocking is correct here - no risky default). | Scott |
+| Q2 | **Free/paid boundary** - engine/MCP/extension local+consumer = free MIT; hosted inference extraction = commercial? | P0 | M3 (ideally settle at M1) | ~~Before M3 opens~~ | **RESOLVED 2026-08-17 (see §15.1).** Everything deterministic + self-hostable is free MIT; the sole paid product is **Vervelio-hosted inference extraction**, **built in M3** as a service separate from the open MCP server; Vervelio also runs a **free public deterministic MCP** instance alongside self-hosting. | Scott |
+| Q3 | **Fixture matrix** - which producers × which pathologies, concretely. | P1 | M1 exit | **Before M1 exit gate** ([OM-DoD-001]) | Use the §14 baseline matrix (InDesign/Word/Buildout/scanned × messy-schedule/CMYK-SMask/flattened/empty/hash-mismatch); expand as real OMs arrive. | Scott + dev |
+| Q4 | **Blob storage + retention** (R2) - expiry for unreleased OMs. | P1 | M3 | **With M3 remote gate** ([OM-DoD-004]) | Apply [OM-PRIV-002] conservative default: ≤24h TTL + delete-on-completion, single-use presigned URLs. | Dev |
+| Q5 | **Sidecar convention** - `om.json` beside `om.pdf`? | P2 | M5a (nice-to-have) | Before M5a ships (non-blocking) | Do not ship a sidecar convention in 0.1; the embedded file + JSON-LD mirror are the two supported surfaces. | Dev |
+| Q6 | **Build-time verifications** - Gemini web connectors · Prompt API limits + structured output · chat prefill deep-links per client · Web Store publishing under Vervelio · Prompt API on Edge. | P1 | M5a/M5b | **During M5a/M5b build** | Feature-detect at runtime and degrade to hosted/chat-handoff fallbacks (OM-RISK-011) where a capability is missing. | Dev |
 | Q7 | **XMP mirror fields** for dumb crawlers. | P2 | future | Registry era (non-blocking) | Ship only the required §D.2 XMP marker in 0.1; add mirror fields additively (minor, §F) when a crawler need is demonstrated. | Dev |
-| Q8 | **Consumer-mode defaults** — auto-check every viewed PDF (size cap) vs check-on-open? Link-badging per-domain opt-in? Cache TTL? | P2 | M5a | **With M5a consumer gate** | Default to check-on-panel-open (privacy-conservative), link-badging opt-in per domain, cache TTL 24h; revisit from telemetry-free user feedback. | Dev |
-| Q9 | **Index submission consent model** (registry era) — what is shared, when. | P3 | registry | Before any registry code | Enforce [OM-PRIV-003]: opt-in per submission, share payload + source URL only (never the PDF), require hash + origin verification. | Scott + dev |
+| Q8 | **Consumer-mode defaults** - auto-check every viewed PDF (size cap) vs check-on-open? Link-badging per-domain opt-in? Cache TTL? | P2 | M5a | **With M5a consumer gate** | Default to check-on-panel-open (privacy-conservative), link-badging opt-in per domain, cache TTL 24h; revisit from telemetry-free user feedback. | Dev |
+| Q9 | **Index submission consent model** (registry era) - what is shared, when. | P3 | registry | Before any registry code | Enforce [OM-PRIV-003]: opt-in per submission, share payload + source URL only (never the PDF), require hash + origin verification. | Scott + dev |
 
-### §15.1 Free/paid boundary (Q2 resolution, 2026-08-17) — the written line for [OM-DoD-004]
+### §15.1 Free/paid boundary (Q2 resolution, 2026-08-17) - the written line for [OM-DoD-004]
 
-This is the authoritative statement M3's gate requires in writing. It does not, and cannot, weaken the cardinal rule (§6a): the open server, `/core`, `/mcp`, and consumer-mode `/js` remain deterministic — zero inference, zero keys — forever.
+This is the authoritative statement M3's gate requires in writing. It does not, and cannot, weaken the cardinal rule (§6a): the open server, `/core`, `/mcp`, and consumer-mode `/js` remain deterministic - zero inference, zero keys - forever.
 
 **Free (MIT code / CC-BY-4.0 spec), self-hostable by anyone:**
 - The entire deterministic toolchain: `/core`, `/cli`, `/mcp` (both stdio **and** Streamable HTTP transports), `/js`, and the `/extension` in **both** consumer and author modes.
-- Author-mode extraction that runs **on-device** (Prompt API) or **client-side** — no Vervelio cost, so free.
+- Author-mode extraction that runs **on-device** (Prompt API) or **client-side** - no Vervelio cost, so free.
 - The spec text, JSON Schema, `@context`/vocabulary, and conformance vectors (CC-BY-4.0, attributed to Vervelio, §G).
-- **A free, rate-limited, public Vervelio-hosted instance of the *deterministic* MCP server** — run for reach/adoption (ChatGPT/web clients), since it carries no per-call model cost. Anyone may also self-host the identical code.
+- **A free, rate-limited, public Vervelio-hosted instance of the *deterministic* MCP server** - run for reach/adoption (ChatGPT/web clients), since it carries no per-call model cost. Anyone may also self-host the identical code.
 
-**Paid (a separate commercial service — never the open server):**
+**Paid (a separate commercial service - never the open server):**
 - **Vervelio-hosted inference extraction** (extraction path 2, §5b): the endpoint that runs an LLM to turn a messy or scanned OM into a *reviewed-draft* payload. This is the only capability with genuine per-call cost and is the sole commercial product in 0.1's horizon.
-- **Decision: it is BUILT in M3** (not stubbed), alongside — but architecturally separate from — the open deterministic remote transport. It holds its own model keys, lives outside `/mcp`, and is subject to single-use presigned uploads ([OM-SEC-006]) and retention ([OM-PRIV-002]). Path 0 (manual/review-only) and Path 1 (on-device) remain free and always available, so the paid path is never on the critical path to a valid embed.
+- **Decision: it is BUILT in M3** (not stubbed), alongside - but architecturally separate from - the open deterministic remote transport. It holds its own model keys, lives outside `/mcp`, and is subject to single-use presigned uploads ([OM-SEC-006]) and retention ([OM-PRIV-002]). Path 0 (manual/review-only) and Path 1 (on-device) remain free and always available, so the paid path is never on the critical path to a valid embed.
 
-**Consequence for M3 scope:** M3 now ships two things — (a) the free deterministic Streamable HTTP MCP (self-host + Vervelio public instance), and (b) the separate paid inference-extraction service. The `assert-no-inference` standing gate ([OM-DoD-008]) MUST continue to pass over `/core`, `/mcp`, and consumer `/js`; the paid service is explicitly out of that tree.
+**Consequence for M3 scope:** M3 now ships two things - (a) the free deterministic Streamable HTTP MCP (self-host + Vervelio public instance), and (b) the separate paid inference-extraction service. The `assert-no-inference` standing gate ([OM-DoD-008]) MUST continue to pass over `/core`, `/mcp`, and consumer `/js`; the paid service is explicitly out of that tree.
 
 ---
 
@@ -719,7 +719,7 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 | **2026-08-16** | **Thesis reframed provenance-first; token asymmetry is the hook, not the durable value** | Token costs decay; attributable provenance does not |
 | **2026-08-16** | **Provenance = four layers: hash + self-asserted identity + domain-origin verification + reserved signature field** | Each proves one thing; be honest about limits |
 | **2026-08-16** | **No cryptographic signing required in 0.1 or at re-embed; `signature` field reserved-not-required** | Signing doesn't solve content lies, adds friction to repricing; reserving the field avoids a breaking change |
-| **2026-08-16** | **Domain-origin verification is the day-one verification path** (read-time, web-native) | Free — consumer mode already has the URL; no key management |
+| **2026-08-16** | **Domain-origin verification is the day-one verification path** (read-time, web-native) | Free - consumer mode already has the URL; no key management |
 | **2026-08-16** | **Per-field `source` tag (asserted/extracted/verified)** | Operationalizes "assertions, not facts" at field level |
 | **2026-08-16** | **`rentSchedule` fully modeled with consistency rules** | The acknowledged differentiator; must be a real object |
 | **2026-08-16** | **Webhook envelope gains HMAC + replay protection + independent `envelopeVersion`** | Receiving systems need a security contract, not just a shape |
@@ -734,13 +734,13 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 | **2026-08-16** | **Trust contract made normative: badge is a strict precedence state machine with UI-honesty constraints and a stale-assertion check** (§AA, [OM-TRUST-001..010]) | "Hash read as authenticity" (OM-RISK-009) is prevented by enforcing what each layer may *say*, not just what it proves |
 | **2026-08-16** | **"Origin-verified" precisely defined = valid HTTPS host + same-eTLD+1 JSON-LD mirror + mirror hash == embedded hash; verification is non-transitive** (§10.1) | The named cross-impl and consumer gates need an unambiguous, testable definition of Layer 3 |
 | **2026-08-16** | **Six explicit attacker models bound to the four layers, with honest residual gaps** (§10.1) | A trust contract is only load-bearing if it names whom it defends against and where it deliberately does not |
-| **2026-08-17** | **M4 gate [OM-DoD-005] met: `/process` extraction playbook shipped — `mapping-guide.md` (shared substance) + `SKILL.md` (Claude) + `agent-instructions.md` (any MCP client), with a committed synthetic demo OM whose produced payload passes `om_validate` zero-error + warning-clean (`spec/tests/test_process_example.py`)** | Inference lives only in the agent's mapping step; every `om_*` tool stays deterministic. The live non-Claude MCP-client run is adoption-deferred (client-agnostic instructions authored, not faked) |
-| **2026-08-17** | **M3 gate [OM-DoD-004] met (deterministic-only): hosted Streamable HTTP MCP — SSRF-hardened url fetch (resolve-then-pin), R2/local blob store (≤24h TTL + delete-on-completion + server-bound owner), per-principal rate limit, transport security (Host/Origin), untrusted-PDF parse isolation (subprocess timeout/memory), per-call page ceiling; paid extraction = seam only** | The free deterministic hosted server ships first; the paid inference-extraction service + distributed limiter/auth are hosted-deploy-gated (§15.1, issues #51/#52) |
+| **2026-08-17** | **M4 gate [OM-DoD-005] met: `/process` extraction playbook shipped - `mapping-guide.md` (shared substance) + `SKILL.md` (Claude) + `agent-instructions.md` (any MCP client), with a committed synthetic demo OM whose produced payload passes `om_validate` zero-error + warning-clean (`spec/tests/test_process_example.py`)** | Inference lives only in the agent's mapping step; every `om_*` tool stays deterministic. The live non-Claude MCP-client run is adoption-deferred (client-agnostic instructions authored, not faked) |
+| **2026-08-17** | **M3 gate [OM-DoD-004] met (deterministic-only): hosted Streamable HTTP MCP - SSRF-hardened url fetch (resolve-then-pin), R2/local blob store (≤24h TTL + delete-on-completion + server-bound owner), per-principal rate limit, transport security (Host/Origin), untrusted-PDF parse isolation (subprocess timeout/memory), per-call page ceiling; paid extraction = seam only** | The free deterministic hosted server ships first; the paid inference-extraction service + distributed limiter/auth are hosted-deploy-gated (§15.1, issues #51/#52) |
 | **2026-08-17** | **Per-field `source` scoped to `rentSchedule[]` period objects in 0.1 (#44); scalar + `options[]` provenance deferred to a future provenance-side-map minor** | A "sibling `source`" is only well-defined on object-valued fields; the schema already implements exactly this, so the prose is aligned to reality rather than wrapping scalars in 0.1 |
 | **2026-08-17** | **Q2 free/paid boundary RESOLVED (§15.1): all deterministic + self-hostable surfaces free MIT; sole paid product = Vervelio-hosted inference extraction, BUILT in M3 as a service separate from the open server; Vervelio also runs a free public deterministic MCP** | Unblocks M3 ([OM-DoD-004] needs the line in writing); charges only for the one capability with real per-call cost, keeping the standard maximally adoptable |
 | **2026-08-16** | **Risk register uses quantified L×I (1–5) scoring, banded, with a testable gate + stable [OM-RISK-###] ID per risk; five risks added (SSRF, retention leak, dependency abandonment, spec fork, Prompt-API insufficiency)** (§12) | Prose severities aren't comparable or falsifiable; "mitigated" must be provable |
 | **2026-08-16** | **Milestone DoD gains machine-checkable exit gates [OM-DoD-###] with numeric thresholds + verification commands** (§14.1) | A gate that can't be run isn't a gate; "non-destructive/survival" needed numbers |
-| **2026-08-16** | **Every open question gets a decide-by deadline and a default-if-unresolved fallback** (§15) | No pending decision — even a P0 — may silently deadlock the build |
+| **2026-08-16** | **Every open question gets a decide-by deadline and a default-if-unresolved fallback** (§15) | No pending decision - even a P0 - may silently deadlock the build |
 | **2026-08-16** | **Trust roadmap + parked scope get explicit graduation gates/triggers** (§11.1, §13.1) | "Registry era"/"future" must be preconditioned, not calendar-guessed, to protect the 0.1 scope and deferral decisions |
 | **2026-08-16** | **Non-goals restated as append-only normative requirements [OM-SCOPE-001..007]; OCR/vision output may never be `verified`/market-truth** (Non-goals) | Settled non-goals must be citable by conformance tests, and the two implied gaps closed |
 | **2026-08-16** | **Webhook contract hardened to production grade (§Y, OM-HOOK): named RFC 6648-clean headers, `t=…,v1=…` HMAC-SHA256 over raw body, ±300 s replay window, stable event-id idempotency key, at-least-once delivery + key rotation. Workflow survival, idempotent re-embed, and extraction-path determinism made normative (§Z, OM-FLOW/OM-EXTP).** | Receiving systems and the extension need a testable wire contract and an unambiguous determinism boundary, not prose |
@@ -749,13 +749,13 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 ---
 
 
-# PART II — Normative Specification & Technical Appendices
+# PART II - Normative Specification & Technical Appendices
 
 > **These sections are normative.** The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** are to be interpreted as described in **RFC 2119** and **RFC 8174** (only uppercase forms are normative). Requirements carry stable IDs (`[OM-AREA-###]`) so conformance tests map 1:1 to requirements (§B, §12-traceability).
 
 ---
 
-> **Scope of this Part II (M1-essential subset).** Only the normative core an M1 implementer opens is inlined here: **§A** conformance conventions, **§B** conformance suite & vectors, **§C** canonicalization & hashing, **§D** embedded-file & XMP wire format, **§E** data dictionary, **§H** error & warning taxonomy, **§I** MCP tool contracts, **§J** security considerations. The remaining normative appendices — versioning & compatibility, licensing/IP, privacy, governance, telemetry, diagrams, the worked end-to-end example, the `@context` model, the ABNF grammar, conformance profiles, the reference harness, vulnerability disclosure, and the §V–§AA conformance appendices — are drafted but **deferred until adoption** and live in [`om-normative-spec-draft-v0.1.md`](om-normative-spec-draft-v0.1.md). **Any §-reference in this document to an appendix not present here (§F, §G, §K, §L, §M, §N, §O–§AA) resolves in that file.** Requirement IDs are append-only and shared across both files.
+> **Scope of this Part II (M1-essential subset).** Only the normative core an M1 implementer opens is inlined here: **§A** conformance conventions, **§B** conformance suite & vectors, **§C** canonicalization & hashing, **§D** embedded-file & XMP wire format, **§E** data dictionary, **§H** error & warning taxonomy, **§I** MCP tool contracts, **§J** security considerations. The remaining normative appendices - versioning & compatibility, licensing/IP, privacy, governance, telemetry, diagrams, the worked end-to-end example, the `@context` model, the ABNF grammar, conformance profiles, the reference harness, vulnerability disclosure, and the §V–§AA conformance appendices - are drafted but **deferred until adoption** and live in [`om-normative-spec-draft-v0.1.md`](om-normative-spec-draft-v0.1.md). **Any §-reference in this document to an appendix not present here (§F, §G, §K, §L, §M, §N, §O–§AA) resolves in that file.** Requirement IDs are append-only and shared across both files.
 
 ---
 
@@ -768,7 +768,7 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 
 ### §A.1 Conformance targets, roles & levels
 
-- **[OM-CONF-005]** A **conformance target** is a (role × level) pair. The roles are those of [OM-CONF-004] (Producer, Consumer, Validator). Each role defines two levels, **L1** (baseline) and **L2** (full). An implementation claims one target per role it implements; **L2 subsumes L1** — an implementation MUST NOT claim L2 for a role without satisfying every L1 requirement for that role. An implementation MAY claim different levels for different roles (e.g. Producer L2, Consumer L1).
+- **[OM-CONF-005]** A **conformance target** is a (role × level) pair. The roles are those of [OM-CONF-004] (Producer, Consumer, Validator). Each role defines two levels, **L1** (baseline) and **L2** (full). An implementation claims one target per role it implements; **L2 subsumes L1** - an implementation MUST NOT claim L2 for a role without satisfying every L1 requirement for that role. An implementation MAY claim different levels for different roles (e.g. Producer L2, Consumer L1).
 
 - **[OM-CONF-006] Producer L1 (baseline embed).** A Producer L1 MUST, for a **native or hybrid** input PDF: (a) serialize the payload per canonicalization [OM-CANON-001]–[OM-CANON-007]; (b) embed it exactly per the wire format [OM-EMB-001]–[OM-EMB-005], [OM-EMB-010]–[OM-EMB-012] and write the XMP marker [OM-XMP-001]–[OM-XMP-003]; (c) perform idempotent re-embed [OM-XMP-004] with a correct `supersedes` value; (d) preserve visual content and document structure (§4.2 non-destructive; no re-export, no recompression of existing content); and (e) reproduce, for every applicable vector, the exact `sha256:` integrity hash required by [OM-VEC-003]. A Producer L1 that also runs consistency checks pre-embed MUST NOT let a warning block the embed ([OM-ERR-001]).
 
@@ -778,7 +778,7 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 
 - **[OM-CONF-009] Consumer L2 (verify + validate).** A Consumer L2 MUST satisfy Consumer L1 and additionally: (a) perform **domain-origin verification** (§10 layer 3) and expose its distinct state (`originVerified: true|false|null`) without conflating it with `hashValid`; (b) **schema-validate** the read payload (Validator L2, [OM-CONF-011]) and surface the two-tier result; (c) accept unknown OPTIONAL fields ([OM-VER-003]) and degrade gracefully on an unknown **major** version ([OM-VER-004], emit `OMW-W001`, never silently misinterpret); and (d) never present `hashValid=true` as authorship or authenticity ([OM-SEC-005], §10). A Consumer L2 MUST NOT populate or trust the reserved `signature` field in 0.1 ([OM-DD]-`meta.signature`).
 
-- **[OM-CONF-010] Validator L1 (consistency checker — schema-independent).** A Validator L1 MUST implement the **warning tier** in full: it MUST evaluate every consistency check whose inputs are present (`OMW-W010`–`OMW-W040`, §H), emit results in the `{code, severity, path, message, expected?, actual?}` shape ([OM-ERR-001]), apply the documented, configurable tolerances ([OM-ERR-002]), and MUST NOT block or mutate the payload. Validator L1 requires **no JSON Schema**; it is the standalone consistency checker of §9 / milestone M1.x and MAY run on any payload, embedded or loose.
+- **[OM-CONF-010] Validator L1 (consistency checker - schema-independent).** A Validator L1 MUST implement the **warning tier** in full: it MUST evaluate every consistency check whose inputs are present (`OMW-W010`–`OMW-W040`, §H), emit results in the `{code, severity, path, message, expected?, actual?}` shape ([OM-ERR-001]), apply the documented, configurable tolerances ([OM-ERR-002]), and MUST NOT block or mutate the payload. Validator L1 requires **no JSON Schema**; it is the standalone consistency checker of §9 / milestone M1.x and MAY run on any payload, embedded or loose.
 
 - **[OM-CONF-011] Validator L2 (full validator).** A Validator L2 MUST satisfy Validator L1 and additionally implement the **error tier** (`OMV-E001`–`OMV-E004`, §H) against the normative JSON Schema [OM-DD-001], enforce the hard block/never-block boundary ([OM-ERR-001]: errors block `om_embed`, warnings never block), reject a 0.1 payload that populates `meta.signature` (`OMV-E003`), and reproduce the **exact code set** required by [OM-VEC-003] for every applicable vector. Validator L2 is the two-tier `om_validate` of milestone M2.
 
@@ -801,7 +801,7 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
     { "role": "Producer", "level": 2 },
     { "role": "Consumer", "level": 1 }
   ],
-  "suite": {                                    // the exact vectors judged against — immutable ref
+  "suite": {                                    // the exact vectors judged against - immutable ref
     "ref": "openom-vectors@0.1.3",
     "commit": "git:9f1c…",
     "manifestHash": "sha256:…"                  // SHA-256 over JCS of manifest.json ([OM-VEC-008])
@@ -819,8 +819,8 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
   A claim is **valid** only if `vectorsFailed == 0` and `vectorsApplicable` equals the count the runner reports for the claimed targets against the referenced suite ([OM-VEC-010]).
 
 - **[OM-CONF-014] Canonical claim string.** The human-readable form MUST be:
-  `OpenOM <specVersion> — <Role Ln>[, <Role Ln>…] (self-certified <YYYY-MM-DD>, suite <suite.ref> <suite.manifestHash-short>)`
-  e.g. `OpenOM 0.1 — Producer L2, Consumer L1 (self-certified 2026-09-01, suite openom-vectors@0.1.3 sha256:9f1c…)`. Roles MUST be listed in the order Producer, Consumer, Validator. The string MUST NOT omit the `self-certified` qualifier while 0.1 provides only self-certification ([OM-CONF-016]).
+  `OpenOM <specVersion> - <Role Ln>[, <Role Ln>…] (self-certified <YYYY-MM-DD>, suite <suite.ref> <suite.manifestHash-short>)`
+  e.g. `OpenOM 0.1 - Producer L2, Consumer L1 (self-certified 2026-09-01, suite openom-vectors@0.1.3 sha256:9f1c…)`. Roles MUST be listed in the order Producer, Consumer, Validator. The string MUST NOT omit the `self-certified` qualifier while 0.1 provides only self-certification ([OM-CONF-016]).
 
 - **[OM-CONF-015] Anti-overclaim (falsifiability).** An implementation MUST NOT state or imply a role/level it has not passed the full applicable vector set for; MUST NOT claim endorsement, approval, or certification **by Vervelio or any body** (0.1 defines none); MUST NOT reference a mutable suite (the `suite` ref and `manifestHash` MUST pin an immutable, published suite release); and MUST NOT present a partial run (`vectorsFailed > 0`, or a filtered subset) as conformance. Because vectors are public and deterministic ([OM-VEC-009]–[OM-VEC-011]), any claim is refutable by re-running the pinned suite; a refuted claim SHOULD be corrected or withdrawn. The word "conformant" (unqualified) is reserved for a valid claim per [OM-CONF-013].
 
@@ -849,7 +849,7 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 
 ## §B. Conformance suite & interop test vectors
 
-- **[OM-VEC-001]** `/spec/vectors/` MUST contain canonical test vectors committed to the repo: (a) `payloads/*.json` — valid and intentionally-invalid payloads; (b) `expected/*.json` — for each payload, its JCS form, its `sha256:` hash, and its expected `om_validate` report (error/warning codes); (c) `pdfs/*.pdf` — golden embedded OMs with a sidecar `*.expected.json` describing the payload, hash, and XMP fields.
+- **[OM-VEC-001]** `/spec/vectors/` MUST contain canonical test vectors committed to the repo: (a) `payloads/*.json` - valid and intentionally-invalid payloads; (b) `expected/*.json` - for each payload, its JCS form, its `sha256:` hash, and its expected `om_validate` report (error/warning codes); (c) `pdfs/*.pdf` - golden embedded OMs with a sidecar `*.expected.json` describing the payload, hash, and XMP fields.
 - **[OM-VEC-002]** The **cross-implementation round-trip test** MUST assert: a payload embedded by `/js` (pdf-lib) and read by `/core` (pikepdf) yields byte-for-byte identical **decompressed payload bytes** and an identical `sha256:` hash, and vice versa. This test MUST run in CI on every commit.
 - **[OM-VEC-003]** A Producer MUST reproduce, for every vector in `payloads/`, the exact `sha256:` hash in `expected/`. A Validator MUST reproduce the exact code set. Divergence is a conformance failure.
 - **[OM-VEC-004]** Vectors MUST cover the fixture *pathology matrix* (§14): native/hybrid/scanned PDFs, CMYK/SMask images, empty payload, hash mismatch, non-contiguous rent schedule, `pro-forma` NOI, superseded re-embed.
@@ -879,7 +879,7 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 | `title` | string | Human label. |
 | `roles` | array of `Producer`\|`Consumer`\|`Validator` | Which roles this vector exercises. |
 | `levels` | object role→int | Minimum level per role at which the vector applies (e.g. `{"Producer":2}`). |
-| `requirements` | array of `OM-*` ids | Requirements exercised — feeds traceability ([OM-CONF-020]). MUST be non-empty. |
+| `requirements` | array of `OM-*` ids | Requirements exercised - feeds traceability ([OM-CONF-020]). MUST be non-empty. |
 | `dimensions` | object | `{ "producer": <enum §B.3>, "pathology": [<enum §B.3>…] }` for coverage ([OM-VEC-013]). |
 | `input` | path | `payloads/…json` or `pdfs/…pdf`. |
 | `expected` | object | Expected results ([OM-VEC-007], [OM-VEC-008]). |
@@ -912,17 +912,17 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 
 - **[OM-VEC-008] Manifest pinning hash.** The `suite.manifestHash` referenced by a claim ([OM-CONF-013]) MUST be `"sha256:" + lowercase_hex(SHA-256(JCS(manifest.json)))`, computed with the §C canonicalization so it is implementation-independent. Two runners MUST derive the same `manifestHash` for the same manifest.
 
-- **[OM-VEC-009] Expected validate-report matching.** An expected `report` declares `errors[]` and `warnings[]`, each a Finding subset `{code, path, expected?, actual?}` per §H. A run **matches** iff the **set of `(code, path)` pairs** produced equals the expected set — comparison is **order-independent** and **message-independent** (human-readable `message` text MUST NOT affect pass/fail; only stable codes and JSON-Pointer paths do). Numeric-consistency warnings MUST be evaluated using the vector's `tolerances` (or the §H defaults, [OM-ERR-002]); a vector that would be tolerance-sensitive MUST pin its `tolerances` so the outcome is deterministic.
+- **[OM-VEC-009] Expected validate-report matching.** An expected `report` declares `errors[]` and `warnings[]`, each a Finding subset `{code, path, expected?, actual?}` per §H. A run **matches** iff the **set of `(code, path)` pairs** produced equals the expected set - comparison is **order-independent** and **message-independent** (human-readable `message` text MUST NOT affect pass/fail; only stable codes and JSON-Pointer paths do). Numeric-consistency warnings MUST be evaluated using the vector's `tolerances` (or the §H defaults, [OM-ERR-002]); a vector that would be tolerance-sensitive MUST pin its `tolerances` so the outcome is deterministic.
 
-- **[OM-VEC-010] Conformance runner (normative behavior).** A conformance runner MUST: (1) load and hash the manifest ([OM-VEC-008]); (2) select, per claimed target, exactly the vectors whose `roles`/`levels` include that target (level L2 selects L1+L2 vectors); (3) execute each vector by `kind` — `payload` → validate and compare report ([OM-VEC-009]) and, for producer targets, canonicalize+hash and compare to `payloadHash`; `pdf` → detect/read and compare hash, XMP, class ([OM-VEC-007]); `roundtrip` → the cross-impl assertion of [OM-VEC-002] in both directions; (4) report `vectorsApplicable`, `vectorsPassed`, `vectorsFailed`. A single mismatched hash or code-set is a **fail** for that vector; divergence is a conformance failure ([OM-VEC-003]).
+- **[OM-VEC-010] Conformance runner (normative behavior).** A conformance runner MUST: (1) load and hash the manifest ([OM-VEC-008]); (2) select, per claimed target, exactly the vectors whose `roles`/`levels` include that target (level L2 selects L1+L2 vectors); (3) execute each vector by `kind` - `payload` → validate and compare report ([OM-VEC-009]) and, for producer targets, canonicalize+hash and compare to `payloadHash`; `pdf` → detect/read and compare hash, XMP, class ([OM-VEC-007]); `roundtrip` → the cross-impl assertion of [OM-VEC-002] in both directions; (4) report `vectorsApplicable`, `vectorsPassed`, `vectorsFailed`. A single mismatched hash or code-set is a **fail** for that vector; divergence is a conformance failure ([OM-VEC-003]).
 
-- **[OM-VEC-011] Golden-PDF comparison scope.** For `pdf`/`roundtrip` vectors the runner MUST compare the **decompressed `om.json` payload bytes** and the §C integrity hash, and the required XMP properties — **not** the whole PDF byte stream. `/ModDate`, `/CreationDate`, object numbering, and stream-compression choices are cosmetic and MUST NOT affect pass/fail ([OM-EMB-011], [OM-CANON-005]). Whole-PDF byte equality MUST NOT be required by any vector.
+- **[OM-VEC-011] Golden-PDF comparison scope.** For `pdf`/`roundtrip` vectors the runner MUST compare the **decompressed `om.json` payload bytes** and the §C integrity hash, and the required XMP properties - **not** the whole PDF byte stream. `/ModDate`, `/CreationDate`, object numbering, and stream-compression choices are cosmetic and MUST NOT affect pass/fail ([OM-EMB-011], [OM-CANON-005]). Whole-PDF byte equality MUST NOT be required by any vector.
 
 - **[OM-VEC-012] Determinism & no live network.** A conformance run MUST be reproducible: identical (implementation, suite) MUST yield identical results. Runs MUST NOT depend on live internet. Vectors that exercise URL re-fetch, SSRF defenses ([OM-SEC-001]), or domain-origin verification (§10 layer 3) MUST target fixtures / loopback stubs / `contexts/` snapshots committed to the suite, and MUST assert the *decision* (e.g. "refused: private range", "originVerified:false") rather than fetching a real host. Negative security vectors (decompression bomb [OM-SEC-002], duplicate keys / over-deep nesting [OM-SEC-004]) MUST assert rejection with the documented code (`OM-IO-BOMB`, etc.).
 
 ### §B.3 Coverage matrix (producer × pathology)
 
-- **[OM-VEC-013] Producer dimension (enumerated).** Every `pdf`/`roundtrip` vector's `dimensions.producer` MUST be one of: `InDesign`, `Word-to-PDF`, `Buildout`, `scanned-flattened`, `library-generated` (pikepdf/pdf-lib synthetic), `other`. `payload`-only vectors use `n/a`. The suite MUST include `pdf` vectors from **at least three distinct real-producer values** (i.e. excluding `library-generated`/`n/a`), because cross-producer variance — object streams, linearization, XMP placement — is where detection and embedding break (§12 fixture-skew risk).
+- **[OM-VEC-013] Producer dimension (enumerated).** Every `pdf`/`roundtrip` vector's `dimensions.producer` MUST be one of: `InDesign`, `Word-to-PDF`, `Buildout`, `scanned-flattened`, `library-generated` (pikepdf/pdf-lib synthetic), `other`. `payload`-only vectors use `n/a`. The suite MUST include `pdf` vectors from **at least three distinct real-producer values** (i.e. excluding `library-generated`/`n/a`), because cross-producer variance - object streams, linearization, XMP placement - is where detection and embedding break (§12 fixture-skew risk).
 
 - **[OM-VEC-014] Pathology dimension (enumerated).** `dimensions.pathology[]` values MUST be drawn from: `rent-messy`, `rent-gap`, `rent-overlap`, `cmyk-smask`, `icc-colorspace`, `tiled-striped`, `flattened-scan`, `empty-payload`, `hash-mismatch`, `pro-forma-noi`, `superseded-reembed`, `object-stream-hidden`, `oversized-payload`, `duplicate-keys`, `unknown-major`, `origin-unverified`. This set is append-only; adding a pathology is a minor suite release ([OM-CONF-017]).
 
@@ -952,10 +952,10 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 
 - **[OM-CANON-001]** The canonical serialization of a payload MUST be **RFC 8785 JSON Canonicalization Scheme (JCS)**: UTF-8 encoding, **no BOM**, object keys sorted lexicographically by UTF-16 code unit, **no insignificant whitespace**, and numbers serialized per RFC 8785 §3.2.2.3 (ECMAScript `Number` shortest round-trip; no trailing zeros, no leading `+`, exponent form only per the algorithm).
 - **[OM-CANON-002]** Array element order is significant and MUST be preserved (JCS sorts object keys only). `rentSchedule` order therefore carries meaning and MUST reflect chronological periods.
-- **[OM-CANON-003]** The **integrity hash** is `"sha256:" + lowercase_hex( SHA-256( JCS(payload_for_hash) ) )`, where `payload_for_hash` is the full payload with `meta.signature` **removed** (not set to null — the key is absent) so that adding a signature later does not change the hash. The integrity hash MUST NOT be stored inside the payload; it lives in XMP (§D) to avoid self-reference.
+- **[OM-CANON-003]** The **integrity hash** is `"sha256:" + lowercase_hex( SHA-256( JCS(payload_for_hash) ) )`, where `payload_for_hash` is the full payload with `meta.signature` **removed** (not set to null - the key is absent) so that adding a signature later does not change the hash. The integrity hash MUST NOT be stored inside the payload; it lives in XMP (§D) to avoid self-reference.
 - **[OM-CANON-004]** `meta.sourceDocHash` is a distinct value: `"sha256:" + lowercase_hex( SHA-256( original_source_PDF_bytes ) )` computed over the source document **before** embedding. It answers "which document does this payload describe," not "has the payload been altered." It is OPTIONAL and, when present, is part of `payload_for_hash`.
 - **[OM-CANON-005]** The embedded-file stream (§D) MUST contain exactly the JCS bytes (a Producer MUST NOT pretty-print, re-key, or re-encode). Stream-level Flate compression is permitted; the hash is always computed over the **decompressed** bytes, so compression choice MUST NOT affect the hash.
-- **[OM-CANON-006]** Monetary amounts are numbers in **major units** of the payload currency; whole-dollar values (e.g. `askingPrice`) SHOULD be integers; sub-unit values (e.g. per-month rent) MAY carry up to 2 decimals — but note JCS drops trailing zeros (`12.70`→`12.7`), so Producers MUST NOT rely on trailing-zero formatting for equality.
+- **[OM-CANON-006]** Monetary amounts are numbers in **major units** of the payload currency; whole-dollar values (e.g. `askingPrice`) SHOULD be integers; sub-unit values (e.g. per-month rent) MAY carry up to 2 decimals - but note JCS drops trailing zeros (`12.70`→`12.7`), so Producers MUST NOT rely on trailing-zero formatting for equality.
 - **[OM-CANON-007]** Rates and percentages are decimal fractions: `capRate: 0.0625` means 6.25%. Producers MUST NOT encode `6.25`.
 
 > **Why this is §C and not a footnote:** the named cross-impl round-trip test (§8a/§B) is *undefinable* without a canonical byte form. This section is the single technical dependency the whole "it's a standard, not a fork per vendor" claim rests on.
@@ -964,11 +964,11 @@ This is the authoritative statement M3's gate requires in writing. It does not, 
 
 RFC 8785 canonicalizes an *already-parsed* JSON value; it deliberately performs **no Unicode normalization** and **assumes unique member names** (RFC 8785 §3.1). OpenOM therefore mandates the preprocessing below *before* JCS is applied. Skipping any step lets two payloads that render identically to a human produce different bytes, a different hash, and a silent fork.
 
-- **[OM-CANON-008] Unicode NFC.** Every JSON string value **and** every object member name MUST be normalized to **Unicode Normalization Form C (NFC)** before canonicalization. Producers MUST emit NFC. Consumers MUST verify integrity by hashing the payload **exactly as received** and MUST NOT silently re-normalize a received payload before hashing — re-normalizing would mask a genuine mismatch. *Worked:* the tenant value "café" as NFC (`é` = U+00E9, UTF-8 `63 61 66 c3 a9`) canonicalizes to `{"tenantEntity":"café"}` with SHA-256 `851b8c23eb02709cb52f013fff5215d8b1d836fa2283fbf8e7c35dbbc5a48ddf`; the NFD form (`e` + combining acute U+0301, UTF-8 `63 61 66 65 cc 81`) canonicalizes to `{"tenantEntity":"café"}` (byte-different) with SHA-256 `23174d586d5a3470ad9275df333f41c3b0e704b0d37447954a9efc74753f7a38`. Identical glyphs, different hash — NFC removes the ambiguity.
+- **[OM-CANON-008] Unicode NFC.** Every JSON string value **and** every object member name MUST be normalized to **Unicode Normalization Form C (NFC)** before canonicalization. Producers MUST emit NFC. Consumers MUST verify integrity by hashing the payload **exactly as received** and MUST NOT silently re-normalize a received payload before hashing - re-normalizing would mask a genuine mismatch. *Worked:* the tenant value "café" as NFC (`é` = U+00E9, UTF-8 `63 61 66 c3 a9`) canonicalizes to `{"tenantEntity":"café"}` with SHA-256 `851b8c23eb02709cb52f013fff5215d8b1d836fa2283fbf8e7c35dbbc5a48ddf`; the NFD form (`e` + combining acute U+0301, UTF-8 `63 61 66 65 cc 81`) canonicalizes to `{"tenantEntity":"café"}` (byte-different) with SHA-256 `23174d586d5a3470ad9275df333f41c3b0e704b0d37447954a9efc74753f7a38`. Identical glyphs, different hash - NFC removes the ambiguity.
 
-- **[OM-CANON-009] No duplicate member names.** Within any single object a member name MUST NOT appear more than once (compared after NFC). Producers MUST NOT emit duplicates; Consumers and Validators MUST **reject** a payload containing them (`OM-IO-DUPKEY`) rather than apply a last-wins/first-wins merge — the two merge strategies fork, and JCS output is undefined when keys repeat. This restates §J [OM-SEC-004] as a canonicalization invariant so it is enforced on the hashing path, not only the parsing path.
+- **[OM-CANON-009] No duplicate member names.** Within any single object a member name MUST NOT appear more than once (compared after NFC). Producers MUST NOT emit duplicates; Consumers and Validators MUST **reject** a payload containing them (`OM-IO-DUPKEY`) rather than apply a last-wins/first-wins merge - the two merge strategies fork, and JCS output is undefined when keys repeat. This restates §J [OM-SEC-004] as a canonicalization invariant so it is enforced on the hashing path, not only the parsing path.
 
-- **[OM-CANON-010] Structural preconditions.** The top-level payload MUST be a JSON **object** (never a bare array or scalar). Every string — value or member name — MUST be well-formed Unicode with **no unpaired surrogate** code unit; a payload containing an unpaired surrogate MUST be rejected (`OM-IO-BADUTF8`). Member names are always JSON strings. (The `OM-IO-*` rejection codes join the family already used by §I [OM-MCP-002] and §J's `OM-IO-BOMB`; they are transport/parse rejections, distinct from the §H `OMV-E###` schema codes.)
+- **[OM-CANON-010] Structural preconditions.** The top-level payload MUST be a JSON **object** (never a bare array or scalar). Every string - value or member name - MUST be well-formed Unicode with **no unpaired surrogate** code unit; a payload containing an unpaired surrogate MUST be rejected (`OM-IO-BADUTF8`). Member names are always JSON strings. (The `OM-IO-*` rejection codes join the family already used by §I [OM-MCP-002] and §J's `OM-IO-BOMB`; they are transport/parse rejections, distinct from the §H `OMV-E###` schema codes.)
 
 ### §C.2 String & number serialization (pinned to the byte)
 
@@ -981,9 +981,9 @@ These clauses pin the two places real implementations diverge. They **refine, an
 **Numbers.**
 
 - **[OM-CANON-012] One number model.** Every numeric value in a payload is an **IEEE 754 binary64** ("double"). Its canonical text is the ECMAScript `Number::toString` result as specified by RFC 8785 §3.2.2.3. There is no separate integer type in the JSON data model: `1850000` and `1850000.0` denote the same value and both canonicalize to `1850000`.
-- **[OM-CANON-013] Reject non-representable numbers.** A Producer MUST reject any number that does not round-trip **exactly** through binary64 (`OM-IO-NUMRANGE`). In particular, integers whose magnitude exceeds the safe-integer limit **2^53 − 1 = 9007199254740991** are silently rounded by the number model — e.g. `9007199254740993` canonicalizes to `9007199254740992`. Silent rounding is a data corruption, so it MUST be a hard rejection, never a tolerated value. (No OpenOM 0.1 field legitimately requires a value outside the safe-integer range.)
+- **[OM-CANON-013] Reject non-representable numbers.** A Producer MUST reject any number that does not round-trip **exactly** through binary64 (`OM-IO-NUMRANGE`). In particular, integers whose magnitude exceeds the safe-integer limit **2^53 − 1 = 9007199254740991** are silently rounded by the number model - e.g. `9007199254740993` canonicalizes to `9007199254740992`. Silent rounding is a data corruption, so it MUST be a hard rejection, never a tolerated value. (No OpenOM 0.1 field legitimately requires a value outside the safe-integer range.)
 - **[OM-CANON-014] Reject non-finite.** `NaN`, `Infinity`, and `-Infinity` are not JSON numbers and MUST be rejected (`OM-IO-NUMRANGE`).
-- **[OM-CANON-015] Formatting invariants.** Negative zero MUST serialize as `0` (per ES `(-0).toString()`); Producers SHOULD NOT emit `-0`. Integral values in range serialize with **no** decimal point and **no** exponent (`1850000`, never `1850000.0` or `1.85e6`). Exponential form is used **only** at the ES thresholds — decimal exponent `< -6` or `≥ 21` (e.g. `1e-7`, `1e+21`) — with a lowercase `e` and a mandatory sign on the exponent; values between those thresholds use plain decimal notation. A formatter that switches to exponents at other thresholds (Python `repr` switches near 1e16 and 1e-5) is **non-conformant**. Trailing zeros are always dropped (`12.70` → `12.7`, `0.10` → `0.1`); Producers MUST NOT rely on trailing-zero or fixed-decimal formatting for equality (this reaffirms [OM-CANON-006]).
+- **[OM-CANON-015] Formatting invariants.** Negative zero MUST serialize as `0` (per ES `(-0).toString()`); Producers SHOULD NOT emit `-0`. Integral values in range serialize with **no** decimal point and **no** exponent (`1850000`, never `1850000.0` or `1.85e6`). Exponential form is used **only** at the ES thresholds - decimal exponent `< -6` or `≥ 21` (e.g. `1e-7`, `1e+21`) - with a lowercase `e` and a mandatory sign on the exponent; values between those thresholds use plain decimal notation. A formatter that switches to exponents at other thresholds (Python `repr` switches near 1e16 and 1e-5) is **non-conformant**. Trailing zeros are always dropped (`12.70` → `12.7`, `0.10` → `0.1`); Producers MUST NOT rely on trailing-zero or fixed-decimal formatting for equality (this reaffirms [OM-CANON-006]).
 
 ### §C.3 Integrity-hash preimage (exact construction)
 
@@ -991,34 +991,34 @@ These clauses pin the two places real implementations diverge. They **refine, an
   1. Verify structural preconditions ([OM-CANON-010]); reject on failure.
   2. Reject on duplicate member names ([OM-CANON-009]) or any non-representable / non-finite number ([OM-CANON-013], [OM-CANON-014]).
   3. NFC-normalize every member name and every string value ([OM-CANON-008]).
-  4. Construct P′ by **removing the `signature` member from the `meta` object** if present — *removed entirely, not set to `null`.* No other member is removed or altered.
+  4. Construct P′ by **removing the `signature` member from the `meta` object** if present - *removed entirely, not set to `null`.* No other member is removed or altered.
   5. Canonicalize P′ with RFC 8785 JCS → UTF-8 byte string B ([OM-CANON-001]–[OM-CANON-002], [OM-CANON-011]–[OM-CANON-015]).
   6. `integrityHash = "sha256:" + lowercase_hex( SHA-256( B ) )`.
 
   The result is stored as `omspec:payloadHash` in XMP (§D [OM-XMP-002]) and MUST NOT appear inside the payload ([OM-CANON-003]).
 
-- **[OM-CANON-017] Field inclusion is exhaustive and closed.** `meta.signature` is the **only** field excluded from the preimage, and it is excluded for one reason: a signature — which, when it graduates from reserved (§10, layer 4) will sign the integrity hash — can then be added to `meta` **without** changing that hash. **Every other field is included in the preimage,** explicitly `meta.sourceDocHash` ([OM-CANON-004]) and `meta.supersedes`: both are part of the broker's assertion (which source document; which prior payload this one replaces), so altering either MUST change the hash. Implementations MUST NOT introduce any additional exclusion, allow-list, field-dropping, or field-reordering step beyond JCS member-name sorting.
+- **[OM-CANON-017] Field inclusion is exhaustive and closed.** `meta.signature` is the **only** field excluded from the preimage, and it is excluded for one reason: a signature - which, when it graduates from reserved (§10, layer 4) will sign the integrity hash - can then be added to `meta` **without** changing that hash. **Every other field is included in the preimage,** explicitly `meta.sourceDocHash` ([OM-CANON-004]) and `meta.supersedes`: both are part of the broker's assertion (which source document; which prior payload this one replaces), so altering either MUST change the hash. Implementations MUST NOT introduce any additional exclusion, allow-list, field-dropping, or field-reordering step beyond JCS member-name sorting.
 
-### §C.4 `payloadHash` vs `sourceDocHash` — two hashes, never interchanged
+### §C.4 `payloadHash` vs `sourceDocHash` - two hashes, never interchanged
 
-Both are `sha256:<lowercase-hex>` strings and both use SHA-256 — which is exactly why the distinction MUST be stated rigorously. They answer different questions, cover different bytes, and live in different places.
+Both are `sha256:<lowercase-hex>` strings and both use SHA-256 - which is exactly why the distinction MUST be stated rigorously. They answer different questions, cover different bytes, and live in different places.
 
 | | `payloadHash` (integrity hash) | `meta.sourceDocHash` |
 |---|---|---|
 | **Covers** | JCS bytes of the payload, minus `meta.signature` ([OM-CANON-016]) | Raw bytes of the **original source PDF**, before embedding ([OM-CANON-004]) |
 | **Answers** | "Has this payload been altered since it was asserted?" | "Which document does this payload describe?" |
 | **Lives in** | XMP `omspec:payloadHash` (outside the payload) | Inside the payload, at `meta.sourceDocHash` |
-| **In the preimage?** | n/a — it *is* the hash | Yes — included in `payloadHash` |
+| **In the preimage?** | n/a - it *is* the hash | Yes - included in `payloadHash` |
 | **Required?** | Always present on an embedded OM | OPTIONAL |
 | **On re-embed** | Recomputed; prior value copied to `omspec:supersedes` (§D [OM-XMP-004]) | Unchanged if the source PDF is unchanged |
 
-- **[OM-CANON-018] No interchange.** A Consumer MUST use `omspec:payloadHash` — never `meta.sourceDocHash` — for the integrity / tamper check ([OM-XMP-003]). `meta.sourceDocHash` is a provenance pointer, not an integrity control, and MUST NOT be surfaced to a user as tamper-evidence. Neither of these is the PDF `/Params /CheckSum` (legacy MD5, §D [OM-EMB-005]), which MUST be ignored for every trust decision ([OM-SEC-005]).
+- **[OM-CANON-018] No interchange.** A Consumer MUST use `omspec:payloadHash` - never `meta.sourceDocHash` - for the integrity / tamper check ([OM-XMP-003]). `meta.sourceDocHash` is a provenance pointer, not an integrity control, and MUST NOT be surfaced to a user as tamper-evidence. Neither of these is the PDF `/Params /CheckSum` (legacy MD5, §D [OM-EMB-005]), which MUST be ignored for every trust decision ([OM-SEC-005]).
 
 ### §C.5 Worked examples (conformance-grade)
 
 Each example gives an input JSON (formatted for reading), the exact single-line JCS byte string a conformant Producer MUST emit, its UTF-8 byte length, and its SHA-256. These are normative anchors: the identical cases live in `/spec/vectors/` (§B [OM-VEC-001]) and every Producer MUST reproduce the exact hashes ([OM-VEC-003]).
 
-**Example 1 — key sorting + whitespace removal.**
+**Example 1 - key sorting + whitespace removal.**
 
 Input:
 ```json
@@ -1027,7 +1027,7 @@ Input:
 JCS (13 bytes): `{"a":1,"b":2}`
 SHA-256: `43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777`
 
-**Example 2 — member-name ordering by UTF-16 code unit (the code-unit-vs-code-point trap).**
+**Example 2 - member-name ordering by UTF-16 code unit (the code-unit-vs-code-point trap).**
 
 Input:
 ```json
@@ -1036,9 +1036,9 @@ Input:
 JCS (47 bytes): `{"Z":1,"a":2,"😀":"grinning","￿":"bmp-max"}`
 SHA-256: `856d9d6d59d4a593c79e78e3609435b72487f44e70bf0ea03d16eb2bab0aba31`
 
-Ordering is `Z` (U+005A) < `a` (U+0061) < `😀` (U+1F600 → UTF-16 units `D83D DE00`) < `￿` (U+FFFF). Note `😀` sorts **before** `￿`: its first UTF-16 code unit `0xD83D` is less than `0xFFFF`. Under *code-point* ordering U+1F600 would sort *after* U+FFFF — the opposite result. This one case is why [OM-CANON-001] mandates UTF-16 code-unit ordering; an implementation that sorts by code point forks here.
+Ordering is `Z` (U+005A) < `a` (U+0061) < `😀` (U+1F600 → UTF-16 units `D83D DE00`) < `￿` (U+FFFF). Note `😀` sorts **before** `￿`: its first UTF-16 code unit `0xD83D` is less than `0xFFFF`. Under *code-point* ordering U+1F600 would sort *after* U+FFFF - the opposite result. This one case is why [OM-CANON-001] mandates UTF-16 code-unit ordering; an implementation that sorts by code point forks here.
 
-**Example 3 — number normalization.**
+**Example 3 - number normalization.**
 
 Input:
 ```json
@@ -1049,9 +1049,9 @@ SHA-256: `3a47e6986d2df5054d4d833871b13781e9edf14ff15b1a3a31a4d2b6b5db6288`
 
 `12.70` → `12.7` and `0.10` → `0.1` (trailing zeros dropped); integers are unchanged; `capRate` stays `0.0625` and is never `6.25` ([OM-CANON-007]).
 
-**Example 4 — signature exclusion from the preimage.**
+**Example 4 - signature exclusion from the preimage.**
 
-Input (a signed payload — `meta.signature` is populated here *only* to demonstrate exclusion; populating it in a real 0.1 payload is `OMV-E003`, §H):
+Input (a signed payload - `meta.signature` is populated here *only* to demonstrate exclusion; populating it in a real 0.1 payload is `OMV-E003`, §H):
 ```json
 {
   "specVersion": "0.1",
@@ -1068,19 +1068,19 @@ Preimage (after removing `meta.signature`, [OM-CANON-016] step 4), JCS (248 byte
 `{"assertedDate":"2026-08-15","deal":{"askingPrice":1850000,"capRate":0.0625,"noi":115625,"noiType":"in-place"},"meta":{"sourceDocHash":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","supersedes":null},"specVersion":"0.1"}`
 SHA-256 (this value becomes `omspec:payloadHash`): `aa631ed617b85ac226ef4f6ae97e5387a60fdc51c6e49f42c35034c113ca16f7`
 
-The identical payload with `meta.signature` **absent** produces byte-identical JCS and the same hash — proving that adding a signature later does not disturb the integrity hash ([OM-CANON-017]). (`meta.sourceDocHash` here is the SHA-256 of an empty byte string, used only as a syntactically valid illustrative value.)
+The identical payload with `meta.signature` **absent** produces byte-identical JCS and the same hash - proving that adding a signature later does not disturb the integrity hash ([OM-CANON-017]). (`meta.sourceDocHash` here is the SHA-256 of an empty byte string, used only as a syntactically valid illustrative value.)
 
-### §C.6 Normative note — numbers are the #1 cross-implementation hazard
+### §C.6 Normative note - numbers are the #1 cross-implementation hazard
 
 > **This note is normative in intent and explains the strictness of §C.2.** More interop failures in JSON-canonicalization standards trace to number formatting than to everything else combined, because JSON has a single `number` type while every implementation language has several, and the mapping is lossy and non-obvious:
 >
-> - **integer vs float:** `1850000` vs `1850000.0` — JCS unifies both to `1850000`; a library that preserves the decimal forks;
+> - **integer vs float:** `1850000` vs `1850000.0` - JCS unifies both to `1850000`; a library that preserves the decimal forks;
 > - **trailing zeros / fixed decimals:** `12.70` vs `12.7`; currency code that formats to two places forks;
 > - **exponent thresholds:** ECMAScript switches to exponential at decimal exponent `< -6` / `≥ 21`; Python `repr` switches at different points; Java `BigDecimal`, Go, and .NET each differ again;
 > - **precision beyond binary64:** big-integer or arbitrary-precision libraries preserve digits ECMAScript silently rounds (`9007199254740993` → `…992`);
 > - **negative zero, locale decimal separators (`,`), and a leading `+`.**
 >
-> Because the integrity hash is over **bytes**, any one of these yields a *different hash for a payload that looks correct on screen* — a payload that verifies in its Producer and fails in every other Consumer. That is precisely the silent cross-implementation drift §8a names as *fatal to a standard*.
+> Because the integrity hash is over **bytes**, any one of these yields a *different hash for a payload that looks correct on screen* - a payload that verifies in its Producer and fails in every other Consumer. That is precisely the silent cross-implementation drift §8a names as *fatal to a standard*.
 >
 > **How the standard removes the freedom.** [OM-CANON-012]–[OM-CANON-015] eliminate every degree of freedom above; the reference behavior is the ECMAScript `Number::toString` algorithm (RFC 8785 §3.2.2.3), the same algorithm exercised by the RFC 8785 test suite.
 >
@@ -1112,12 +1112,12 @@ Grounded in the actual libraries: pikepdf `AttachedFileSpec`/`Pdf.attachments`, 
 - **[OM-EMB-012]** Filename casing MUST be exactly `om.json` (lowercase) in both `/F` and `/UF`.
 - **[OM-EMB-021]** *Object streams.* pikepdf/qpdf writes compressed object streams and cross-reference streams by default. This is conformant output, but a `/js` Consumer (pdf.js / pdf-lib) MUST parse compressed object streams to find `/EmbeddedFiles` (OM-XMP-006). A round-trip test MUST include a pikepdf-saved fixture read by `/js` to exercise this path.
 - **[OM-EMB-022]** *Pass bytes, never objects (pdf-lib).* In `/js`, the payload MUST be handed to `attach()` as a `Uint8Array` of the JCS bytes. Building a JS object and letting `JSON.stringify` run reorders keys and inserts whitespace, breaking the §C hash. This is the JS-side corollary of OM-EMB-010.
-- **[OM-EMB-023]** *Library XMP regeneration.* Some pipelines regenerate or overwrite `/Metadata` on save (e.g. setting document info via pdf-lib, or Adobe round-trips). A Producer MUST (re-)inject the `omspec:*` properties **after** any such step and MUST verify OM-XMP-013 (existing `dc:`/`pdf:`/`xmp:` preserved, omspec present) on the final saved bytes — not on the in-memory model.
+- **[OM-EMB-023]** *Library XMP regeneration.* Some pipelines regenerate or overwrite `/Metadata` on save (e.g. setting document info via pdf-lib, or Adobe round-trips). A Producer MUST (re-)inject the `omspec:*` properties **after** any such step and MUST verify OM-XMP-013 (existing `dc:`/`pdf:`/`xmp:` preserved, omspec present) on the final saved bytes - not on the in-memory model.
 - **[OM-EMB-024]** *pikepdf content normalization.* `Pdf.save(..., normalize_content=True)` and `linearize=True` may rewrite content-stream bytes; the former is forbidden for non-destructive embed (OM-EMB-020). Use object-stream generation and garbage collection (`object_stream_mode`, `qdf=False`) but leave content untouched.
 - **[OM-EMB-025]** *Shared indirect objects across libraries.* When constructing the `/Filespec` manually (rather than via `Pdf.attachments[...] = AttachedFileSpec(...)` / pdf-lib `attach`), a Producer MUST ensure the name-tree ref and `/AF` ref are the same object (OM-EMB-006) and `/EF /F`/`/UF` are the same stream (OM-EMB-007). Manual construction that mints two objects is the classic duplicate-`om.json` bug.
 - **[OM-EMB-026]** *`/UF` text-string encoding.* `/UF` is a PDF text string; for the pure-ASCII value `om.json` both PDFDocEncoding and UTF-16BE (leading `FEFF`) are valid. Producers SHOULD write the ASCII literal; Consumers MUST decode a UTF-16BE `/UF` (strip the BOM) before comparing to `om.json` (OM-EMB-014).
 - **[OM-EMB-027]** *Compression is not part of the contract.* pikepdf and pdf-lib may choose different `/Filter` settings or none. Because the §C hash is over decompressed bytes (OM-CANON-005), the two outputs MUST yield identical decompressed payload bytes and an identical hash even when their on-wire `/Length` differs. The cross-impl test (OM-VEC-002) asserts decompressed-byte and hash equality, never PDF-byte equality.
-- **[OM-EMB-028]** *MIME subtype survival.* Confirm on read that the decoded `/Subtype` is `application/ld+json` (or accepted `application/json`, OM-EMB-004); some libraries default an embedded file's `/Subtype` to `application#2Foctet-stream` when the MIME argument is omitted — a Producer MUST set the MIME type explicitly (pikepdf `AttachedFileSpec(..., mime_type='application/ld+json')`; pdf-lib `attach(..., { mimeType: 'application/ld+json' })`).
+- **[OM-EMB-028]** *MIME subtype survival.* Confirm on read that the decoded `/Subtype` is `application/ld+json` (or accepted `application/json`, OM-EMB-004); some libraries default an embedded file's `/Subtype` to `application#2Foctet-stream` when the MIME argument is omitted - a Producer MUST set the MIME type explicitly (pikepdf `AttachedFileSpec(..., mime_type='application/ld+json')`; pdf-lib `attach(..., { mimeType: 'application/ld+json' })`).
 
 ### §D.0 Object graph (the required topology)
 
@@ -1219,13 +1219,13 @@ A conformant OpenOM document links **exactly four** logical nodes off the catalo
 | `/Size` | integer | 0..1 | **decompressed** byte length of `om.json` | SHOULD |
 | `/ModDate` | date string | 0..1 | `D:YYYYMMDDHHmmSSOHH'mm'` | SHOULD |
 | `/CreationDate` | date string | 0..1 | same format | MAY |
-| `/CheckSum` | byte string (16 bytes) | 0..1 | **legacy MD5** of uncompressed bytes — NOT integrity (§D.4) | MAY |
+| `/CheckSum` | byte string (16 bytes) | 0..1 | **legacy MD5** of uncompressed bytes - NOT integrity (§D.4) | MAY |
 
 #### §D.1.2 Name-object escaping (normative)
 
 PDF name objects (`/Subtype`, `/AFRelationship`, `/Type`) are subject to ISO 32000-1 §7.3.5 escaping: any byte that is a delimiter, whitespace, the number sign `#` itself, or outside the range `0x21`–`0x7E` MUST be written as `#` followed by two uppercase-or-lowercase hexadecimal digits.
 
-- **[OM-EMB-013]** In the MIME subtype `application/ld+json`, the solidus `/` (0x2F) is a delimiter and MUST be escaped as `#2F`, yielding the on-wire name `/application#2Fld+json`. The plus sign `+` (0x2B) is a regular character in a name object and MUST NOT be escaped by Producers (it is written literally); the letters and the period are written literally. Producers MUST NOT emit an unescaped `/` inside the subtype name, and MUST NOT escape `+` — writing `#2Fld+json` exactly.
+- **[OM-EMB-013]** In the MIME subtype `application/ld+json`, the solidus `/` (0x2F) is a delimiter and MUST be escaped as `#2F`, yielding the on-wire name `/application#2Fld+json`. The plus sign `+` (0x2B) is a regular character in a name object and MUST NOT be escaped by Producers (it is written literally); the letters and the period are written literally. Producers MUST NOT emit an unescaped `/` inside the subtype name, and MUST NOT escape `+` - writing `#2Fld+json` exactly.
 - **[OM-EMB-014]** Consumers MUST **decode** name-object escaping to the logical byte string *before* comparing names. A Consumer MUST treat `/application#2Fld+json` and any equivalently-escaped encoding of the same bytes (e.g. `/application#2Fld#2Bjson`) as equal, and MUST match the payload filename `om.json` on its decoded value, not its raw on-wire bytes. Comparison of the MIME subtype MUST be over the decoded string; a Consumer MUST accept both `application/ld+json` and `application/json` per OM-EMB-004.
 
 #### §D.1.3 `/AF` placement (normative)
@@ -1235,7 +1235,7 @@ PDF name objects (`/Subtype`, `/AFRelationship`, `/Type`) are subject to ISO 320
 
 #### §D.2.1 Serialized XMP template (normative)
 
-- **[OM-XMP-010]** The `omspec` RDF description MUST be serialized as RDF/XML inside the catalog `/Metadata` XMP packet, using namespace URI `https://verveliolabs.com/openom/ns/0.1#` (placeholder until §15 Q1) bound to the RECOMMENDED prefix `omspec`. All `omspec:*` values are **XMP simple (text) properties** — no arrays, no structs, no language alternatives. The canonical serialization is:
+- **[OM-XMP-010]** The `omspec` RDF description MUST be serialized as RDF/XML inside the catalog `/Metadata` XMP packet, using namespace URI `https://verveliolabs.com/openom/ns/0.1#` (placeholder until §15 Q1) bound to the RECOMMENDED prefix `omspec`. All `omspec:*` values are **XMP simple (text) properties** - no arrays, no structs, no language alternatives. The canonical serialization is:
 
 ```xml
 <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
@@ -1257,22 +1257,22 @@ PDF name objects (`/Subtype`, `/AFRelationship`, `/Type`) are subject to ISO 320
 
 - **[OM-XMP-011]** Property value types and forms: `omspec:specName` and `omspec:specVersion` are literal text (`"OpenOM"`, `"0.1"`); `omspec:payloadFilename` is literal text (`"om.json"`); `omspec:payloadHash` is the §C integrity hash as `sha256:<lowercase-hex>`; `omspec:assertedDate` is an ISO 8601 date (`YYYY-MM-DD`); `omspec:supersedes` (OPTIONAL) is a prior `sha256:<hex>` value or is **omitted** when there is no predecessor (its absence, not an empty element, means "original"). A Producer MUST NOT emit `omspec:supersedes` as an empty element. Values MUST be XML-escaped (`&`, `<`, `>`); the hash and date values contain none of these but the rule is normative for robustness.
 - **[OM-XMP-012]** The XMP packet MUST be UTF-8 encoded with the leading byte-order-mark inside `xpacket begin` (`﻿`) exactly as shown; the packet MUST be well-formed XML. `omspec:*` MAY be emitted as element form (shown) or attribute form on the `rdf:Description`; Consumers MUST accept both RDF/XML abbreviations.
-- **[OM-XMP-013]** Writing the `omspec` description MUST be **non-destructive** to the producer's existing metadata: a Producer MUST preserve any pre-existing `dc:`, `pdf:`, `xmp:`, `pdfaid:` and other properties, adding `omspec:*` either to the existing `rdf:Description rdf:about=""` or as an additional `rdf:Description rdf:about=""` in the same `rdf:RDF`. A Producer MUST NOT replace the entire `/Metadata` stream with an omspec-only packet (a real hazard when a library regenerates XMP on save — see OM-EMB-023).
+- **[OM-XMP-013]** Writing the `omspec` description MUST be **non-destructive** to the producer's existing metadata: a Producer MUST preserve any pre-existing `dc:`, `pdf:`, `xmp:`, `pdfaid:` and other properties, adding `omspec:*` either to the existing `rdf:Description rdf:about=""` or as an additional `rdf:Description rdf:about=""` in the same `rdf:RDF`. A Producer MUST NOT replace the entire `/Metadata` stream with an omspec-only packet (a real hazard when a library regenerates XMP on save - see OM-EMB-023).
 
-#### §D.2.2 Detection algorithm (normative — extends OM-XMP-003)
+#### §D.2.2 Detection algorithm (normative - extends OM-XMP-003)
 
 - **[OM-XMP-005]** A Consumer MUST detect and verify a payload in this exact order, producing exactly one of the states {`absent`, `present`, `hash-mismatch`, `ambiguous`}:
   1. Obtain the PDF bytes by re-fetching the source (never by scraping the viewer, §Non-goals), under the size/decompression bounds of OM-SEC-002.
   2. Parse the document, including **cross-reference streams and compressed object streams** (OM-XMP-006). Locate `/Root`.
   3. Read `/Root /Metadata`; parse the XMP for `omspec:specName` and `omspec:payloadHash`. Presence of `omspec:payloadHash` is the fast-path signal that a payload is claimed.
-  4. Resolve the payload `/Filespec`: **prefer** the catalog `/AF` array — the first entry whose `/AFRelationship` is `/Data` and whose `/F` or `/UF` decodes to `om.json`. If `/AF` is absent, **fall back** to the `/Root /Names /EmbeddedFiles` name tree (OM-XMP-009).
+  4. Resolve the payload `/Filespec`: **prefer** the catalog `/AF` array - the first entry whose `/AFRelationship` is `/Data` and whose `/F` or `/UF` decodes to `om.json`. If `/AF` is absent, **fall back** to the `/Root /Names /EmbeddedFiles` name tree (OM-XMP-009).
   5. Dereference `/EF /F` (fallback `/EF /UF`); read the stream; apply `/Filter` decompression to obtain the decompressed bytes, bounded per OM-SEC-002.
   6. Recompute the §C hash over the decompressed bytes and compare to `omspec:payloadHash`. On mismatch, emit state `hash-mismatch` and MUST NOT treat the payload as trusted (OM-SEC-005). On match, emit `present`.
   7. Schema-validate (§E), then perform origin verification (§10 layer 3). Neither step changes the integrity state from step 6.
   If no `omspec:payloadHash` and no `om.json` file is found, emit `absent`.
 - **[OM-XMP-006]** A Consumer MUST parse PDFs that use compressed cross-reference streams and object streams (ISO 32000-1 §7.5.7–§7.5.8). `/EmbeddedFiles` name-tree nodes and `/Filespec` objects are frequently stored in object streams (pikepdf/qpdf default output, OM-EMB-021); a Consumer that only scans the uncompressed body will falsely report `absent`.
 - **[OM-XMP-007]** If more than one distinct `om.json` `/Filespec` is reachable (malformed producer): a Consumer MUST select the one referenced by catalog `/AF`; if two `/AF` entries or an `/AF` entry and a name-tree entry point at **different** objects, the Consumer MUST prefer the one whose recomputed hash equals `omspec:payloadHash`; if still ambiguous, emit state `ambiguous` and MUST NOT silently pick one.
-- **[OM-XMP-008]** If `om.json` is present but the XMP carries no `omspec:payloadHash` (degraded producer): a Consumer MAY surface the payload but MUST mark it integrity-unverified and MUST NOT report `hashValid: true`. A self-hash of the bytes is informational only — with no stored reference hash there is nothing to verify against.
+- **[OM-XMP-008]** If `om.json` is present but the XMP carries no `omspec:payloadHash` (degraded producer): a Consumer MAY surface the payload but MUST mark it integrity-unverified and MUST NOT report `hashValid: true`. A self-hash of the bytes is informational only - with no stored reference hash there is nothing to verify against.
 - **[OM-XMP-009]** Name-tree fallback: when traversing `/Root /Names /EmbeddedFiles`, a Consumer MUST recurse through intermediate `/Kids` nodes (a name tree may be nested, not a flat `/Names` array) and MUST match the key `om.json` on its decoded value.
 
 ### §D.4 Re-embed (replace-in-place) algorithm (normative)
@@ -1287,7 +1287,7 @@ Re-embed is the most common Producer operation (repricing, §4) and MUST replace
   5. Remove the existing `om.json` entry from the `/EmbeddedFiles` name tree **and** remove its `/Filespec` reference from the catalog `/AF` array.
   6. Create a new `/EmbeddedFile` stream (JCS bytes, OM-CANON-005) and a new `/Filespec` per §D.1, satisfying the shared-object invariants (OM-EMB-006/007).
   7. Add exactly one entry to the name tree and one reference to `/AF`, both pointing at the new `/Filespec`.
-  8. Update the XMP: set `omspec:payloadHash = H_new`, `omspec:assertedDate` to the new assertion date, and `omspec:supersedes = H_prior` (omit `omspec:supersedes` if there was no predecessor). Also set `meta.supersedes` in the payload consistently (§E) before step 2 — the payload's `supersedes` and the XMP `supersedes` MUST agree.
+  8. Update the XMP: set `omspec:payloadHash = H_new`, `omspec:assertedDate` to the new assertion date, and `omspec:supersedes = H_prior` (omit `omspec:supersedes` if there was no predecessor). Also set `meta.supersedes` in the payload consistently (§E) before step 2 - the payload's `supersedes` and the XMP `supersedes` MUST agree.
   9. Save (OM-EMB-020), then verify reachability (OM-EMB-008) and single-instance (OM-EMB-018).
 - **[OM-EMB-018]** After re-embed the document MUST contain **exactly one** reachable `om.json` `/Filespec` and one `/EmbeddedFile` payload stream. The superseded stream and `/Filespec` MUST be made unreferenced and MUST be removed by object garbage-collection on save; a Producer MUST NOT leave a second `om.json` in `/EmbeddedFiles` (restates OM-XMP-004) and MUST NOT let a superseded payload stream remain reachable from `/Root`.
 - **[OM-EMB-019]** Idempotent no-op: if `H_new == H_prior` (the payload is byte-identical after JCS), a Producer SHOULD skip the write and leave the document unchanged (no `supersedes` self-reference, no `assertedDate` churn). A re-embed MUST NOT set `omspec:supersedes` equal to `omspec:payloadHash`.
@@ -1298,7 +1298,7 @@ Re-embed is the most common Producer operation (repricing, §4) and MUST replace
 - **[OM-EMB-030]** The PDF `/Params /CheckSum` is, by ISO 32000-1, an **MD5** digest of the uncompressed embedded-file bytes. MD5 is not collision-resistant, so a matching `/CheckSum` proves nothing an attacker cannot also produce: a forged payload can be given a valid `/CheckSum`. Therefore:
   - A Consumer MUST NOT read, compare, or surface `/CheckSum` for **any** trust, integrity, or verification decision. The one and only integrity value is the SHA-256 in XMP `omspec:payloadHash` (§C, §D.2), recomputed over the decompressed JCS bytes at read time (OM-XMP-005 step 6).
   - A Producer MAY write `/CheckSum` for legacy-reader compatibility (restates OM-EMB-005) but MUST NOT present it, in tooling output or UI, as evidence of integrity or authenticity.
-  - `hashValid: true` in tool output (§I) and the `origin-verified` badge (§10) MUST derive solely from the SHA-256 check and the domain-origin check — never from `/CheckSum`.
+  - `hashValid: true` in tool output (§I) and the `origin-verified` badge (§10) MUST derive solely from the SHA-256 check and the domain-origin check - never from `/CheckSum`.
 - This is the wire-format restatement of the §10 principle and OM-SEC-005: integrity is SHA-256; `/CheckSum` is a legacy artifact of the container format, not part of the OpenOM trust model. See also the decision-log entry (2026-08-16) fixing `/Params/CheckSum` as *not* the integrity mechanism.
 
 ---
@@ -1319,7 +1319,7 @@ This is the complete human-readable mirror of `/spec/om-0.1.schema.json`; on con
 |---|---|---|---|---|---|
 | `@context` | array<string> | 1 | JSON-LD contexts, [OM-DD-014] | MUST | n/a |
 | `@type` | string const | 1 | `"RealEstateListing"` | MUST | n/a |
-| `specVersion` | string enum `"0.1"` | 1 | — | MUST | n/a |
+| `specVersion` | string enum `"0.1"` | 1 | - | MUST | n/a |
 | `currency` | string | 0..1 | ISO 4217, default USD, [OM-DD-021] | SHOULD | n/a |
 | `assertedDate` | date | 1 | ISO 8601 | MUST | n/a |
 | `assertedBy` | object | 1 | see below | MUST | n/a |
@@ -1365,7 +1365,7 @@ This is the complete human-readable mirror of `/spec/om-0.1.schema.json`; on con
 | `deal.askingPrice` | number | 0..1 | major currency units (int) | SHOULD | applies |
 | `deal.capRate` | number | 0..1 | decimal fraction (`0.0625`) | SHOULD | applies |
 | `deal.noi` | number | 0..1 | major currency units | SHOULD | applies |
-| `deal.noiType` | enum `in-place`\|`pro-forma` | 1 if `noi` present | — | MUST w/ `noi` (§H `OMV-E002`) | n/a |
+| `deal.noiType` | enum `in-place`\|`pro-forma` | 1 if `noi` present | - | MUST w/ `noi` (§H `OMV-E002`) | n/a |
 | `deal.noiAsOfDate` | date | 1 if `noi` present | ISO 8601 | MUST w/ `noi` (§H `OMV-E002`) | n/a |
 | `deal.pricePerSF` | number | 0..1 | major units ÷ SF, ≤ 2 dp; derivable | MAY | applies |
 | `deal.status` | enum | 0..1 | `active`\|`under-contract`\|`sold`\|`withdrawn` | MAY | applies |
@@ -1399,14 +1399,14 @@ This is the complete human-readable mirror of `/spec/om-0.1.schema.json`; on con
 
 - **[OM-DD-023] `assertedBy` completeness.** `assertedBy` MUST include `broker`, `brokerage`, and `license`; `phone`/`email` are OPTIONAL professional contact for the assertion and are the only contact data a payload SHOULD carry (§K [OM-PRIV-004]).
 
-- **[OM-DD-004]** A `source` tag is `asserted`\|`extracted`\|`verified`; when absent, Consumers MUST assume `asserted` for an embedded (review-gated) payload. **0.1 scope (resolved 2026-08-17, #44):** a `source` tag is structurally carried **only on object-valued containers that have room for a sibling key — normatively, `rentSchedule[]` period objects** (the extraction-risk hotspot, and the only place a "sibling `source`" is unambiguous). A bare scalar (`buildingSF`, `apn`, `askingPrice`, geo, …) has no sibling to attach to, so scalar-field and `options[]` provenance is **deferred to a future minor** that defines a provenance side-map (§13 parked item); the §E `source` column value **`applies`** marks the fields that side-map will cover, and until it ships those fields carry no per-field `source` and inherit the payload-level `asserted` assumption. This keeps 0.1 internally consistent with the published schema, which implements `source` on `rentPeriod` only.
+- **[OM-DD-004]** A `source` tag is `asserted`\|`extracted`\|`verified`; when absent, Consumers MUST assume `asserted` for an embedded (review-gated) payload. **0.1 scope (resolved 2026-08-17, #44):** a `source` tag is structurally carried **only on object-valued containers that have room for a sibling key - normatively, `rentSchedule[]` period objects** (the extraction-risk hotspot, and the only place a "sibling `source`" is unambiguous). A bare scalar (`buildingSF`, `apn`, `askingPrice`, geo, …) has no sibling to attach to, so scalar-field and `options[]` provenance is **deferred to a future minor** that defines a provenance side-map (§13 parked item); the §E `source` column value **`applies`** marks the fields that side-map will cover, and until it ships those fields carry no per-field `source` and inherit the payload-level `asserted` assumption. This keeps 0.1 internally consistent with the published schema, which implements `source` on `rentPeriod` only.
 - **[OM-DD-005] RentPeriod:** `periodStart` (date, MUST), `periodEnd` (date, MUST, > start), `annualRent` (number, MUST), `monthlyRent` (number, MAY), `rentPSF` (number, MAY; = annualRent÷buildingSF), `escalationFromPrior` (decimal fraction, MAY), `abatement` (number\|null, MAY), `source` (enum, MAY). Periods MUST be chronologically ordered; gaps/overlaps raise `OMW-W021`/`OMW-W022` (§H), never a schema error.
 
 ### §E.1 General encoding, units, precision & absence semantics
 
 These rules apply to **every** field in the dictionary unless a field's row overrides them. They make the per-field table unambiguous and keep it consistent with the canonicalization keystone (§C).
 
-- **[OM-DD-006] Document shape.** A payload MUST be a single JSON object serialized as JSON-LD and canonicalized/hashed per §C (RFC 8785 JCS). Object keys MUST be unique (duplicate keys are rejected, §J [OM-SEC-004]). Consumers MUST accept unknown OPTIONAL members without rejecting the payload (§F [OM-VER-003]). An empty object `{}` or empty array `[]` MUST NOT be used to signify "not asserted" — the key MUST be omitted instead (see [OM-DD-003]).
+- **[OM-DD-006] Document shape.** A payload MUST be a single JSON object serialized as JSON-LD and canonicalized/hashed per §C (RFC 8785 JCS). Object keys MUST be unique (duplicate keys are rejected, §J [OM-SEC-004]). Consumers MUST accept unknown OPTIONAL members without rejecting the payload (§F [OM-VER-003]). An empty object `{}` or empty array `[]` MUST NOT be used to signify "not asserted" - the key MUST be omitted instead (see [OM-DD-003]).
 - **[OM-DD-007] Currency scope & default.** All monetary amounts in a payload are expressed in one currency, given by the top-level `currency` field (ISO 4217 alphabetic code, §E.3 [OM-DD-021]). When `currency` is absent the currency is **USD**. A single payload is single-currency in 0.1; mixed-currency deals are out of scope. Monetary fields are bare numbers in **major units** (dollars, not cents) and MUST NOT carry a currency symbol, thousands separators, or a suffix.
 - **[OM-DD-008] Number precision & lexical form.** Numbers MUST be finite JSON numbers; `NaN`, `Infinity`, leading `+`, and leading zeros are prohibited (JCS, §C [OM-CANON-001]). Because JCS emits the shortest round-trip form and drops trailing zeros (`12.70`→`12.7`), Producers MUST NOT rely on trailing-zero formatting for equality or display fidelity ([OM-CANON-006]). Per-field precision:
 
@@ -1422,7 +1422,7 @@ These rules apply to **every** field in the dictionary unless a field's row over
   | Counts / durations (`options[].count`, `options[].lengthYears`, `lease.remainingTermYears`) | non-negative; counts integer, durations MAY be fractional years |
 
 - **[OM-DD-009] Rates & percentages.** Every rate or percentage MUST be a decimal fraction, never a percent value: `capRate: 0.0625` means 6.25%; `escalationFromPrior: 0.10` means 10% ([OM-CANON-007]). Producers MUST NOT encode `6.25` or `10`.
-- **[OM-DD-010] Strings.** A string field, when present, MUST be non-empty, MUST be trimmed of leading/trailing whitespace, and MUST NOT contain unescaped control characters. Sentinel placeholders (`""`, `"N/A"`, `"TBD"`, `"-"`) MUST NOT be used as data — omit the key ([OM-DD-003]) or use `null` where a null is defined.
+- **[OM-DD-010] Strings.** A string field, when present, MUST be non-empty, MUST be trimmed of leading/trailing whitespace, and MUST NOT contain unescaped control characters. Sentinel placeholders (`""`, `"N/A"`, `"TBD"`, `"-"`) MUST NOT be used as data - omit the key ([OM-DD-003]) or use `null` where a null is defined.
 - **[OM-DD-011] Enumerations.** Enum values are matched **case-sensitively** against the registry in §E.6 ([OM-DD-040]); literals are lowercase and hyphenated except where the registry states otherwise (e.g. `N`/`NN`/`NNN`). A Consumer encountering an unknown enum member MUST treat the field as present-but-uninterpreted and MUST NOT reject the payload for it (§F [OM-VER-003]).
 - **[OM-DD-012] Dates & term arithmetic.** All date-typed fields (`assertedDate`, `deal.noiAsOfDate`, `lease.commencement`, `lease.expiration`, `RentPeriod.periodStart`/`periodEnd`) MUST be ISO 8601 `YYYY-MM-DD` calendar dates with no time or zone component and MUST be valid on the proleptic Gregorian calendar. Timestamps (e.g. the webhook `publishedAt`, §5b) MUST be RFC 3339 UTC with a `Z` designator ([OM-DD-002]). A lease/rent interval `[start, end]` is **inclusive of both endpoints**; two intervals are **contiguous** iff the later interval's `periodStart` equals the earlier interval's `periodEnd` plus one calendar day. Unless a check names another reference, the "as-of" instant for term arithmetic (e.g. remaining term) is `assertedDate` (consistent with §H `OMW-W030`).
 - **[OM-DD-013] Geospatial values.** `property.geo.latitude` and `property.geo.longitude` are WGS84 decimal degrees with `latitude ∈ [-90, 90]` and `longitude ∈ [-180, 180]`, RECOMMENDED to ≤ 6 decimal places. `latitude` and `longitude` MUST both be present or both absent.
@@ -1439,7 +1439,7 @@ Identifier-shaped fields carry a machine-checkable lexical form so Producers and
   ```
   Regex: `^sha256:[0-9a-f]{64}$`
 
-- **[OM-DD-016] `assertedBy.license`** (real-estate license number). License numbering is jurisdiction-specific and has no single national format; the grammar is therefore permissive but structured, and MUST NOT be empty or whitespace-only. **RECOMMENDED normalized form:** the ISO 3166-2 subdivision suffix (state), a single space, then the jurisdiction's local identifier — e.g. `MI 6501-000000`.
+- **[OM-DD-016] `assertedBy.license`** (real-estate license number). License numbering is jurisdiction-specific and has no single national format; the grammar is therefore permissive but structured, and MUST NOT be empty or whitespace-only. **RECOMMENDED normalized form:** the ISO 3166-2 subdivision suffix (state), a single space, then the jurisdiction's local identifier - e.g. `MI 6501-000000`.
   ```abnf
   license-norm = region SP local-id
   region       = 2ALPHA                     ; ISO 3166-2:US subdivision suffix
@@ -1482,26 +1482,26 @@ Identifier-shaped fields carry a machine-checkable lexical form so Producers and
 - **[OM-DD-026] `lease.rofr` / `lease.rofo`.** Booleans: `rofr` = a right of first refusal exists; `rofo` = a right of first offer exists. Absent = not asserted; there is no third value.
 - **[OM-DD-027] `lease.remainingTermYears`.** The OM-asserted remaining primary-lease term (excluding options) measured in years as of `assertedDate`. It is derivable from `expiration − assertedDate`; when both are present and disagree beyond tolerance, §H `OMW-W030` fires. Remaining term MUST exclude unexercised options.
 - **[OM-DD-028] `lease.landlordResponsibilities`.** A fixed-key object of exactly seven booleans: `roof`, `structure`, `parking`, `hvac`, `taxes`, `insurance`, `cam`. `true` means the **landlord** bears that cost/obligation; `false` means the **tenant** does. Additional keys MUST NOT be added in 0.1. This object, not `leaseTypeAsserted`, is the disputable ground truth for net-lease grade.
-- **[OM-DD-029] `lease.leaseTypeAsserted` vs the derived grade.** `leaseTypeAsserted` is the broker's stated label (source tag fixed to `asserted`); it is advisory. The *derivable* net-lease grade is computed by Consumers from `landlordResponsibilities` and is **not** a stored field in 0.1. When `leaseTypeAsserted` = `NNN` but any of `taxes`/`insurance`/`cam` (or maintenance-bearing `roof`/`structure`/`parking`/`hvac`) is `true` for the landlord, §H `OMW-W040` fires — this is the mechanism that kills "everything is NNN" (§7a).
+- **[OM-DD-029] `lease.leaseTypeAsserted` vs the derived grade.** `leaseTypeAsserted` is the broker's stated label (source tag fixed to `asserted`); it is advisory. The *derivable* net-lease grade is computed by Consumers from `landlordResponsibilities` and is **not** a stored field in 0.1. When `leaseTypeAsserted` = `NNN` but any of `taxes`/`insurance`/`cam` (or maintenance-bearing `roof`/`structure`/`parking`/`hvac`) is `true` for the landlord, §H `OMW-W040` fires - this is the mechanism that kills "everything is NNN" (§7a).
 - **[OM-DD-030] `meta.imageRights`.** OPTIONAL free-text statement of third-party image licensing/redistribution constraints on the OM's photos (§8b), e.g. `"Third-party photography licensed to lister; do not redistribute."` It is descriptive only; tooling MUST NOT act on it.
 - **[OM-DD-031] No separate `escalations` field.** Rent escalations are modeled structurally: within the primary term via `rentSchedule[].escalationFromPrior` (§E.5), and for renewal options via `options[].escalation`/`escalationRate`. 0.1 defines no free-standing `lease.escalations` field; Producers MUST NOT introduce one (it would duplicate, and risk contradicting, the schedule).
 
 ### §E.5 `rentSchedule` / RentPeriod (fully modeled)
 
-`lease.rentSchedule` is an ordered array of RentPeriod objects — the differentiator (§6d), so it is specified exhaustively here. [OM-DD-005] gives the summary; this section is its normative expansion and governs on any apparent difference within §E.
+`lease.rentSchedule` is an ordered array of RentPeriod objects - the differentiator (§6d), so it is specified exhaustively here. [OM-DD-005] gives the summary; this section is its normative expansion and governs on any apparent difference within §E.
 
 **RentPeriod fields**
 
 | Field | Type | Card. | Units/Format | Req? | `source` |
 |---|---|---|---|---|---|
-| `periodStart` | date | 1 | ISO 8601 | MUST | — |
-| `periodEnd` | date | 1 | ISO 8601, > `periodStart` | MUST | — |
-| `annualRent` | number | 1 | major currency units (face/contract rent) | MUST | — |
-| `monthlyRent` | number | 0..1 | major units, ≤ 2 dp; ≈ `annualRent ÷ 12` | MAY | — |
-| `rentPSF` | number | 0..1 | major units per SF/yr, ≤ 2 dp; ≈ `annualRent ÷ buildingSF` | MAY | — |
-| `escalationFromPrior` | number | 0..1 | decimal fraction vs prior period's `annualRent` | MAY | — |
-| `abatement` | number \| null | 0..1 | months of free rent within this period; `null` = none | MAY | — |
-| `source` | enum | 0..1 | `asserted`\|`extracted`\|`verified` ([OM-DD-004]) | MAY | — |
+| `periodStart` | date | 1 | ISO 8601 | MUST | - |
+| `periodEnd` | date | 1 | ISO 8601, > `periodStart` | MUST | - |
+| `annualRent` | number | 1 | major currency units (face/contract rent) | MUST | - |
+| `monthlyRent` | number | 0..1 | major units, ≤ 2 dp; ≈ `annualRent ÷ 12` | MAY | - |
+| `rentPSF` | number | 0..1 | major units per SF/yr, ≤ 2 dp; ≈ `annualRent ÷ buildingSF` | MAY | - |
+| `escalationFromPrior` | number | 0..1 | decimal fraction vs prior period's `annualRent` | MAY | - |
+| `abatement` | number \| null | 0..1 | months of free rent within this period; `null` = none | MAY | - |
+| `source` | enum | 0..1 | `asserted`\|`extracted`\|`verified` ([OM-DD-004]) | MAY | - |
 
 **Structural & consistency invariants** (structural = schema error `OMV-E001`; consistency = warning, never blocks, §9/§H):
 
@@ -1509,16 +1509,16 @@ Identifier-shaped fields carry a machine-checkable lexical form so Producers and
 - **[OM-DD-033] Ordering & contiguity (consistency).** Array order MUST reflect chronology ([OM-CANON-002]): for every adjacent pair, `periodStart[i] > periodStart[i-1]`. A **gap** (period *i* `periodStart` later than `periodEnd[i-1]` + 1 day, per [OM-DD-012]) raises `OMW-W021`; an **overlap** (`periodStart[i] ≤ periodEnd[i-1]`) raises `OMW-W022`. A contiguous schedule has `periodStart[i] = periodEnd[i-1] + 1 day` for all *i*.
 - **[OM-DD-034] `rentPSF` derivation (consistency).** When `rentPSF` and `property.buildingSF` are both present, `rentPSF` SHOULD equal `annualRent ÷ buildingSF`; a mismatch beyond the configured tolerance (§H default 0.5% relative) raises `OMW-W024`.
 - **[OM-DD-035] `escalationFromPrior` semantics (consistency).** For period *i* > 0, `escalationFromPrior` = `(annualRent[i] − annualRent[i-1]) ÷ annualRent[i-1]`, a decimal fraction ([OM-DD-009]). On the **first** period there is no prior, so `escalationFromPrior` SHOULD be absent (or `null`); a non-null value on the first period, or a value inconsistent with adjacent `annualRent` beyond tolerance, raises `OMW-W023`.
-- **[OM-DD-036] `monthlyRent` derivation (consistency).** When present, `monthlyRent` SHOULD equal `annualRent ÷ 12` within tolerance; a mismatch SHOULD raise a consistency warning (§H — code allocation belongs to §H). `monthlyRent` never overrides `annualRent`.
+- **[OM-DD-036] `monthlyRent` derivation (consistency).** When present, `monthlyRent` SHOULD equal `annualRent ÷ 12` within tolerance; a mismatch SHOULD raise a consistency warning (§H - code allocation belongs to §H). `monthlyRent` never overrides `annualRent`.
 - **[OM-DD-037] `abatement` semantics (structural + consistency).** `abatement` is the number of months of free/abated rent *within* the period; `0 ≤ abatement ≤` the period's whole-month span (structural bound; out-of-range is `OMV-E001`). `abatement` MUST NOT modify `annualRent` (which is always face/contract rent); it is disclosed separately so Consumers can compute effective rent. `null` asserts explicitly no abatement; absent means not asserted.
-- **[OM-DD-038] Year-one vs NOI (consistency).** When `deal.noi`, `deal.noiType = in-place`, and a rentSchedule are all present, the `annualRent` of the period covering `deal.noiAsOfDate` SHOULD equal `deal.noi` within tolerance; a mismatch raises `OMW-W020`. (Pro-forma NOI is exempt — it need not match current contract rent.)
+- **[OM-DD-038] Year-one vs NOI (consistency).** When `deal.noi`, `deal.noiType = in-place`, and a rentSchedule are all present, the `annualRent` of the period covering `deal.noiAsOfDate` SHOULD equal `deal.noi` within tolerance; a mismatch raises `OMW-W020`. (Pro-forma NOI is exempt - it need not match current contract rent.)
 - **[OM-DD-039] Schedule coverage vs lease term (consistency).** When `lease.commencement`/`lease.expiration` are present, the schedule SHOULD begin no earlier than `commencement` and its final `periodEnd` SHOULD equal `expiration`; deviations are surfaced via the gap/overlap and term-arithmetic warnings (`OMW-W021`/`OMW-W022`/`OMW-W031`). The schedule covers the **primary** term only; option-period rent is expressed via `options[]` ([OM-DD-025]), not appended to `rentSchedule`.
 
 **Worked example** (the §7e sample, `buildingSF = 9100`, `noiAsOfDate = 2026-06-30`, `noi = 115625`, `noiType = in-place`):
 
 | # | periodStart | periodEnd | annualRent | rentPSF (check) | escalationFromPrior (check) | contiguity |
 |---|---|---|---|---|---|---|
-| 1 | 2024-05-01 | 2029-04-30 | 115625 | 115625 ÷ 9100 = 12.706 ≈ 12.70 ✓ (`W024` clear) | — (first period) | — |
+| 1 | 2024-05-01 | 2029-04-30 | 115625 | 115625 ÷ 9100 = 12.706 ≈ 12.70 ✓ (`W024` clear) | - (first period) | - |
 | 2 | 2029-05-01 | 2034-04-30 | 127188 | 127188 ÷ 9100 = 13.977 ≈ 13.98 ✓ | (127188−115625)÷115625 = 0.1000 ✓ (`W023` clear) | 2029-04-30 + 1d = 2029-05-01 ✓ (`W021`/`W022` clear) |
 
 Period 1 covers `noiAsOfDate` and `annualRent[1] = 115625 = deal.noi` → `OMW-W020` clear. `monthlyRent` for period 1, if asserted, is `115625 ÷ 12 = 9635.42` ✓. All consistency checks pass; the schedule is contiguous, chronologically ordered, and internally consistent.
@@ -1532,7 +1532,7 @@ Period 1 covers `noiAsOfDate` and `annualRent[1] = 115625 = deal.noi` → `OMW-W
 | `specVersion` | `0.1` | single value in this release |
 | `@type` | `RealEstateListing` | schema.org type |
 | `deal.noiType` | `in-place`, `pro-forma` | REQUIRED when `noi` present ([OM-DD-002] framing, §H `OMV-E002`) |
-| `deal.status` | `active`, `under-contract`, `sold`, `withdrawn` | — |
+| `deal.status` | `active`, `under-contract`, `sold`, `withdrawn` | - |
 | `lease.leaseTypeAsserted` | `N`, `NN`, `NNN`, `absolute-net`, `gross`, `modified-gross` | advisory label; grade derived from `landlordResponsibilities` ([OM-DD-029]) |
 | `lease.guarantor.type` | `corporate`, `personal`, `franchisee`, `none` | prefer `guarantor: null` over `type: none` ([OM-DD-024]) |
 | `source` (any field's provenance tag) | `asserted`, `extracted`, `verified` | default `asserted` for embedded payloads ([OM-DD-004]) |
@@ -1553,7 +1553,7 @@ Period 1 covers `noiAsOfDate` and `annualRent[1] = 115625 = deal.noi` → `OMW-W
 
 - **[OM-ERR-004]** **The block boundary is binary and is a pure function of severity.** `om_embed` (and any Producer commit step) MUST refuse when the Finding set contains **≥ 1 `error`**, and MUST proceed when it contains **zero errors**, regardless of how many `warning` or `info` Findings are present. `warning` and `info` MUST NEVER block, MUST NEVER alter the payload, and are advisory only. No configuration, flag, or future code may make a `warning`/`info` block, nor make an `error` non-blocking.
 
-- **[OM-ERR-005]** **Info severity.** `info` Findings are non-blocking observations that are neither schema violations nor data-quality contradictions — e.g. a defaulted field, an assumed `source` tag, a skipped cross-check because inputs were absent, or a deprecated-field notice (OM-VER-014). A Validator MAY suppress `info` by default and expose it under a verbose mode; it MUST NOT suppress `error` or `warning`.
+- **[OM-ERR-005]** **Info severity.** `info` Findings are non-blocking observations that are neither schema violations nor data-quality contradictions - e.g. a defaulted field, an assumed `source` tag, a skipped cross-check because inputs were absent, or a deprecated-field notice (OM-VER-014). A Validator MAY suppress `info` by default and expose it under a verbose mode; it MUST NOT suppress `error` or `warning`.
 
 - **[OM-ERR-006]** **Market truth stays out.** No code in any severity may encode a judgement about whether an assertion is *true in the market* (§10 Non-goals). Every `warning` is an **internal-consistency** or **plausibility** check computable from the payload alone (optionally plus the source document's own stated figures). This boundary is permanent and MUST NOT be crossed by any future code.
 
@@ -1575,9 +1575,9 @@ Period 1 covers `noiAsOfDate` and `annualRent[1] = 115625 = deal.noi` → `OMW-W
 }
 ```
 
-- **[OM-ERR-008]** **`path` is RFC 6901.** `path` MUST be a JSON Pointer into the *payload* (not the PDF), with `""` denoting the whole document and array indices as their decimal position (e.g. `/lease/rentSchedule/1/annualRent`). Consumers MUST NOT parse `message` to locate a field — `path`, `code`, `expected`, and `actual` are the machine surface; `message` is display-only and its exact wording is non-normative and MAY change in a PATCH.
+- **[OM-ERR-008]** **`path` is RFC 6901.** `path` MUST be a JSON Pointer into the *payload* (not the PDF), with `""` denoting the whole document and array indices as their decimal position (e.g. `/lease/rentSchedule/1/annualRent`). Consumers MUST NOT parse `message` to locate a field - `path`, `code`, `expected`, and `actual` are the machine surface; `message` is display-only and its exact wording is non-normative and MAY change in a PATCH.
 
-- **[OM-ERR-009]** **Deterministic ordering.** A Validator MUST emit Findings in a stable total order: primary key severity (`error` < `warning` < `info`), secondary key `code` ascending lexicographically, tertiary key `path` ascending as a byte string. Two conformant Validators MUST produce identical Finding sequences for the same payload — this is what makes the §B `expected/*.json` reports comparable.
+- **[OM-ERR-009]** **Deterministic ordering.** A Validator MUST emit Findings in a stable total order: primary key severity (`error` < `warning` < `info`), secondary key `code` ascending lexicographically, tertiary key `path` ascending as a byte string. Two conformant Validators MUST produce identical Finding sequences for the same payload - this is what makes the §B `expected/*.json` reports comparable.
 
 - **[OM-ERR-010]** **Report envelope.** `om_validate` returns:
 
@@ -1589,7 +1589,7 @@ Period 1 covers `noiAsOfDate` and `annualRent[1] = 115625 = deal.noi` → `OMW-W
   "warnings": [Finding, ...],
   "info":     [Finding, ...],   // MAY be omitted when empty / suppressed
   "summary":  { "errorCount": 0, "warningCount": 2, "infoCount": 1 },
-  "blocked":  false             // MUST equal (errorCount > 0)  — OM-ERR-004
+  "blocked":  false             // MUST equal (errorCount > 0)  - OM-ERR-004
 }
 ```
 `blocked` MUST equal `errorCount > 0`; a Producer MUST key its refuse/proceed decision on `blocked` alone.
@@ -1645,7 +1645,7 @@ Requirement-ID ranges are likewise reserved append-only: `OM-VER-001–050`, `OM
 
 | Code | Sev | Meaning |
 |---|---|---|
-| `OMV-E005` | error | Duplicate object key in payload (JCS requires unique keys — §C, OM-SEC-004) |
+| `OMV-E005` | error | Duplicate object key in payload (JCS requires unique keys - §C, OM-SEC-004) |
 | `OMV-E006` | error | Max nesting depth exceeded (OM-SEC-004) |
 | `OMV-E007` | error | Payload not valid UTF-8, or a BOM is present (violates OM-CANON-001) |
 | `OMV-E008` | error | Payload exceeds the documented size cap before parse (OM-SEC-002; transport-side surfaces as `OM-IO-BOMB`) |
@@ -1674,7 +1674,7 @@ Requirement-ID ranges are likewise reserved append-only: `OM-VER-001–050`, `OM
 
 | Code | Sev | Meaning |
 |---|---|---|
-| `OMI-I001` | info | A field was defaulted (e.g. `currency` assumed `USD` — OM-DD-002) |
+| `OMI-I001` | info | A field was defaulted (e.g. `currency` assumed `USD` - OM-DD-002) |
 | `OMI-I002` | info | A `source` tag was absent and assumed `asserted` (OM-DD-004) |
 | `OMI-I003` | info | A cross-check was skipped because required inputs were absent (e.g. no `buildingSF` for W024) |
 | `OMI-I010` | info | Payload uses a field deprecated as of this Validator's version (OM-VER-014) |
@@ -1709,7 +1709,7 @@ Relative tolerance means `|actual − expected| ÷ |expected| ≤ tol`; absolute
 ### §I.1 Common tool conventions (all tools)
 
 - **[OM-MCP-003] PDF input polymorphism.** Every tool's `pdf` parameter is a `PdfRef`: **exactly one** of `path` (stdio only; local filesystem), `url` (HTTPS only), or `blobId` (a handle returned by a prior presigned upload; remote only). Rules:
-  - A `path` MUST be rejected by the hosted (Streamable HTTP) transport — remote servers have no access to client filesystems (§6d) — returning `OM-IO-008`.
+  - A `path` MUST be rejected by the hosted (Streamable HTTP) transport - remote servers have no access to client filesystems (§6d) - returning `OM-IO-008`.
   - A `url` MUST be `https:` (never `http:`, `file:`, `ftp:`, `data:`, `gopher:`, `blob:`) or the tool returns `OM-IO-008`; it is subject to the full SSRF ruleset (§J OM-SEC-001, OM-SEC-011, OM-SEC-014).
   - A `blobId` MUST resolve to a live, authorized blob for the calling principal (§J OM-SEC-013) or return `OM-IO-006` / `OM-IO-007`.
   - Canonical schema:
@@ -1758,14 +1758,14 @@ Relative tolerance means `|actual − expected| ÷ |expected| ≤ tol`; absolute
 - **[OM-MCP-005] Pagination.** Text output is paginated by an **opaque** `cursor`. A tool that truncates MUST set `truncated: true` and return `nextCursor` (a base64url-encoded, server-owned token); the caller passes it back verbatim to continue. Cursors MUST be opaque (callers MUST NOT parse or construct them), stable for a bounded TTL (RECOMMENDED ≥ 5 min), and scoped to the same `pdf` input; a cursor presented for a different input MUST return `OM-IO-013`. A tool MUST NOT stream unbounded text into context (§6c, OM-MCP-001).
 - **[OM-MCP-006] Image manifest & links.** `om_extract_images` MUST NOT return image bytes inline. Each manifest entry is a descriptor plus a retrieval handle: on remote transport a short-TTL HTTPS download URL (RECOMMENDED ≤ 15 min, single-object scope); on stdio a local `path`. Handles are for out-of-band retrieval and MUST NOT be inlined as `data:` URIs. Deduplication is by PDF `xref`; the count of collapsed duplicates is reported in `deduped`.
 - **[OM-MCP-007] Determinism.** `/core`, `/mcp`, and the tools they expose MUST be free of inference and free of network side effects beyond the explicit fetch a tool performs (§6a; §M OM-TEL-001). Given identical input bytes and options, `om_inspect`, `om_read`, `om_validate`, and the JCS/hash portion of `om_embed` MUST produce identical results across runs and across implementations (the interop guarantee of §C). Non-deterministic PDF metadata (e.g. `/ModDate`) MUST NOT affect any hash or verdict (§D OM-EMB-011).
-- **[OM-MCP-008] Limits & timeouts.** Each tool MUST enforce, and the hosted server MUST document, per-call limits: max fetched PDF size (RECOMMENDED 200 MB), max PDF-stream decompression budget (RECOMMENDED 500 MB + ratio cap, §J OM-SEC-002), max decompressed payload 5 MB (§J OM-SEC-002), connect+read timeouts (RECOMMENDED 10 s connect / 30 s read), and max pages processed per call. Exceeding a limit returns the mapped `OM-IO-###` — never a crash, a hang, or a truncated-but-successful result.
+- **[OM-MCP-008] Limits & timeouts.** Each tool MUST enforce, and the hosted server MUST document, per-call limits: max fetched PDF size (RECOMMENDED 200 MB), max PDF-stream decompression budget (RECOMMENDED 500 MB + ratio cap, §J OM-SEC-002), max decompressed payload 5 MB (§J OM-SEC-002), connect+read timeouts (RECOMMENDED 10 s connect / 30 s read), and max pages processed per call. Exceeding a limit returns the mapped `OM-IO-###` - never a crash, a hang, or a truncated-but-successful result.
 - **[OM-MCP-009] Read-only vs mutating.** `om_inspect`, `om_read`, `om_extract_text`, `om_extract_images`, and `om_validate` are read-only and MUST NOT modify the input. `om_embed` is the only mutating tool; it MUST write a new document, MUST NOT modify the input in place, and MUST honor §D idempotency (replace, never stack).
 
 ### §I.2 Per-tool I/O contracts
 
 Each contract gives the input schema, the success-output schema, and a worked example. All tools share the `PdfRef` input (OM-MCP-003), the error envelope (OM-MCP-004), and the limits (OM-MCP-008). `Finding` is the §H shape `{code, severity, path, message, expected?, actual?}`. `null` in `verification`/`payload` fields is significant per §E OM-DD-003 (absent/`null` are distinct).
 
-#### om_inspect — **[OM-MCP-010]**
+#### om_inspect - **[OM-MCP-010]**
 *Read-only. Classifies the document and reports the payload / image / text profile.*
 ```jsonc
 // input
@@ -1781,7 +1781,7 @@ Each contract gives the input schema, the success-output schema, and a worked ex
 ```
 - **[OM-MCP-010]** When `payload.present=false`, `hashValid` and `originVerified` MUST be `null`, not `false`. `hashValid=false` means a payload was found but failed the §D.2 hash check (`hash-mismatch`); `class` MUST reflect the fixture matrix classes (§14): `native` (extractable text), `hybrid` (mixed), `scanned` (page images only).
 
-#### om_read — **[OM-MCP-011]**
+#### om_read - **[OM-MCP-011]**
 *Read-only. The cheap consumer path (§2). Returns the verified payload or null.*
 ```jsonc
 // input
@@ -1792,9 +1792,9 @@ Each contract gives the input schema, the success-output schema, and a worked ex
   "specVersion": "0.1",
   "verification": { "hashValid": true, "originVerified": null, "signatureValid": null } }
 ```
-- **[OM-MCP-011]** A Consumer MUST NOT return a non-null `payload` together with `verification.hashValid:false`. A hash-mismatched payload MUST be surfaced as `payload:null` with `verification.hashValid:false` — never as a trusted payload (§D OM-XMP-003; §J OM-SEC-005). `signatureValid` is `null` in 0.1 (reserved, §10). Cross-transport parity: the same `pdf` bytes MUST yield the same `payloadHash` on stdio and remote (OM-MCP-007).
+- **[OM-MCP-011]** A Consumer MUST NOT return a non-null `payload` together with `verification.hashValid:false`. A hash-mismatched payload MUST be surfaced as `payload:null` with `verification.hashValid:false` - never as a trusted payload (§D OM-XMP-003; §J OM-SEC-005). `signatureValid` is `null` in 0.1 (reserved, §10). Cross-transport parity: the same `pdf` bytes MUST yield the same `payloadHash` on stdio and remote (OM-MCP-007).
 
-#### om_extract_text — **[OM-MCP-012]**
+#### om_extract_text - **[OM-MCP-012]**
 *Read-only, paginated (OM-MCP-005).*
 ```jsonc
 // input
@@ -1806,7 +1806,7 @@ Each contract gives the input schema, the success-output schema, and a worked ex
 ```
 - **[OM-MCP-012]** `pageRange` is 1-indexed inclusive (`"3"`, `"1-5"`, `"2,4,7"`); an out-of-bounds or malformed range returns `OM-IO-012`. When output exceeds `maxChars` or the server cap, the tool MUST set `truncated:true` and return a `nextCursor` (OM-MCP-005). `text` MUST NOT include image bytes; tables are best-effort structural extraction, not rendering.
 
-#### om_extract_images — **[OM-MCP-013]**
+#### om_extract_images - **[OM-MCP-013]**
 *Read-only. Manifest + links, never bytes (OM-MCP-006; §8b).*
 ```jsonc
 // input
@@ -1821,13 +1821,13 @@ Each contract gives the input schema, the success-output schema, and a worked ex
 ```
 - **[OM-MCP-013]** Extraction is locate + decompress only; the tool MUST NOT render/rasterize page content except the documented full-page-image fallback for scanned or vector-only pages (§8b). It MUST recombine SMasks to RGBA and convert CMYK/ICC to sRGB before emitting (§8b), and MUST dedupe by `xref` (reported in `deduped`). `includeVector` defaults false; when true, rendered fallbacks MUST be flagged (`"rendered": true`). All output paths/links are subject to §J OM-SEC-007 (no traversal outside the designated output scope).
 
-#### om_validate — **[OM-MCP-014]**
+#### om_validate - **[OM-MCP-014]**
 *Validator role (§A). Two-tier (§9, §H).*
 ```jsonc
 // input
 { "payload": { /* om.json */ },
   "tolerances": { "capRateAbs": 0.005, "psfRel": 0.02 } }   // optional; defaults per §H OM-ERR-002
-// output (success — a report is success even when it contains errors)
+// output (success - a report is success even when it contains errors)
 { "ok": false,
   "errors":   [ { "code": "OMV-E002", "severity": "error", "path": "deal.noiType",
                   "message": "noiType required when noi present" } ],
@@ -1835,9 +1835,9 @@ Each contract gives the input schema, the success-output schema, and a worked ex
                   "message": "cap rate != NOI/price", "expected": 0.0625, "actual": 0.061 } ],
   "canonical": { "hash": "sha256:…" } }   // JCS hash of payload_for_hash (§C)
 ```
-- **[OM-MCP-014]** `om_validate` MUST NOT mutate the payload and MUST return a report (tool success) even when `errors` is non-empty — a schema error is *data in the report*, not a tool-level error. `ok` is `true` iff `errors` is empty. `canonical.hash` MUST equal the hash a Producer would embed (§C OM-CANON-003), so callers can pre-check exactly what `om_embed` will write.
+- **[OM-MCP-014]** `om_validate` MUST NOT mutate the payload and MUST return a report (tool success) even when `errors` is non-empty - a schema error is *data in the report*, not a tool-level error. `ok` is `true` iff `errors` is empty. `canonical.hash` MUST equal the hash a Producer would embed (§C OM-CANON-003), so callers can pre-check exactly what `om_embed` will write.
 
-#### om_embed — **[OM-MCP-015]**
+#### om_embed - **[OM-MCP-015]**
 *The only mutating tool (OM-MCP-009). Producer role.*
 ```jsonc
 // input
@@ -1851,7 +1851,7 @@ Each contract gives the input schema, the success-output schema, and a worked ex
   "xmp": { "specName": "OpenOM", "specVersion": "0.1",
            "payloadFilename": "om.json", "payloadHash": "sha256:…" } }
 ```
-- **[OM-MCP-015]** `om_embed` MUST run `om_validate` internally and MUST refuse when schema errors are present — returning an error envelope whose `details.errors` carries the §H `OMV-E###` findings; warnings MUST pass through and MUST NOT block (§9). It MUST write the JCS bytes verbatim (§C OM-CANON-005; §D OM-EMB-010), perform the in-place replace / `supersedes` idempotency of §D OM-XMP-004 (never stacking a second `om.json`), and MUST NOT alter visual content unless `badge:true`.
+- **[OM-MCP-015]** `om_embed` MUST run `om_validate` internally and MUST refuse when schema errors are present - returning an error envelope whose `details.errors` carries the §H `OMV-E###` findings; warnings MUST pass through and MUST NOT block (§9). It MUST write the JCS bytes verbatim (§C OM-CANON-005; §D OM-EMB-010), perform the in-place replace / `supersedes` idempotency of §D OM-XMP-004 (never stacking a second `om.json`), and MUST NOT alter visual content unless `badge:true`.
 
 ---
 
@@ -1877,7 +1877,7 @@ The table enumerates the threats OpenOM tooling faces, classified by STRIDE (Spo
 | T12 | HMAC secret leakage | I, S | Extension storage | Secret in `chrome.storage.sync` syncs unencrypted across devices | OM-SEC-003 |
 | T13 | Webhook replay | S, T | Webhook receiver | Captured envelope re-POSTed to trigger duplicate actions | §5b (timestamp + nonce window), OM-SEC-003 |
 | T14 | Hash-collision / MD5 misuse | T, S | Trust decision | Trusting the legacy MD5 `/CheckSum` as integrity | OM-SEC-005 |
-| T15 | Payload spoofing (valid hash, false claim) | S, R | Consumer | Broker mislabels the deal; hash still valid | OM-SEC-005 + §10 (attribution, not crypto — market truth out of scope) |
+| T15 | Payload spoofing (valid hash, false claim) | S, R | Consumer | Broker mislabels the deal; hash still valid | OM-SEC-005 + §10 (attribution, not crypto - market truth out of scope) |
 | T16 | Blob IDOR | I | Hosted blob store | Attacker guesses/enumerates a `blobId` to fetch another tenant's OM | OM-SEC-013 |
 | T17 | Supply-chain compromise | T, E | Build/CI | Compromised or typosquatted dep (pikepdf, pdf-lib, ajv) ships malicious code | OM-SEC-008 |
 | T18 | Resource exhaustion / no rate limit | D | Hosted MCP | Flood of large-PDF fetches exhausts CPU/bandwidth | OM-SEC-012 |
@@ -1891,15 +1891,15 @@ The table enumerates the threats OpenOM tooling faces, classified by STRIDE (Spo
 - **[OM-SEC-002] Decompression bombs.** Producers/Consumers MUST cap the decompressed payload (`om.json`) at a documented limit (RECOMMENDED 5 MB) and reject payloads exceeding it (`OM-IO-BOMB`). PDF stream expansion MUST be bounded (max total decompressed size + max compression ratio) before parsing.
 - **[OM-SEC-003] Webhook SSRF & secrets.** The user-configured webhook URL is attacker-influenced relative to the receiver: the extension MUST apply the OM-SEC-001 range rules before POSTing, and MUST HMAC-sign the body (§5b). HMAC secrets MUST NOT be stored in `chrome.storage.sync` (it syncs unencrypted across devices); use `chrome.storage.local` and document that secrets are device-local.
 - **[OM-SEC-004] Payload/JSON hardening.** Parsers MUST enforce a max nesting depth and reject duplicate object keys (JCS assumes unique keys). Consumers MUST treat all payload strings as untrusted data and MUST NOT execute or interpolate them (no `@context` fetch that executes code; contexts are fetched as inert JSON with the range rules of OM-SEC-001, and SHOULD be cached/pinned).
-- **[OM-SEC-005] Hash assumptions.** Integrity relies on SHA-256 collision resistance; the legacy MD5 `/CheckSum` (§D) MUST NOT be used for any trust decision. `hashValid=true` proves *unaltered since embed*, not *authentic* (§10) — Consumers MUST NOT present it as authorship proof.
+- **[OM-SEC-005] Hash assumptions.** Integrity relies on SHA-256 collision resistance; the legacy MD5 `/CheckSum` (§D) MUST NOT be used for any trust decision. `hashValid=true` proves *unaltered since embed*, not *authentic* (§10) - Consumers MUST NOT present it as authorship proof.
 - **[OM-SEC-006] Blob storage.** Presigned upload URLs MUST be single-use, short-TTL, and scoped to one object; uploaded blobs are subject to the retention policy (§K).
 
 - **[OM-SEC-007] Path traversal in file/image handling.** On read, a Consumer MUST treat the embedded `/F`/`/UF` filename as untrusted: it MUST require exactly `om.json` (§D OM-EMB-012) and MUST NOT use any embedded filename to derive a filesystem write path. When `om_extract_images` (or any tool) writes outputs, generated filenames MUST be derived from safe tokens (e.g. `img_<xref>.<ext>`), MUST be confined to a designated output directory, and MUST reject any path component that is `.`/`..`, absolute, a symlink, a Windows device name (`CON`, `NUL`, `AUX`, `COM1`…), or contains a path separator or NUL byte. A traversal attempt MUST be refused (`OM-IO-TRAVERSAL` on read, or a tool error on write), never silently written outside the output scope.
 - **[OM-SEC-008] Supply-chain integrity.** Builds MUST use a committed, hash-pinned lockfile for every dependency (`uv.lock`/`poetry.lock` for Python; `package-lock.json` for `/js`), and CI MUST verify integrity hashes on install and fail on mismatch. Releases MUST be built in CI from a tagged commit (not a developer machine), SHOULD publish provenance/attestation (e.g. npm/PyPI trusted publishing with build provenance), and SHOULD be reproducible. Direct dependencies MUST be limited to the vetted set (pikepdf, PyMuPDF, jsonschema, typer, FastMCP; pdf-lib, ajv, pdf.js) plus their transitive closure; adding a new direct dependency to `/core`, `/mcp`, or consumer-mode `/js` requires the §L RFC. A CVE scan MUST run in CI and block release on a known-exploitable high-severity finding.
-- **[OM-SEC-009] XMP parsing (RDF/XML) hardening.** The XMP `/Metadata` stream (§D.2) is RDF/**XML** and is parsed with an XML parser; that parser MUST disable external entity resolution (no XXE — no external DTD, no `SYSTEM`/`PUBLIC` entities, no network or file fetches) and MUST bound internal-entity expansion to defeat `billion-laughs`/quadratic-blowup (`OM-IO-BOMB`). XMP parsing MUST NOT execute or fetch anything referenced within the metadata. A malformed or over-sized XMP block MUST degrade to "payload absent / detection failed," never crash the Consumer.
+- **[OM-SEC-009] XMP parsing (RDF/XML) hardening.** The XMP `/Metadata` stream (§D.2) is RDF/**XML** and is parsed with an XML parser; that parser MUST disable external entity resolution (no XXE - no external DTD, no `SYSTEM`/`PUBLIC` entities, no network or file fetches) and MUST bound internal-entity expansion to defeat `billion-laughs`/quadratic-blowup (`OM-IO-BOMB`). XMP parsing MUST NOT execute or fetch anything referenced within the metadata. A malformed or over-sized XMP block MUST degrade to "payload absent / detection failed," never crash the Consumer.
 - **[OM-SEC-010] PDF parser hardening.** Untrusted PDF bytes MUST be parsed with resource ceilings enforced *before and during* parse: max input size and max stream-decompression budget (OM-SEC-002, OM-MCP-008), a wall-clock timeout per operation, and a bounded object/xref-recursion depth. Parsing SHOULD run in an isolated, memory-limited worker/process so a crash or OOM in pikepdf/PyMuPDF/pdf.js cannot take down the host; the hosted server MUST convert a parser crash/timeout into `OM-IO-010`/`OM-IO-003`. Consumers MUST NOT enable any PDF-parser feature that executes embedded JavaScript or launches external actions.
 - **[OM-SEC-011] Redirect & DNS-rebinding controls.** Server-side fetches (OM-SEC-001) MUST cap redirects (RECOMMENDED ≤ 5) and MUST re-apply the OM-SEC-001 address-range check to **every** hop, including the final resolved IP. Implementations MUST mitigate DNS rebinding by resolving the hostname, validating the resolved address(es) against the block list, and **connecting to the pinned validated address** (resolve-then-pin), not re-resolving between check and connect. A hop or resolution that lands in a blocked range MUST fail with `OM-IO-009`/`OM-IO-002` and MUST NOT be followed.
-- **[OM-SEC-012] Rate limiting & quotas (hosted).** The hosted MCP server and upload endpoint MUST enforce per-principal rate limits and concurrency/size quotas, and MUST return `OM-IO-014` with a `Retry-After` when exceeded. Limits MUST be documented. Rate limiting MUST NOT weaken any correctness or verification guarantee — it only bounds resource use.
+- **[OM-SEC-012] Rate limiting & quotas (hosted).** The hosted MCP server and upload endpoint MUST enforce per-principal rate limits and concurrency/size quotas, and MUST return `OM-IO-014` with a `Retry-After` when exceeded. Limits MUST be documented. Rate limiting MUST NOT weaken any correctness or verification guarantee - it only bounds resource use.
 - **[OM-SEC-013] Blob authorization (anti-IDOR).** `blobId` values MUST be unguessable (≥ 128 bits of entropy) and MUST be authorization-checked against the calling principal on every access; a `blobId` belonging to another principal MUST return `OM-IO-007` (not `OM-IO-006`, to avoid leaking existence only where policy permits). Blobs are single-tenant, subject to OM-SEC-006 and the §K retention policy.
 - **[OM-SEC-014] Fetched-content verification.** Before parsing, a fetched resource MUST be confirmed to be a PDF by inspecting the leading bytes (`%PDF-`), independent of the `Content-Type` header, and MUST be rejected with `OM-IO-005` otherwise. The declared `Content-Type` MUST NOT be trusted for security decisions. Response size MUST be enforced incrementally during download (OM-SEC-002, OM-MCP-008), not only after completion.
 - **[OM-SEC-015] Extension least-privilege (MV3).** The extension MUST request the minimum host permissions necessary and SHOULD prefer `activeTab` / user-gesture-scoped access over broad `<all_urls>` host grants; link-level detection host access is per-domain opt-in (§5b). Content scripts MUST NOT inject into or read logged-in third-party app surfaces (Non-goals; no chat-UI puppeteering). Secrets and device-local settings live in `chrome.storage.local`, never `chrome.storage.sync` (OM-SEC-003). The extension MUST NOT weaken page security (no disabling CSP, no `eval` of remote code); the `/js` subset it ships MUST remain inference-free in consumer mode (§6a).

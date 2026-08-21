@@ -21,7 +21,7 @@ describe("[OM-CANON-009] duplicate member names → OM-IO-DUPKEY", () => {
   });
 
   test("rejects keys that collide only after NFC normalization", () => {
-    // "café" composed (U+00E9) vs decomposed (e + U+0301) — equal after NFC.
+    // "café" composed (U+00E9) vs decomposed (e + U+0301) - equal after NFC.
     expect(() => parsePayload('{"café":1,"café":2}')).toThrowError(
       expect.objectContaining({ code: "OM-IO-DUPKEY" }),
     );
@@ -48,7 +48,7 @@ describe("[OM-CANON-009] duplicate member names → OM-IO-DUPKEY", () => {
   });
 
   test("detects a duplicate key written with a \\u escape (NFC-decoded)", () => {
-    // "café" (composed) vs decomposed "café" — same after NFC → duplicate.
+    // "café" (composed) vs decomposed "café" - same after NFC → duplicate.
     expect(() => parsePayload('{"caf\\u00e9":1,"café":2}')).toThrowError(
       expect.objectContaining({ code: "OM-IO-DUPKEY" }),
     );

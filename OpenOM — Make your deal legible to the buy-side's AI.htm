@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenOM — Make your deal legible to the buy-side's AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="OpenOM%20%E2%80%94%20Make%20your%20deal%20legible%20to%20the%20buy-side's%20AI_files/css2_ebJd.css" rel="stylesheet">
+<style>
+:root{
+  --page:#EDEEE9;
+  --paper:#FBFAF5;
+  --ink:#171A20;
+  --ink-soft:#4B5160;
+  --navy:#0F1D30;
+  --navy-2:#15263D;
+  --machine:#9CC0EA;
+  --machine-dim:#5E7CA6;
+  --machine-key:#7E97BC;
+  --hl:#FFDE59;
+  --hl-ink:#20180a;
+  --ok:#3BAE6A;
+  --rule:#D6D7CF;
+  --rule-dark:#24374F;
+  --maxw:1120px;
+  --serif:'Source Serif 4', Georgia, serif;
+  --sans:'Schibsted Grotesk', system-ui, sans-serif;
+  --mono:'Spline Sans Mono', ui-monospace, monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--page);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:2px}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+  .scanline{display:none}
+}
+
+/* ---------- top bar ---------- */
+.bar{border-bottom:1px solid var(--rule)}
+.bar-in{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+.wordmark{font-weight:800;font-size:20px;letter-spacing:-0.02em}
+.wordmark .om{background:var(--hl);padding:1px 6px 2px;border-radius:3px}
+.bar-meta{display:flex;gap:10px;align-items:center}
+.pill{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;border:1px solid var(--rule);border-radius:999px;padding:4px 11px;color:var(--ink-soft);background:var(--paper)}
+.pill.dark{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* ---------- hero ---------- */
+.hero{padding:72px 0 30px}
+.hero h1{font-size:clamp(38px,5.6vw,64px);font-weight:800;letter-spacing:-0.03em;line-height:1.02;max-width:15ch}
+.hero h1 .mark{background:linear-gradient(transparent 62%, var(--hl) 62%)}
+.hero p.lede{margin-top:22px;font-size:clamp(17px,1.9vw,20px);color:var(--ink-soft);max-width:56ch}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px;align-items:center}
+.btn{font-family:var(--sans);font-weight:700;font-size:15.5px;text-decoration:none;padding:13px 22px;border-radius:8px;border:1.5px solid var(--ink);transition:transform .12s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--hl);border-color:var(--hl);color:var(--hl-ink)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.spec-link{font-family:var(--mono);font-size:13px;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;margin-left:6px}
+
+/* ---------- signature: split document ---------- */
+.stage{padding:44px 0 84px}
+.stage-note{display:flex;justify-content:center;margin-bottom:14px}
+.stage-note span{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+.docpair{position:relative;display:grid;grid-template-columns:1fr 1fr;border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -30px rgba(15,29,48,.45);border:1px solid #cfd0c8}
+.scanline{position:absolute;top:0;bottom:0;width:2px;background:var(--hl);box-shadow:0 0 18px 2px rgba(255,222,89,.9);z-index:5;left:-2%;animation:scan 1.6s .4s ease-in-out forwards;pointer-events:none}
+@keyframes scan{from{left:-2%}to{left:102%}}
+
+/* human half — a diegetic OM page */
+.doc-h{background:var(--paper);padding:38px 36px 32px;position:relative}
+.doc-h .om-eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.28em;color:#8a8676}
+.doc-h h2{font-family:var(--serif);font-weight:700;font-size:clamp(22px,2.5vw,30px);line-height:1.12;margin-top:10px;letter-spacing:-0.01em}
+.doc-h .addr{font-family:var(--mono);font-size:12.5px;color:#77735f;margin-top:6px}
+.photo{margin:20px 0;height:110px;border-radius:6px;background:
+  linear-gradient(115deg,#2c3a4d 0%,#3f5670 45%,#5f7c99 75%,#8aa5bd 100%);position:relative;overflow:hidden}
+.photo::after{content:"";position:absolute;inset:0;background:
+  repeating-linear-gradient(90deg,transparent 0 46px, rgba(255,255,255,.10) 46px 47px),
+  repeating-linear-gradient(0deg,transparent 0 30px, rgba(255,255,255,.07) 30px 31px)}
+.photo b{position:absolute;right:10px;bottom:8px;font-family:var(--mono);font-weight:500;font-size:10px;letter-spacing:.14em;color:rgba(255,255,255,.75)}
+.terms{width:100%;border-collapse:collapse;font-size:14.5px}
+.terms td{padding:9px 2px;border-bottom:1px solid #E4E1D4;vertical-align:baseline}
+.terms td:first-child{color:#77735f;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;width:44%}
+.terms td:last-child{font-weight:700;font-variant-numeric:tabular-nums}
+.doc-h .foot{margin-top:18px;font-family:var(--mono);font-size:10.5px;color:#a09c88;letter-spacing:.05em}
+
+/* machine half */
+.doc-m{background:var(--navy);color:var(--machine);padding:38px 34px 32px;font-family:var(--mono);font-size:13px;line-height:1.72}
+.doc-m .m-eyebrow{font-size:10.5px;letter-spacing:.28em;color:var(--machine-dim);text-transform:uppercase}
+.doc-m pre{margin-top:16px;white-space:pre-wrap;word-break:break-word}
+.k{color:var(--machine-key)}
+.s{color:#CFE0F4}
+.n{color:#F0F4FA;font-weight:600}
+.p{color:var(--machine-dim)}
+.ok-line{margin-top:16px;padding-top:14px;border-top:1px dashed #2A3E5B;color:var(--ok);font-size:12px;display:flex;gap:8px;align-items:center}
+.ok-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+
+/* synced highlight */
+.hl{border-radius:3px;padding:0 3px;cursor:default;transition:background .12s ease,color .12s ease}
+.doc-h .hl{background:rgba(255,222,89,.45)}
+.doc-m .hl{background:rgba(255,222,89,.10)}
+.hl.lit{background:var(--hl)!important;color:var(--hl-ink)!important}
+.doc-m .hl.lit .n,.doc-m .hl.lit .s{color:var(--hl-ink)}
+
+.seam-badge{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:7px 12px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.hint{margin-top:14px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+
+/* ---------- math strip ---------- */
+.math{background:var(--navy);color:#E8EEF6;padding:58px 0 62px}
+.math .eyebrow{color:var(--machine-dim)}
+.math-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:30px;border-left:1px solid #24374F}
+.math-cell{padding:8px 30px;border-right:1px solid #24374F}
+.math-cell .big{font-family:var(--mono);font-weight:600;font-size:clamp(26px,3vw,36px);letter-spacing:-0.02em;color:#fff}
+.math-cell .big em{font-style:normal;color:var(--hl)}
+.math-cell p{margin-top:8px;font-size:14.5px;color:#9FB2C9;max-width:30ch}
+
+/* ---------- how it works ---------- */
+.how{padding:84px 0 70px}
+.how h3, .surf h3, .trust h3{font-size:clamp(27px,3.4vw,40px);font-weight:800;letter-spacing:-0.025em;margin-top:10px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:38px}
+.step{background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:26px 24px}
+.step .num{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--ink-soft)}
+.step h4{font-size:20px;font-weight:700;margin-top:10px;letter-spacing:-0.01em}
+.step p{margin-top:8px;font-size:15px;color:var(--ink-soft)}
+.step .tagline{margin-top:14px;display:inline-block;font-family:var(--mono);font-size:11.5px;background:#F0EEE3;border-radius:5px;padding:4px 8px;color:#6d6852}
+
+/* ---------- two surfaces ---------- */
+.surf{padding:10px 0 84px}
+.surf-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:38px}
+.card{border-radius:14px;padding:32px 30px;border:1px solid var(--rule)}
+.card.mcp{background:var(--navy);color:#DEE8F4;border-color:var(--navy)}
+.card.ext{background:var(--paper)}
+.card .kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase}
+.card.mcp .kicker{color:var(--machine-dim)}
+.card.ext .kicker{color:var(--ink-soft)}
+.card h4{font-size:24px;font-weight:800;letter-spacing:-0.02em;margin-top:10px}
+.card p.sub{margin-top:8px;font-size:15px}
+.card.mcp p.sub{color:#9FB2C9}
+.card.ext p.sub{color:var(--ink-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:6px;background:#1B2E47;color:var(--machine)}
+.card ul{list-style:none;margin-top:20px;display:grid;gap:12px}
+.card li{padding-left:24px;position:relative;font-size:15px}
+.card.mcp li{color:#C6D4E5}
+.card li::before{content:"";position:absolute;left:0;top:8px;width:10px;height:10px;border-radius:2px;background:var(--hl)}
+.card li b{font-weight:700}
+.card.mcp li b{color:#fff}
+.persona{margin-top:20px;border-top:1px dashed var(--rule);padding-top:16px}
+.persona .p-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+.persona h5{font-size:16.5px;font-weight:700;margin-top:6px}
+.persona p{margin-top:5px;font-size:14.5px;color:var(--ink-soft)}
+.clients{margin-top:22px;padding-top:16px;border-top:1px dashed #2A3E5B;font-family:var(--mono);font-size:12px;color:var(--machine-dim);line-height:2}
+
+/* ---------- trust ---------- */
+.trust{background:var(--ink);color:#EDEDE8;padding:78px 0 84px}
+.trust .eyebrow{color:#8a8f9c}
+.trust-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;margin-top:36px;background:#2b2f39;border:1px solid #2b2f39;border-radius:12px;overflow:hidden}
+.trust-cell{background:var(--ink);padding:26px 26px 28px}
+.trust-cell h5{font-size:17px;font-weight:700;letter-spacing:-0.01em}
+.trust-cell h5 .tick{color:var(--hl);margin-right:8px;font-family:var(--mono)}
+.trust-cell p{margin-top:8px;font-size:14.5px;color:#A6AAB5}
+
+/* ---------- footer cta ---------- */
+.foot{padding:76px 0 34px}
+.foot-inner{background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:52px 44px;display:flex;justify-content:space-between;align-items:center;gap:30px;flex-wrap:wrap}
+.foot h3{font-size:clamp(24px,3vw,34px);font-weight:800;letter-spacing:-0.02em;max-width:20ch}
+.foot h3 .mark{background:linear-gradient(transparent 62%, var(--hl) 62%)}
+.colophon{margin-top:26px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+.colophon a{text-underline-offset:3px}
+
+/* ---------- responsive ---------- */
+@media (max-width:920px){
+  .docpair{grid-template-columns:1fr}
+  .seam-badge{top:auto;left:50%;transform:translate(-50%,-50%)}
+  .math-grid,.steps,.surf-grid,.trust-grid{grid-template-columns:1fr}
+  .math-cell{border-right:none;border-bottom:1px solid #24374F;padding:18px 24px}
+  .scanline{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap bar-in">
+    <div class="wordmark">Open<span class="om">OM</span></div>
+    <div class="bar-meta">
+      <span class="pill">spec 0.1</span>
+      <span class="pill">MIT</span>
+      <span class="pill dark">MCP + Chrome</span>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">An open standard for machine-readable offering memorandums</div>
+    <h1 style="margin-top:16px">Make your deal <span class="mark">legible</span> to the buy‑side's AI.</h1>
+    <p class="lede">OpenOM embeds a broker-asserted data payload inside 
+the offering memorandum itself. The PDF looks exactly the same to people
+ — and every AI assistant, CRM, and analyst can read the whole deal in 
+seconds.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="#surfaces">Connect the MCP</a>
+      <a class="btn ghost" href="#surfaces">Add the Chrome extension</a>
+      <a class="spec-link" href="#footer">read the spec →</a>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <div class="wrap">
+    <div class="stage-note"><span>One file · two readers</span></div>
+    <div class="docpair">
+      <div class="scanline" aria-hidden="true"></div>
+      <div class="seam-badge">SAME PDF</div>
+
+      <!-- human layer -->
+      <div class="doc-h">
+        <div class="om-eyebrow">OFFERING MEMORANDUM</div>
+        <h2>Example Retail — Single-Tenant Net Lease</h2>
+        <div class="addr">1000 Example Rd · Sampleville, MI 48000</div>
+        <div class="photo" aria-hidden="true"><b>PROPERTY PHOTO</b></div>
+        <table class="terms">
+          <tbody><tr><td>Asking Price</td><td><span class="hl" data-k="price">$1,850,000</span></td></tr>
+          <tr><td>Cap Rate</td><td><span class="hl" data-k="cap">6.25%</span></td></tr>
+          <tr><td>NOI (in-place)</td><td><span class="hl" data-k="noi">$115,625</span></td></tr>
+          <tr><td>Lease Type</td><td><span class="hl" data-k="lease">Absolute NNN</span></td></tr>
+          <tr><td>Lease Expiration</td><td><span class="hl" data-k="exp">April 30, 2034</span></td></tr>
+          <tr><td>Options</td><td><span class="hl" data-k="opt">4 × 5 Years</span></td></tr>
+        </tbody></table>
+        <div class="foot">EXAMPLE NET LEASE ADVISORS · CONFIDENTIAL · PAGE 3 OF 42</div>
+      </div>
+
+      <!-- machine layer -->
+      <div class="doc-m">
+        <div class="m-eyebrow">Embedded payload · om.json</div>
+<pre>{
+  <span class="k">"specVersion"</span><span class="p">:</span> <span class="s">"0.1"</span><span class="p">,</span>
+  <span class="k">"assertedBy"</span><span class="p">:</span> <span class="s">"Example Net Lease Advisors"</span><span class="p">,</span>
+  <span class="k">"assertedDate"</span><span class="p">:</span> <span class="s">"2026-08-15"</span><span class="p">,</span>
+  <span class="k">"askingPrice"</span><span class="p">:</span> <span class="hl" data-k="price"><span class="n">1850000</span></span><span class="p">,</span>
+  <span class="k">"capRate"</span><span class="p">:</span> <span class="hl" data-k="cap"><span class="n">0.0625</span></span><span class="p">,</span>
+  <span class="k">"noi"</span><span class="p">:</span> <span class="hl" data-k="noi"><span class="n">115625</span></span><span class="p">,</span>
+  <span class="k">"noiType"</span><span class="p">:</span> <span class="s">"in-place"</span><span class="p">,</span>
+  <span class="k">"leaseTypeAsserted"</span><span class="p">:</span> <span class="hl" data-k="lease"><span class="s">"NNN"</span></span><span class="p">,</span>
+  <span class="k">"expiration"</span><span class="p">:</span> <span class="hl" data-k="exp"><span class="s">"2034-04-30"</span></span><span class="p">,</span>
+  <span class="k">"options"</span><span class="p">:</span> <span class="hl" data-k="opt"><span class="s">"4 × 5yr"</span></span><span class="p">,</span>
+  <span class="k">"rentSchedule"</span><span class="p">:</span> <span class="s">[ … ]</span>
+}</pre>
+        <div class="ok-line"><span class="ok-dot"></span> hash verified · math checks pass · read in one call</div>
+      </div>
+    </div>
+    <div class="hint">hover a number — both layers carry the same fact</div>
+  </div>
+</section>
+
+<section class="math">
+  <div class="wrap">
+    <div class="eyebrow">The math</div>
+    <div class="math-grid">
+      <div class="math-cell reveal">
+        <div class="big">40 pages → <em>~3k tokens</em></div>
+        <p>What an AI reads instead of running vision over the entire OM.</p>
+      </div>
+      <div class="math-cell reveal">
+        <div class="big">1 extraction, <em>∞ reads</em></div>
+        <p>The listing broker extracts once. Every buyer, lender, and agent downstream just reads.</p>
+      </div>
+      <div class="math-cell reveal">
+        <div class="big"><em>0</em> API keys</div>
+        <p>The server runs no model. Your assistant does the reading — on your plan, not our meter.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h3>Three steps. Nothing about your OM changes.</h3>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="num">STEP 1</div>
+        <h4>Generate</h4>
+        <p>Export the OM exactly the way you already do — InDesign, Word, Buildout. Same design, same file.</p>
+        <span class="tagline">your workflow, untouched</span>
+      </div>
+      <div class="step reveal">
+        <div class="num">STEP 2</div>
+        <h4>Embed</h4>
+        <p>Your AI drafts the data. You review every field, the validator checks the math, and you click <b>Assert&nbsp;&amp;&nbsp;Embed</b>.</p>
+        <span class="tagline">you approve every number</span>
+      </div>
+      <div class="step reveal">
+        <div class="num">STEP 3</div>
+        <h4>Rehost</h4>
+        <p>Post the embedded file back where your OM lives. Every reader from now on gets the data layer for free.</p>
+        <span class="tagline">repriced? re-embed in one click</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="surf" id="surfaces">
+  <div class="wrap">
+    <div class="eyebrow">Two surfaces</div>
+    <h3>For every AI. For every human in the deal.</h3>
+    <div class="surf-grid">
+
+      <div class="card mcp reveal">
+        <div class="kicker">MCP server</div>
+        <h4>Plug it into any assistant</h4>
+        <p class="sub">Six deterministic tools, hosted and local. No inference on our side — your model, your subscription.</p>
+        <div class="chips">
+          <span class="chip">om_read</span><span class="chip">om_inspect</span><span class="chip">om_validate</span>
+          <span class="chip">om_embed</span><span class="chip">om_extract_text</span><span class="chip">om_extract_images</span>
+        </div>
+        <ul>
+          <li><b>One call, whole deal.</b> om_read returns the payload — price, cap, NOI, rent schedule — instantly.</li>
+          <li><b>Hash-verified.</b> Tampered payloads fail loudly before your model ever sees them.</li>
+          <li><b>Validator built in.</b> Catches an OM contradicting its own math before it ships.</li>
+        </ul>
+        <div class="clients">WORKS IN — Claude · ChatGPT · Gemini · Copilot · Claude Code · Cursor · local models — any MCP client</div>
+      </div>
+
+      <div class="card ext reveal">
+        <div class="kicker">Chrome extension</div>
+        <h4>Sees the data layer everywhere</h4>
+        <p class="sub">One extension, two jobs — whichever side of the deal you're on.</p>
+        <div class="persona">
+          <div class="p-label">If you list</div>
+          <h5>Embed in one click</h5>
+          <p>It catches your OM as it downloads, drafts the fields, and 
+opens a review panel. Approve, embed, rehost. A private on-device option
+ means the document never leaves your machine.</p>
+        </div>
+        <div class="persona">
+          <div class="p-label">If you buy</div>
+          <h5>Know before you read</h5>
+          <p>The icon lights up when a PDF carries a payload. Open the 
+deal card — price, cap, NOI, term — in four seconds. Then push it 
+anywhere with a webhook: your CRM is one URL away.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="wrap">
+    <div class="eyebrow">Built on a simple honesty</div>
+    <h3>Assertions, not scraped guesses.</h3>
+    <div class="trust-grid">
+      <div class="trust-cell reveal">
+        <h5><span class="tick">✓</span>Signed by the source</h5>
+        <p>Every payload names who asserted it and when — broker, brokerage, license, date — and carries a tamper-evident hash.</p>
+      </div>
+      <div class="trust-cell reveal">
+        <h5><span class="tick">✓</span>Checks its own math</h5>
+        <p>NOI ÷ price against the stated cap rate. Rent schedules that 
+actually sum. Dates that add up. Flagged before embed, not after close.</p>
+      </div>
+      <div class="trust-cell reveal">
+        <h5><span class="tick">✓</span>Says which NOI</h5>
+        <p>In-place or pro-forma is a required field, not a footnote. The disclosure most deal arguments are actually about.</p>
+      </div>
+      <div class="trust-cell reveal">
+        <h5><span class="tick">✓</span>Takes no position on value</h5>
+        <p>The OM is your opinion of the deal — the standard keeps it 
+that way. The payload doesn't judge the price. It just makes it legible.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="foot" id="footer">
+  <div class="wrap">
+    <div class="foot-inner">
+      <h3>The next thousand readers of your OM <span class="mark">won't be human.</span></h3>
+      <div class="cta-row" style="margin-top:0">
+        <a class="btn primary" href="#">Get started free</a>
+        <a class="btn ghost" href="#">Read the spec</a>
+      </div>
+    </div>
+    <div class="colophon">
+      <span>An open standard published by Vervelio · MIT licensed</span>
+      <span>Inspired by Factur-X — the embedded-invoice standard that became European law</span>
+      <span>Spec · GitHub · Webhook envelope · “OpenOM” is a working title</span>
+    </div>
+  </div>
+</section>
+
+<script>
+// synced highlight across the two document layers
+document.querySelectorAll('.hl[data-k]').forEach(function(el){
+  var k = el.getAttribute('data-k');
+  el.addEventListener('mouseenter', function(){
+    document.querySelectorAll('.hl[data-k="'+k+'"]').forEach(function(m){ m.classList.add('lit'); });
+  });
+  el.addEventListener('mouseleave', function(){
+    document.querySelectorAll('.hl[data-k="'+k+'"]').forEach(function(m){ m.classList.remove('lit'); });
+  });
+});
+// scroll reveals
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+},{threshold:.15});
+document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+</script>
+
+
+</body></html>

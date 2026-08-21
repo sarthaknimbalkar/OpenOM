@@ -1,6 +1,6 @@
 // Stale-vs-tamper (§AA [OM-TRUST-009], OMW-W051). When the embedded payload's hash differs from the
 // origin mirror's CURRENT hash, decide whether the mirror is a genuine *newer* assertion (stale/
-// superseded — surface a warning, keep the badge) or an actual mismatch (leave it to the badge).
+// superseded - surface a warning, keep the badge) or an actual mismatch (leave it to the badge).
 
 export interface StaleResult {
   stale: boolean;

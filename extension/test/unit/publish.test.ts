@@ -55,7 +55,7 @@ describe("publish (§Y)", () => {
   });
 });
 
-describe("publishWithRetry (#85) — bounded retry + backoff", () => {
+describe("publishWithRetry (#85) - bounded retry + backoff", () => {
   test("retries 5xx then succeeds; Event-Id stable, Delivery-Id changes per attempt", async () => {
     let n = 0;
     const seen: { eventId: string; deliveryId: string; attempt: string }[] = [];

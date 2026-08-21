@@ -1,16 +1,16 @@
 /**
- * `<openom-badge>` — a web-embeddable trust badge for portals (#144).
+ * `<openom-badge>` - a web-embeddable trust badge for portals (#144).
  *
  * A portal drops one script tag and `<openom-badge src="…deal.pdf">` next to a listing; the widget
  * re-fetches the PDF bytes, reads + integrity-checks the embedded openOM payload, optionally verifies
  * origin against a mirror, and renders the §AA badge. The verification is the exact deterministic,
- * inference-free openom-js read/verify path the extension uses (see ./badge-core) — never
- * re-implemented — so a portal badge and the browser badge can never disagree.
+ * inference-free openom-js read/verify path the extension uses (see ./badge-core) - never
+ * re-implemented - so a portal badge and the browser badge can never disagree.
  *
  * Honesty is load-bearing (§AA / [OM-TRUST-003]): the label comes ONLY from `honestLabel`, and
  * `absent` renders nothing (no false reassurance, no nag on the majority of PDFs that aren't openOM).
  * No payload-derived text is injected into the DOM, so an attacker-controlled payload has no XSS
- * surface — the only dynamic string is the sanitized `details` href.
+ * surface - the only dynamic string is the sanitized `details` href.
  *
  * This file is the DOM shell; build it via widget/build.mjs and typecheck it via tsconfig.widget.json
  * (it needs the DOM lib the deterministic core deliberately excludes).
@@ -65,7 +65,7 @@ export function paintBadge(host: HTMLElement, view: BadgeView, details?: string)
   mark.textContent = c.mark;
   mark.setAttribute("aria-hidden", "true");
   const label = document.createElement("span");
-  label.textContent = view.label; // static honestLabel copy only — no payload text
+  label.textContent = view.label; // static honestLabel copy only - no payload text
   wrap.append(mark, label);
   if (link) {
     const a = document.createElement("a");

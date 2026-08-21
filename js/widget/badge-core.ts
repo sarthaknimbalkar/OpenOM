@@ -1,7 +1,7 @@
 /**
  * The DOM-free core of the embeddable badge (#144): fetch → read → integrity → optional origin →
  * §AA view. Kept separate from the custom-element shell so the deterministic logic typechecks under
- * the base (DOM-free) tsconfig and is unit-tested in node — the honesty-critical part carries no DOM
+ * the base (DOM-free) tsconfig and is unit-tested in node - the honesty-critical part carries no DOM
  * dependency. Reuses the openom-js read/verify path verbatim; zero inference.
  */
 import { readPayloadFromBytes } from "../src/read.js";
@@ -100,7 +100,7 @@ export async function evaluateBadge(opts: BadgeOptions): Promise<BadgeView> {
   });
 }
 
-/** Absent view — for fail-closed rendering (a fetch/parse error is not evidence of tampering). */
+/** Absent view - for fail-closed rendering (a fetch/parse error is not evidence of tampering). */
 export function absentView(): BadgeView {
   return computeBadge(ABSENT);
 }

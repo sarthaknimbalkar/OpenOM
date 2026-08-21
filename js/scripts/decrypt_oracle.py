@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Dev-only oracle half for #4 — verify decryptPdf output against pikepdf's own decryption.
+"""Dev-only oracle half for #4 - verify decryptPdf output against pikepdf's own decryption.
 
 Reads .decrypt-oracle/manifest.json (produced by decrypt-check.mjs). For each source PDF that pikepdf
 reports as encrypted-with-empty-password:
@@ -9,7 +9,7 @@ reports as encrypted-with-empty-password:
   - if decryptPdf returned null, that is only acceptable for out-of-scope files (RC4 / non-empty
     password); an in-scope AES file returning null is a FAIL.
 
-Prints a PASS/FAIL/SKIP split by R4/R6. Any FAIL is a decrypt bug — stop and debug that file.
+Prints a PASS/FAIL/SKIP split by R4/R6. Any FAIL is a decrypt bug - stop and debug that file.
 Corpus is confidential; this script and its output are never committed.
 """
 
@@ -80,7 +80,7 @@ def main() -> None:
             ref.close()
             continue
 
-        # decryptPdf produced output — compare render vs pikepdf's reference decryption.
+        # decryptPdf produced output - compare render vs pikepdf's reference decryption.
         buf = io.BytesIO()
         ref.save(buf)  # pikepdf writes an unencrypted reference
         ref.close()

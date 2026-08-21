@@ -1,4 +1,4 @@
-// openOM link-badging content script (#69) — THIN by design: DOM + IntersectionObserver + messaging
+// openOM link-badging content script (#69) - THIN by design: DOM + IntersectionObserver + messaging
 // only, no /js / tldts / pdf.js. The service worker does all openOM logic (eTLD+1 gating, verification
 // via the deterministic detect pipeline + 24h cache). Runs on every https page but self-gates on the
 // per-domain allowlist and exits immediately when not enabled. Verification is LAZY (on view),
@@ -14,7 +14,7 @@ async function install(): Promise<void> {
   const res = (await chrome.runtime.sendMessage({ type: "linkbadge:enabled", hostname: location.hostname })) as {
     enabled?: boolean;
   };
-  if (!res?.enabled) return; // not opted in for this domain — do nothing
+  if (!res?.enabled) return; // not opted in for this domain - do nothing
 
   const seen = new Set<string>();
   const queue: HTMLAnchorElement[] = [];

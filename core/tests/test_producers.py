@@ -1,8 +1,8 @@
 """Task 12: embed round-trips across producer-diverse base PDFs (structural variety).
 
 Real producer diversity (InDesign/Word/Buildout/scan) lives in the confidential corpus; these
-synthetic bases exercise the structural variety that matters for the wire format — multi-page,
-pre-existing XMP, object streams, non-Letter page size — so producer robustness runs in CI.
+synthetic bases exercise the structural variety that matters for the wire format - multi-page,
+pre-existing XMP, object streams, non-Letter page size - so producer robustness runs in CI.
 """
 
 from __future__ import annotations

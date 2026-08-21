@@ -16,7 +16,7 @@ beforeEach(() => {
   };
 });
 
-describe("draft-store (#94) — device-local draft persistence", () => {
+describe("draft-store (#94) - device-local draft persistence", () => {
   test("round-trips a draft by source id, then clears", async () => {
     const d = setField(newDraft(), "/deal/capRate", 0.0575);
     await setDraft("sha256:abc", d);

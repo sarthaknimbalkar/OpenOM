@@ -10,7 +10,7 @@ import {
   partialPayloadToFields,
 } from "../../src/author/extract/source.js";
 
-// Reference Buildout connector — maps a listing to a partial openOM payload deterministically, with
+// Reference Buildout connector - maps a listing to a partial openOM payload deterministically, with
 // percent→fraction conversion and omit-if-absent. Transport is injected (BuildoutClient).
 
 const LISTING: BuildoutListing = {
@@ -43,7 +43,7 @@ describe("buildoutListingToPayload", () => {
     expect(p.deal.pricePerUnit).toBe(200000);
   });
 
-  test("omits absent fields — never guesses", () => {
+  test("omits absent fields - never guesses", () => {
     const p = buildoutListingToPayload({ askingPrice: 5000000 }) as Record<
       string,
       any
@@ -59,7 +59,7 @@ describe("buildoutListingToPayload", () => {
   });
 });
 
-describe("makeBuildoutConnector — flows through the draft-source seam", () => {
+describe("makeBuildoutConnector - flows through the draft-source seam", () => {
   const client: BuildoutClient = {
     isConfigured: async () => true,
     getListing: async () => LISTING,

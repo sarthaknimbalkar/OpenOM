@@ -118,6 +118,6 @@ def test_nondestructive_scanned(scanned_om: bytes) -> None:
 @pytest.mark.parametrize("cls", ["native", "hybrid", "scanned"])
 def test_nondestructive_producer(cls: str, producer_pdfs: dict[str, bytes]) -> None:
     """Non-destructiveness across object-stream/linearized (native), text+image (hybrid), and
-    image-only (scanned) producer structures — the diversity the CI gate previously lacked."""
+    image-only (scanned) producer structures - the diversity the CI gate previously lacked."""
     original = producer_pdfs[cls]
     _assert_nondestructive(original, embed(original, _sample(), asserted_date=FIXED_DATE))

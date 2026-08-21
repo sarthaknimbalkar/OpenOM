@@ -1,4 +1,4 @@
-// Receiver-side validation of a §Y webhook envelope ([#14], [OM-HOOK-002]) — the other half of the
+// Receiver-side validation of a §Y webhook envelope ([#14], [OM-HOOK-002]) - the other half of the
 // two-sided standard. A broker's receiver pairs this with verifyWebhookSignature (webhook.ts): verify
 // the signature first, then validate the body shape. Kept in its own module (NOT webhook.ts) so ajv
 // never leaks into the consumer popup bundle, which imports openom-js/webhook for signing only.
@@ -47,7 +47,7 @@ export const ENVELOPE_SCHEMA = {
       type: "string",
       pattern: "^sha256:[0-9a-f]{64}$",
       description:
-        "The §C integrity hash of `payload`. JSON Schema cannot bind it to `payload`, so a receiver MUST recompute and compare (verifyEnvelopePayloadHash) after verifying the signature — a schema-valid envelope can still carry a mismatched hash ([OM-HOOK], #120).",
+        "The §C integrity hash of `payload`. JSON Schema cannot bind it to `payload`, so a receiver MUST recompute and compare (verifyEnvelopePayloadHash) after verifying the signature - a schema-valid envelope can still carry a mismatched hash ([OM-HOOK], #120).",
     },
     verification: {
       type: "object",
@@ -80,7 +80,7 @@ function validator() {
 }
 
 /**
- * Verify the envelope's `payloadHash` actually binds its inline `payload` — i.e. it equals the §C
+ * Verify the envelope's `payloadHash` actually binds its inline `payload` - i.e. it equals the §C
  * integrity hash of the payload ([OM-HOOK], #120). JSON Schema cannot express this cross-field
  * invariant, so a schema-valid envelope can still carry a mismatched hash; a receiver MUST run this
  * (after verifying the signature) before trusting `payloadHash`. Returns false on any shape error.

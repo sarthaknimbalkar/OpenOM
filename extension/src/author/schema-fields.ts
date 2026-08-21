@@ -1,4 +1,4 @@
-// Typed field descriptors from the JSON Schema ([#77/#93]) — the SINGLE source of form-control typing.
+// Typed field descriptors from the JSON Schema ([#77/#93]) - the SINGLE source of form-control typing.
 // Walking the schema (vs a hand-curated list) keeps the form in sync with the spec and makes #93 fall
 // out for free: noiType is an enum → <select>, noiAsOfDate has format:date → date input. Array nodes
 // (rentSchedule, options) are excluded here; the form renders those with a dedicated editor. Pure.
@@ -30,7 +30,7 @@ export function schemaFieldDescriptors(schema: { properties?: Record<string, unk
 
 function walk(node: SchemaNode | undefined, prefix: string, out: FieldDescriptor[]): void {
   if (!node) return;
-  if (node.type === "array") return; // rentSchedule / options — dedicated editor, not a flat control
+  if (node.type === "array") return; // rentSchedule / options - dedicated editor, not a flat control
   if (node.properties) {
     for (const [k, child] of Object.entries(node.properties)) walk(child, `${prefix}/${k}`, out);
     return;

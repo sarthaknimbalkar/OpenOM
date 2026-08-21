@@ -2,12 +2,12 @@ import { payloadHash } from "./hash.js";
 import type { Finding } from "./validate.js";
 
 /**
- * Non-blocking re-embed warnings against an existing PDF (§H) — parity with the Python core's
+ * Non-blocking re-embed warnings against an existing PDF (§H) - parity with the Python core's
  * `reembed_warnings`. Pure w.r.t. the PDF (reads the prior omspec marker via pdf.js); embedding
  * itself stays a separate step, so callers compose this to surface provenance issues.
  *
  * OMW-W051: the new assertedDate (taken from the payload, as the JS writer would embed it)
- * precedes the payload it would supersede — time going backwards on a reprice. Warnings never
+ * precedes the payload it would supersede - time going backwards on a reprice. Warnings never
  * block.
  */
 export async function reembedWarnings(

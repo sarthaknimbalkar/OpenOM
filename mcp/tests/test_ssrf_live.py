@@ -1,4 +1,4 @@
-"""M3 #46: LIVE SSRF path — exercise the real _default_opener/_default_resolver over a genuine TLS
+"""M3 #46: LIVE SSRF path - exercise the real _default_opener/_default_resolver over a genuine TLS
 socket, which the injected-opener unit tests in test_ssrf.py cannot cover. A self-signed cert +
 threaded HTTPS loopback server prove: real TLS+read+%PDF sniff, connect-to-the-pinned-IP while
 presenting the original Host (rebind defense), and real redirect following. The block-list is

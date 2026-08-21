@@ -1,4 +1,4 @@
-"""M3 Task 1: SSRF-hardened safe_fetch ([OM-SEC-001/011/014]). Every rule is exercised offline —
+"""M3 Task 1: SSRF-hardened safe_fetch ([OM-SEC-001/011/014]). Every rule is exercised offline -
 the DNS resolver and the connection opener are both injected, so range logic, redirect re-checking,
 resolve-then-pin, timeouts, size caps, and the %PDF- sniff are tested without any real network.
 """

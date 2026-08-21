@@ -1,4 +1,4 @@
-// openOM MV3 service worker — consumer mode orchestration. Deterministic; zero inference. Runs the
+// openOM MV3 service worker - consumer mode orchestration. Deterministic; zero inference. Runs the
 // detect → read → validate → origin → stale → badge pipeline and sets the toolbar badge. The
 // pipeline (`handleDetect`) is a pure function with injected deps so it is unit-testable off-browser.
 
@@ -72,7 +72,7 @@ export async function handleDetect(
   const findings: string[] = [];
   let stale: "OMW-W051" | undefined;
   let payload: Record<string, unknown> | null = null;
-  const encrypted = read?.state === "encrypted"; // #72 — distinct from a plain "no payload" PDF
+  const encrypted = read?.state === "encrypted"; // #72 - distinct from a plain "no payload" PDF
 
   if (!read || read.state === "absent" || read.state === "encrypted") {
     state = "absent";
@@ -81,10 +81,10 @@ export async function handleDetect(
     read.state === "hash-mismatch" ||
     read.verification.hashValid !== true
   ) {
-    state = "hash-mismatch"; // terminal — no L3/L4
+    state = "hash-mismatch"; // terminal - no L3/L4
   } else {
     payload = read.payload;
-    // Eval-free validator (ajv standalone) — the MV3 CSP forbids ajv's runtime compile.
+    // Eval-free validator (ajv standalone) - the MV3 CSP forbids ajv's runtime compile.
     const report = validatePayload(payload, schema as Record<string, unknown>, {
       validate: precompiledValidate,
     });
@@ -133,10 +133,10 @@ export async function handleDetect(
 
   if (deps.setBadge) await deps.setBadge(state);
   const honest = honestLabel(state);
-  // #72 — an encrypted PDF is "absent" for the badge, but say WHY rather than "no data / vision fallback".
+  // #72 - an encrypted PDF is "absent" for the badge, but say WHY rather than "no data / vision fallback".
   const label = encrypted ? "Encrypted PDF" : honest.label;
   const caption = encrypted
-    ? "This PDF is encrypted — openOM can't read it."
+    ? "This PDF is encrypted - openOM can't read it."
     : honest.caption;
   return {
     state,
@@ -208,7 +208,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // #127 (fixed): only trust messages from THIS extension's own contexts, and confine content
     // scripts to the read-only badge verbs. The content-script test is by sender URL, not merely by
-    // the presence of a tab — our own extension pages hosted in a tab (deep-link popup, side panel)
+    // the presence of a tab - our own extension pages hosted in a tab (deep-link popup, side panel)
     // also have sender.tab set and must NOT be treated as content scripts. See message-gate.ts.
     if (!accepts(sender, msg?.type, chrome.runtime.id)) return false;
     if (msg?.type === "detect" && typeof msg.url === "string") {
@@ -218,7 +218,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true; // async response
     }
-    // Author mode (M5b) — capture re-fetches PDF bytes SW-side (page CSP can't block it); embed runs
+    // Author mode (M5b) - capture re-fetches PDF bytes SW-side (page CSP can't block it); embed runs
     // the deterministic /js embedPayload. Zero inference; the human assertion happens in the panel.
     if (msg?.type === "author:fetch" && typeof msg.url === "string") {
       refetchPdf(msg.url)
@@ -226,7 +226,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true;
     }
-    // Link-badging (#69) — the content script is thin; the SW gates by eTLD+1 and verifies via the
+    // Link-badging (#69) - the content script is thin; the SW gates by eTLD+1 and verifies via the
     // deterministic detect pipeline (24h cache), returning only the badge state (never a tab badge).
     if (msg?.type === "linkbadge:enabled" && typeof msg.hostname === "string") {
       const d = getDomain(msg.hostname);
@@ -278,7 +278,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   });
 }
 
-// §15 Q8 proactive detection (#84): OFF by default (privacy-conservative — the popup is the default
+// §15 Q8 proactive detection (#84): OFF by default (privacy-conservative - the popup is the default
 // check). When the broker opts in, detect + badge a freshly-loaded HTTPS PDF on navigation, reusing
 // the 24h cache so it's cheap. Never fires unless the setting is on.
 if (typeof chrome !== "undefined" && chrome.tabs?.onUpdated) {

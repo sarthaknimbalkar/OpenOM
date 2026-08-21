@@ -41,7 +41,7 @@ export function receiveWebhook(d: Delivery): ReceiveResult {
   const shape = validateEnvelope(envelope);
   if (!shape.valid) return { accepted: false, reason: `envelope:${shape.errors[0] ?? "invalid"}` };
 
-  // Schema can't bind payloadHash to payload — a schema-valid envelope may still carry a mismatch.
+  // Schema can't bind payloadHash to payload - a schema-valid envelope may still carry a mismatch.
   if (!verifyEnvelopePayloadHash(envelope))
     return { accepted: false, reason: "payloadHash-mismatch" };
 

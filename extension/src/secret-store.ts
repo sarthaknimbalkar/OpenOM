@@ -3,7 +3,7 @@
 // AES-GCM under a NON-EXTRACTABLE CryptoKey kept in IndexedDB: the wrapped form in chrome.storage
 // carries no usable secret, and the wrapping key cannot be exported via the API. This defends the
 // stated threat (passive storage/disk inspection); it does NOT defend against code execution inside
-// the extension origin (which could use the key) — see SECURITY.md's threat model.
+// the extension origin (which could use the key) - see SECURITY.md's threat model.
 //
 // Degrades to a passthrough where WebCrypto/IndexedDB are unavailable (e.g. a Node unit-test runtime);
 // the real browser path (popup/options) always wraps and is proven end-to-end by the live publish gate.

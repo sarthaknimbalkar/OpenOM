@@ -12,7 +12,7 @@ async function twoPagePdf(): Promise<Uint8Array> {
   return doc.save();
 }
 
-describe("extractPageText — worker-agnostic pdf.js page text", () => {
+describe("extractPageText - worker-agnostic pdf.js page text", () => {
   test("returns per-page text", async () => {
     const { pages } = await extractPageText(await twoPagePdf());
     expect(pages).toHaveLength(2);

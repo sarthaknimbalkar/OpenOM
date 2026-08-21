@@ -15,7 +15,7 @@ def test_every_pathology_fixture_builds() -> None:
 
 
 def test_synthetic_axis_is_full() -> None:
-    # Pathology axis only (no corpus) — the CI-checkable half of the matrix gate.
+    # Pathology axis only (no corpus) - the CI-checkable half of the matrix gate.
     assert matrix.assert_matrix(require_corpus=False) == []
 
 

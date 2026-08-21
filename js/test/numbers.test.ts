@@ -5,7 +5,7 @@ import { canonicalize } from "../src/canonicalize.js";
 /**
  * §C.2/§C.6 number rules at the raw-text parse boundary.
  * [OM-CANON-013] a token whose integer magnitude exceeds 2^53-1 is silently
- * rounded by binary64 and MUST be rejected (OM-IO-NUMRANGE) — detectable only
+ * rounded by binary64 and MUST be rejected (OM-IO-NUMRANGE) - detectable only
  * against the source token, since JSON.parse rounds before we can inspect it.
  * [OM-CANON-019] number-serialization torture cases.
  */

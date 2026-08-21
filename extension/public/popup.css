@@ -1,5 +1,5 @@
-/* openOM extension design system (#71). Inherits the marketing mock's editorial language — warm
-   paper, ink, navy + machine-blue accents, a yellow highlight — but with SYSTEM-font fallbacks only
+/* openOM extension design system (#71). Inherits the marketing mock's editorial language - warm
+   paper, ink, navy + machine-blue accents, a yellow highlight - but with SYSTEM-font fallbacks only
    (no external font fetch: MV3 CSP + offline). Shared by the popup and the author side panel.
    Colors are chosen for WCAG AA contrast against the paper background. */
 :root {
@@ -9,7 +9,7 @@
   --ink-soft: #4b5160;
   --navy: #0f1d30;
   --ok: #2f8f57; /* accent / border */
-  --ok-text: #0a5f2e; /* green TEXT — AA (≥4.5:1) on both --paper and --ok-bg */
+  --ok-text: #0a5f2e; /* green TEXT - AA (≥4.5:1) on both --paper and --ok-bg */
   --ok-bg: #e6f4ea;
   --danger: #b3261e;
   --danger-bg: #fce8e6;
@@ -274,7 +274,7 @@ button#assert,
   min-height: 1.2em;
 }
 
-/* Keyboard focus — visible for everyone, not just mouse users. */
+/* Keyboard focus - visible for everyone, not just mouse users. */
 :focus-visible {
   outline: 2px solid var(--navy);
   outline-offset: 1px;

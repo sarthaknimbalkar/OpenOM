@@ -12,7 +12,7 @@ export interface IntegrityResult {
  * Compute the integrity hash of already-serialized payload bytes.
  *
  * Spec: §C [OM-CANON-003], [OM-CANON-008]. This is the CONSUMER path: it hashes
- * the received decompressed `om.json` bytes EXACTLY as received — no parse, no
+ * the received decompressed `om.json` bytes EXACTLY as received - no parse, no
  * NFC, no re-canonicalization. A conformant Producer stores exactly the JCS
  * preimage bytes ([OM-CANON-005]; `meta.signature` is forbidden in 0.1), so a
  * direct byte hash both answers "unaltered since embed?" and honours the

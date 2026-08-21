@@ -3,7 +3,7 @@ import { classifyStale } from "../../src/stale.js";
 
 const EMB = { assertedDate: "2026-06-15", meta: { supersedes: null } };
 
-describe("classifyStale — OMW-W051 [OM-TRUST-009]", () => {
+describe("classifyStale - OMW-W051 [OM-TRUST-009]", () => {
   test("equal hashes → not stale", () => {
     expect(
       classifyStale({ embeddedHash: "sha256:a", mirrorHash: "sha256:a", embeddedPayload: EMB, mirrorPayload: EMB }),

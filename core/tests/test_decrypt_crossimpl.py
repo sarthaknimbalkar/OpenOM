@@ -1,6 +1,6 @@
 """#132: cross-implementation decryption agreement. Author-mode decryption is JS-only
 (js/src/decrypt.ts, a hand-written AES impl); the Python core relies on pikepdf. Both MUST recover
-the SAME plaintext from the same empty-password AES fixtures — else a broker decrypting in-browser
+the SAME plaintext from the same empty-password AES fixtures - else a broker decrypting in-browser
 and a server decrypting via the CLI would see different content. This anchors both to the known
 plaintext in js/test/fixtures/enc-fixtures.json (the JS side asserts the same in decrypt.test.ts): a
 committed, corpus-free cross-check complementing the dev-only pikepdf render oracle."""

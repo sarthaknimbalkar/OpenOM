@@ -1,5 +1,5 @@
 """M4 gate [OM-DoD-005]: the payload the /process playbook produces from the demo OM passes
-om_validate with zero errors AND is internally consistent (zero warnings) — the CI-checkable form
+om_validate with zero errors AND is internally consistent (zero warnings) - the CI-checkable form
 of "the playbook drives the full loop to a valid payload". Also asserts the demo OM is something to
 extract FROM (no embedded payload), not an already-embedded OM.
 """

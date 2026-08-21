@@ -14,7 +14,7 @@ const clean: ValidationReport = {
   blocked: false,
 };
 
-describe("finalize — the assertion transform", () => {
+describe("finalize - the assertion transform", () => {
   test("stamps constants + assertedBy + today; promotes rent source; sets supersedes on reprice", () => {
     let d = newDraft({ lease: { rentSchedule: [{ annualRent: 100, source: "extracted" }] } });
     d = setField(d, "/deal/noi", 100);
@@ -33,7 +33,7 @@ describe("finalize — the assertion transform", () => {
   });
 });
 
-describe("assertAndEmbed — validate then embed", () => {
+describe("assertAndEmbed - validate then embed", () => {
   test("schema error → rejects, never embeds", async () => {
     const withError: ValidationReport = { ...clean, errors: [{ code: "OMV-E001", severity: "error", path: "/x", message: "bad" }] };
     let embedded = false;

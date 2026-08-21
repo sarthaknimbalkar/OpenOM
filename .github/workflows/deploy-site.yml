@@ -1,7 +1,7 @@
 # Deploy the pinned namespace tree (site/) so the schema $id and JSON-LD @context
 # URLs actually resolve (#139). Cloudflare Pages is used deliberately: it honors the
 # committed site/_headers, which is what serves the extensionless /openom/ns/0.1 as
-# application/ld+json with open CORS — a plain static host would serve it as
+# application/ld+json with open CORS - a plain static host would serve it as
 # octet-stream and break every JSON-LD processor.
 #
 # Inert until the account is wired: the deploy step self-skips unless both secrets
@@ -10,7 +10,7 @@
 # then attach the domains below (custom domains / routes).
 #
 # Domains (decision 2026-08-21): the CANONICAL machine namespace stays
-# verveliolabs.com/openom/* — the schema $id and @context are pinned there and must
+# verveliolabs.com/openom/* - the schema $id and @context are pinned there and must
 # resolve there (unchanged). openom.app is the human FRONT-DOOR (docs, verify tool,
 # marketing, and the eventual hosted MCP). Serve this same site/ tree on both custom
 # domains; verveliolabs.com/openom/* is the authoritative host for ns/0.1 + the schemas.
@@ -39,7 +39,7 @@ jobs:
         run: |
           python spec/scripts/gen_site.py
           git diff --exit-code -- site \
-            || (echo "::error::refusing to deploy a stale site/ — regenerate it"; exit 1)
+            || (echo "::error::refusing to deploy a stale site/ - regenerate it"; exit 1)
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -63,4 +63,4 @@ jobs:
         if: ${{ env.CF_TOKEN == '' }}
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: echo "Cloudflare secrets not set — skipping deploy (see workflow header to enable)."
+        run: echo "Cloudflare secrets not set - skipping deploy (see workflow header to enable)."

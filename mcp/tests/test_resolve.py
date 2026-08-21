@@ -1,4 +1,4 @@
-"""M3 Task 4: PdfResolver enforces the transport policy — path only on stdio, url/blobId only on
+"""M3 Task 4: PdfResolver enforces the transport policy - path only on stdio, url/blobId only on
 http, exactly one key. Deterministic tool bodies stay unchanged; only PDF resolution differs.
 """
 

@@ -17,7 +17,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("onDeviceExtractor — Prompt API adapter", () => {
+describe("onDeviceExtractor - Prompt API adapter", () => {
   test("available() reflects the Prompt API global", async () => {
     expect(await onDeviceExtractor.available()).toBe(false);
     installFakeModel({ fields: [] });
@@ -41,7 +41,7 @@ describe("onDeviceExtractor — Prompt API adapter", () => {
     await expect(onDeviceExtractor.extract([{ page: 1, text: "x" }])).rejects.toThrow();
   });
 
-  test("available() honors availability() — false only for 'unavailable' (#101)", async () => {
+  test("available() honors availability() - false only for 'unavailable' (#101)", async () => {
     installFakeModel({ fields: [] }, "unavailable");
     expect(await onDeviceExtractor.available()).toBe(false);
     installFakeModel({ fields: [] }, "downloadable");

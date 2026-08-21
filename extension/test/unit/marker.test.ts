@@ -2,7 +2,7 @@
 import { describe, expect, test } from "vitest";
 import { markerFor } from "../../src/content/marker.js";
 
-describe("markerFor (#69) — honest link badge", () => {
+describe("markerFor (#69) - honest link badge", () => {
   test("no marker for absent / signature-verified (never overclaim §AA)", () => {
     expect(markerFor("absent")).toBeNull();
     expect(markerFor("signature-verified")).toBeNull();

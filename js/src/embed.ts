@@ -18,7 +18,7 @@ import { readMarkerProp } from "./read.js";
  *
  * Assumption A (confirmed with Track A): the stored `om.json` stream is the
  * signature-stripped **preimage** (`preimageBytes`), and `omspec:payloadHash`
- * is `payloadHash(payload)` — so a Consumer's byte-recompute of the stored
+ * is `payloadHash(payload)` - so a Consumer's byte-recompute of the stored
  * stream equals the marker directly ([OM-CANON-005], [OM-CANON-008]).
  *
  * NOTE: this uses pdf-lib's load→save, which is fine for author-mode/fresh
@@ -32,7 +32,7 @@ export async function embedPayload(
   const bytes = preimageBytes(payload);
   const hash = payloadHash(payload);
 
-  // #5/#166: sourceDocHash identifies the underlying source PDF and is held STABLE across reprices —
+  // #5/#166: sourceDocHash identifies the underlying source PDF and is held STABLE across reprices -
   // carried forward from a prior marker, or computed once (hash of the source bytes) on first embed.
   // Mirrors the Python core; marker-only, so the asserted payload + payloadHash are untouched.
   const priorSourceHash = await readMarkerProp(pdfBytes, "sourceDocHash");
@@ -40,7 +40,7 @@ export async function embedPayload(
 
   const staged = await PDFDocument.load(pdfBytes);
   // Idempotent re-embed ([OM-XMP-004]): strip any prior om.json + its /AF ref first, so a reprice
-  // replaces (never stacks a second attachment) — parity with the Python core's _remove_existing.
+  // replaces (never stacks a second attachment) - parity with the Python core's _remove_existing.
   removeExistingOmJson(staged);
   // Pass the exact JCS bytes; never let the library re-serialize ([OM-EMB-010/022]).
   await staged.attach(bytes, "om.json", {
@@ -73,8 +73,8 @@ function filespecName(fs: PDFDict): string | null {
 }
 
 /**
- * Remove any existing `om.json` attachment — its `/AF` reference AND its `/EmbeddedFiles` name-tree
- * entry — so a re-embed replaces rather than stacks a second copy ([OM-XMP-004]). Mirrors the Python
+ * Remove any existing `om.json` attachment - its `/AF` reference AND its `/EmbeddedFiles` name-tree
+ * entry - so a re-embed replaces rather than stacks a second copy ([OM-XMP-004]). Mirrors the Python
  * core's `_remove_existing`; without it, a reprice leaves a stale stream that fails the hash check.
  */
 function removeExistingOmJson(doc: PDFDocument): void {
@@ -131,7 +131,7 @@ interface OmspecProps {
 }
 
 // PDF/A requires every custom XMP namespace to be described by an embedded Extension Schema
-// (PDF/A-3 §6.6.2.3, #2). Static — describes the fixed 0.1 marker properties. MUST match the
+// (PDF/A-3 §6.6.2.3, #2). Static - describes the fixed 0.1 marker properties. MUST match the
 // Python writer (core/src/openom_core/xmp.py) so the PDF/A claim is producer-independent.
 const PDFA_EXTENSION_SCHEMA = [
   ["specName", "name of the embedded data standard"],

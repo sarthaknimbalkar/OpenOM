@@ -1,7 +1,7 @@
 import { payloadHash } from "./hash.js";
 import type { Finding } from "./validate.js";
 
-/** Consistency tolerances (§H.4 [OM-ERR-002]) — configurable; mirrors the Python Tolerances. */
+/** Consistency tolerances (§H.4 [OM-ERR-002]) - configurable; mirrors the Python Tolerances. */
 export interface Tolerances {
   capRateAbs: number; // absolute, cap rate is itself a small fraction
   monetaryRel: number; // relative, for money/PSF cross-checks
@@ -22,7 +22,7 @@ export const DEFAULT_TOLERANCES: Tolerances = {
 
 const DAYS_PER_MONTH = 30.4375; // 365.25 / 12, for month<->day term arithmetic
 
-/** Optional context for the consistency tier — mirrors the Python `as_of` parameter. */
+/** Optional context for the consistency tier - mirrors the Python `as_of` parameter. */
 export interface ConsistencyOptions {
   /** Processing date (YYYY-MM-DD) for OMW-W032; without it, W032 is silent (no wall clock). */
   asOf?: string;
@@ -111,7 +111,7 @@ function obj(value: unknown): Record<string, unknown> {
 }
 
 /**
- * Consistency (warning) + info tier (§H) — mirror of the Python core's _warning_tier/_info_tier.
+ * Consistency (warning) + info tier (§H) - mirror of the Python core's _warning_tier/_info_tier.
  * Internal-consistency only, never market truth; warnings/info NEVER block.
  */
 export function consistencyFindings(
@@ -126,14 +126,14 @@ export function consistencyFindings(
   const lease = obj(payload.lease);
 
   // Reference date for term checks (OMW-W030): explicit asOf, else the payload's assertedDate;
-  // processingDate (OMW-W032) is set ONLY when a caller passes asOf — never the wall clock.
+  // processingDate (OMW-W032) is set ONLY when a caller passes asOf - never the wall clock.
   const processingDate = options.asOf ? epochDay(options.asOf) : null;
   const asOfDate = processingDate !== null ? processingDate : epochDay(payload.assertedDate);
   dateTermChecks(lease, asOfDate, tol, warnings);
   dateSanityChecks(payload, deal, lease, processingDate, options.asOf, warnings);
   selfSupersedeCheck(payload, warnings);
 
-  // OMW-W061 (#119): currency absent on an EXPLICITLY non-US property — the silent-USD default is
+  // OMW-W061 (#119): currency absent on an EXPLICITLY non-US property - the silent-USD default is
   // likely wrong. The plain absent case stays info (OMI-I001); this targets the real footgun.
   if (payload.currency === undefined || payload.currency === null) {
     const country = obj(prop.address).addressCountry;
@@ -142,7 +142,7 @@ export function consistencyFindings(
         warn(
           "OMW-W061",
           "/currency",
-          "currency absent on a non-US property; assumed USD — confirm the currency",
+          "currency absent on a non-US property; assumed USD - confirm the currency",
         ),
       );
     }
@@ -371,7 +371,7 @@ function dateSanityChecks(
   }
 }
 
-/** OMW-W050: self-supersede — supersedes == hash of the payload with the pointer removed (§H.3). */
+/** OMW-W050: self-supersede - supersedes == hash of the payload with the pointer removed (§H.3). */
 function selfSupersedeCheck(payload: Record<string, unknown>, warnings: Finding[]): void {
   const meta = obj(payload.meta);
   const supersedes = meta.supersedes;

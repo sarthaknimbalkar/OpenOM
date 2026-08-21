@@ -8,7 +8,7 @@ import { sha256Hex } from "../src/crypto.js";
 // #129: the TS half of the cross-language JCS differential fuzz. The 600 edge-weighted vectors were
 // canonicalized by the PYTHON core (gen_fuzz_corpus.py) into `expected`; here the TS core canonicalizes
 // the SAME corpus and must reproduce every hash byte-for-byte. A single divergence (an ES6 number
-// switch-point, a UTF-16 surrogate ordering, an NFC edge) fails here — catching a silent fork of the
+// switch-point, a UTF-16 surrogate ordering, an NFC edge) fails here - catching a silent fork of the
 // standard that the hand-picked vectors never reach.
 const fuzzDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -21,7 +21,7 @@ const fuzzDir = join(
 const lines = (name: string): string[] =>
   readFileSync(join(fuzzDir, name), "utf8").split("\n").filter(Boolean);
 
-describe("JCS differential fuzz — TS core matches the Python core (#129)", () => {
+describe("JCS differential fuzz - TS core matches the Python core (#129)", () => {
   test("every corpus vector canonicalizes to the expected hash", () => {
     const corpus = lines("corpus.jsonl");
     const expected = lines("expected.jsonl");

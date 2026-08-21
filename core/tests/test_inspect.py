@@ -38,7 +38,7 @@ def test_ocr_scanned_classifies_as_scanned() -> None:
     fully extractable text."""
     profile = inspect(make_ocr_scanned(make_text_pdf()))
     assert profile["class"] == "scanned"
-    assert profile["textCoverage"] >= 0.85  # the OCR layer IS extractable — coverage is high
+    assert profile["textCoverage"] >= 0.85  # the OCR layer IS extractable - coverage is high
     assert profile["classConfidence"] > 0.0
     assert profile["ocrOverlay"] >= 0.6
 
@@ -73,7 +73,7 @@ def test_scanned_synthetic() -> None:
 
 
 def test_scanned_real_corpus(scanned_om: bytes) -> None:
-    """Real scanned OM from the corpus (local; skipped without it) — genuine scanned proof."""
+    """Real scanned OM from the corpus (local; skipped without it) - genuine scanned proof."""
     profile = inspect(scanned_om)
     assert profile["class"] == "scanned"
     assert profile["textCoverage"] < 0.2

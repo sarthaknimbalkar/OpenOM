@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { consistencyFindings } from "../src/consistency.js";
 
 /**
- * Consistency (warning) + info tier — behavioral parity with the Python core's test_validate.
+ * Consistency (warning) + info tier - behavioral parity with the Python core's test_validate.
  * Internal-consistency only; warnings/info never block.
  */
 const specDir = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "spec");

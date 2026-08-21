@@ -3,7 +3,7 @@
 Runnable, copy-paste snippets for the three integration audiences. The library APIs are stable and
 byte-parity across the Python (`openom-core`) and TypeScript (`openom-js`) cores.
 
-## Embed at the source (Node — a producer/authoring tool)
+## Embed at the source (Node - a producer/authoring tool)
 
 ```ts
 import { readFileSync, writeFileSync } from "node:fs";
@@ -38,10 +38,10 @@ const { errors } = validatePayload(payload, schema);
 if (errors.length) process.exit(1); // schema errors block; warnings/info never do
 ```
 
-## Receive change-notification webhooks (§Y — a portal/CRM)
+## Receive change-notification webhooks (§Y - a portal/CRM)
 
-The canonical receiver flow — **verify signature → validate envelope → verify payloadHash binds the
-payload** — is [`js/examples/webhook-receiver.ts`](../js/examples/webhook-receiver.ts) (CI-tested).
+The canonical receiver flow - **verify signature → validate envelope → verify payloadHash binds the
+payload** - is [`js/examples/webhook-receiver.ts`](../js/examples/webhook-receiver.ts) (CI-tested).
 Copy that file into your project and change its one import to `openom-js`; then wire it into any HTTP
 server, passing the RAW request body text (never a re-serialized object):
 

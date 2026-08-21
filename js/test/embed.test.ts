@@ -79,7 +79,7 @@ describe("embedPayload", () => {
   });
 });
 
-describe("embedPayload — idempotent re-embed ([OM-XMP-004], cross-impl parity)", () => {
+describe("embedPayload - idempotent re-embed ([OM-XMP-004], cross-impl parity)", () => {
   test("re-embed replaces (never stacks a second om.json) and reads the new payload", async () => {
     const first = await embedPayload(await blankPdf(), validStnl);
 

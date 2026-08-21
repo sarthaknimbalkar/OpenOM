@@ -1,4 +1,4 @@
-"""Test helper: a synthetic PDF exercising the structures embedding must NOT disturb —
+"""Test helper: a synthetic PDF exercising the structures embedding must NOT disturb -
 real text, an internal GoTo link, an external URI link, bookmarks (TOC), and a raster image.
 Lets the non-destructive proof run in CI without the confidential corpus.
 """
@@ -12,7 +12,7 @@ def make_rich_pdf() -> bytes:
     doc = pymupdf.open()
     try:
         p1 = doc.new_page(width=612, height=792)
-        p1.insert_text((72, 72), "Offering memorandum — page one. " * 10, fontsize=11)
+        p1.insert_text((72, 72), "Offering memorandum - page one. " * 10, fontsize=11)
         p2 = doc.new_page(width=612, height=792)
         p2.insert_text((72, 72), "Page two: rent schedule and financials.", fontsize=11)
 

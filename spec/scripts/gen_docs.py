@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the per-persona docs site pages (#141), served under /docs/.
 
-WHY: the single Python quick-start serves none of the three real audiences — a
+WHY: the single Python quick-start serves none of the three real audiences - a
 broker wanting to publish an OM, a portal integrator wanting to consume, and a
 third-party implementer building against the standard. Worldwide adoption needs an
 on-ramp per audience plus a *reference* that cannot lie: the field table and the
@@ -9,7 +9,7 @@ error-code catalog are generated straight from ``om-0.1.schema.json`` and
 ``codes.json``, so they can never drift from what the validator actually enforces.
 
 Imported by ``gen_site.py`` (one drift gate covers the whole ``site/`` tree). Pure:
-returns ``{relative_path: html}`` — no I/O, deterministic ordering.
+returns ``{relative_path: html}`` - no I/O, deterministic ordering.
 """
 
 from __future__ import annotations
@@ -62,11 +62,11 @@ def _page(title: str, body: str) -> str:
 def _docs_index() -> str:
     body = """
   <h1>openOM docs</h1>
-  <p>Machine-readable, broker-asserted data embedded in CRE offering memoranda —
+  <p>Machine-readable, broker-asserted data embedded in CRE offering memoranda -
      extracted once at the source, consumed cheaply everywhere. Pick your on-ramp:</p>
   <div class="card" style="border-color:#065f46;background:#ecfdf5;">
     <h3 style="margin-top:0;">🤖 Building an AI agent for CRE? Start here</h3>
-    <p>Ground your agent in <b>verified facts, not guesses</b> — a deterministic read of a
+    <p>Ground your agent in <b>verified facts, not guesses</b> - a deterministic read of a
        broker-asserted, hash-verified opinion instead of a hallucination-prone re-parse of the PDF.
        <a href="/docs/grounding-ai.html"><b>Grounding AI agents in openOM →</b></a></p>
   </div>
@@ -90,18 +90,18 @@ def _docs_index() -> str:
   <h2>Reference</h2>
   <ul>
     <li><a href="/docs/schema-reference.html">Payload field reference</a>
-        — generated from the JSON Schema.</li>
+        - generated from the JSON Schema.</li>
     <li><a href="/docs/codes.html">Validation code catalog</a>
-        — every error/warning/info code the validator emits.</li>
+        - every error/warning/info code the validator emits.</li>
     <li><a href="/verify/">Verify a PDF</a>
-        — drop a PDF and check its openOM state, entirely in your browser.</li>
+        - drop a PDF and check its openOM state, entirely in your browser.</li>
     <li><a href="/spec/om-0.1.schema.json">Raw JSON Schema</a> ·
         <a href="/ns/0.1">JSON-LD context</a></li>
   </ul>
-  <p><small>An OM is an <b>advertisement</b> — a broker's <b>opinion of value</b>, agreed to by the
+  <p><small>An OM is an <b>advertisement</b> - a broker's <b>opinion of value</b>, agreed to by the
      seller before publication. openOM records who asserted it, unaltered, and as of when; it never
      claims the opinion is true. <b>Verified means provenance, not truth.</b> The engine is
-     deterministic and inference-free; every payload is an identified party's opinion as of a date —
+     deterministic and inference-free; every payload is an identified party's opinion as of a date -
      assertions, never facts.</small></p>
 """
     return _page("Overview", body)
@@ -111,13 +111,13 @@ def _quickstart_broker() -> str:
     body = """
   <h1>Quick-start · broker / author</h1>
   <p>Goal: turn an existing OM PDF into an openOM PDF that carries a verifiable,
-     broker-asserted payload — without changing a single visible pixel.</p>
-  <h2>Option A — the browser extension (no install of a toolchain)</h2>
+     broker-asserted payload - without changing a single visible pixel.</p>
+  <h2>Option A - the browser extension (no install of a toolchain)</h2>
   <p>Load the extension (Chrome 116+), open your OM, use <em>author mode</em> to review
      the extracted fields, then <strong>assert</strong> and embed. You review every field
-     before it is stamped with your name and the date — the review panel is the assertion
+     before it is stamped with your name and the date - the review panel is the assertion
      gate. Extraction (if you use on-device assist) never leaves your machine.</p>
-  <h2>Option B — the CLI (scriptable / server-side)</h2>
+  <h2>Option B - the CLI (scriptable / server-side)</h2>
   <pre><code>pip install openom-core openom-cli
 
 om embed offering.pdf --payload deal.json --out offering.openom.pdf --asserted-date 2026-08-18
@@ -135,7 +135,7 @@ om validate deal.json                 # schema errors block; consistency warning
 def _quickstart_portal() -> str:
     body = """
   <h1>Quick-start · portal / consumer</h1>
-  <p>Goal: read and trust openOM data on PDFs you host or receive — with an honest badge,
+  <p>Goal: read and trust openOM data on PDFs you host or receive - with an honest badge,
      never overclaiming.</p>
   <h2>Drop-in badge (one script tag)</h2>
   <pre><code>&lt;script src="https://openom.app/widget/openom-badge.js" defer&gt;&lt;/script&gt;
@@ -149,7 +149,7 @@ const r = await readPayloadFromBytes(pdfBytes);
 if (r.state === "present" &amp;&amp; r.verification.hashValid) useIt(r.payload);</code></pre>
   <p>Change notifications: verify webhook deliveries with the
      <a href="https://github.com/sarthaknimbalkar/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
-     — signature → envelope → payloadHash binding, in that order.</p>
+     - signature → envelope → payloadHash binding, in that order.</p>
 """
     return _page("Portal quick-start", body)
 
@@ -163,7 +163,7 @@ def _quickstart_developer() -> str:
     <li><a href="/spec/om-0.1.schema.json">Payload schema</a> (JSON Schema 2020-12) and the
         <a href="/ns/0.1">JSON-LD context</a>.</li>
     <li>Canonicalization is <strong>RFC 8785 (JCS)</strong>; the integrity hash is SHA-256 over the
-        canonical bytes. This is the anti-fork keystone — two conformant implementations MUST produce
+        canonical bytes. This is the anti-fork keystone - two conformant implementations MUST produce
         byte-identical canonical JSON and the same hash.</li>
     <li>The <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/spec/vectors">conformance
         vectors</a> are the oracle: canonical bytes, hashes, golden embedded PDFs, negatives, and a
@@ -270,8 +270,8 @@ def _verify_tool() -> str:
     # leave the browser: it reads the file locally via the deployed widget bundle's window.openOM.
     body = """
   <h1>Verify an openOM PDF</h1>
-  <p>Drop or choose a PDF. It is read <strong>entirely in your browser</strong> — the bytes never
-     leave your machine — and checked for an embedded, unaltered openOM payload.</p>
+  <p>Drop or choose a PDF. It is read <strong>entirely in your browser</strong> - the bytes never
+     leave your machine - and checked for an embedded, unaltered openOM payload.</p>
   <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
   <div id="badge" style="margin:1rem 0;"></div>
   <pre id="out" hidden></pre>
@@ -292,7 +292,7 @@ def _verify_tool() -> str:
         originVerified: false,
         signatureValid: r.verification.signatureValid,
       });
-      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " — " + view.caption;
+      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " - " + view.caption;
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
       else { out.hidden = true; }
     });
@@ -307,52 +307,52 @@ def _verify_tool() -> str:
 def _grounding_ai() -> str:
     body = """
   <h1>Grounding AI agents in openOM</h1>
-  <p>General-purpose AI extraction of an offering memorandum <b>hallucinates</b> — it will
+  <p>General-purpose AI extraction of an offering memorandum <b>hallucinates</b> - it will
      confidently invent an NOI, a cap rate, or a lease term that looks right and isn't. In CRE that
      is a liability, not a convenience. openOM removes the guess: for an openOM-enabled OM your agent
-     reads a <b>broker-asserted, hash-verified</b> payload deterministically — no vision parse, no
+     reads a <b>broker-asserted, hash-verified</b> payload deterministically - no vision parse, no
      re-extraction, no hallucination.</p>
 
   <h2>The one thing to get right: it's an opinion, not a fact</h2>
-  <p>An OM is an <b>advertisement</b> — the broker's <b>opinion of value</b>, agreed to by the seller
+  <p>An OM is an <b>advertisement</b> - the broker's <b>opinion of value</b>, agreed to by the seller
      before publication. So openOM tells your agent <i>who</i> asserted a figure, that it is
-     <i>unaltered</i>, and <i>as of when</i> — <b>never that it is true</b>. Ground the model on
+     <i>unaltered</i>, and <i>as of when</i> - <b>never that it is true</b>. Ground the model on
      <i>"the broker asserted NOI = $143,750, unaltered, as of 2026-05-31"</i>, never <i>"NOI is
      $143,750."</i> <b>Verified means provenance, not truth.</b> Underwriting still happens at the
      deal desk off the broker-of-record file.</p>
 
   <h2>Connect the deterministic MCP server</h2>
   <p>openOM ships a deterministic <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/mcp">MCP
-     server</a> — six read/validate/inspect tools, <b>zero inference, no API key, no per-call
+     server</a> - six read/validate/inspect tools, <b>zero inference, no API key, no per-call
      cost</b>. Point your MCP client at it (stdio locally, or a hosted deterministic instance):</p>
   <pre><code>{ "mcpServers": { "openom": { "command": "om-mcp" } } }</code></pre>
   <p>Then the agent uses:</p>
   <ul>
-    <li><code>om_read</code> — the broker-asserted payload + <code>verification.hashValid</code>
-        (unaltered since embed). A hash-mismatched payload is returned as null — never trust it.</li>
-    <li><code>om_validate</code> — schema + internal-consistency (NOI÷price vs cap rate, rent-schedule
+    <li><code>om_read</code> - the broker-asserted payload + <code>verification.hashValid</code>
+        (unaltered since embed). A hash-mismatched payload is returned as null - never trust it.</li>
+    <li><code>om_validate</code> - schema + internal-consistency (NOI÷price vs cap rate, rent-schedule
         math). Validity means well-formed and self-consistent, <b>not</b> that the opinion is right.</li>
-    <li><code>om_inspect</code> · <code>om_extract_text</code> · <code>om_extract_images</code> —
+    <li><code>om_inspect</code> · <code>om_extract_text</code> · <code>om_extract_images</code> -
         classify, and pull text/images for the OMs that aren't openOM-enabled yet.</li>
   </ul>
 
   <h2>Tell your agent how to treat it (system-prompt snippet)</h2>
   <pre><code>When an openOM payload is present, use it as the broker's ASSERTED OPINION, not fact.
 - Attribute every figure: "&lt;assertedBy&gt; asserts &lt;field&gt; = &lt;value&gt;, as of &lt;assertedDate&gt;".
-- If verification.hashValid is not true, do NOT use the payload — it may be altered.
+- If verification.hashValid is not true, do NOT use the payload - it may be altered.
 - Never state an OM figure as verified truth; it is an advertisement / opinion of value.
-- For OMs with no openOM payload, extraction is a guess — flag it as unverified.</code></pre>
+- For OMs with no openOM payload, extraction is a guess - flag it as unverified.</code></pre>
 
   <h2>Why this beats re-extraction</h2>
   <ul>
-    <li><b>No hallucination</b> — the figure is transcribed once at the source and hash-locked.</li>
-    <li><b>Defensible</b> — provenance (who/unaltered/as-of-when) is exactly what credit committees
+    <li><b>No hallucination</b> - the figure is transcribed once at the source and hash-locked.</li>
+    <li><b>Defensible</b> - provenance (who/unaltered/as-of-when) is exactly what credit committees
         and compliance need; "the AI guessed" is not.</li>
-    <li><b>Free + instant</b> — a deterministic read, not a per-document inference bill.</li>
-    <li><b>Honest by design</b> — the badge/labels never say "verified" to mean "true".</li>
+    <li><b>Free + instant</b> - a deterministic read, not a per-document inference bill.</li>
+    <li><b>Honest by design</b> - the badge/labels never say "verified" to mean "true".</li>
   </ul>
   <p><small>Cold-start reality: most OMs aren't openOM-enabled yet, so your agent still needs an
-     extractor for those — treat that output as an unverified guess, and prefer openOM-enabled OMs as
+     extractor for those - treat that output as an unverified guess, and prefer openOM-enabled OMs as
      the trusted path. See the <a href="/docs/quickstart-developer.html">developer
      quick-start</a> and the <a href="/verify/">verify tool</a>.</small></p>
 """

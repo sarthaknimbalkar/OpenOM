@@ -1,4 +1,4 @@
-"""M4 #59: the reprice/re-embed loop the playbook prescribes — om_read the prior payload, build a
+"""M4 #59: the reprice/re-embed loop the playbook prescribes - om_read the prior payload, build a
 new one with meta.supersedes = the prior hash, om_embed (replace, never stack). Proves the
 supersedes chain end-to-end and that a re-embed leaves exactly one payload.
 """

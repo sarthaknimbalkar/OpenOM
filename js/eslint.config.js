@@ -15,7 +15,7 @@ export default tseslint.config(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
       ],
       eqeqeq: ["error", "always"],
-      // The XMP packet embeds a mandatory BOM inside a template literal — legitimate.
+      // The XMP packet embeds a mandatory BOM inside a template literal - legitimate.
       "no-irregular-whitespace": ["error", { skipStrings: true, skipTemplates: true }],
     },
   },

@@ -13,7 +13,7 @@ function sha256Hex(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-describe("§C.5 Example 1 — key sorting + whitespace removal", () => {
+describe("§C.5 Example 1 - key sorting + whitespace removal", () => {
   const value = { b: 2, a: 1 };
   const expectedJcs = '{"a":1,"b":2}';
   const expectedSha = "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777";
@@ -29,7 +29,7 @@ describe("§C.5 Example 1 — key sorting + whitespace removal", () => {
   });
 });
 
-describe("§C.5 Example 2 — member ordering by UTF-16 code unit", () => {
+describe("§C.5 Example 2 - member ordering by UTF-16 code unit", () => {
   // "😀" (U+1F600 → surrogate D83D DE00) must sort BEFORE "￿" (U+FFFF):
   // code-unit ordering, not code-point. A code-point sorter forks here.
   const value = { "￿": "bmp-max", "\u{1F600}": "grinning", Z: 1, a: 2 };
@@ -44,7 +44,7 @@ describe("§C.5 Example 2 — member ordering by UTF-16 code unit", () => {
   });
 });
 
-describe("§C.5 Example 3 — number normalization", () => {
+describe("§C.5 Example 3 - number normalization", () => {
   const value = {
     capRate: 0.0625,
     askingPrice: 1850000,

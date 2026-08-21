@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { type BrowserContext, chromium, test as base } from "@playwright/test";
 
 // Playwright fixtures for MV3 extension testing: a persistent context with the unpacked extension
-// loaded, plus the resolved extension id. Headed Chromium is required — MV3 extensions do not run
+// loaded, plus the resolved extension id. Headed Chromium is required - MV3 extensions do not run
 // under chrome-headless-shell (on Linux CI, run under xvfb).
 const DIST = join(dirname(fileURLToPath(import.meta.url)), "..", "dist");
 

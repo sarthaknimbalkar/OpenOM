@@ -7,7 +7,7 @@ no PDF, no network, no inference). The corpus is selected with ``--corpus`` (def
 
 Each case applies a small labeled mutation to a clean base payload and lists the §H code(s) it
 MUST raise. The base itself is internally consistent, so the gate also asserts the base is clean
-of every code any case expects — proving the detections are caused by the seeded defect, not by
+of every code any case expects - proving the detections are caused by the seeded defect, not by
 an always-on check.
 """
 
@@ -83,7 +83,7 @@ def test_base_is_clean_of_every_expected_code(corpus_dir: Path) -> None:
 
 
 def test_seeded_defects_detected_with_zero_false_negatives(corpus_dir: Path) -> None:
-    """Every case's expected §H code(s) MUST be present — the DoD-002 zero-false-negative gate."""
+    """Every case's expected §H code(s) MUST be present - the DoD-002 zero-false-negative gate."""
     misses: dict[str, list[str]] = {}
     for name, base, case in _cases(corpus_dir):
         payload = _apply_case(base, case)

@@ -31,13 +31,13 @@
 
   <h1>Quick-start · broker / author</h1>
   <p>Goal: turn an existing OM PDF into an openOM PDF that carries a verifiable,
-     broker-asserted payload — without changing a single visible pixel.</p>
-  <h2>Option A — the browser extension (no install of a toolchain)</h2>
+     broker-asserted payload - without changing a single visible pixel.</p>
+  <h2>Option A - the browser extension (no install of a toolchain)</h2>
   <p>Load the extension (Chrome 116+), open your OM, use <em>author mode</em> to review
      the extracted fields, then <strong>assert</strong> and embed. You review every field
-     before it is stamped with your name and the date — the review panel is the assertion
+     before it is stamped with your name and the date - the review panel is the assertion
      gate. Extraction (if you use on-device assist) never leaves your machine.</p>
-  <h2>Option B — the CLI (scriptable / server-side)</h2>
+  <h2>Option B - the CLI (scriptable / server-side)</h2>
   <pre><code>pip install openom-core openom-cli
 
 om embed offering.pdf --payload deal.json --out offering.openom.pdf --asserted-date 2026-08-18

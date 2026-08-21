@@ -146,7 +146,7 @@ def write_marker(
         xml = _PDFA_DESC_RE.sub("", xml)
         if "</rdf:RDF>" in xml:
             xml = xml.replace("</rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
-        else:  # malformed/absent RDF — fall back to a fresh packet
+        else:  # malformed/absent RDF - fall back to a fresh packet
             xml = _EMPTY_PACKET.replace(" </rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
     else:
         xml = _EMPTY_PACKET.replace(" </rdf:RDF>", f"{block}\n </rdf:RDF>", 1)

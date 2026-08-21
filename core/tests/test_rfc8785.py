@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from openom_core.canonical import canonicalize
 
-# (input, expected canonical text) — hand-derived from RFC 8785.
+# (input, expected canonical text) - hand-derived from RFC 8785.
 _VECTORS: list[tuple[dict, str]] = [
     ({"b": 1, "a": 2, "c": 3}, '{"a":2,"b":1,"c":3}'),  # key sort
     ({"z": {"y": 1, "x": 2}}, '{"z":{"x":2,"y":1}}'),  # nested sort

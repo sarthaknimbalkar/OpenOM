@@ -6,7 +6,7 @@
 # Default: normalize declared-text files to LF in the repo, regardless of OS.
 * text=auto eol=lf
 
-# Source & data — always LF.
+# Source & data - always LF.
 *.py    text eol=lf
 *.ts    text eol=lf
 *.js    text eol=lf
@@ -18,7 +18,7 @@
 *.cfg   text eol=lf
 *.txt   text eol=lf
 
-# Binaries — never touched, never EOL-normalized (byte-exact oracles).
+# Binaries - never touched, never EOL-normalized (byte-exact oracles).
 *.pdf   binary
 *.png   binary
 *.jpg   binary
@@ -28,5 +28,5 @@
 *.woff  binary
 *.woff2 binary
 
-# Marker file (PEP 561) — keep as-is, empty.
+# Marker file (PEP 561) - keep as-is, empty.
 py.typed text eol=lf

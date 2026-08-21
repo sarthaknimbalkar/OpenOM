@@ -17,7 +17,7 @@ beforeEach(() => {
   };
 });
 
-describe("detection cache (#68) — 24h TTL", () => {
+describe("detection cache (#68) - 24h TTL", () => {
   test("returns a fresh cached result, null once expired", async () => {
     await setCachedDetect("https://x/deal.pdf", RESULT, 1_000);
     expect(await getCachedDetect("https://x/deal.pdf", 1_000 + 60_000)).toEqual(RESULT); // within TTL
