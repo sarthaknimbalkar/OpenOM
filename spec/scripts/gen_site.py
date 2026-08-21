@@ -169,6 +169,7 @@ def _landing_html() -> str:
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
   <meta name="author" content="Vervelio Labs" />
   <meta name="theme-color" content="#0b1021" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="alternate" type="application/ld+json" href="{BASE}/ns/0.1" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="openOM" />
@@ -442,6 +443,14 @@ def generate() -> None:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page_html, "utf-8", newline="\n")
     (SITE / "og.png").write_bytes((SPEC / "assets" / "og.png").read_bytes())  # social share card
+    (SITE / "favicon.ico").write_bytes((SPEC / "assets" / "favicon.ico").read_bytes())  # browser tab icon
+    # Embeddable badge widget (window.openOM) - powers /verify/ and the <openom-badge> element in the
+    # portal quick-start. Committed pre-built artifact (js/widget/dist is gitignored + built in the JS
+    # CI job, not this Python drift job); rebuild via `npm --prefix js run build:widget` then refresh
+    # spec/assets/openom-badge.js when the widget source changes.
+    widget = SITE / "widget"
+    widget.mkdir(parents=True, exist_ok=True)
+    (widget / "openom-badge.js").write_bytes((SPEC / "assets" / "openom-badge.js").read_bytes())
     (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
     (SITE / "404.html").write_text(_not_found_html(), "utf-8", newline="\n")  # Pages custom 404
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
