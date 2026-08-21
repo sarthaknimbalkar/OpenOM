@@ -64,7 +64,7 @@ Create one Custom Token (My Profile → API Tokens → Create Custom Token) with
 need through the dev phase, so you never have to recreate it. Store it in `.env` (gitignored) as
 `CLOUDFLARE_API_TOKEN`; 30-day expiry + rotation is fine.
 
-**Account permissions** - scope: Include → *Hello@vervelio.com's Account* (`REDACTED`):
+**Account permissions** - scope: Include → *your Cloudflare account* (account id lives in `.env` as `CLOUDFLARE_ACCOUNT_ID`, never committed):
 - **Cloudflare Pages · Edit** - create + deploy the docs/namespace site *(in use)*
 - **Cloudflare Tunnel · Edit** - the self-hosted MCP endpoint (gx10) + any future self-hosted service *(in use)*
 - **Workers Scripts · Edit** - deploy the hosted deterministic MCP (`om-mcp-http`) as a Worker *(later)*
