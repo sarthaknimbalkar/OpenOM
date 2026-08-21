@@ -92,8 +92,11 @@ def _docs_index() -> str:
     <li><a href="/openom/spec/om-0.1.schema.json">Raw JSON Schema</a> ·
         <a href="/openom/ns/0.1">JSON-LD context</a></li>
   </ul>
-  <p><small>The one rule: the engine is deterministic and inference-free. Every payload
-     is an identified party's opinion as of a date — assertions, never facts.</small></p>
+  <p><small>An OM is an <b>advertisement</b> — a broker's <b>opinion of value</b>, agreed to by the
+     seller before publication. openOM records who asserted it, unaltered, and as of when; it never
+     claims the opinion is true. <b>Verified means provenance, not truth.</b> The engine is
+     deterministic and inference-free; every payload is an identified party's opinion as of a date —
+     assertions, never facts.</small></p>
 """
     return _page("Overview", body)
 

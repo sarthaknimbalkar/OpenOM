@@ -7,9 +7,11 @@
 
 ## Stance — assertions, not facts
 
-An openOM payload is **one identified party's opinion as of a date**, not ground truth. Your job is
-to *transcribe* what the OM states into structured fields — never to appraise, compute market
-truth, or fill gaps with plausible guesses.
+An OM is an **advertisement** — a broker's **opinion of value**, agreed to by the seller before
+publication. So an openOM payload is **one identified party's opinion as of a date**, not ground
+truth: it records who asserted it, unaltered, and as of when — never that the opinion is true
+(*verified means provenance, not truth*). Your job is to *transcribe* what the OM states into
+structured fields — never to appraise, compute market truth, or fill gaps with plausible guesses.
 
 - **Inference lives only here, in the mapping step.** Every `om_*` tool you call is deterministic
   and holds no model — you supply the reading/mapping; the tools embed, read, validate, and extract
