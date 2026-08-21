@@ -123,6 +123,30 @@ hosted-stub, test-double; chosen by `pickExtractor`). Two structural facts matte
 5. **Token custody.** The extension already has an AES-GCM secret-store; a hosted/CLI home would
    need its own token handling.
 
+### 3.3 Resolved defaults (2026-08-21 — decided by analysis; adopt unless overridden)
+
+Of the §3.2 open questions, these are settled with sound engineering defaults so only the truly
+external fact (Q2) blocks the build:
+
+- **Q1 (where it runs) → DEFAULT: extension author mode**, matching the stated intent ("during the
+  creation process read the buildout connection"). *Contingent on transport:* if the Buildout MCP is
+  HTTP / OAuth-web-flow it lives in the extension (`chrome.identity`); if stdio-only it falls back to
+  a Node/CLI companion. The `StructuredConnector` interface is transport-agnostic, so code isn't
+  blocked either way. **Reversible once the transport (part of Q2) is known.**
+- **Q3 (mapping ownership) → DONE.** The deterministic map is `partialPayloadToFields`
+  (`extension/src/author/extract/source.ts`) — a pure, drift-lockable module, not a prompt.
+- **Q4 (provenance label) → DECIDED: reuse `source: "extracted"`**, promoted to `"asserted"` at the
+  review gate — the SAME path as the on-device extractor. No new enum value, so **no spec change**
+  (stays thin). A connector pull is a higher-fidelity draft, but still a draft the human asserts.
+- **Q5 (token custody) → DECIDED: defer to the Buildout MCP's own OAuth.** openOM consumes the
+  authenticated MCP client and does not re-implement token storage (in-extension: `chrome.identity`;
+  Node/CLI: the MCP client's own store).
+
+**Still needs you — the ONLY remaining external input: Q2** — your Buildout MCP's actual
+tools/resources, their field shapes, and its transport (HTTP vs stdio). Everything else is decided
+and the generic seam is built (25c3749); the concrete connector is then a thin adapter that
+normalizes your API into a partial openOM payload.
+
 ---
 
 ## 4. Signing / trust layer (recon's O5/O6)
