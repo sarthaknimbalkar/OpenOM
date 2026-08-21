@@ -1,6 +1,6 @@
 """Survival ([OM-DoD-001](c)): the payload hash is invariant after >=3 upload->download
 round-trips across >=2 storage backends. A byte-preserving store is the common case; a
-re-serializing CDN (re-saves the PDF) is the adversarial one — the payload must survive both.
+re-serializing CDN (re-saves the PDF) is the adversarial one - the payload must survive both.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ def _reserialize_backend(data: bytes, tmp: Path, i: int) -> bytes:
 
 def _linearize_backend(data: bytes, tmp: Path, i: int) -> bytes:
     """The most aggressive real transform (#135): a web-optimizer that LINEARIZES + rewrites the
-    object structure into compressed object streams — the qpdf path (pikepdf wraps qpdf) that most
+    object structure into compressed object streams - the qpdf path (pikepdf wraps qpdf) that most
     often rewrites the xref/objects an attachment lives in."""
     with pikepdf.open(io.BytesIO(data)) as pdf:
         buf = io.BytesIO()
@@ -89,7 +89,7 @@ def test_survival_over_producer_bases(
     cls: str, producer_pdfs: dict[str, bytes], tmp_path: Path
 ) -> None:
     """#135: survival on real producer structures (object-stream/linearized, text+image,
-    image-only), not just a blank — through the filesystem, re-serialize, and linearize backends."""
+    image-only), not just a blank - through the filesystem, re-serialize, and linearize backends."""
     sample = _sample()
     expected = payload_hash(sample)
     data = embed(producer_pdfs[cls], sample, asserted_date="2026-08-15")

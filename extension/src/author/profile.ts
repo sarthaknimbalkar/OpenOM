@@ -1,5 +1,5 @@
 // The reviewing broker's identity, used as `assertedBy` at the assert step. Device-local via
-// `chrome.storage.local` ONLY — never `chrome.storage.sync` ([OM-SEC-003]); the broker's license
+// `chrome.storage.local` ONLY - never `chrome.storage.sync` ([OM-SEC-003]); the broker's license
 // and identity must not sync off the device. Mirrors the consumer storage.ts pattern.
 
 export interface BrokerProfile {

@@ -10,7 +10,7 @@ const serve =
   async () => ({ https, body });
 const unreachable: MirrorFetch = async () => null;
 
-describe("verifyOrigin — §10.1", () => {
+describe("verifyOrigin - §10.1", () => {
   test("same domain + matching hash → origin-verified", async () => {
     const r = await verifyOrigin({
       sourceUrl: "https://broker.example.com/deal.pdf",
@@ -76,7 +76,7 @@ describe("verifyOrigin — §10.1", () => {
   });
 });
 
-describe("verifyOrigin — hash format normalization (#81)", () => {
+describe("verifyOrigin - hash format normalization (#81)", () => {
   const args = (embeddedHash: string) => ({
     sourceUrl: "https://broker.example.com/deal.pdf",
     mirrorUrl: "https://broker.example.com/om.json",
@@ -97,7 +97,7 @@ describe("verifyOrigin — hash format normalization (#81)", () => {
   });
 });
 
-describe("verifyOrigin — multi-label eTLD+1 via the PSL (#80)", () => {
+describe("verifyOrigin - multi-label eTLD+1 via the PSL (#80)", () => {
   const check = (source: string, mirror: string) =>
     verifyOrigin({
       sourceUrl: source,
@@ -119,7 +119,7 @@ describe("verifyOrigin — multi-label eTLD+1 via the PSL (#80)", () => {
       "cross-origin",
     );
   });
-  test("*.github.io is a public suffix — distinct users are cross-origin", async () => {
+  test("*.github.io is a public suffix - distinct users are cross-origin", async () => {
     expect(
       (await check("https://a.github.io/deal.pdf", "https://b.github.io/om.json")).reason,
     ).toBe("cross-origin");

@@ -48,7 +48,7 @@ function resp(
 
 const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]); // %PDF-
 
-describe("storage — chrome.storage.local only", () => {
+describe("storage - chrome.storage.local only", () => {
   beforeEach(() => {
     const f = fakeChrome();
     (globalThis as unknown as { chrome: unknown }).chrome = f.chrome;
@@ -83,7 +83,7 @@ describe("storage — chrome.storage.local only", () => {
   });
 });
 
-describe("refetchPdf — re-fetch bytes, size-capped", () => {
+describe("refetchPdf - re-fetch bytes, size-capped", () => {
   test("returns bytes for a normal PDF", async () => {
     const got = await refetchPdf("https://h/x.pdf", 1000, async () =>
       resp(PDF),

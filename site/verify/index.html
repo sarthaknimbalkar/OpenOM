@@ -30,8 +30,8 @@
   <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
 
   <h1>Verify an openOM PDF</h1>
-  <p>Drop or choose a PDF. It is read <strong>entirely in your browser</strong> — the bytes never
-     leave your machine — and checked for an embedded, unaltered openOM payload.</p>
+  <p>Drop or choose a PDF. It is read <strong>entirely in your browser</strong> - the bytes never
+     leave your machine - and checked for an embedded, unaltered openOM payload.</p>
   <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
   <div id="badge" style="margin:1rem 0;"></div>
   <pre id="out" hidden></pre>
@@ -52,7 +52,7 @@
         originVerified: false,
         signatureValid: r.verification.signatureValid,
       });
-      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " — " + view.caption;
+      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " - " + view.caption;
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
       else { out.hidden = true; }
     });

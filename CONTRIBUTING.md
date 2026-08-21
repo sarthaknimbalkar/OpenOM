@@ -5,11 +5,11 @@ Thanks for helping build the standard. A few rules keep it trustworthy.
 ## The non-negotiables
 
 1. **Deterministic core.** Never add an LLM, inference, or network client to `core/`, `mcp/`,
-   or consumer-mode `js/`. CI's `boundary` job enforces this — a leaked dependency fails the
+   or consumer-mode `js/`. CI's `boundary` job enforces this - a leaked dependency fails the
    build. Inference belongs only in the client-side authoring layer.
 2. **The spec is the product.** Changes under `spec/` (schema, `@context`, vectors) are
    contract changes. Every payload-shape change bumps the version and updates the changelog.
-   Regenerating vectors (`python core/scripts/gen_vectors.py`) MUST be a no-op — a diff means a
+   Regenerating vectors (`python core/scripts/gen_vectors.py`) MUST be a no-op - a diff means a
    canonical hash moved, which the `drift` job rejects.
 3. **Cross-implementation fidelity.** `core` (Python) and `js` (TypeScript) must produce
    byte-identical JCS output. If you touch canonicalization, embedding, or the schema, run the
@@ -28,7 +28,7 @@ pre-commit install
 
 ## Verification gates
 
-CI (`.github/workflows/ci.yml`) is **manual** — it runs only when dispatched (`gh workflow run
+CI (`.github/workflows/ci.yml`) is **manual** - it runs only when dispatched (`gh workflow run
 ci.yml` or the Actions tab), not on push. Gates are verified **locally before pushing**; the
 workflow reproduces them on demand.
 
@@ -47,20 +47,20 @@ npm --prefix js ci && npm --prefix js run typecheck && npm --prefix js run lint 
 npm --prefix js run build:widget              # builds the badge + asserts inference-free
 ```
 
-### Live extension gate (local/manual — #163)
+### Live extension gate (local/manual - #163)
 
 Headed MV3 Chromium crashes deterministically under the GitHub-hosted xvfb runner, so this runs
-**locally**, where it passes fully. It is the real proof of the extension (repo Rule 5 — no mocks):
+**locally**, where it passes fully. It is the real proof of the extension (repo Rule 5 - no mocks):
 
 ```bash
 npm --prefix extension run test:consumer      # headed Chromium: consumer + author + a11y + link-badger
 npm --prefix extension run assert-no-inference
 ```
 
-### Mutation testing (local/manual — #164)
+### Mutation testing (local/manual - #164)
 
 Assertion-strength beyond coverage. Slow; run before a release. A surviving mutant (a flipped
-comparison / wrong rounding no test catches) is real coverage debt — the class of bug that forks a
+comparison / wrong rounding no test catches) is real coverage debt - the class of bug that forks a
 standard silently.
 
 ```bash

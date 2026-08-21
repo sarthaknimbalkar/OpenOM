@@ -45,7 +45,7 @@ def _blank_base() -> bytes:
 
 
 def _scanned_base() -> bytes:
-    """An image-only page (no text layer) — classifies as `scanned`."""
+    """An image-only page (no text layer) - classifies as `scanned`."""
     doc = pymupdf.open()
     page = doc.new_page(width=300, height=300)
     pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 300, 300))

@@ -1,14 +1,14 @@
 import canonicalizeRfc8785 from "canonicalize";
 import { OmIoError } from "./errors.js";
 
-/** Max nesting depth (§J) — matches the Python core and parse.ts for cross-impl parity. */
+/** Max nesting depth (§J) - matches the Python core and parse.ts for cross-impl parity. */
 const MAX_DEPTH = 64;
 
-/** Lone (unpaired) UTF-16 surrogate — high without low, or low without high. */
+/** Lone (unpaired) UTF-16 surrogate - high without low, or low without high. */
 const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
 /**
- * Recursively NFC-normalize and enforce the §C rejection contract — identical to the Python
+ * Recursively NFC-normalize and enforce the §C rejection contract - identical to the Python
  * core's canonicalize (the anti-fork guarantee extends to REJECTIONS, not just the happy path):
  *
  * - non-finite numbers, and integer-valued numbers with |v| > 2^53-1 → OM-IO-NUMRANGE

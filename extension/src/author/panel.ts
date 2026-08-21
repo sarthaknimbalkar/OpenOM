@@ -1,4 +1,4 @@
-// openOM author-mode side panel — capture → review → assert → embed → hand back. Deterministic;
+// openOM author-mode side panel - capture → review → assert → embed → hand back. Deterministic;
 // ZERO inference in B1 (on-device extraction arrives in M5b-2). This panel document is the ONLY place
 // that reads the clock (assertedDate) and touches chrome.* / the DOM runtime; every transform it calls
 // (capture / draft / finalize / repriceDiff / assertAndEmbed) is pure and unit-tested. The workflow
@@ -59,7 +59,7 @@ const validate = (p: Record<string, unknown>): ValidationReport =>
 /** Entry screen: capture the current tab's PDF, or pick a local file. */
 export function renderCaptureScreen(root: HTMLElement): void {
   root.replaceChildren();
-  root.appendChild(el("h1", "title", "openOM — embed a payload"));
+  root.appendChild(el("h1", "title", "openOM - embed a payload"));
   root.appendChild(
     el(
       "p",
@@ -116,19 +116,19 @@ async function startReview(
       el(
         "p",
         "err",
-        "That doesn't look like a PDF — capture an offering-memorandum PDF.",
+        "That doesn't look like a PDF - capture an offering-memorandum PDF.",
       ),
     ); // #65
     return;
   }
   const capture: Capture = await captureFromBytes(bytes);
-  // #107 — pd-lib can't load an encrypted PDF, so embedding would fail opaquely later. Say so now.
+  // #107 - pd-lib can't load an encrypted PDF, so embedding would fail opaquely later. Say so now.
   if (capture.encrypted) {
     root.replaceChildren(
       el(
         "p",
         "err",
-        "This OM is encrypted — the browser extension can't embed into it. Use the openOM CLI (which handles encrypted OMs), or ask for an unencrypted copy.",
+        "This OM is encrypted - the browser extension can't embed into it. Use the openOM CLI (which handles encrypted OMs), or ask for an unencrypted copy.",
       ),
     );
     return;
@@ -140,7 +140,7 @@ async function startReview(
   };
   root.replaceChildren();
 
-  // #4 — this OM was empty-password permission-encrypted and we decrypted it in-browser to author.
+  // #4 - this OM was empty-password permission-encrypted and we decrypted it in-browser to author.
   // pd-lib can't re-encrypt, so the embedded copy will be unencrypted; tell the broker plainly.
   if (capture.wasDecrypted) {
     root.appendChild(
@@ -152,14 +152,14 @@ async function startReview(
     );
   }
 
-  // A prior payload that FAILS integrity is not a reprice base — warn that this will be a fresh
+  // A prior payload that FAILS integrity is not a reprice base - warn that this will be a fresh
   // assertion with no supersedes chain, so the broker is not surprised ([#87]).
   if (capture.priorUnverified) {
     root.appendChild(
       el(
         "p",
         "prior-unverified",
-        "This PDF already contains openOM data that FAILS its integrity check. It will not be used as a reprice base — embedding will create a fresh assertion with no link to the prior payload.",
+        "This PDF already contains openOM data that FAILS its integrity check. It will not be used as a reprice base - embedding will create a fresh assertion with no link to the prior payload.",
       ),
     );
   }
@@ -172,7 +172,7 @@ async function startReview(
     const i = el("input", cls) as HTMLInputElement;
     i.placeholder = ph;
     i.value = v;
-    i.setAttribute("aria-label", ph); // #71 — placeholder is not an accessible name
+    i.setAttribute("aria-label", ph); // #71 - placeholder is not an accessible name
     label.append(`${ph} `, i);
     prof.appendChild(label);
     return i;
@@ -184,7 +184,7 @@ async function startReview(
 
   // The draft (payload + evidence) is the source of truth so extracted evidence survives re-renders;
   // the textarea edits only the payload half. Seeded from a prior payload on reprice, OR restored from
-  // a saved in-progress draft ([#94]). Extraction confidence is never consent — the human still clicks
+  // a saved in-progress draft ([#94]). Extraction confidence is never consent - the human still clicks
   // Assert below on the SAME review the extraction pre-filled ([OM-EXTP-003]).
   const sourceDocHash = integrityHashOfBytes(capture.bytes); // #96 provenance + #94 draft key
   const restored = await getDraft(sourceDocHash);
@@ -203,7 +203,7 @@ async function startReview(
     : null;
 
   // Draft source (M5b-2 / #166): prefer a deterministic structured connector (e.g. a Buildout MCP
-  // pull), else the on-device Prompt API — else a manual-entry note. Connectors are prepended to this
+  // pull), else the on-device Prompt API - else a manual-entry note. Connectors are prepended to this
   // list when configured (see extract/CONNECTORS.md); with none, this is the on-device path unchanged.
   const source = await pickDraftSource([
     extractorSource(onDeviceExtractor, "on-device AI"),
@@ -218,18 +218,18 @@ async function startReview(
     root.appendChild(btn);
   } else {
     root.appendChild(
-      el("p", "no-ai", "On-device AI unavailable — enter fields manually."),
+      el("p", "no-ai", "On-device AI unavailable - enter fields manually."),
     );
   }
 
   const formEl = el("section", "form"); // stable inputs, built once (focus-safe)
   const derivedEl = el("section", "derived"); // validation/preview/assert, re-rendered each edit
   const status = el("p", "status");
-  status.setAttribute("aria-live", "polite"); // #71 — announce embed/extract/error outcomes
+  status.setAttribute("aria-live", "polite"); // #71 - announce embed/extract/error outcomes
   root.append(formEl, derivedEl, status);
 
   // Re-render ONLY the derived panel (no inputs to lose focus). The Assert gate reflects the FINALIZED
-  // payload — exactly what would be embedded — so the human approves the real assertion (#95).
+  // payload - exactly what would be embedded - so the human approves the real assertion (#95).
   const renderDerivedNow = (): void => {
     const finalized = finalize(
       draft,
@@ -276,7 +276,7 @@ async function startReview(
       const wasNoi = getField(draft, "/deal/noi") !== undefined;
       draft = setField(draft, p, v);
       void setDraft(sourceDocHash, draft);
-      // The #93 noiType/noiAsOfDate controls are conditional on deal.noi — rebuild the form only when
+      // The #93 noiType/noiAsOfDate controls are conditional on deal.noi - rebuild the form only when
       // noi crosses the empty↔set boundary (so those controls appear/disappear), else just re-derive.
       if (
         p === "/deal/noi" &&
@@ -329,9 +329,9 @@ async function startReview(
         validate,
         embedViaSW,
       );
-      handBack(out, suggestedFilename(final)); // #99 — meaningful name from the property address
-      void clearDraft(sourceDocHash); // #94 — the OM is embedded; drop the saved draft
-      status.textContent = "Embedded — downloaded the OM.";
+      handBack(out, suggestedFilename(final)); // #99 - meaningful name from the property address
+      void clearDraft(sourceDocHash); // #94 - the OM is embedded; drop the saved draft
+      status.textContent = "Embedded - downloaded the OM.";
     } catch (e) {
       status.textContent = `Blocked: ${(e as Error).message}`;
     }
@@ -340,28 +340,28 @@ async function startReview(
   const runExtract = async (): Promise<void> => {
     if (!source) return;
     try {
-      // A deterministic connector (e.g. Buildout) needs NO PDF text — skip text extraction, the
+      // A deterministic connector (e.g. Buildout) needs NO PDF text - skip text extraction, the
       // scanned-no-text-layer block, and the truncation note, which are all PDF-inference-only.
       let pages: PageText[] = [];
       let totalPages = 0;
       if (!source.deterministic) {
         ({ pages, totalPages } = await extractPageText(capture.bytes));
-        // #91 — a scanned/flattened OM has no text layer; say so instead of pre-filling a blank draft.
+        // #91 - a scanned/flattened OM has no text layer; say so instead of pre-filling a blank draft.
         if (!pages.some((p) => p.text.trim().length > 0)) {
           status.textContent =
-            "This OM appears to be scanned (no text layer) — extraction can't read it. Enter fields manually.";
+            "This OM appears to be scanned (no text layer) - extraction can't read it. Enter fields manually.";
           return;
         }
       }
       const result = await source.draft({ pages });
       rebuild((d) => applyExtraction(d, result)); // reflect drafted fields in the form + derived
-      // #66 — surface when only a prefix of a long OM was read; never a silent "complete".
+      // #66 - surface when only a prefix of a long OM was read; never a silent "complete".
       const truncated =
         !source.deterministic && pages.length < totalPages
           ? ` (read pages 1–${pages.length} of ${totalPages} only)`
           : "";
       const verb = source.deterministic ? "Imported" : "Extracted";
-      status.textContent = `${verb} a draft — review every field before asserting.${truncated}`;
+      status.textContent = `${verb} a draft - review every field before asserting.${truncated}`;
     } catch (e) {
       status.textContent = `Extraction failed: ${(e as Error).message}`;
     }

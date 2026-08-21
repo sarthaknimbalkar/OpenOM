@@ -1,6 +1,6 @@
-// In-browser decryption of empty-user-password AES-encrypted PDFs (#4) — so author mode can embed into
+// In-browser decryption of empty-user-password AES-encrypted PDFs (#4) - so author mode can embed into
 // permission-encrypted OMs (restrict print/copy, NOT password-protected) instead of refusing them (#107).
-// Deterministic, zero inference. Scope: Standard security handler, empty user password, AES only —
+// Deterministic, zero inference. Scope: Standard security handler, empty user password, AES only -
 // V4/R4 (AESV2, AES-128, per-object keys) and V5/R6 (AESV3, AES-256, file key used directly). Anything
 // else (RC4, a real password, unknown /V·/R, any parse/crypto failure) → null; the caller falls back to
 // the #107 "use the CLI" message. A wrong key must yield null, never a corrupt PDF: we validate the empty
@@ -18,7 +18,7 @@ const PAD = new Uint8Array([
   0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08,
   0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80, 0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a,
 ]);
-const SALT = new Uint8Array([0x73, 0x41, 0x6c, 0x54]); // "sAlT" — AESV2 per-object-key suffix
+const SALT = new Uint8Array([0x73, 0x41, 0x6c, 0x54]); // "sAlT" - AESV2 per-object-key suffix
 const EMPTY = new Uint8Array(0);
 const ZERO_IV = new Uint8Array(16);
 
@@ -60,7 +60,7 @@ export async function decryptPdf(pdfBytes: Uint8Array): Promise<Uint8Array | nul
     }
 
     // Real OMs pack most objects into compressed object streams (/Type /ObjStm) referenced by an xref
-    // stream. pdf-lib DISSOLVES each ObjStm at load — it inflates the container to extract inner objects,
+    // stream. pdf-lib DISSOLVES each ObjStm at load - it inflates the container to extract inner objects,
     // but an AES body won't inflate, so the inner objects end up absent / PDFInvalidObject and the
     // container itself is never an enumerable object. An ObjStm's DICT is plaintext (only string values
     // and stream BODIES are encrypted), so we locate containers with a safe raw scan, AES-decrypt each
@@ -71,7 +71,7 @@ export async function decryptPdf(pdfBytes: Uint8Array): Promise<Uint8Array | nul
 
     for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
       if (info.encRef && ref === info.encRef) continue; // never decrypt the /Encrypt dict
-      if (containerNums.has(ref.objectNumber)) continue; // ObjStm container — handled below
+      if (containerNums.has(ref.objectNumber)) continue; // ObjStm container - handled below
       const objKey =
         info.R === 4 ? objectKeyR4(fileKey, ref.objectNumber, ref.generationNumber) : fileKey;
       if (obj instanceof pdfLib.PDFRawStream) {
@@ -124,13 +124,13 @@ interface ObjStmContainer {
 
 /**
  * Locate every `/Type /ObjStm` container by walking the raw bytes object-by-object. Safe because an
- * ObjStm's dict is NOT encrypted — only string values and stream bodies are — so `/Type /ObjStm`,
+ * ObjStm's dict is NOT encrypted - only string values and stream bodies are - so `/Type /ObjStm`,
  * `/N`, `/First`, and `/Length` appear literally in the dict. pdf-lib can't hand us these containers
  * (it dissolves them at load), so this raw pass is how the ObjStm-decrypt reaches them.
  *
  * Hardening (#124): the walk SKIPS each stream body (advancing the cursor past `endstream`), so an
  * `N G obj … /ObjStm` sequence forged inside another object's encrypted/binary body can never be
- * mistaken for a real container — the scanner only ever inspects genuine object dicts. `/Length` is
+ * mistaken for a real container - the scanner only ever inspects genuine object dicts. `/Length` is
  * cross-checked against the actual `endstream` position and clamped to it, so a lying `/Length`
  * cannot make us over-read past the body. Latin-1 view: 1 char == 1 byte, so indices are byte offsets.
  */
@@ -150,7 +150,7 @@ function findObjStmContainers(bytes: Uint8Array): ObjStmContainer[] {
     streamRe.lastIndex = hdrEnd;
     const sm = streamRe.exec(S);
     if (sm === null || (endobj >= 0 && sm.index >= endobj)) {
-      cursor = endobj >= 0 ? endobj + "endobj".length : hdrEnd + 1; // no body — advance past this object
+      cursor = endobj >= 0 ? endobj + "endobj".length : hdrEnd + 1; // no body - advance past this object
       continue;
     }
     const lead = sm[1] ?? "";
@@ -165,7 +165,7 @@ function findObjStmContainers(bytes: Uint8Array): ObjStmContainer[] {
     if (S[esTrim - 1] === "\n") esTrim--;
     if (S[esTrim - 1] === "\r") esTrim--;
     const maxLen = esTrim - bodyStart; // the body cannot extend past endstream
-    cursor = es + "endstream".length; // SKIP the body — never scan inside it
+    cursor = es + "endstream".length; // SKIP the body - never scan inside it
 
     const dictText = S.slice(hdrEnd, streamKw);
     if (!/\/ObjStm\b/.test(dictText)) continue;
@@ -202,7 +202,7 @@ function readEncryptInfo(
   const { PDFName, PDFDict, PDFArray, PDFNumber, PDFBool, PDFRef } = pdfLib;
   let enc = ctx.trailerInfo.Encrypt;
   // Pure xref-stream files (common with R6) don't surface /Encrypt in pdf-lib's trailerInfo. The
-  // reference is plaintext in the trailer/xref dict — raw-scan for it and look the object up (an
+  // reference is plaintext in the trailer/xref dict - raw-scan for it and look the object up (an
   // /Encrypt dict is always an uncompressed top-level object, so pdf-lib has parsed it).
   if (!enc) {
     const m = /\/Encrypt\s+(\d+)\s+(\d+)\s+R/.exec(new TextDecoder("latin1").decode(pdfBytes));
@@ -316,7 +316,7 @@ function hash2B(password: Uint8Array, salt: Uint8Array, udata: Uint8Array): Uint
 
 /** AES-CBC with PKCS#7 padding stripped; data = IV(16) ‖ ciphertext. Throws on bad padding (⇒ null). */
 function aesCbcDecrypt(key: Uint8Array, data: Uint8Array): Uint8Array {
-  if (data.length < 16) return data; // not an AES blob (e.g. a short/empty string) — leave as-is
+  if (data.length < 16) return data; // not an AES blob (e.g. a short/empty string) - leave as-is
   return cbc(key, data.subarray(0, 16)).decrypt(data.subarray(16));
 }
 
@@ -371,7 +371,7 @@ function walkArray(arr: import("pdf-lib").PDFArray, objKey: Uint8Array, pdfLib: 
   }
 }
 
-/** RC4 stream cipher — used ONLY for the R4 /U password check (@noble/ciphers omits RC4 by design). */
+/** RC4 stream cipher - used ONLY for the R4 /U password check (@noble/ciphers omits RC4 by design). */
 function rc4(key: Uint8Array, data: Uint8Array): Uint8Array {
   const s = new Uint8Array(256);
   for (let i = 0; i < 256; i++) s[i] = i;

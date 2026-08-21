@@ -62,7 +62,7 @@ NEGATIVES = VECTORS / "negatives"
 
 def _tampered(base: bytes, payload: dict) -> bytes:
     """Embed `payload`, then overwrite the stored om.json stream with DIFFERENT-but-valid canonical
-    bytes, leaving the XMP payloadHash marker stale — a hash-mismatch that still parses as JSON. A
+    bytes, leaving the XMP payloadHash marker stale - a hash-mismatch that still parses as JSON. A
     conformant consumer MUST report hash-mismatch / hashValid=false ([OM-VAL-006])."""
     embedded = embed(base, payload, asserted_date=FIXED_DATE)
     altered = json.loads(json.dumps(payload))
@@ -110,7 +110,7 @@ def _deep(levels: int) -> object:
 
 def _rejection_cases() -> list[tuple[str, object, str]]:
     nfc = normalize("NFC", "café")  # precomposed café (U+00E9)
-    nfd = normalize("NFD", "café")  # decomposed café — NFC-collides with nfc
+    nfd = normalize("NFD", "café")  # decomposed café - NFC-collides with nfc
     return [
         ("toplevel-array", [1, 2], "OM-IO-STRUCTURE"),
         ("toplevel-scalar", "not an object", "OM-IO-STRUCTURE"),

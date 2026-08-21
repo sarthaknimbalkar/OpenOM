@@ -60,7 +60,7 @@ describe("renderPopup", () => {
     const root = render({
       state: "hash-mismatch",
       label: "Altered payload",
-      caption: "The embedded data does not match its hash — do not trust it.",
+      caption: "The embedded data does not match its hash - do not trust it.",
       payload: null,
       findings: [],
     });

@@ -1,7 +1,7 @@
 import { hmacSha256Hex, timingSafeEqualHex } from "./crypto.js";
 
 /**
- * §Y publish webhook — the SENDER side (consumer-mode "Publish"). Builds the signed envelope a
+ * §Y publish webhook - the SENDER side (consumer-mode "Publish"). Builds the signed envelope a
  * consumer POSTs to a broker-configured receiver. Deterministic: the clock (`now`) and ids are
  * injected by the caller. Zero inference.
  */
@@ -114,8 +114,8 @@ const _PRIVATE_HOSTS = new Set(["localhost", "metadata.google.internal"]);
  * host/IP-literal blocklist (no DNS resolve-then-pin is possible pre-fetch in an extension; that is
  * the hosted server's job, and §Y also puts SSRF duty on the receiver). Throws on unsafe.
  *
- * The IP check NORMALIZES every literal encoding a browser/curl will still resolve — dotted-quad,
- * dword-decimal, octal, hex, short forms, and IPv4-mapped IPv6 — so `http://2130706433`,
+ * The IP check NORMALIZES every literal encoding a browser/curl will still resolve - dotted-quad,
+ * dword-decimal, octal, hex, short forms, and IPv4-mapped IPv6 - so `http://2130706433`,
  * `http://0x7f.1`, and `[::ffff:127.0.0.1]` are all rejected, not just `127.0.0.1` ([#79]).
  */
 export function assertSafeWebhookTarget(url: string): void {
@@ -127,7 +127,7 @@ export function assertSafeWebhookTarget(url: string): void {
  * loopback / link-local / CGNAT / metadata IP literal (every inet_aton + IPv6 encoding). Reused by the
  * extension's PDF re-fetch and origin-mirror fetch so an attacker-supplied link-badge href cannot steer
  * the service worker at 169.254.169.254 or an internal host. Caveat (same as the webhook path): the
- * browser cannot resolve DNS, so a hostname that RESOLVES to a private IP is not caught here — the
+ * browser cannot resolve DNS, so a hostname that RESOLVES to a private IP is not caught here - the
  * hosted /mcp fetch.py resolve-then-pin guard covers that server-side.
  */
 export function assertSafeUrl(url: string, label = "fetch target"): void {
@@ -194,7 +194,7 @@ function _ipv4ToInt(host: string): number | null {
 }
 
 /**
- * Block IPv6 loopback (::1), unspecified (::), ULA fc00::/7, link-local fe80::/10, and mapped v4 —
+ * Block IPv6 loopback (::1), unspecified (::), ULA fc00::/7, link-local fe80::/10, and mapped v4 -
  * in EVERY textual form. Prior code string-matched "::1"/"::" only, so uncompressed/alternate forms
  * like 0:0:0:0:0:0:0:1 bypassed it ([#125]); we now expand to 8 groups and range-check numerically.
  */

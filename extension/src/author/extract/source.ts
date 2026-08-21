@@ -1,9 +1,9 @@
-// The DRAFT-SOURCE seam (#166 groundwork) — a layer ABOVE the Extractor seam that unifies two ways
+// The DRAFT-SOURCE seam (#166 groundwork) - a layer ABOVE the Extractor seam that unifies two ways
 // to produce a draft payload for the human review gate:
 //
-//   1. inference EXTRACTORS (on-device Prompt API, hosted) — run a model over the PDF's text.
+//   1. inference EXTRACTORS (on-device Prompt API, hosted) - run a model over the PDF's text.
 //      Non-deterministic; the existing `Extractor` adapters, wrapped by `extractorSource`.
-//   2. structured CONNECTORS (Buildout MCP, DealGround, a CRM) — fetch the broker's OWN structured
+//   2. structured CONNECTORS (Buildout MCP, DealGround, a CRM) - fetch the broker's OWN structured
 //      record at the source and map it, with NO inference and NO PDF text. Deterministic.
 //
 // A connector is NOT a drop-in Extractor: it takes no `pages`. So it slots here, above the seam, and
@@ -12,7 +12,7 @@
 // on-device model to a fallback (`pickDraftSource` prefers deterministic sources).
 //
 // SCOPE: this is the generic, reusable scaffold only. It is NOT yet wired into the review panel, and
-// no concrete Buildout connector is included here — that adapter (OAuth/MCP) + the panel wiring are
+// no concrete Buildout connector is included here - that adapter (OAuth/MCP) + the panel wiring are
 // the "finish it" step, gated on where the pull runs (decision memo §3.2 Q1) and the Buildout API
 // shape (Q2). `partialPayloadToFields` is dependency-free so it can move to /js if a CLI/hosted
 // run-location is chosen.
@@ -53,7 +53,7 @@ export function extractorSource(
 
 /**
  * A structured data source (e.g. a Buildout MCP OAuth connector). It returns a PARTIAL openOM
- * payload — the broker's own pre-flatten record — which the deterministic mapper turns into draft
+ * payload - the broker's own pre-flatten record - which the deterministic mapper turns into draft
  * fields. Concrete connectors normalize their API into a partial payload; that is the only adapter
  * work, keeping the openOM shape as the single intermediate (no third vocabulary).
  */
@@ -81,7 +81,7 @@ export function connectorSource(
 
 // Top-level members a connector must NOT draft: structural (@context/@type/specVersion/meta) and the
 // human-only assertion identity (assertedBy/assertedDate are stamped at the review gate, never
-// imported). Everything else — property.*, deal.*, lease.* — is draftable. (Whether deal.noiType /
+// imported). Everything else - property.*, deal.*, lease.* - is draftable. (Whether deal.noiType /
 // noiAsOfDate should be connector-filled or stay gate-only is decision-memo Q4, deferred; the human
 // gate confirms every field regardless.)
 const NON_DRAFTABLE_TOP_LEVEL = new Set([
@@ -112,10 +112,10 @@ function walk(value: unknown, pointer: string, out: FieldExtraction[]): void {
 }
 
 /**
- * Flatten a PARTIAL openOM payload into review-gate draft fields — DETERMINISTIC, no inference.
+ * Flatten a PARTIAL openOM payload into review-gate draft fields - DETERMINISTIC, no inference.
  * Each leaf becomes a `FieldExtraction` whose `path` is its RFC 6901 JSON pointer; structural and
  * human-only top-level members are skipped. Connector-sourced fields carry no page/quote evidence
- * (there is no PDF locus) — provenance labeling for imported data is decision-memo Q4, deferred.
+ * (there is no PDF locus) - provenance labeling for imported data is decision-memo Q4, deferred.
  */
 export function partialPayloadToFields(
   partial: Record<string, unknown>,

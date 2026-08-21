@@ -1,17 +1,17 @@
 # --- OpenOM repo hygiene (see CLAUDE.md Rule 2) ---
 
-# Marketing mock — NEVER committed
-OpenOM — Make your deal legible to the buy-side's AI.htm
-OpenOM — Make your deal legible to the buy-side's AI_files/
+# Marketing mock - NEVER committed
+OpenOM - Make your deal legible to the buy-side's AI.htm
+OpenOM - Make your deal legible to the buy-side's AI_files/
 
-# Planning scratch — git-ignored by rule
+# Planning scratch - git-ignored by rule
 docs/superpowers/
 .planning/
 
 # Eval / tooling scratch
 .deepeval/
 
-# Real OM corpus — private test fixtures, never committed (191MB, confidential)
+# Real OM corpus - private test fixtures, never committed (191MB, confidential)
 OMs/
 
 # --- Python (/core, /cli, /mcp) ---

@@ -1,8 +1,8 @@
 Creative Commons Attribution 4.0 International (CC BY 4.0)
 
-The openOM specification — the JSON Schema (om-0.1.schema.json), the JSON-LD @context and
+The openOM specification - the JSON Schema (om-0.1.schema.json), the JSON-LD @context and
 vocabulary, the conformance vectors and samples, the webhook envelope schema, the finding-code
-registry (codes.json), and the normative/handoff specification documents in this repository —
+registry (codes.json), and the normative/handoff specification documents in this repository -
 is licensed under the Creative Commons Attribution 4.0 International License.
 
 You are free to share and adapt this material for any purpose, including commercially, provided
@@ -15,5 +15,5 @@ Full legal text: https://creativecommons.org/licenses/by/4.0/legalcode
 Human-readable summary: https://creativecommons.org/licenses/by/4.0/
 
 Note: the openOM TOOLCHAIN (the /core, /cli, /mcp, /js, and /extension source) is licensed
-separately under the MIT License — see the repository-root LICENSE. This CC-BY-4.0 license
+separately under the MIT License - see the repository-root LICENSE. This CC-BY-4.0 license
 covers the SPECIFICATION artifacts under /spec and the specification documents only.

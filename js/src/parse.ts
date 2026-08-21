@@ -15,7 +15,7 @@ export interface ParseOptions {
   readonly maxBytes?: number;
 }
 
-/** Lone (unpaired) UTF-16 surrogate — high without low, or low without high. */
+/** Lone (unpaired) UTF-16 surrogate - high without low, or low without high. */
 const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
 /**
@@ -25,7 +25,7 @@ const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[
  * rejection compared after NFC ([OM-CANON-009], OM-IO-DUPKEY), a top-level
  * object precondition ([OM-CANON-010], OM-IO-STRUCTURE), and a depth guard.
  *
- * Does NOT re-normalize string values — a Consumer hashes bytes as received
+ * Does NOT re-normalize string values - a Consumer hashes bytes as received
  * ([OM-CANON-008]); NFC here is used only to compare key names for duplicates.
  */
 export function parsePayload(
@@ -75,7 +75,7 @@ function decodeUtf8(bytes: Uint8Array): string {
 
 /**
  * Recursively reject any string value or member name containing a lone
- * surrogate — such strings survive `JSON.parse` (e.g. from a `\uD83D` escape)
+ * surrogate - such strings survive `JSON.parse` (e.g. from a `\uD83D` escape)
  * but are not well-formed Unicode ([OM-CANON-010]).
  */
 function assertWellFormedStrings(value: unknown, depth: number): void {
@@ -158,7 +158,7 @@ function assertNoDuplicateKeys(text: string): void {
  * ([OM-CANON-013/014]), and return the index just past it.
  *
  * An integer-form token (digits only, no `.`/`e`) whose value is not a safe
- * integer denotes a magnitude binary64 rounds silently — a data corruption, so
+ * integer denotes a magnitude binary64 rounds silently - a data corruption, so
  * rejected with OM-IO-NUMRANGE. Any token that overflows to a non-finite value
  * (e.g. `1e309`) is rejected too. Float/exponent forms within range (e.g.
  * `1e21`, `0.0625`) are accepted; their canonicalization is defined ([OM-CANON-015]).
@@ -179,7 +179,7 @@ function scanAndCheckNumber(text: string, start: number): number {
   if (!Number.isFinite(value)) {
     throw new OmIoError("OM-IO-NUMRANGE", `number token is not finite: ${token}`);
   }
-  // Value-based (not token-form) — matches the Python core and canonicalize.ts: any
+  // Value-based (not token-form) - matches the Python core and canonicalize.ts: any
   // integer-valued number beyond 2^53-1 is rejected, whether written 1000...0 or 1e21.
   if (Number.isInteger(value) && !Number.isSafeInteger(value)) {
     throw new OmIoError(

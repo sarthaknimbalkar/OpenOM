@@ -15,7 +15,7 @@ const readResult = (over: Partial<ReadResult>): ReadResult => ({
   ...over,
 });
 
-describe("handleDetect — §AA pipeline", () => {
+describe("handleDetect - §AA pipeline", () => {
   test("absent when no bytes", async () => {
     const r = await handleDetect(SRC, { refetch: async () => null });
     expect(r.state).toBe("absent");

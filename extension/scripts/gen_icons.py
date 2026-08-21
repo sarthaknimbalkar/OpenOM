@@ -1,4 +1,4 @@
-# Generate the openOM extension icons (#63): a rounded teal square with a white ring + inner dot —
+# Generate the openOM extension icons (#63): a rounded teal square with a white ring + inner dot -
 # a compact "verified origin" mark. Placeholder-grade but real; refine in the design pass (#71).
 # Requires Pillow. Regenerate: python extension/scripts/gen_icons.py
 from PIL import Image, ImageDraw

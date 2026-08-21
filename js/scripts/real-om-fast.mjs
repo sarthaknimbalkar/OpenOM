@@ -1,5 +1,5 @@
 // FAST producer-diversity pass over the OMs/ corpus (#20/#22, Q3): embed a payload into every OM via
-// the extension's /js embedPayload, read it back, and structure-diff (pages/bookmarks/links) — all in
+// the extension's /js embedPayload, read it back, and structure-diff (pages/bookmarks/links) - all in
 // Node via pdf-lib, NO rendering, so it scales to thousands of files. Groups outcomes by PDF producer
 // so we see which real-world producers the load→save embed survives. Local only. Needs `npm --prefix
 // js run build`. Run: `node js/scripts/real-om-fast.mjs`.

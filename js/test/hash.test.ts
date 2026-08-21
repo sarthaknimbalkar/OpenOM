@@ -6,7 +6,7 @@ import { payloadHash } from "../src/hash.js";
  * payloadHash = "sha256:" + lowercase_hex(SHA-256(JCS(P without meta.signature))).
  * meta.signature is REMOVED from the preimage (absent, not null).
  */
-describe("[OM-CANON-016] integrity hash — §C.5 Example 4", () => {
+describe("[OM-CANON-016] integrity hash - §C.5 Example 4", () => {
   const base = {
     specVersion: "0.1",
     assertedDate: "2026-08-15",

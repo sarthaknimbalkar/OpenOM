@@ -2,7 +2,7 @@
 """Embed / read the om.json payload in a PDF via pikepdf (spec §D).
 
 Non-destructive by construction: pikepdf appends the embedded file + XMP marker without
-touching page content. The catalog ``/AF`` array is added manually — assigning to
+touching page content. The catalog ``/AF`` array is added manually - assigning to
 ``Pdf.attachments`` populates the ``/EmbeddedFiles`` name tree but NOT ``/AF`` ([OM-EMB-002]).
 The exact JCS bytes are stored verbatim ([OM-EMB-010]); the integrity hash is over those bytes.
 """
@@ -88,7 +88,7 @@ def embed(
         # §D.4 re-embed semantics:
         #  - a *different* prior payload is superseded (supersedes = prior hash);
         #  - an *identical* re-embed is a true no-op that PRESERVES the existing lineage
-        #    (carry the prior supersedes forward) rather than wiping it — re-running the tool
+        #    (carry the prior supersedes forward) rather than wiping it - re-running the tool
         #    on an unchanged payload must not erase provenance;
         #  - a first embed has no predecessor (supersedes = None). No self-supersede.
         prior = read_marker(pdf)
@@ -102,7 +102,7 @@ def embed(
             supersedes = None
 
         # #5: sourceDocHash identifies the underlying source PDF, held STABLE across reprices. It is
-        # computed once — the hash of the document at first embed (before any om.json existed) — and
+        # computed once - the hash of the document at first embed (before any om.json existed) - and
         # carried forward from the prior marker on every re-embed, so a reprice never loses or
         # mutates the source-document provenance. (Marker-only: the asserted payload is untouched,
         # so payloadHash and cross-impl JCS parity are unaffected.)
@@ -195,7 +195,7 @@ def _decoded_payload_bytes(stream: pikepdf.Object) -> bytes:
     """Decode the EF stream to raw payload bytes, bounding size *before* full materialization.
 
     A malicious PDF can hide a decompression bomb in a tiny compressed stream. We read the
-    stored (compressed) bytes — always bounded by the file itself — reject if already over the
+    stored (compressed) bytes - always bounded by the file itself - reject if already over the
     cap, then inflate with a hard ceiling rather than decompressing unbounded into memory.
     """
     raw = bytes(stream.read_raw_bytes())
@@ -204,7 +204,7 @@ def _decoded_payload_bytes(stream: pikepdf.Object) -> bytes:
 
     filt = stream.get("/Filter")
     names = [str(filt)] if isinstance(filt, pikepdf.Name) else [str(n) for n in (filt or [])]
-    # Plain FlateDecode (no predictor) — the common case for our writes and pdf-lib — can be
+    # Plain FlateDecode (no predictor) - the common case for our writes and pdf-lib - can be
     # inflated with a bounded zlib object. Anything exotic (predictors, other filters) defers
     # to pikepdf's decoder, still guarded by the compressed-size cap above and a post-check.
     if names == ["/FlateDecode"] and "/DecodeParms" not in stream and "/DP" not in stream:

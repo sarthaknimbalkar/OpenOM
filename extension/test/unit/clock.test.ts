@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { localDateISO } from "../../src/author/clock.js";
 
-describe("localDateISO — local calendar date, not UTC (#64)", () => {
+describe("localDateISO - local calendar date, not UTC (#64)", () => {
   test("returns the local Y-M-D of a locally-constructed date", () => {
     // new Date(y, m, d, ...) is LOCAL; 23:30 must never roll to the next calendar day.
     expect(localDateISO(new Date(2026, 0, 15, 23, 30))).toBe("2026-01-15");

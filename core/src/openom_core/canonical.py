@@ -12,7 +12,7 @@ Producer vs Consumer contract (§C, §D)
 --------------------------------------
 The **producer** normalizes (NFC), canonicalizes, hashes the resulting bytes, and stores
 *those exact bytes* as the payload plus the hash in the XMP marker. The **consumer** hashes
-the stored bytes *as received* — it does NOT re-canonicalize before verifying. Verification
+the stored bytes *as received* - it does NOT re-canonicalize before verifying. Verification
 is therefore a byte comparison of ``sha256(stored_bytes)`` against the marker hash; it never
 depends on the consumer re-running NFC/JCS. This asymmetry is deliberate: normalization
 happens once, at authoring time, so a consumer on a different platform/library cannot perturb
@@ -37,7 +37,7 @@ from .errors import IO_BADUTF8, IO_DUPKEY, IO_NUMRANGE, IO_STRUCTURE, Canonicali
 #: model, which would be data corruption (§C [OM-CANON-013]).
 MAX_SAFE_INT = 2**53 - 1
 
-#: Max nesting depth (§J JSON-hardening guard) — matches the JS parser for cross-impl parity.
+#: Max nesting depth (§J JSON-hardening guard) - matches the JS parser for cross-impl parity.
 MAX_DEPTH = 64
 
 
@@ -48,7 +48,7 @@ def _prepare(obj: Any, depth: int = 0) -> Any:
     """
     if depth > MAX_DEPTH:
         raise CanonicalizationError(IO_STRUCTURE, f"nesting exceeds {MAX_DEPTH}")
-    # bool is an int subclass — must be checked first.
+    # bool is an int subclass - must be checked first.
     if isinstance(obj, bool):
         return obj
     if isinstance(obj, str):
@@ -100,7 +100,7 @@ def canonicalize(payload: Mapping[str, Any]) -> bytes:
         return rfc8785.dumps(prepared)
     except CanonicalizationError:
         raise
-    except Exception as exc:  # noqa: BLE001 — normalize any serializer failure to our code
+    except Exception as exc:  # noqa: BLE001 - normalize any serializer failure to our code
         raise CanonicalizationError(IO_NUMRANGE, str(exc)) from exc
 
 
@@ -108,7 +108,7 @@ def hash_bytes(data: bytes) -> str:
     """The openOM integrity hash of already-canonical bytes: ``sha256:<lowercase-hex>``.
 
     Used on both the write path (over the bytes just produced) and the read/verify path
-    (over the decompressed stored bytes, as received — no re-canonicalization; §C, §D).
+    (over the decompressed stored bytes, as received - no re-canonicalization; §C, §D).
     """
     return "sha256:" + hashlib.sha256(data).hexdigest()
 

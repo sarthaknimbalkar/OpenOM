@@ -42,7 +42,7 @@ async function structure(
   return { pages, bookmarks, links };
 }
 
-describe("embedPayload — non-destructive ([OM-DoD-001], #105)", () => {
+describe("embedPayload - non-destructive ([OM-DoD-001], #105)", () => {
   test("preserves pages, bookmarks, and link annotations on a structured PDF", async () => {
     const src = new Uint8Array(readFileSync(join(fixtures, "structured.pdf")));
     const before = await structure(src);

@@ -96,8 +96,8 @@ class LocalBlobStore(BlobStore):
 
 class S3BlobStore(BlobStore):
     """R2/S3 adapter with **server-bound ownership** (#50). Ownership is recorded by a companion
-    ``_owners/<blobId>`` object that ONLY this server writes — never derived from client-supplied
-    object metadata — so a presigned PUT (which can write only the data object) cannot forge or
+    ``_owners/<blobId>`` object that ONLY this server writes - never derived from client-supplied
+    object metadata - so a presigned PUT (which can write only the data object) cannot forge or
     omit ownership. ``get`` reads the server-written owner for authz; TTL is enforced both by a
     ≤24h bucket lifecycle rule and from the object's ``LastModified``. boto3 is an optional extra;
     inject ``client`` for tests. authz/TTL semantics match ``LocalBlobStore``.

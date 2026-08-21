@@ -45,7 +45,7 @@ def main() -> None:
         rel = pdf.relative_to(OMS).as_posix()
         try:
             prof = inspect(pdf.read_bytes())
-        except Exception as exc:  # noqa: BLE001 — tool: report and keep going
+        except Exception as exc:  # noqa: BLE001 - tool: report and keep going
             print(f"ERROR {rel}: {exc}")
             continue
         cls = prof["class"]

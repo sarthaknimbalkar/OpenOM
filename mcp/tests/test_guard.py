@@ -33,7 +33,7 @@ def test_hard_crash_maps_to_010() -> None:
 @pytest.mark.skipif(not _RESOURCE_AVAILABLE, reason="RLIMIT_AS is POSIX-only")
 def test_memory_cap_enforced_not_swallowed() -> None:
     # #123: under a 1 MB address-space cap, allocating ~64 MB in the child MUST fail (MemoryError),
-    # surfacing as OM-IO-010 — proving the cap is applied and a breach is not silently swallowed.
+    # surfacing as OM-IO-010 - proving the cap is applied and a breach is not silently swallowed.
     with pytest.raises(ToolError) as e:
         bounded_call(bytearray, (64 * 1024 * 1024,), timeout=30, memory_mb=1)
     assert e.value.code == "OM-IO-010"

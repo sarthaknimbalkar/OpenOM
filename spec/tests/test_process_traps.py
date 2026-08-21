@@ -2,7 +2,7 @@
 mis-extraction of the demo OM that a naive first pass would produce; om_validate MUST flag it with
 a specific OMW-W### (the agent's cue to re-read the source), and the corrected demo payload
 (expected-payload.json) MUST be warning-clean. This is the machine-checked form of "a warning means
-your extraction is probably wrong — fix it, don't silence it."
+your extraction is probably wrong - fix it, don't silence it."
 """
 
 from __future__ import annotations

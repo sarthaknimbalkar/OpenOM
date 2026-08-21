@@ -60,7 +60,7 @@ describe("[OM-SEC-002] read-side decompression bomb → OM-IO-BOMB", () => {
     const filespec = loaded.context.lookup(af.get(0)) as PDFDict;
     const ef = filespec.lookup(PDFName.of("EF")) as PDFDict;
     const stream = loaded.context.lookup(ef.get(PDFName.of("F"))) as PDFRawStream;
-    // 6 MiB inflated, tiny compressed — the classic bomb.
+    // 6 MiB inflated, tiny compressed - the classic bomb.
     const bomb = zlib.deflateSync(Buffer.alloc(6 * 1024 * 1024, 0x41));
     (stream as unknown as { contents: Uint8Array }).contents = new Uint8Array(bomb);
     const bombPdf = await loaded.save();

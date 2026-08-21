@@ -1,4 +1,4 @@
-// A deterministic extractor for tests — returns a fixed ExtractionResult, no model, no I/O. It proves
+// A deterministic extractor for tests - returns a fixed ExtractionResult, no model, no I/O. It proves
 // the seam and the apply/panel wiring without a real Prompt API model. (The live gate goes further and
 // exercises the REAL on-device adapter against an injected fake LanguageModel global.)
 import type { Extractor, ExtractionResult } from "./types.js";

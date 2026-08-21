@@ -83,7 +83,7 @@ describe("assertSafeWebhookTarget (SSRF host/IP-literal bound)", () => {
     expect(() => assertSafeWebhookTarget(url)).not.toThrow();
   });
 
-  // #79 — every encoding of 127.0.0.1 / private / metadata that a browser still resolves.
+  // #79 - every encoding of 127.0.0.1 / private / metadata that a browser still resolves.
   test.each([
     "https://2130706433/x", // dword-decimal 127.0.0.1
     "https://0x7f000001/x", // hex 127.0.0.1
@@ -100,7 +100,7 @@ describe("assertSafeWebhookTarget (SSRF host/IP-literal bound)", () => {
     "https://[0:0:0:0:0:0:0:1]/x", // #125: UNCOMPRESSED IPv6 loopback (bypassed the old ::1 match)
     "https://[0000:0000:0000:0000:0000:0000:0000:0001]/x", // #125: fully-padded loopback
     "https://[fe80:0:0:0:0:0:0:1]/x", // #125: uncompressed link-local
-    "https://[64:ff9b::7f00:1]/x", // (not blocked range but valid parse — sanity that expand works)
+    "https://[64:ff9b::7f00:1]/x", // (not blocked range but valid parse - sanity that expand works)
   ])("rejects encoded/mapped literal %s (#79/#125)", (url) => {
     // note: the 64:ff9b case is NOT a blocked range, excluded below
     if (url.includes("64:ff9b")) return;

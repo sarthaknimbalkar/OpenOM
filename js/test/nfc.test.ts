@@ -7,7 +7,7 @@ function sha256Hex(bytes: Uint8Array): string {
 }
 
 /**
- * §C.1 [OM-CANON-008] — every string value and member name MUST be
+ * §C.1 [OM-CANON-008] - every string value and member name MUST be
  * NFC-normalized before canonicalization. Worked hashes are from the spec.
  */
 describe("[OM-CANON-008] NFC normalization on the Producer path", () => {

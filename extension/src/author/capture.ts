@@ -16,17 +16,17 @@ export function looksLikePdf(bytes: Uint8Array): boolean {
 
 export interface Capture {
   readonly bytes: Uint8Array;
-  /** Non-null only for a cleanly-readable existing payload — the reprice base. */
+  /** Non-null only for a cleanly-readable existing payload - the reprice base. */
   readonly prior: ReadResult | null;
   /**
    * True when the PDF DID carry a payload that failed its integrity check (hash-mismatch): it is not
    * a reprice base, and the panel MUST warn that embedding will start a fresh assertion, not chain
-   * from it ([#87]). A plain PDF (absent) leaves this false — that is a normal fresh embed.
+   * from it ([#87]). A plain PDF (absent) leaves this false - that is a normal fresh embed.
    */
   readonly priorUnverified: boolean;
   /**
    * True when the PDF is encrypted AND we could not decrypt it in-browser (RC4, a real user password,
-   * or out of scope) — embedPayload can't load it, so authoring is refused ([#107]).
+   * or out of scope) - embedPayload can't load it, so authoring is refused ([#107]).
    */
   readonly encrypted: boolean;
   /**

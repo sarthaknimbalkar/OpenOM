@@ -1,12 +1,12 @@
 // The assertion step: turn a reviewed Draft into the payload the broker is asserting, then validate
-// and embed. `finalize` is pure (the clock is passed in as `today` — the deterministic core never
+// and embed. `finalize` is pure (the clock is passed in as `today` - the deterministic core never
 // reads a clock); `assertAndEmbed` refuses to embed a schema-invalid payload; `handBack` hands the
 // produced OM to the broker as a download. Zero inference. Called only after an explicit human Assert.
 import type { Draft } from "./draft.js";
 import type { BrokerProfile } from "./profile.js";
 import type { ValidationReport } from "openom-js";
 
-/** Spec constants stamped at assertion — boilerplate, not broker-entered facts (§E). */
+/** Spec constants stamped at assertion - boilerplate, not broker-entered facts (§E). */
 const CONTEXT = ["https://schema.org", "https://openom.app/ns/0.1"];
 
 /**

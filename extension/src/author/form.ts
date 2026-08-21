@@ -1,4 +1,4 @@
-// The author review FORM — stable, typed controls built ONCE per capture (never rebuilt on keystroke,
+// The author review FORM - stable, typed controls built ONCE per capture (never rebuilt on keystroke,
 // so input focus is never lost; #77). Each control is a schema-driven view of the draft that reports
 // edits through callbacks; the draft stays the single source of truth. Renders the review-contract's
 // per-field rows (value + evidence + flag), the #93 conditional NOI controls, the rent-schedule
@@ -44,7 +44,7 @@ export function buildForm(root: HTMLElement, draft: Draft, cb: FormCallbacks): v
   const flagged = new Set(fieldsWithoutEvidence(draft));
   const hasNoi = getField(draft, "/deal/noi") !== undefined;
 
-  // Core section (in CORE_PATHS order; NOI enum/date only when noi is set — #93).
+  // Core section (in CORE_PATHS order; NOI enum/date only when noi is set - #93).
   const core = el("section", "form-core");
   for (const path of CORE_PATHS) {
     if ((path === "/deal/noiType" || path === "/deal/noiAsOfDate") && !hasNoi) continue;
@@ -88,17 +88,17 @@ function fieldRow(desc: FieldDescriptor, draft: Draft, flagged: Set<string>, cb:
   label.append(`${desc.label} `, control);
   row.appendChild(label);
 
-  // evidence — placeholder alone is not an accessible name, so label each input explicitly.
+  // evidence - placeholder alone is not an accessible name, so label each input explicitly.
   const ev = el("span", "field-evidence");
   const priorEv = draft.evidence[desc.path];
   const page = el("input", "ev-page") as HTMLInputElement;
   page.type = "number";
   page.placeholder = "pg";
-  page.setAttribute("aria-label", `${desc.label} — evidence page`);
+  page.setAttribute("aria-label", `${desc.label} - evidence page`);
   if (priorEv?.page !== undefined) page.value = String(priorEv.page);
   const quote = el("input", "ev-quote") as HTMLInputElement;
   quote.placeholder = "quote";
-  quote.setAttribute("aria-label", `${desc.label} — evidence quote`);
+  quote.setAttribute("aria-label", `${desc.label} - evidence quote`);
   if (priorEv?.quote) quote.value = priorEv.quote;
   const emitEv = (): void =>
     cb.onEvidence(desc.path, {
@@ -110,7 +110,7 @@ function fieldRow(desc: FieldDescriptor, draft: Draft, flagged: Set<string>, cb:
   ev.append(page, quote);
   row.appendChild(ev);
 
-  if (flagged.has(desc.path)) row.appendChild(el("span", "field-flag", "no evidence — please cite"));
+  if (flagged.has(desc.path)) row.appendChild(el("span", "field-flag", "no evidence - please cite"));
   return row;
 }
 
@@ -118,7 +118,7 @@ function makeControl(desc: FieldDescriptor, value: unknown): HTMLElement {
   let c: HTMLInputElement | HTMLSelectElement;
   if (desc.kind === "enum") {
     const s = document.createElement("select");
-    s.appendChild(new Option("—", ""));
+    s.appendChild(new Option("-", ""));
     for (const opt of desc.enum ?? []) s.appendChild(new Option(opt, opt));
     if (typeof value === "string") s.value = value;
     c = s;
@@ -157,7 +157,7 @@ function rentEditor(draft: Draft, cb: FormCallbacks): HTMLElement {
     for (const f of RENT_FIELDS) {
       const desc: FieldDescriptor = { path: `/lease/rentSchedule/${i}/${f.key}`, kind: f.kind, label: f.label };
       const control = makeControl(desc, period[f.key]);
-      control.setAttribute("aria-label", `Rent period ${i + 1} — ${f.label}`); // #71
+      control.setAttribute("aria-label", `Rent period ${i + 1} - ${f.label}`); // #71
       control.addEventListener("input", () => cb.onField(desc.path, readControl(desc, control)));
       row.appendChild(control);
     }

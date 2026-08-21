@@ -25,7 +25,7 @@ const withWarning: ValidationReport = {
   summary: { errorCount: 0, warningCount: 1, infoCount: 0 },
 };
 
-describe("renderDerived — assert gate + finalized preview", () => {
+describe("renderDerived - assert gate + finalized preview", () => {
   test("schema error disables Assert; finalized preview shows the stamped fields (#95)", () => {
     const c = document.createElement("div");
     renderDerived(c, newDraft({}), {

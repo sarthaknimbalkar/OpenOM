@@ -1,4 +1,4 @@
-// openOM settings page (#70) — the single home for the device-local broker profile, the publish
+// openOM settings page (#70) - the single home for the device-local broker profile, the publish
 // webhook, and the §15 Q8 opt-ins. Everything is chrome.storage.local ONLY (never sync). The render
 // is a pure function of the stored values; the runtime bootstrap loads + saves. Uses the shared
 // design system (popup.css). No inference.

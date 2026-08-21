@@ -1,4 +1,4 @@
-// Dev-only correctness oracle for decryptPdf (#4). NOT in CI — the corpus (OMs/) is confidential and
+// Dev-only correctness oracle for decryptPdf (#4). NOT in CI - the corpus (OMs/) is confidential and
 // gitignored. Runs decryptPdf over every encrypted OM and hands the results to decrypt_oracle.py, which
 // renders each against pikepdf's own decryption (the reference) and asserts they are render-identical.
 //

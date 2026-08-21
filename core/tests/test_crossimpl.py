@@ -55,7 +55,7 @@ def test_js_embedded_read_by_python(name: str) -> None:
 @pytest.mark.parametrize("producer", ["producer-native", "producer-hybrid", "producer-scanned"])
 def test_js_embed_onto_producer_bases_read_by_python(producer: str) -> None:
     """#131: JS embed onto structurally-diverse producer PDFs (object-stream / linearized /
-    image-only) must be Python-readable and byte-identical — not just onto a blank page."""
+    image-only) must be Python-readable and byte-identical - not just onto a blank page."""
     pdf_path = Path(XIMPL_DIR or "") / f"{producer}.pdf"
     if not pdf_path.exists():
         pytest.skip(f"missing JS-embedded producer PDF: {pdf_path}")

@@ -3,7 +3,7 @@
 """Generate small, structurally-diverse producer fixtures committed for CI (#130).
 
 Rule 5 says producer diversity is where PDF tooling breaks, but the named non-destructive/survival
-tests only had the private OMs/ corpus (gitignored) — so in CI they skipped, leaving the gate with
+tests only had the private OMs/ corpus (gitignored) - so in CI they skipped, leaving the gate with
 no producer diversity. These committed fixtures stand in for the corpus classes when absent:
 
   producer-native.pdf   text, compressed object streams + linearized (modern web-optimized producer)

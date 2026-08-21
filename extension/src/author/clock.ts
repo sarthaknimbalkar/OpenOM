@@ -1,4 +1,4 @@
-// The broker's LOCAL calendar date for assertedDate. Using toISOString() would stamp the UTC date —
+// The broker's LOCAL calendar date for assertedDate. Using toISOString() would stamp the UTC date -
 // for negative-offset zones (all of the US) that is tomorrow's date for the last hours of the day,
 // mis-stating a legal assertion date ([#64]). getFullYear/getMonth/getDate read local components.
 

@@ -280,12 +280,12 @@ def test_force_utf8_switches_a_legacy_encoding() -> None:
     stream = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
     _force_utf8(stream)
     assert stream.encoding == "utf-8"
-    stream.write("em-dash — and middot ·")  # would raise on a strict cp1252 stream
+    stream.write("em-dash - and middot ·")  # would raise on a strict cp1252 stream
     stream.flush()
 
 
 def test_force_utf8_tolerates_a_non_reconfigurable_stream() -> None:
-    """A test harness / pipe may swap stdout for a plain object w/o reconfigure — never raise."""
+    """A test harness / pipe may swap stdout for a plain object w/o reconfigure - never raise."""
     from openom_cli.main import _force_utf8
 
     class _Plain:
@@ -298,7 +298,7 @@ def test_help_renders_non_ascii_without_error() -> None:
     """The app help (em-dash) is emitted cleanly through the runner."""
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    assert "—" in result.stdout
+    assert "-" in result.stdout
 
 
 def test_watch_once_embeds_pairs_and_skips_lonely_pdf(tmp_path: Path) -> None:

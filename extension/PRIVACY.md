@@ -1,9 +1,9 @@
-# openOM extension — Privacy Policy
+# openOM extension - Privacy Policy
 
 _Last updated: 2026-08-18 · Publisher: Vervelio Labs_
 
 The openOM browser extension is **local-first and deterministic**. It reads offering-memorandum PDFs,
-verifies their embedded openOM data, and (in author mode) embeds broker-asserted data — all on your
+verifies their embedded openOM data, and (in author mode) embeds broker-asserted data - all on your
 device. It contains **no analytics, no tracking, no advertising, and no telemetry**, and it sends
 **no data to Vervelio Labs**.
 
@@ -21,7 +21,7 @@ device. It contains **no analytics, no tracking, no advertising, and no telemetr
    scraping the browser's PDF viewer).
 2. **Fetching a `.well-known` mirror** from the OM's stated domain, to verify domain-origin (§10.1). This
    is a request to the broker's own site, carrying no personal data.
-3. **Delivering a change-notification webhook** — only to an endpoint **you** configure — when you choose
+3. **Delivering a change-notification webhook** - only to an endpoint **you** configure - when you choose
    to publish. The request goes to your/your broker's own receiver, signed with your configured key.
 
 There are no other network requests. In particular:
@@ -39,10 +39,10 @@ There are no other network requests. In particular:
 
 ## Permissions (why each is needed)
 
-- **activeTab** — read the URL/PDF of the tab you act on, only when you invoke the extension.
-- **storage** — save your broker profile and settings locally on your device.
-- **sidePanel** — open author mode in the browser side panel.
-- **Host access to `https://*/*`** — re-fetch PDF bytes and mirror files from the sites you view, and
+- **activeTab** - read the URL/PDF of the tab you act on, only when you invoke the extension.
+- **storage** - save your broker profile and settings locally on your device.
+- **sidePanel** - open author mode in the browser side panel.
+- **Host access to `https://*/*`** - re-fetch PDF bytes and mirror files from the sites you view, and
   badge openOM links on pages where you enable it. Used only to read PDFs/mirrors, never to collect
   browsing data.
 

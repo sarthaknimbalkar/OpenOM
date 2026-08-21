@@ -3,13 +3,13 @@ import { integrityHashOfBytes, verifyIntegrity } from "../src/verify.js";
 
 /**
  * §C.4/§X.4 [OM-VAL-006] + [OM-CANON-008] Consumer verification.
- * The tamper check hashes the received decompressed bytes EXACTLY as-is — no
- * re-parse, no NFC, no re-canonicalization — and compares to omspec:payloadHash.
+ * The tamper check hashes the received decompressed bytes EXACTLY as-is - no
+ * re-parse, no NFC, no re-canonicalization - and compares to omspec:payloadHash.
  * Re-normalizing would mask a genuine mismatch.
  */
 
 // The exact bytes a conformant Producer stores for §C.5 Example 4 (meta.signature
-// absent in 0.1) — this IS the preimage JCS, 248 bytes.
+// absent in 0.1) - this IS the preimage JCS, 248 bytes.
 const STORED = new TextEncoder().encode(
   '{"assertedDate":"2026-08-15","deal":{"askingPrice":1850000,"capRate":0.0625,"noi":115625,"noiType":"in-place"},"meta":{"sourceDocHash":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","supersedes":null},"specVersion":"0.1"}',
 );

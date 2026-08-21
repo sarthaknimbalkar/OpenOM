@@ -1,4 +1,4 @@
-# Transcript — openom-author on `sample-om.pdf`
+# Transcript - openom-author on `sample-om.pdf`
 
 A recorded run of the `/process` playbook (Claude, via the `openom-author` skill) driving the
 deterministic openOM MCP tools over the synthetic demo OM `sample-om.pdf`, ending at the review
@@ -6,10 +6,10 @@ gate. This is the Claude half of the [OM-DoD-005] evidence; the produced payload
 `expected-payload.json`, which the CI gate (`spec/tests/test_process_example.py`) validates.
 
 > The non-Claude MCP-client half of the gate (a broker's own AI via an MCP connector following
-> `agent-instructions.md`) is adoption-deferred — the client-agnostic instructions are authored,
+> `agent-instructions.md`) is adoption-deferred - the client-agnostic instructions are authored,
 > the live run is tracked as adoption, not faked here.
 
-## 1. Classify — `om_inspect`
+## 1. Classify - `om_inspect`
 
 ```
 → om_inspect({"path": "process/example/sample-om.pdf"})
@@ -17,7 +17,7 @@ gate. This is the Claude half of the [OM-DoD-005] evidence; the produced payload
 ```
 Native text; no existing payload → a first embed (not a reprice). Proceed to text extraction.
 
-## 2. Gather — `om_extract_text`
+## 2. Gather - `om_extract_text`
 
 ```
 → om_extract_text({"path": ".../sample-om.pdf"})
@@ -28,18 +28,18 @@ Native text; no existing payload → a first embed (not a reprice). Proceed to t
     Net Operating Income:  $143,750 (in-place, as of 05/31/2026)
     Price / SF:            $416.67
     Status:                Active
-    PROPERTY  — 500 Example Blvd, Testville, TX 75000 · APN R000000 · +/- 6,000 SF · Year Built 2021
-    LEASE ABSTRACT — Tenant: Placeholder Quick Service, LLC · Guarantor: Placeholder Brands Inc.
+    PROPERTY  - 500 Example Blvd, Testville, TX 75000 · APN R000000 · +/- 6,000 SF · Year Built 2021
+    LEASE ABSTRACT - Tenant: Placeholder Quick Service, LLC · Guarantor: Placeholder Brands Inc.
       (Corporate) · Lease Type: NNN (tenant pays taxes/insurance/CAM) · Term 06/01/2021-05/31/2031
     RENT SCHEDULE
       06/01/2021 - 05/31/2026    $143,750   $23.96   -
       06/01/2026 - 05/31/2031    $158,125   $26.35   10%
     Two (2) five-year renewal options remain.
 ```
-(`truncated: false` — single page, no pagination needed. `om_extract_images` skipped: no figures
+(`truncated: false` - single page, no pagination needed. `om_extract_images` skipped: no figures
 needed for the fields.)
 
-## 3. Map — per `mapping-guide.md`
+## 3. Map - per `mapping-guide.md`
 
 Transcribe, applying the unit/vocabulary rules: `5.75% → capRate 0.0575`; money as bare major
 units; ISO dates; `leaseTypeAsserted "NNN"` with all `landlordResponsibilities` false (tenant pays);
@@ -47,18 +47,18 @@ rent periods `source: "extracted"`. Omitted (not stated in the OM): `geo`, `lotA
 `yearRenovated`, `termMonths`, `remainingTermMonths`, `options` detail beyond the renewal note,
 `monthlyRent`, `currency` (defaults USD). Draft rentPeriod `source` = `"extracted"`.
 
-## 4. Validate & iterate — `om_validate`
+## 4. Validate & iterate - `om_validate`
 
 ```
 → om_validate(draft, schema)
 ← { ok: true, errors: [], warnings: [], info: ["OMI-I001"] }
 ```
-Schema-clean and consistency-clean on the first pass — the transcribed numbers agree
+Schema-clean and consistency-clean on the first pass - the transcribed numbers agree
 (cap = 143750/2500000 = 0.0575; pricePerSF ≈ 2500000/6000; rentPSF ≈ annualRent/6000; escalation =
 158125/143750 − 1 = 0.10; schedule contiguous within the term). `OMI-I001` is advisory only
 (currency absent → USD assumed). No re-read needed.
 
-## 5. Human review gate — the assertion moment
+## 5. Human review gate - the assertion moment
 
 Presented the payload, the source line for each field, and the single info notice to the broker.
 Broker (Dana Sample) confirmed the transcription against the OM and approved. On approval:
@@ -75,7 +75,7 @@ With approval, `om_embed({"path": ".../sample-om.pdf"}, payload, assertedDate="2
 write the embedded PDF (first embed → `meta.supersedes: null`). Left unrun here so the demo OM
 stays payload-free for the gate's `test_sample_om_has_no_embedded_payload`.
 
-## Appendix — the warning-iteration loop (a corrected mis-extraction)
+## Appendix - the warning-iteration loop (a corrected mis-extraction)
 
 The happy path above was clean on the first pass. The loop's real purpose is catching a bad
 mapping. A representative first-pass slip on this same OM, and its correction:
@@ -95,12 +95,12 @@ deal.capRate = 0.0575
 ← warnings: []             # ties to NOI ÷ askingPrice = 143750 / 2500000 = 0.0575
 ```
 
-The rule the loop enforces: **a warning means the extraction is probably wrong — re-read and fix,
+The rule the loop enforces: **a warning means the extraction is probably wrong - re-read and fix,
 never silence it.** `spec/tests/test_process_traps.py` machine-checks this and the other common
 traps (schedule gap → `OMW-W021`, NNN-but-landlord-pays → `OMW-W040`, rentPSF mismatch →
 `OMW-W024`, deal-math → `OMW-W010`/`W011`), each against the corrected warning-clean payload.
 
-## Appendix — reprice (re-embed with a supersedes chain)
+## Appendix - reprice (re-embed with a supersedes chain)
 
 The common repeat operation is a price change on an already-embedded OM. The playbook reads the
 prior payload, builds the new one, and links it:
@@ -114,7 +114,7 @@ prior payload, builds the new one, and links it:
 → om_validate(repriced, schema)             ← warnings: []   # still ties
 → om_embed({"path": ".../embedded.pdf"}, repriced, assertedDate="2026-09-01")
 ← a NEW PDF with exactly ONE om.json (replaced in place, not stacked) and
-  meta.supersedes = H_prev — the audit chain to the superseded assertion.
+  meta.supersedes = H_prev - the audit chain to the superseded assertion.
 ```
 
 `process/example/repriced-payload.json` is the committed after-state;

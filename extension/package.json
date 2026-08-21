@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "openOM MV3 consumer-mode extension — detect, verify, view, publish. Zero inference.",
+  "description": "openOM MV3 consumer-mode extension - detect, verify, view, publish. Zero inference.",
   "scripts": {
     "gen": "node scripts/gen-validator.mjs",
     "build": "node build.mjs",

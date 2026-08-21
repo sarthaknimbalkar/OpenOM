@@ -1,10 +1,10 @@
-"""M2 (#13): the JSON-LD `@context` is the published vocabulary — the second half of "the spec is
+"""M2 (#13): the JSON-LD `@context` is the published vocabulary - the second half of "the spec is
 the product". These tests keep the vocabulary provably complete and drift-locked to the schema,
 deterministically and offline (no network to schema.org):
 
-  * completeness vs the schema  — every property name the JSON Schema defines has an IRI mapping;
-  * completeness vs the wire    — every term a conformant sample uses is mapped;
-  * structural soundness        — every mapping resolves to a declared prefix (om/schema/xsd).
+  * completeness vs the schema  - every property name the JSON Schema defines has an IRI mapping;
+  * completeness vs the wire    - every term a conformant sample uses is mapped;
+  * structural soundness        - every mapping resolves to a declared prefix (om/schema/xsd).
 
 A term added to the schema without a vocabulary mapping (or vice versa) fails here, so the two
 halves of the contract cannot silently diverge.
@@ -141,7 +141,7 @@ def _schema_typed_terms(node: Any, acc: dict[str, set[str]]) -> None:
 
 def test_typed_terms_carry_matching_datatype_coercion() -> None:
     """[OM-LD-004]: unambiguously number/integer/boolean/date schema terms must be coerced in the
-    context (mixed oneOf terms like abatement are skipped — they cannot carry a single @type)."""
+    context (mixed oneOf terms like abatement are skipped - they cannot carry a single @type)."""
     schema = json.loads(SCHEMA_FILE.read_text(encoding="utf-8"))
     typed: dict[str, set[str]] = {}
     _schema_typed_terms(schema, typed)
@@ -149,7 +149,7 @@ def test_typed_terms_carry_matching_datatype_coercion() -> None:
     bad: dict[str, Any] = {}
     for name, kinds in typed.items():
         if len(kinds) != 1:
-            continue  # untyped or mixed-type (ambiguous) — no single coercion applies
+            continue  # untyped or mixed-type (ambiguous) - no single coercion applies
         (kind,) = tuple(kinds)
         expected = {"xsd:date"} if kind == "date" else _TYPE_TO_XSD[kind]
         mapping = ctx.get(name)

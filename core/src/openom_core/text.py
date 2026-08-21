@@ -69,7 +69,7 @@ def _decode_cursor(cursor: str, tag: str) -> int:
         return int(data["off"])
     except CursorError:
         raise
-    except Exception as exc:  # noqa: BLE001 — any decode failure is a bad cursor
+    except Exception as exc:  # noqa: BLE001 - any decode failure is a bad cursor
         raise CursorError("malformed cursor") from exc
 
 
@@ -97,7 +97,7 @@ def extract_text(
         for i in pages:
             try:
                 found = doc.load_page(i).find_tables()
-            except Exception:  # noqa: BLE001 — tables are best-effort, never fatal
+            except Exception:  # noqa: BLE001 - tables are best-effort, never fatal
                 continue
             for tbl in found.tables:
                 tables.append({"page": i + 1, "rows": tbl.extract()})

@@ -2,8 +2,8 @@ import { describe, expect, test } from "vitest";
 import { canonicalize } from "../src/canonicalize.js";
 
 // #134: independent RFC 8785 anchor for the TS core (mirror of core/tests/test_rfc8785.py). Vectors are
-// hand-derived from the RFC rules — key sort by UTF-16 code unit, minimal string escaping, ECMAScript
-// Number.toString, array order preserved, NFC non-ASCII emitted raw — so they prove canonicalize is
+// hand-derived from the RFC rules - key sort by UTF-16 code unit, minimal string escaping, ECMAScript
+// Number.toString, array order preserved, NFC non-ASCII emitted raw - so they prove canonicalize is
 // CORRECT, not merely equal to the Python core. Only openOM's accepted number range is used.
 const dec = new TextDecoder();
 const CONTROLS = String.fromCharCode(0x01) + String.fromCharCode(0x1f);
@@ -24,7 +24,7 @@ const V: [Record<string, unknown>, string][] = [
   [{ n: 2 ** 53 - 1 }, '{"n":9007199254740991}'],
 ];
 
-describe("RFC 8785 anchor — TS canonicalize is correct, not just self-consistent (#134)", () => {
+describe("RFC 8785 anchor - TS canonicalize is correct, not just self-consistent (#134)", () => {
   for (const [value, expected] of V) {
     test(`canonicalize ${expected}`, () => {
       expect(dec.decode(canonicalize(value))).toBe(expected);
