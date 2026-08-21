@@ -59,12 +59,60 @@ def _landing_html() -> str:
         f'      <li><a href="/{p}">/{p}</a> <small>({ct})</small></li>'
         for p, (_src, ct) in ARTIFACTS.items()
     )
+    desc = (
+        "openOM is an open standard that embeds machine-readable, broker-asserted, "
+        "hash-verified data inside commercial real estate offering memorandum PDFs, mirrored "
+        "as JSON-LD on the web. Extract once at the source; consume cheaply everywhere."
+    )
+    org = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Vervelio Labs",
+        "url": "https://verveliolabs.com",
+        "brand": {"@type": "Brand", "name": "openOM"},
+    }
+    website = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "openOM",
+        "url": BASE + "/",
+        "description": desc,
+        "publisher": {"@type": "Organization", "name": "Vervelio Labs"},
+    }
+    software = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "openOM",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Cross-platform",
+        "url": BASE + "/",
+        "description": desc,
+        "license": "https://opensource.org/licenses/MIT",
+        "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+        "publisher": {"@type": "Organization", "name": "Vervelio Labs"},
+    }
+    jsonld = "\n".join(
+        f'  <script type="application/ld+json">{json.dumps(o, ensure_ascii=False)}</script>'
+        for o in (org, website, software)
+    )
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>openOM namespace 0.1</title>
+  <title>openOM - verifiable data for CRE offering memoranda</title>
+  <meta name="description" content="{desc}" />
+  <link rel="canonical" href="{BASE}/" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="openOM" />
+  <meta property="og:title" content="openOM - verifiable data for CRE offering memoranda" />
+  <meta property="og:description" content="{desc}" />
+  <meta property="og:url" content="{BASE}/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="openOM - verifiable data for CRE offering memoranda" />
+  <meta name="twitter:description" content="{desc}" />
+{jsonld}
   <style>
     body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 44rem; margin: 3rem auto;
             padding: 0 1rem; color: #111; }}
@@ -134,6 +182,88 @@ def _htaccess_file() -> str:
     )
 
 
+def _page_url(rel: str) -> str:
+    """Map a generated page path to its clean canonical URL (index.html -> dir; .html dropped)."""
+    if rel.endswith("/index.html"):
+        return "/" + rel[: -len("index.html")]
+    return "/" + rel.removesuffix(".html")
+
+
+def _all_urls() -> list[str]:
+    """Every crawlable openOM URL, canonical form, deterministic order. Landing first, then pages,
+    then the machine artifacts (namespace + schemas) so AI/answer engines can find them too."""
+    pages = sorted(_page_url(r) for r in docs_pages())
+    arts = [f"/{p}" for p in ARTIFACTS]
+    return ["/", *pages, *arts]
+
+
+def _robots_file() -> str:
+    """robots.txt: open the whole site to every crawler, INCLUDING the AI/answer engines
+    (AEO/GEO/AIO distribution). Explicit allows silence any doubt about GPTBot/ClaudeBot/etc.,
+    and point everyone at the sitemap."""
+    ai_bots = [
+        "GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-Web", "anthropic-ai",
+        "PerplexityBot", "Perplexity-User", "Google-Extended", "Googlebot", "Bingbot",
+        "Applebot", "Applebot-Extended", "CCBot", "Amazonbot", "cohere-ai", "Meta-ExternalAgent",
+        "DuckDuckBot", "YandexBot",
+    ]
+    blocks = "\n\n".join(f"User-agent: {b}\nAllow: /" for b in ["*", *ai_bots])
+    return f"{blocks}\n\nSitemap: {BASE}/sitemap.xml\n"
+
+
+def _sitemap_file() -> str:
+    """sitemap.xml over every canonical URL. No <lastmod> - it would be nondeterministic and trip
+    the drift gate; search engines treat its absence fine."""
+    urls = "\n".join(f"  <url><loc>{BASE}{u}</loc></url>" for u in _all_urls())
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}\n"
+        "</urlset>\n"
+    )
+
+
+def _llms_file() -> str:
+    """llms.txt (llmstxt.org): a curated, plain-text map for LLMs/answer engines - what openOM is,
+    in one honest paragraph, then the canonical links worth reading. This is the AIO/GEO on-ramp."""
+    lines = [
+        "# openOM",
+        "",
+        "> An open (MIT) standard and toolchain that embeds machine-readable, broker-asserted,",
+        "> hash-verified data inside commercial real estate (CRE) offering memorandum (OM) PDFs,",
+        "> and mirrors the same payload as JSON-LD on the web. Extract once at the source; consume",
+        "> cheaply everywhere. Published by Vervelio Labs.",
+        "",
+        "An offering memorandum is an advertisement - a broker's opinion of value, agreed to by the",
+        "seller before publication. openOM records who asserted the data, that it is unaltered, and",
+        "as of when. Verified means provenance (who / unaltered / as-of-when), NOT that the opinion",
+        "is true. The engine is deterministic and inference-free; every payload is an identified",
+        "party's opinion as of a date - assertions, never facts.",
+        "",
+        "## Docs",
+        "",
+        f"- [Documentation home]({BASE}/docs/): per-persona quick-starts and reference.",
+        f"- [Grounding AI agents in openOM]({BASE}/docs/grounding-ai): read verified OM facts via MCP"
+        " instead of hallucination-prone PDF extraction.",
+        f"- [Broker quick-start]({BASE}/docs/quickstart-broker): publish an OM carrying verifiable data.",
+        f"- [Portal quick-start]({BASE}/docs/quickstart-portal): read and trust openOM data.",
+        f"- [Developer quick-start]({BASE}/docs/quickstart-developer): build against the standard.",
+        f"- [Field reference]({BASE}/docs/schema-reference): every payload field, from the schema.",
+        f"- [Validation code catalog]({BASE}/docs/codes): every error/warning/info code.",
+        f"- [Verify a PDF]({BASE}/verify/): check an openOM PDF in the browser.",
+        "",
+        "## Machine artifacts",
+        "",
+        f"- [JSON-LD context]({BASE}/ns/0.1): the openOM 0.1 vocabulary.",
+        f"- [JSON Schema]({BASE}/spec/om-0.1.schema.json): the openOM 0.1 payload schema.",
+        f"- [Webhook envelope schema]({BASE}/spec/webhook-envelope-0.1.schema.json).",
+        f"- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript,"
+        " MIT.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def generate() -> None:
     if SITE.exists():
         shutil.rmtree(SITE)
@@ -148,6 +278,9 @@ def generate() -> None:
     (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
     (SITE / ".htaccess").write_text(_htaccess_file(), "utf-8", newline="\n")  # Apache/GoDaddy
+    (SITE / "robots.txt").write_text(_robots_file(), "utf-8", newline="\n")  # AEO/GEO/AIO crawlers
+    (SITE / "sitemap.xml").write_text(_sitemap_file(), "utf-8", newline="\n")
+    (SITE / "llms.txt").write_text(_llms_file(), "utf-8", newline="\n")  # llmstxt.org AIO on-ramp
 
 
 if __name__ == "__main__":
