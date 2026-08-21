@@ -8,6 +8,7 @@ import {
   integrityHashOfBytes,
   setPdfWorkerSrc,
   validatePayload,
+  type PageText,
   type ValidationReport,
 } from "openom-js";
 import schema from "../../../spec/om-0.1.schema.json";
@@ -39,7 +40,7 @@ import { renderDerived, repriceDiff } from "./review-panel.js";
 import { buildForm, type FormCallbacks } from "./form.js";
 import { applyExtraction } from "./extract/apply.js";
 import { onDeviceExtractor } from "./extract/on-device.js";
-import { pickExtractor } from "./extract/pick.js";
+import { extractorSource, pickDraftSource } from "./extract/source.js";
 import { localDateISO } from "./clock.js";
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
@@ -201,14 +202,17 @@ async function startReview(
       }
     : null;
 
-  // On-device extraction (M5b-2): offer it only when a Prompt API is present; else a manual-entry note.
-  const extractor = await pickExtractor([onDeviceExtractor]);
-  if (extractor) {
-    const btn = el(
-      "button",
-      "extract-btn",
-      "Extract with on-device AI",
-    ) as HTMLButtonElement;
+  // Draft source (M5b-2 / #166): prefer a deterministic structured connector (e.g. a Buildout MCP
+  // pull), else the on-device Prompt API — else a manual-entry note. Connectors are prepended to this
+  // list when configured (see extract/CONNECTORS.md); with none, this is the on-device path unchanged.
+  const source = await pickDraftSource([
+    extractorSource(onDeviceExtractor, "on-device AI"),
+  ]);
+  if (source) {
+    const label = source.deterministic
+      ? `Import from ${source.label}`
+      : `Extract with ${source.label}`;
+    const btn = el("button", "extract-btn", label) as HTMLButtonElement;
     btn.dataset.action = "extract";
     btn.addEventListener("click", () => void runExtract());
     root.appendChild(btn);
@@ -334,23 +338,30 @@ async function startReview(
   };
 
   const runExtract = async (): Promise<void> => {
-    if (!extractor) return;
+    if (!source) return;
     try {
-      const { pages, totalPages } = await extractPageText(capture.bytes);
-      // #91 — a scanned/flattened OM has no text layer; say so instead of pre-filling a blank draft.
-      if (!pages.some((p) => p.text.trim().length > 0)) {
-        status.textContent =
-          "This OM appears to be scanned (no text layer) — extraction can't read it. Enter fields manually.";
-        return;
+      // A deterministic connector (e.g. Buildout) needs NO PDF text — skip text extraction, the
+      // scanned-no-text-layer block, and the truncation note, which are all PDF-inference-only.
+      let pages: PageText[] = [];
+      let totalPages = 0;
+      if (!source.deterministic) {
+        ({ pages, totalPages } = await extractPageText(capture.bytes));
+        // #91 — a scanned/flattened OM has no text layer; say so instead of pre-filling a blank draft.
+        if (!pages.some((p) => p.text.trim().length > 0)) {
+          status.textContent =
+            "This OM appears to be scanned (no text layer) — extraction can't read it. Enter fields manually.";
+          return;
+        }
       }
-      const result = await extractor.extract(pages);
-      rebuild((d) => applyExtraction(d, result)); // reflect extracted fields in the form + derived
+      const result = await source.draft({ pages });
+      rebuild((d) => applyExtraction(d, result)); // reflect drafted fields in the form + derived
       // #66 — surface when only a prefix of a long OM was read; never a silent "complete".
       const truncated =
-        pages.length < totalPages
+        !source.deterministic && pages.length < totalPages
           ? ` (read pages 1–${pages.length} of ${totalPages} only)`
           : "";
-      status.textContent = `Extracted a draft — review every field before asserting.${truncated}`;
+      const verb = source.deterministic ? "Imported" : "Extracted";
+      status.textContent = `${verb} a draft — review every field before asserting.${truncated}`;
     } catch (e) {
       status.textContent = `Extraction failed: ${(e as Error).message}`;
     }
