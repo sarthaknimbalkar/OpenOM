@@ -109,9 +109,13 @@ def _landing_html() -> str:
   <meta property="og:title" content="openOM - verifiable data for CRE offering memoranda" />
   <meta property="og:description" content="{desc}" />
   <meta property="og:url" content="{BASE}/" />
+  <meta property="og:image" content="{BASE}/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="openOM - verifiable data for CRE offering memoranda" />
   <meta name="twitter:description" content="{desc}" />
+  <meta name="twitter:image" content="{BASE}/og.png" />
 {jsonld}
   <style>
     body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 44rem; margin: 3rem auto;
@@ -243,6 +247,8 @@ def _llms_file() -> str:
         "## Docs",
         "",
         f"- [Documentation home]({BASE}/docs/): per-persona quick-starts and reference.",
+        f"- [What is an offering memorandum?]({BASE}/docs/what-is-an-offering-memorandum): the"
+        " definition, an OM's contents, and why its data is an assertion not a fact.",
         f"- [Grounding AI agents in openOM]({BASE}/docs/grounding-ai): read verified OM facts via MCP"
         " instead of hallucination-prone PDF extraction.",
         f"- [Broker quick-start]({BASE}/docs/quickstart-broker): publish an OM carrying verifiable data.",
@@ -275,6 +281,7 @@ def generate() -> None:
         dest = SITE / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page_html, "utf-8", newline="\n")
+    (SITE / "og.png").write_bytes((SPEC / "assets" / "og.png").read_bytes())  # social share card
     (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
     (SITE / ".htaccess").write_text(_htaccess_file(), "utf-8", newline="\n")  # Apache/GoDaddy

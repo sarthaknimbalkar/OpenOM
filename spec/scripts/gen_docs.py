@@ -73,28 +73,44 @@ def _faqpage(qas: list[tuple[str, str]]) -> dict:
     }
 
 
-def _page(title: str, body: str, *, description: str = "", canonical: str = "/", jsonld: str = "") -> str:
+def _page(
+    title: str,
+    body: str,
+    *,
+    description: str = "",
+    canonical: str = "/",
+    jsonld: str = "",
+    seo_title: str = "",
+) -> str:
     """Wrap page body in the shared shell with full SEO/AEO/GEO metadata: description, canonical,
-    Open Graph, Twitter card, and JSON-LD structured data. Dependency-free; deterministic."""
+    Open Graph, Twitter card, and JSON-LD structured data. ``seo_title`` (search-intent phrasing)
+    drives the <title> + og/twitter title; the in-body h1 keeps the short ``title``.
+    Dependency-free; deterministic."""
     url = SITE + canonical
     desc = html.escape(description)
+    head_title = html.escape(seo_title) if seo_title else f"{html.escape(title)} · openOM docs"
+    og_title = html.escape(seo_title) if seo_title else html.escape(title)
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{html.escape(title)} · openOM docs</title>
+  <title>{head_title}</title>
   <meta name="description" content="{desc}" />
   <link rel="canonical" href="{url}" />
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="openOM" />
-  <meta property="og:title" content="{html.escape(title)}" />
+  <meta property="og:title" content="{og_title}" />
   <meta property="og:description" content="{desc}" />
   <meta property="og:url" content="{url}" />
+  <meta property="og:image" content="{SITE}/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="{html.escape(title)}" />
+  <meta name="twitter:title" content="{og_title}" />
   <meta name="twitter:description" content="{desc}" />
+  <meta name="twitter:image" content="{SITE}/og.png" />
 {jsonld}
   <style>
     body {{ font: 16px/1.6 system-ui, sans-serif; max-width: 52rem; margin: 2.5rem auto;
@@ -154,6 +170,11 @@ def _docs_index() -> str:
       <p><a href="/docs/quickstart-developer.html">10-minute quick-start →</a></p>
     </div>
   </div>
+  <h2>Learn</h2>
+  <ul>
+    <li><a href="/docs/what-is-an-offering-memorandum.html">What is an offering memorandum?</a>
+        - the definition, what an OM contains, and why its data is an assertion.</li>
+  </ul>
   <h2>Reference</h2>
   <ul>
     <li><a href="/docs/schema-reference.html">Payload field reference</a>
@@ -211,6 +232,7 @@ def _docs_index() -> str:
         description=desc,
         canonical="/docs/",
         jsonld=_jsonld(_article("openOM documentation", desc, "/docs/"), _breadcrumb("/docs/", "Docs"), _faqpage(faq)),
+        seo_title="openOM docs - machine-readable data for CRE offering memoranda",
     )
 
 
@@ -237,7 +259,7 @@ om validate deal.json                 # schema errors block; consistency warning
      what goes in <code>deal.json</code>.</p>
 """
     _d = 'Turn an offering memorandum PDF into an openOM PDF carrying verifiable, broker-asserted data, via the browser extension or the om CLI. The output is visually identical.'
-    return _page("Broker quick-start", body, description=_d, canonical="/docs/quickstart-broker", jsonld=_jsonld(_article("Broker quick-start", _d, "/docs/quickstart-broker"), _breadcrumb("/docs/quickstart-broker", "Broker quick-start")))
+    return _page("Broker quick-start", body, description=_d, canonical="/docs/quickstart-broker", jsonld=_jsonld(_article("Broker quick-start", _d, "/docs/quickstart-broker"), _breadcrumb("/docs/quickstart-broker", "Broker quick-start")), seo_title="Publish a verifiable offering memorandum - openOM broker quick-start")
 
 
 def _quickstart_portal() -> str:
@@ -260,7 +282,7 @@ if (r.state === "present" &amp;&amp; r.verification.hashValid) useIt(r.payload);
      - signature → envelope → payloadHash binding, in that order.</p>
 """
     _d = 'Read and trust openOM data on offering memoranda you host or receive: the drop-in <openom-badge> widget and the openom-js reader, with an honest trust badge.'
-    return _page("Portal quick-start", body, description=_d, canonical="/docs/quickstart-portal", jsonld=_jsonld(_article("Portal quick-start", _d, "/docs/quickstart-portal"), _breadcrumb("/docs/quickstart-portal", "Portal quick-start")))
+    return _page("Portal quick-start", body, description=_d, canonical="/docs/quickstart-portal", jsonld=_jsonld(_article("Portal quick-start", _d, "/docs/quickstart-portal"), _breadcrumb("/docs/quickstart-portal", "Portal quick-start")), seo_title="Read & trust openOM data on offering memoranda - portal quick-start")
 
 
 def _quickstart_developer() -> str:
@@ -287,7 +309,7 @@ npm  install openom-js       # TypeScript: byte-parity with the Python core</cod
      <a href="/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
 """
     _d = 'Build against the openOM standard: JSON Schema, JSON-LD @context, RFC 8785 canonicalization, conformance vectors, and byte-parity Python and TypeScript reference implementations.'
-    return _page("Developer quick-start", body, description=_d, canonical="/docs/quickstart-developer", jsonld=_jsonld(_article("Developer quick-start", _d, "/docs/quickstart-developer"), _breadcrumb("/docs/quickstart-developer", "Developer quick-start")))
+    return _page("Developer quick-start", body, description=_d, canonical="/docs/quickstart-developer", jsonld=_jsonld(_article("Developer quick-start", _d, "/docs/quickstart-developer"), _breadcrumb("/docs/quickstart-developer", "Developer quick-start")), seo_title="Build against the openOM standard - developer quick-start")
 
 
 def _resolve(schema: dict, node: dict) -> dict:
@@ -347,7 +369,7 @@ def _schema_reference() -> str:
   </table>
 """
     _d = 'openOM 0.1 payload field reference, generated from the JSON Schema: every property, type, and requirement for commercial real estate offering-memorandum data.'
-    return _page("Field reference", body, description=_d, canonical="/docs/schema-reference", jsonld=_jsonld(_article("Field reference", _d, "/docs/schema-reference"), _breadcrumb("/docs/schema-reference", "Field reference")))
+    return _page("Field reference", body, description=_d, canonical="/docs/schema-reference", jsonld=_jsonld(_article("Field reference", _d, "/docs/schema-reference"), _breadcrumb("/docs/schema-reference", "Field reference")), seo_title="openOM payload field reference (JSON Schema)")
 
 
 def _codes_catalog() -> str:
@@ -374,7 +396,7 @@ def _codes_catalog() -> str:
   </table>
 """
     _d = 'openOM validation code catalog: every schema error, consistency warning, and info code the validator emits, with its requirement clause.'
-    return _page("Code catalog", body, description=_d, canonical="/docs/codes", jsonld=_jsonld(_article("Code catalog", _d, "/docs/codes"), _breadcrumb("/docs/codes", "Code catalog")))
+    return _page("Code catalog", body, description=_d, canonical="/docs/codes", jsonld=_jsonld(_article("Code catalog", _d, "/docs/codes"), _breadcrumb("/docs/codes", "Code catalog")), seo_title="openOM validation codes - errors, warnings & info reference")
 
 
 def _verify_tool() -> str:
@@ -414,7 +436,7 @@ def _verify_tool() -> str:
      <a href="/docs/quickstart-portal.html">embeddable badge</a>.</small></p>
 """
     _d = 'Verify an openOM offering-memorandum PDF entirely in your browser: check its embedded, unaltered, broker-asserted data. Bytes never leave your machine.'
-    return _page("Verify a PDF", body, description=_d, canonical="/verify/", jsonld=_jsonld(_article("Verify a PDF", _d, "/verify/"), _breadcrumb("/verify/", "Verify a PDF")))
+    return _page("Verify a PDF", body, description=_d, canonical="/verify/", jsonld=_jsonld(_article("Verify a PDF", _d, "/verify/"), _breadcrumb("/verify/", "Verify a PDF")), seo_title="Verify an openOM offering-memorandum PDF in your browser")
 
 
 def _grounding_ai() -> str:
@@ -470,7 +492,126 @@ def _grounding_ai() -> str:
      quick-start</a> and the <a href="/verify/">verify tool</a>.</small></p>
 """
     _d = "Ground your commercial real estate AI agent in verified facts: read an offering memorandum's broker-asserted, hash-verified openOM payload deterministically via MCP instead of hallucination-prone PDF extraction."
-    return _page("Grounding AI agents", body, description=_d, canonical="/docs/grounding-ai", jsonld=_jsonld(_article("Grounding AI agents", _d, "/docs/grounding-ai"), _breadcrumb("/docs/grounding-ai", "Grounding AI agents"), _faqpage([('Can I ground an AI agent on offering memorandum data?', 'Yes. Point your MCP client at the openOM server and read a broker-asserted, hash-verified payload via om_read: deterministic ground truth instead of hallucination-prone PDF extraction.'), ('How does openOM reduce AI hallucination in commercial real estate?', 'It replaces per-document AI extraction with one at-source, hash-verified, broker-asserted fact attributed to a named party as of a date, so the model cites provenance instead of guessing.')])))
+    return _page("Grounding AI agents", body, description=_d, canonical="/docs/grounding-ai", jsonld=_jsonld(_article("Grounding AI agents", _d, "/docs/grounding-ai"), _breadcrumb("/docs/grounding-ai", "Grounding AI agents"), _faqpage([('Can I ground an AI agent on offering memorandum data?', 'Yes. Point your MCP client at the openOM server and read a broker-asserted, hash-verified payload via om_read: deterministic ground truth instead of hallucination-prone PDF extraction.'), ('How does openOM reduce AI hallucination in commercial real estate?', 'It replaces per-document AI extraction with one at-source, hash-verified, broker-asserted fact attributed to a named party as of a date, so the model cites provenance instead of guessing.')])), seo_title="Ground AI agents in verified CRE offering-memorandum data - openOM")
+
+
+def _what_is_om() -> str:
+    """Top-of-funnel pillar page: the definitional query 'what is an offering memorandum'. This is the
+    query answer engines (Google AI Overviews, Perplexity, ChatGPT) resolve most; a clean DefinedTerm
+    + FAQPage page is how openOM gets cited as the authority on OM data - AEO/GEO leverage."""
+    canonical = "/docs/what-is-an-offering-memorandum"
+    desc = (
+        "An offering memorandum (OM) is the marketing document a broker uses to offer a commercial "
+        "real estate asset for sale: the property, the deal terms, the tenancy, and the broker's "
+        "opinion of value. Learn what an OM contains, why its data is an assertion rather than a "
+        "fact, and how openOM makes it machine-readable and verifiable."
+    )
+    body = """
+  <h1>What is an offering memorandum (OM)?</h1>
+  <p>An <b>offering memorandum</b> (OM, sometimes "offering memo" or "deal book") is the marketing
+     document a commercial real estate (CRE) broker prepares to offer a property for sale to
+     prospective buyers. It presents the asset, the deal terms, the tenancy, and the broker's
+     <b>opinion of value</b> - typically as a designed PDF of 10-40 pages.</p>
+
+  <h2>What an offering memorandum contains</h2>
+  <ul>
+    <li><b>The property</b> - address, asset type, building and lot size, year built.</li>
+    <li><b>The deal</b> - asking price, capitalization (cap) rate, and net operating income (NOI).</li>
+    <li><b>The tenancy</b> - tenant(s), lease type (e.g. NNN), term, and the rent schedule.</li>
+    <li><b>Broker context</b> - location, market, and investment-highlight narrative.</li>
+  </ul>
+
+  <h2>Why OM data is an <em>assertion</em>, not a fact</h2>
+  <p>An OM is an <b>advertisement</b>: a broker's opinion of value that the seller agreed to before
+     publication. The NOI may be in-place or pro-forma; the cap rate follows from a chosen price. So
+     every figure is <b>an identified party's opinion as of a date</b> - not independently verified
+     market truth. Any system that consumes OM data honestly must record <b>who</b> asserted it, that
+     it is <b>unaltered</b>, and <b>as of when</b> - and must never claim the opinion is true.
+     <b>Verified means provenance, not truth.</b></p>
+
+  <h2>The problem: OM data is trapped in the PDF</h2>
+  <p>Because the OM ships as a designed PDF, every downstream party - buyers, brokers, portals, lenders,
+     and AI agents - re-extracts the same numbers by hand or with error-prone parsing. The work is
+     repeated thousands of times and each copy can drift or be misread.</p>
+
+  <h2>How openOM makes an offering memorandum machine-readable</h2>
+  <p><a href="/">openOM</a> is an open (MIT) standard that embeds a <b>machine-readable,
+     broker-asserted, hash-verified</b> data payload inside the OM PDF (via the same mechanism as
+     Factur-X / PDF/A-3), and mirrors it as JSON-LD on the web. The data is extracted <b>once at the
+     source</b> and consumed cheaply everywhere - with its provenance intact.</p>
+
+  <h3>openOM vs. manual OM extraction</h3>
+  <table>
+    <thead><tr><th></th><th>Manual / AI re-extraction</th><th>openOM</th></tr></thead>
+    <tbody>
+      <tr><td>Where extraction happens</td><td>Every consumer, every time</td>
+          <td>Once, at the source</td></tr>
+      <tr><td>Provenance</td><td>Lost - who asserted what is unknown</td>
+          <td>Recorded - assertedBy + assertedDate</td></tr>
+      <tr><td>Integrity</td><td>Unverifiable</td><td>Hash-verified (RFC 8785 + SHA-256)</td></tr>
+      <tr><td>AI reliability</td><td>Hallucination-prone re-parse</td>
+          <td>Deterministic read of a verified payload</td></tr>
+      <tr><td>Cost at scale</td><td>Repeated per document</td><td>Near-zero downstream</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li><b>Brokers:</b> <a href="/docs/quickstart-broker.html">publish a verifiable OM →</a></li>
+    <li><b>Portals / consumers:</b> <a href="/docs/quickstart-portal.html">read and trust openOM data →</a></li>
+    <li><b>AI builders:</b> <a href="/docs/grounding-ai.html">ground your agent in verified OM facts →</a></li>
+    <li><b>Verify one now:</b> <a href="/verify/">check an OM PDF in your browser →</a></li>
+  </ul>
+  <p><small>openOM is published by <a href="https://verveliolabs.com">Vervelio Labs</a>. The engine is
+     deterministic and inference-free; every payload is an assertion, never a fact.</small></p>
+"""
+    faq = [
+        (
+            "What is an offering memorandum in commercial real estate?",
+            "An offering memorandum (OM) is the marketing document a CRE broker prepares to offer a "
+            "property for sale: it presents the property, the deal terms (asking price, cap rate, NOI), "
+            "the tenancy, and the broker's opinion of value, usually as a designed PDF.",
+        ),
+        (
+            "Is the data in an offering memorandum verified or true?",
+            "No. An OM is an advertisement - a broker's opinion of value the seller agreed to before "
+            "publication. Its figures are assertions as of a date, not independently verified market "
+            "truth. openOM records who asserted the data, that it is unaltered, and as of when; "
+            "verified means provenance, not truth.",
+        ),
+        (
+            "What is the difference between an offering memorandum and a broker opinion of value?",
+            "An offering memorandum is the full marketing package used to sell a property; the broker's "
+            "opinion of value is the price/valuation view expressed within it. Every headline figure in "
+            "an OM (price, cap rate, NOI) reflects that opinion.",
+        ),
+        (
+            "How do you extract data from an offering memorandum PDF reliably?",
+            "Instead of re-parsing the PDF per consumer, openOM embeds a machine-readable, "
+            "broker-asserted, hash-verified payload in the OM itself (and mirrors it as JSON-LD), so any "
+            "tool or AI agent reads the same verified data deterministically.",
+        ),
+    ]
+    return _page(
+        "What is an offering memorandum?",
+        body,
+        description=desc,
+        canonical=canonical,
+        jsonld=_jsonld(
+            _article("What is an offering memorandum (OM)?", desc, canonical),
+            _breadcrumb(canonical, "What is an offering memorandum?"),
+            _faqpage(faq),
+            {
+                "@context": "https://schema.org",
+                "@type": "DefinedTerm",
+                "name": "Offering memorandum",
+                "alternateName": ["OM", "offering memo", "CRE offering memorandum"],
+                "description": desc,
+                "url": SITE + canonical,
+            },
+        ),
+        seo_title="What is an offering memorandum (OM)? - definition, contents & data",
+    )
 
 
 def docs_pages() -> dict[str, str]:
@@ -478,6 +619,7 @@ def docs_pages() -> dict[str, str]:
     return {
         "verify/index.html": _verify_tool(),
         "docs/index.html": _docs_index(),
+        "docs/what-is-an-offering-memorandum.html": _what_is_om(),
         "docs/grounding-ai.html": _grounding_ai(),
         "docs/quickstart-broker.html": _quickstart_broker(),
         "docs/quickstart-portal.html": _quickstart_portal(),
