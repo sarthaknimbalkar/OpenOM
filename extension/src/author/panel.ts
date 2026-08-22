@@ -87,22 +87,62 @@ export function renderCaptureScreen(root: HTMLElement): void {
     if (f)
       void f.arrayBuffer().then((b) => startReview(root, new Uint8Array(b)));
   });
+
+  // [M6] Surface the highest-value path up front: if the active tab is a Buildout listing, tell the
+  // broker their fields will be imported automatically once they pick the OM PDF (the connector needs
+  // the PDF to embed into). Previously the connector was only discoverable deep inside the review flow.
+  void chrome.tabs
+    ?.query({ active: true, currentWindow: true })
+    .then(([tab]) => {
+      if (buildoutRefFromUrl(tab?.url)) {
+        const hint = el(
+          "p",
+          "buildout-hint",
+          "This looks like a Buildout listing - choose the OM PDF above and its fields will be imported from Buildout automatically.",
+        );
+        root.insertBefore(hint, useTab);
+      }
+    })
+    .catch(() => {});
 }
 
 async function captureFromTab(root: HTMLElement): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.url) await captureFromUrl(root, tab.url);
+  if (tab?.url) {
+    await captureFromUrl(root, tab.url);
+    return;
+  }
+  // [P4] no active-tab URL (e.g. a chrome:// page or a restricted tab) - say so instead of doing
+  // nothing on the click.
+  root.replaceChildren(
+    el(
+      "p",
+      "err",
+      "Couldn't read the current tab's URL. Open the OM in a tab, or use the file picker below.",
+    ),
+  );
 }
 
 /** Fetch a URL's PDF bytes (SW-side, page-CSP-immune) and start review. Also the ?url= deep-link. */
 async function captureFromUrl(root: HTMLElement, url: string): Promise<void> {
+  // [P4] a large OM re-fetch can take a moment - show progress instead of a frozen panel.
+  root.replaceChildren(el("p", "hint", "Fetching PDF…"));
   const resp = (await chrome.runtime.sendMessage({
     type: "author:fetch",
     url,
-  })) as { b64: string | null } | { error: string };
+  })) as { b64: string | null; reason?: "oversize" | "fetch" } | { error: string };
   if ("error" in resp || !resp.b64) {
+    // [M6] a too-big OM from the tab path gets a clear, actionable message (not a generic network
+    // error) - and note the file picker has no such cap.
+    const oversize = !("error" in resp) && resp.reason === "oversize";
     root.replaceChildren(
-      el("p", "err", "Could not fetch this page's PDF bytes."),
+      el(
+        "p",
+        "err",
+        oversize
+          ? "This OM is larger than 25 MB, so it can't be re-fetched from the tab. Use the file picker below (no size limit), or the openOM CLI."
+          : "Could not fetch this page's PDF bytes. Use the file picker below to choose the OM instead.",
+      ),
     );
     return;
   }
@@ -167,6 +207,30 @@ async function startReview(
     );
   }
 
+  // [M1] A digitally-signed OM: embedding rewrites the file and invalidates the signature. Warn and
+  // require an explicit acknowledgement before Assert (the CLI is the path to preserve a signature).
+  let signedAck = false;
+  if (capture.signed) {
+    const warn = el("section", "signed-warning");
+    warn.appendChild(
+      el(
+        "p",
+        undefined,
+        "This PDF is digitally signed. Embedding rewrites the file and will invalidate that signature. To keep the signature, embed with the openOM CLI instead.",
+      ),
+    );
+    const lbl = el("label", "signed-ack-field");
+    const ck = el("input", "signed-ack") as HTMLInputElement;
+    ck.type = "checkbox";
+    ck.addEventListener("change", () => {
+      signedAck = ck.checked;
+      renderDerivedNow();
+    });
+    lbl.append(ck, " I understand embedding will invalidate the existing signature.");
+    warn.appendChild(lbl);
+    root.appendChild(warn);
+  }
+
   // Broker profile (assertedBy), device-local.
   const prof = el("section", "profile");
   prof.appendChild(el("h2", undefined, "Reviewing broker"));
@@ -224,13 +288,27 @@ async function startReview(
     extractorSource(onDeviceExtractor, "on-device AI"),
   ]);
   if (source) {
+    // [M5] Be honest when the on-device model isn't downloaded yet: a click would otherwise trigger a
+    // silent multi-GB download. Label it so, and note manual entry is always available.
+    const needsDownload = !source.deterministic && (await source.readiness()) === "needs-download";
     const label = source.deterministic
       ? `Import from ${source.label}`
-      : `Extract with ${source.label}`;
+      : needsDownload
+        ? `Download on-device AI (~1-2 GB), then extract`
+        : `Extract with ${source.label}`;
     const btn = el("button", "extract-btn", label) as HTMLButtonElement;
     btn.dataset.action = "extract";
     btn.addEventListener("click", () => void runExtract());
     root.appendChild(btn);
+    if (needsDownload) {
+      root.appendChild(
+        el(
+          "p",
+          "extract-hint",
+          "On-device AI isn't downloaded yet - the first extract downloads it (progress shown). You can also just enter the fields manually.",
+        ),
+      );
+    }
   } else {
     root.appendChild(
       el("p", "no-ai", "On-device AI unavailable - enter fields manually."),
@@ -267,9 +345,12 @@ async function startReview(
         ),
       ); // #97
     }
-    derivedEl
-      .querySelector("#assert")
-      ?.addEventListener("click", () => void doAssert());
+    const assertBtn = derivedEl.querySelector("#assert");
+    // [M1] block Assert until a signed OM's invalidation is acknowledged.
+    if (capture.signed && !signedAck && assertBtn instanceof HTMLButtonElement) {
+      assertBtn.disabled = true;
+    }
+    assertBtn?.addEventListener("click", () => void doAssert());
   };
 
   // A field-level edit mutates the draft (source of truth), persists (#94), and refreshes the derived
@@ -307,6 +388,17 @@ async function startReview(
       ),
     onRemoveRentPeriod: (i) =>
       rebuild((d) => removeArrayItem(d, "/lease/rentSchedule", i)),
+    // [M7] open the SOURCE OM (the captured bytes) at the cited page in a new tab so the broker can
+    // check the value against the document. Uses the PDF viewer's #page= fragment; a blob URL keeps
+    // the bytes local (never uploaded).
+    onViewPage: (n) => {
+      const url = URL.createObjectURL(
+        new Blob([new Uint8Array(capture.bytes)], { type: "application/pdf" }),
+      );
+      window.open(`${url}#page=${n}`, "_blank", "noopener");
+      // Revoke after the viewer has had time to load the bytes.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    },
   };
 
   const buildFormNow = (): void => {
@@ -329,6 +421,10 @@ async function startReview(
   };
 
   const doAssert = async (): Promise<void> => {
+    if (capture.signed && !signedAck) {
+      status.textContent = "Blocked: acknowledge the signature will be invalidated first.";
+      return;
+    }
     try {
       await setProfile(profile());
       const final = finalize(
@@ -360,7 +456,9 @@ async function startReview(
       let pages: PageText[] = [];
       let totalPages = 0;
       if (!source.deterministic) {
-        ({ pages, totalPages } = await extractPageText(capture.bytes));
+        // [M4] read deeper than the old 40-page default - rent rolls / financial exhibits sit at the
+        // back of long OMs; on-device extraction chunks the text, so more pages is safe.
+        ({ pages, totalPages } = await extractPageText(capture.bytes, 80));
         // #91 - a scanned/flattened OM has no text layer; say so instead of pre-filling a blank draft.
         if (!pages.some((p) => p.text.trim().length > 0)) {
           status.textContent =
@@ -368,7 +466,12 @@ async function startReview(
           return;
         }
       }
-      const result = await source.draft({ pages });
+      const result = await source.draft({
+        pages,
+        // [M5] surface on-device model download progress instead of a silent hang.
+        onDownloadProgress: (f) =>
+          (status.textContent = `Downloading on-device AI… ${Math.round(f * 100)}%`),
+      });
       rebuild((d) => applyExtraction(d, result)); // reflect drafted fields in the form + derived
       // #66 - surface when only a prefix of a long OM was read; never a silent "complete".
       const truncated =

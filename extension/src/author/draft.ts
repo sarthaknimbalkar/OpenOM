@@ -71,12 +71,31 @@ export function omissions(d: Draft, schemaPaths: string[]): string[] {
   return schemaPaths.filter((p) => resolve(d.payload, p) === undefined);
 }
 
-/** Leaf paths that carry a value but no citable evidence - flagged for the human, never blocked. */
+/** The financially-material figures a buyer underwrites - the ONLY fields worth a "please cite" nag.
+ * [P2] Nagging for a citation on an address, a state code, or an enum trains the broker to ignore the
+ * flag; scope it to the numbers that carry money/risk. [M7] structured rows + assertedBy are already
+ * out (no evidence inputs / stamped profile). */
+const MATERIAL_EVIDENCE_PATHS = new Set([
+  "/deal/askingPrice",
+  "/deal/capRate",
+  "/deal/noi",
+  "/deal/pricePerSF",
+  "/deal/pricePerUnit",
+  "/property/buildingSF",
+  "/property/units",
+  "/property/occupancy",
+]);
+
+/** Material leaf paths that carry a value but no citable evidence - flagged for the human, never
+ * blocked. Only financially-material figures are flagged ([P2]). */
 export function fieldsWithoutEvidence(d: Draft): string[] {
-  return leaves(d.payload).map(([p]) => p).filter((p) => {
-    const ev = d.evidence[p];
-    return !ev || (ev.page === undefined && !ev.quote);
-  });
+  return leaves(d.payload)
+    .map(([p]) => p)
+    .filter((p) => MATERIAL_EVIDENCE_PATHS.has(p))
+    .filter((p) => {
+      const ev = d.evidence[p];
+      return !ev || (ev.page === undefined && !ev.quote);
+    });
 }
 
 /** JSON-pointer path + value for every primitive/null leaf (recursing objects and arrays). */

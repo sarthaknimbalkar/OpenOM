@@ -1,10 +1,11 @@
 // In-browser decryption of empty-user-password AES-encrypted PDFs (#4) - so author mode can embed into
 // permission-encrypted OMs (restrict print/copy, NOT password-protected) instead of refusing them (#107).
-// Deterministic, zero inference. Scope: Standard security handler, empty user password, AES only -
-// V4/R4 (AESV2, AES-128, per-object keys) and V5/R6 (AESV3, AES-256, file key used directly). Anything
-// else (RC4, a real password, unknown /V·/R, any parse/crypto failure) → null; the caller falls back to
-// the #107 "use the CLI" message. A wrong key must yield null, never a corrupt PDF: we validate the empty
-// user password against /U BEFORE decrypting, and any AES PKCS#7 padding failure aborts to null.
+// Deterministic, zero inference. Scope: Standard security handler, empty user password - V4/R4 (AESV2,
+// AES-128, per-object keys), V5/R6 (AESV3, AES-256, file key used directly), and V4/R4 RC4 ("V2" CFM,
+// per-object keys, no sAlT) ([P6]). Anything else (a real password, unknown /V·/R, any parse/crypto
+// failure) → null; the caller falls back to the #107 "use the CLI" message. A wrong key must yield null,
+// never a corrupt PDF: we validate the empty user password against /U BEFORE decrypting, and any AES
+// PKCS#7 padding failure aborts to null.
 //
 // Refs: PDF 32000-1 §7.6 (R2–R4); PDF 32000-2 §7.6.4.3.3–.4 + Adobe "Algorithm 2.B" (R6).
 import { cbc } from "@noble/ciphers/aes.js";
@@ -48,7 +49,14 @@ export async function decryptPdf(pdfBytes: Uint8Array): Promise<Uint8Array | nul
     const info = readEncryptInfo(doc.context, pdfLib, pdfBytes);
     if (info === null) return null;
     if (!((info.V === 4 && info.R === 4) || (info.V === 5 && info.R === 6))) return null;
-    if (info.cfm !== "AESV2" && info.cfm !== "AESV3") return null;
+    // Scope: AESV2 (V4/R4), AESV3 (V5/R6), and RC4 ("V2" CFM, V4/R4) ([P6]) - all empty user password.
+    if (info.cfm !== "AESV2" && info.cfm !== "AESV3" && info.cfm !== "V2") return null;
+    const isRC4 = info.cfm === "V2";
+    // The per-object cipher: RC4 (no IV, whole buffer) or AES-CBC (IV(16) ‖ ct, PKCS#7). Short/empty
+    // strings pass through unchanged.
+    const cipher: Cipher = isRC4
+      ? (key, data) => (data.length ? rc4(key, data) : data)
+      : aesCbcDecrypt;
 
     let fileKey: Uint8Array | null;
     if (info.R === 4) {
@@ -73,23 +81,25 @@ export async function decryptPdf(pdfBytes: Uint8Array): Promise<Uint8Array | nul
       if (info.encRef && ref === info.encRef) continue; // never decrypt the /Encrypt dict
       if (containerNums.has(ref.objectNumber)) continue; // ObjStm container - handled below
       const objKey =
-        info.R === 4 ? objectKeyR4(fileKey, ref.objectNumber, ref.generationNumber) : fileKey;
+        info.R === 4
+          ? objectKeyR4(fileKey, ref.objectNumber, ref.generationNumber, !isRC4)
+          : fileKey;
       if (obj instanceof pdfLib.PDFRawStream) {
         const type = typeName(obj.dict, pdfLib);
         if (type === "XRef") continue; // cross-reference streams are never encrypted
         if (type === "Metadata" && !info.encryptMetadata) continue; // unencrypted metadata
-        walkDict(obj.dict, objKey, pdfLib); // strings in the stream dict are encrypted too
-        const dec = aesCbcDecrypt(objKey, obj.contents);
+        walkDict(obj.dict, objKey, pdfLib, cipher); // strings in the stream dict are encrypted too
+        const dec = cipher(objKey, obj.contents);
         obj.dict.set(pdfLib.PDFName.of("Length"), pdfLib.PDFNumber.of(dec.length));
         doc.context.assign(ref, pdfLib.PDFRawStream.of(obj.dict, dec)); // .contents is readonly
       } else {
-        decryptObjectTree(obj, objKey, pdfLib);
+        decryptObjectTree(obj, objKey, pdfLib, cipher);
       }
     }
 
     for (const c of rawContainers) {
-      const objKey = info.R === 4 ? objectKeyR4(fileKey, c.num, c.gen) : fileKey;
-      const dec = aesCbcDecrypt(objKey, c.body);
+      const objKey = info.R === 4 ? objectKeyR4(fileKey, c.num, c.gen, !isRC4) : fileKey;
+      const dec = cipher(objKey, c.body);
       const d = pdfLib.PDFDict.withContext(doc.context);
       d.set(pdfLib.PDFName.of("N"), pdfLib.PDFNumber.of(c.n));
       d.set(pdfLib.PDFName.of("First"), pdfLib.PDFNumber.of(c.first));
@@ -108,6 +118,9 @@ export async function decryptPdf(pdfBytes: Uint8Array): Promise<Uint8Array | nul
 }
 
 type PdfLib = typeof import("pdf-lib");
+
+/** Per-object decryptor: (objectKey, ciphertext) → plaintext. RC4 or AES-CBC, chosen per document. */
+type Cipher = (objKey: Uint8Array, data: Uint8Array) => Uint8Array;
 
 function typeName(dict: import("pdf-lib").PDFDict, { PDFName }: PdfLib): string | null {
   const t = dict.lookup(PDFName.of("Type"));
@@ -273,8 +286,9 @@ function validateUserPasswordR4(info: EncryptInfo, fileKey: Uint8Array): boolean
   return constEqual(x.subarray(0, 16), info.U.subarray(0, 16));
 }
 
-/** Algorithm 1 per-object key for AESV2: MD5(fileKey ‖ obj(3 LE) ‖ gen(2 LE) ‖ "sAlT"), truncated. */
-function objectKeyR4(fileKey: Uint8Array, objNum: number, gen: number): Uint8Array {
+/** Algorithm 1 per-object key: MD5(fileKey ‖ obj(3 LE) ‖ gen(2 LE) [‖ "sAlT" for AESV2]), truncated.
+ * The "sAlT" suffix is AESV2-only; RC4 ("V2") omits it ([P6]). */
+function objectKeyR4(fileKey: Uint8Array, objNum: number, gen: number, aes: boolean): Uint8Array {
   const extra = new Uint8Array([
     objNum & 0xff,
     (objNum >> 8) & 0xff,
@@ -282,7 +296,7 @@ function objectKeyR4(fileKey: Uint8Array, objNum: number, gen: number): Uint8Arr
     gen & 0xff,
     (gen >> 8) & 0xff,
   ]);
-  const m = md5(concatBytes(fileKey, extra, SALT));
+  const m = aes ? md5(concatBytes(fileKey, extra, SALT)) : md5(concatBytes(fileKey, extra));
   return m.slice(0, Math.min(fileKey.length + 5, 16));
 }
 
@@ -331,10 +345,11 @@ function decryptObjectTree(
   obj: import("pdf-lib").PDFObject,
   objKey: Uint8Array,
   pdfLib: PdfLib,
+  cipher: Cipher,
 ): void {
   const { PDFDict, PDFArray } = pdfLib;
-  if (obj instanceof PDFDict) walkDict(obj, objKey, pdfLib);
-  else if (obj instanceof PDFArray) walkArray(obj, objKey, pdfLib);
+  if (obj instanceof PDFDict) walkDict(obj, objKey, pdfLib, cipher);
+  else if (obj instanceof PDFArray) walkArray(obj, objKey, pdfLib, cipher);
   // A standalone indirect scalar (string/name/number) has no container to rewrite through; our target
   // producers don't emit encrypted top-level indirect strings, so leaving scalars is correct.
 }
@@ -343,35 +358,46 @@ function decryptString(
   v: import("pdf-lib").PDFObject,
   objKey: Uint8Array,
   pdfLib: PdfLib,
+  cipher: Cipher,
 ): import("pdf-lib").PDFObject | null {
   const bytes = asBytes(v, pdfLib);
   if (bytes === null) return null;
-  const dec = aesCbcDecrypt(objKey, bytes);
+  const dec = cipher(objKey, bytes);
   return pdfLib.PDFHexString.of(toHex(dec));
 }
 
-function walkDict(dict: import("pdf-lib").PDFDict, objKey: Uint8Array, pdfLib: PdfLib): void {
+function walkDict(
+  dict: import("pdf-lib").PDFDict,
+  objKey: Uint8Array,
+  pdfLib: PdfLib,
+  cipher: Cipher,
+): void {
   const { PDFDict, PDFArray } = pdfLib;
   for (const [name, val] of dict.entries()) {
-    const s = decryptString(val, objKey, pdfLib);
+    const s = decryptString(val, objKey, pdfLib, cipher);
     if (s !== null) dict.set(name, s);
-    else if (val instanceof PDFDict) walkDict(val, objKey, pdfLib);
-    else if (val instanceof PDFArray) walkArray(val, objKey, pdfLib);
+    else if (val instanceof PDFDict) walkDict(val, objKey, pdfLib, cipher);
+    else if (val instanceof PDFArray) walkArray(val, objKey, pdfLib, cipher);
   }
 }
 
-function walkArray(arr: import("pdf-lib").PDFArray, objKey: Uint8Array, pdfLib: PdfLib): void {
+function walkArray(
+  arr: import("pdf-lib").PDFArray,
+  objKey: Uint8Array,
+  pdfLib: PdfLib,
+  cipher: Cipher,
+): void {
   const { PDFDict, PDFArray } = pdfLib;
   for (let i = 0; i < arr.size(); i++) {
     const val = arr.get(i);
-    const s = decryptString(val, objKey, pdfLib);
+    const s = decryptString(val, objKey, pdfLib, cipher);
     if (s !== null) arr.set(i, s);
-    else if (val instanceof PDFDict) walkDict(val, objKey, pdfLib);
-    else if (val instanceof PDFArray) walkArray(val, objKey, pdfLib);
+    else if (val instanceof PDFDict) walkDict(val, objKey, pdfLib, cipher);
+    else if (val instanceof PDFArray) walkArray(val, objKey, pdfLib, cipher);
   }
 }
 
-/** RC4 stream cipher - used ONLY for the R4 /U password check (@noble/ciphers omits RC4 by design). */
+/** RC4 stream cipher - the R4 /U password check AND ("V2") full RC4 decryption ([P6]). */
 function rc4(key: Uint8Array, data: Uint8Array): Uint8Array {
   const s = new Uint8Array(256);
   for (let i = 0; i < 256; i++) s[i] = i;

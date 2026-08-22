@@ -1,6 +1,14 @@
 {
-  "financials": {"sale_price": 1850000, "cap_rate": 6.5, "noi": 115625, "cap_rate_derived": 6.25},
-  "dates": {"listed_on": "2026-08-15", "close_date": null},
+  "financials": {
+    "sale_price": 1850000,
+    "cap_rate": 6.5,
+    "noi": 115625,
+    "cap_rate_derived": 6.25
+  },
+  "dates": {
+    "listed_on": "2026-08-15",
+    "close_date": null
+  },
   "core": {
     "research_property_attributes.address": "1000 Example Rd",
     "research_property_attributes.city": "Sampleville",
@@ -14,11 +22,15 @@
     "research_property_attributes.lot_size": "1.25",
     "research_property_attributes.lot_size_units": "Acres",
     "research_property_attributes.occupancy_pct": "100.0",
-    "research_property_attributes.number_of_units": "1"
+    "research_property_attributes.number_of_units": "1",
+    "research_property_attributes.property_type": "Retail"
   },
   "custom_fields": {
-    "Tenant": "Example Retail Stores, LLC", "Lease type": "Absolute NNN",
-    "Lease start date": "5/1/2019", "Lease expiration date": "4/30/2034",
-    "Lease guarantor": "Example Retail Corp.", "NOI": "115625"
+    "Tenant": "Example Retail Stores, LLC",
+    "Lease type": "Absolute NNN",
+    "Lease start date": "5/1/2019",
+    "Lease expiration date": "4/30/2034",
+    "Lease guarantor": "Example Retail Corp.",
+    "NOI": "115625"
   }
 }

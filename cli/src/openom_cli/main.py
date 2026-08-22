@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 """The ``om`` CLI over openom-core (spec §5a). Thin, deterministic, zero inference.
 
-Commands: embed · embed-batch · buildout-manifest · read · inspect · validate · check · extract ·
-conformance · version. JSON goes
+Commands: embed · embed-batch · buildout-pull · buildout-manifest · mirror · read · inspect ·
+validate · check · extract · conformance · version. JSON goes
 to stdout (``--format pretty|compact``; ``--quiet`` suppresses it). A path of ``-`` means stdin
 (input) or stdout (``embed --out -``) for pipe-friendly use. Exit codes: 0 ok · 1 validation/
 conformance failure · 2 usage (typer) · 3 data/IO error (bad PDF/JSON, OM-IO-*). Warnings never
@@ -34,7 +34,7 @@ from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
 
-from openom_cli.buildout import listing_to_payload
+from openom_cli.buildout import listing_to_payload, payload_coverage
 
 SPEC_VERSION = "0.1"
 
@@ -153,12 +153,27 @@ def embed(
     payload: Annotated[Path, typer.Option(help="Payload JSON to embed")],
     out: Annotated[Path, typer.Option(help="Output PDF path")],
     asserted_date: Annotated[str, typer.Option(help="ISO 8601 assertion date")],
+    mirror: Annotated[
+        bool,
+        typer.Option(
+            help="Also write the JSON-LD web mirror (<out>.jsonld) - the exact bytes the "
+            "domain-origin badge verifies against ([M2])"
+        ),
+    ] = False,
 ) -> None:
     src = _read_bytes(pdf)
     data = _load_json(payload)
     for w in _reembed_warnings(src, data, asserted_date=asserted_date):
         typer.echo(f"warning {w.code} {w.path}: {w.message}", err=True)
-    _write_bytes(out, _embed(src, data, asserted_date=asserted_date))
+    embedded = _embed(src, data, asserted_date=asserted_date)
+    _write_bytes(out, embedded)
+    if mirror and str(out) != "-":
+        mpath = out.with_suffix(".jsonld")
+        # The mirror MUST be the canonical (JCS) preimage bytes so its hash == the embedded
+        # payloadHash; read the payload back from the PDF so it reflects exactly what was stamped.
+        mpath.write_bytes(canonicalize(_read(embedded).payload or data))
+        if not _output.quiet:
+            typer.echo(f"wrote web mirror -> {mpath}", err=True)
     # Status to stderr so `--out -` keeps a clean binary PDF on stdout for piping.
     if not _output.quiet:
         typer.echo(f"embedded om.json -> {'<stdout>' if str(out) == '-' else out}", err=True)
@@ -333,41 +348,204 @@ def buildout_manifest(
     noi_as_of: Annotated[
         str | None, typer.Option(help="deal.noiAsOfDate (default: --asserted-date)")
     ] = None,
+    overrides: Annotated[
+        Path | None,
+        typer.Option(
+            help="JSON {listing-id: {broker,brokerage,license,noiType,noiAsOfDate}} - per-listing "
+            "assertion identity overriding the flags (a catalog spans many brokers / NOI types)"
+        ),
+    ] = None,
+    min_fields: Annotated[
+        int, typer.Option(help="Flag any mapped payload with fewer than this many tracked fields")
+    ] = 3,
 ) -> None:
     """Bridge: turn fetched Buildout listings into an ``om embed-batch`` manifest (catalog seed).
 
     Deterministic, zero inference: each get_listing JSON is mapped to a schema-valid openOM payload
-    (assertion identity from the flags, never inferred), written as <id>.om.json, and paired with
-    <id>.pdf in a manifest. Review/edit the payloads (the assertion gate), then run
-    ``om embed-batch --manifest <out-dir>/manifest.json``. Listings with no OM PDF are skipped.
+    (assertion identity from flags, or per-listing via ``--overrides``, never inferred), written
+    as <id>.om.json, and paired with <id>.pdf in a manifest. A ``coverage.json`` reports each
+    listing's filled/omitted fields so you can triage BEFORE a bulk embed (Rule 6: review at scale).
+    Review/edit the payloads (the assertion gate), then run
+    ``om embed-batch --manifest <out-dir>/manifest.json``. Listings with no OM PDF are skipped, each
+    with a reason.
     """
-    asserted_by = {"broker": broker, "brokerage": brokerage, "license": license}
+    default_by = {"broker": broker, "brokerage": brokerage, "license": license}
+    ov: dict[str, dict[str, str]] = (
+        json.loads(overrides.read_text(encoding="utf-8")) if overrides else {}
+    )
     out_dir.mkdir(parents=True, exist_ok=True)
     manifest: list[dict[str, str]] = []
-    skipped: list[str] = []
+    skipped: list[dict[str, str]] = []
+    coverage: list[dict[str, Any]] = []
+    sparse: list[str] = []
     for jf in sorted(listings_dir.glob("*.json")):
+        stem = jf.stem
         listing = json.loads(jf.read_text(encoding="utf-8"))
-        pdf = pdf_dir / f"{jf.stem}.pdf"
+        pdf = pdf_dir / f"{stem}.pdf"
         if not pdf.exists():
-            skipped.append(f"{jf.stem} (no {pdf.name})")
+            skipped.append({"id": stem, "reason": f"no OM PDF at {pdf.name}"})
             continue
+        row = ov.get(stem, {})
+        asserted_by = {
+            "broker": row.get("broker", default_by["broker"]),
+            "brokerage": row.get("brokerage", default_by["brokerage"]),
+            "license": row.get("license", default_by["license"]),
+        }
         payload = listing_to_payload(
             listing, asserted_by=asserted_by, asserted_date=asserted_date,
-            noi_type=noi_type, noi_as_of=noi_as_of,
+            noi_type=row.get("noiType", noi_type),
+            noi_as_of=row.get("noiAsOfDate", noi_as_of),
         )
-        sidecar = out_dir / f"{jf.stem}.om.json"
+        sidecar = out_dir / f"{stem}.om.json"
         sidecar.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         manifest.append(
             {"pdf": str(pdf.resolve()), "payload": str(sidecar.resolve()),
              "assertedDate": asserted_date}
         )
+        cov = payload_coverage(payload)
+        coverage.append({"id": stem, **cov})
+        if cov["filled"] < min_fields:
+            sparse.append(stem)
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (out_dir / "coverage.json").write_text(
+        json.dumps({"listings": coverage, "sparse": sparse, "minFields": min_fields}, indent=2),
+        encoding="utf-8",
+    )
     if not _output.quiet:
+        note = f", {len(sparse)} sparse (<{min_fields} fields)" if sparse else ""
         typer.echo(
-            f"buildout-manifest: {len(manifest)} mapped, {len(skipped)} skipped -> {out_dir}",
+            f"buildout-manifest: {len(manifest)} mapped, {len(skipped)} skipped{note} -> {out_dir}",
             err=True,
         )
-    _emit({"mapped": len(manifest), "skipped": skipped, "manifest": str(out_dir / "manifest.json")})
+    _emit({
+        "mapped": len(manifest), "skipped": skipped, "sparse": sparse,
+        "manifest": str(out_dir / "manifest.json"), "coverage": str(out_dir / "coverage.json"),
+    })
+
+
+@app.command(name="buildout-pull")
+@_guard
+def buildout_pull(
+    endpoint: Annotated[str, typer.Option(help="Buildout MCP Streamable-HTTP endpoint")],
+    out_dir: Annotated[
+        Path, typer.Option(help="Output dir; writes listings/<id>.json + pdfs/<id>.pdf")
+    ],
+    ids: Annotated[
+        str | None, typer.Option(help="Comma-separated listing ids to pull")
+    ] = None,
+    ids_file: Annotated[
+        Path | None, typer.Option(help="File of listing ids, one per line (alternative to --ids)")
+    ] = None,
+    search: Annotated[
+        str | None,
+        typer.Option(help="Enumerate ids via the search tool with this query (whole-catalog pull)"),
+    ] = None,
+    token: Annotated[
+        str | None,
+        typer.Option(
+            help="Bearer token (or set OPENOM_BUILDOUT_TOKEN)", envvar="OPENOM_BUILDOUT_TOKEN"
+        ),
+    ] = None,
+    listing_tool: Annotated[
+        str, typer.Option(help="MCP tool that returns a listing by ref")
+    ] = "get_listing",
+    search_tool: Annotated[
+        str, typer.Option(help="MCP tool that searches/enumerates listings")
+    ] = "search_listings",
+    skip_existing: Annotated[
+        bool, typer.Option(help="Skip listings already pulled (resume a run)")
+    ] = False,
+    jobs: Annotated[int, typer.Option(help="Concurrent downloads (I/O-bound)")] = 1,
+    report: Annotated[
+        Path | None, typer.Option(help="Write the JSON summary to this file")
+    ] = None,
+) -> None:
+    """Pull a Buildout back-catalog: each listing + its OM PDF in one authenticated pass (#B3).
+
+    Deterministic, zero inference (a data fetch). Writes ``listings/<id>.json`` + ``pdfs/<id>.pdf``,
+    ready for ``om buildout-manifest --listings-dir <out>/listings --pdf-dir <out>/pdfs``. Give ids
+    (``--ids``/``--ids-file``) or ``--search <query>`` to enumerate the whole catalog.
+    ``--skip-existing`` resumes; ``--jobs`` downloads concurrently. Needs a Buildout MCP endpoint +
+    token; listings with no discoverable OM PDF are recorded (``no-om``), the JSON still written.
+    """
+    from openom_cli.buildout_pull import (
+        http_fetch_pdf,
+        ids_from_search_result,
+        mcp_http_call_tool,
+        pull,
+    )
+
+    def get_listing(tool: str, args: dict[str, Any]) -> dict[str, Any]:
+        return mcp_http_call_tool(endpoint, token, tool, args)
+
+    id_list: list[str] = []
+    if ids:
+        id_list += [s.strip() for s in ids.split(",") if s.strip()]
+    if ids_file:
+        lines = ids_file.read_text(encoding="utf-8").splitlines()
+        id_list += [ln.strip() for ln in lines if ln.strip()]
+    if search:
+        id_list += ids_from_search_result(get_listing(search_tool, {"query": search}))
+    # de-dupe, preserve order
+    id_list = list(dict.fromkeys(id_list))
+    if not id_list:
+        typer.echo("buildout-pull: no listing ids (use --ids, --ids-file, or --search)", err=True)
+        raise typer.Exit(code=2)
+
+    summary = pull(
+        id_list,
+        get_listing=get_listing,
+        fetch_pdf=http_fetch_pdf,
+        out_listings_dir=out_dir / "listings",
+        out_pdf_dir=out_dir / "pdfs",
+        listing_tool=listing_tool,
+        skip_existing=skip_existing,
+        jobs=jobs,
+    )
+    if report is not None:
+        report.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    if not _output.quiet:
+        tally = " ".join(f"{k}={v}" for k, v in summary["counts"].items())
+        typer.echo(
+            f"buildout-pull: {summary['pulled']}/{summary['of']} pulled - {tally} -> {out_dir}",
+            err=True,
+        )
+    _emit(summary)
+    failed = sum(1 for r in summary["results"] if r["status"] in ("listing-error", "pdf-error"))
+    raise typer.Exit(code=1 if failed else 0)
+
+
+@app.command()
+@_guard
+def mirror(
+    src: Annotated[Path, typer.Argument(help="An embedded openOM PDF, or a payload JSON")],
+    out: Annotated[
+        Path | None,
+        typer.Option(help="Output .jsonld path (default: alongside the input; '-' for stdout)"),
+    ] = None,
+) -> None:
+    """Emit the JSON-LD web mirror: the EXACT canonical (JCS) preimage bytes ([M2]).
+
+    Host this next to a listing at a same-domain HTTPS URL and point the badge's ``mirror=`` at it;
+    its byte hash equals the embedded ``payloadHash``, so the badge can show domain-origin.
+    Reads the payload from an embedded PDF, or canonicalizes a payload JSON directly. Deterministic.
+    """
+    raw = _read_bytes(src)
+    if raw[:5] == b"%PDF-" or (b"%PDF-" in raw[:1024]):
+        payload = _read(raw).payload
+        if payload is None:
+            typer.echo("mirror: no openOM payload found in that PDF", err=True)
+            raise typer.Exit(code=1)
+    else:
+        payload = json.loads(raw)
+    bytes_out = canonicalize(payload)
+    if out is not None and str(out) == "-":
+        sys.stdout.buffer.write(bytes_out)
+    else:
+        dest = out if out is not None else src.with_suffix(".jsonld")
+        dest.write_bytes(bytes_out)
+        if not _output.quiet:
+            typer.echo(f"wrote web mirror ({hash_bytes(bytes_out)}) -> {dest}", err=True)
 
 
 @app.command()

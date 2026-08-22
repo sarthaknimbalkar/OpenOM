@@ -70,11 +70,26 @@ describe("decryptPdf - V5/R6 AES-256 (#4)", () => {
   });
 });
 
-describe("decryptPdf - out-of-scope ⇒ null (#4 fallback to #107)", () => {
-  test("returns null for an RC4-encrypted PDF", async () => {
-    expect(await decryptPdf(fix("enc-rc4.pdf"))).toBeNull();
+describe("decryptPdf - V4/R4 RC4 ([P6])", () => {
+  test("decrypts an empty-password RC4 PDF (stream + string)", async () => {
+    const out = await decryptPdf(fix("enc-rc4.pdf"));
+    expect(out).not.toBeNull();
+    await expect(PDFDocument.load(out!)).resolves.toBeDefined();
+    const text = (await extractPageText(out!)).pages[0]?.text ?? "";
+    expect(text).toContain(known.text);
+    expect(await firstOutlineTitle(out!)).toBe(known.bookmark);
   });
 
+  test("the decrypted RC4 PDF accepts an openOM embed round-trip", async () => {
+    const out = await decryptPdf(fix("enc-rc4.pdf"));
+    const embedded = await embedPayload(out!, payload);
+    const r = await readPayloadFromBytes(embedded);
+    expect(r.state).toBe("present");
+    expect(r.verification.hashValid).toBe(true);
+  });
+});
+
+describe("decryptPdf - out-of-scope ⇒ null (#4 fallback to #107)", () => {
   test("returns null for a genuinely password-protected PDF (empty password fails /U)", async () => {
     expect(await decryptPdf(fix("encrypted-userpw.pdf"))).toBeNull();
   });

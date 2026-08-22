@@ -280,13 +280,21 @@ def _quickstart_broker() -> str:
   <h1>Quick-start · broker / author</h1>
   <p>Goal: turn an existing OM PDF into an openOM PDF that carries a verifiable,
      broker-asserted payload - without changing a single visible pixel.</p>
-  <h2>Option A - the browser extension (no install of a toolchain)</h2>
-  <p>Load the extension (Chrome 116+), open your OM, use <em>author mode</em> to review
-     the extracted fields, then <strong>assert</strong> and embed. You review every field
-     before it is stamped with your name and the date - the review panel is the assertion
-     gate. Extraction (if you use on-device assist) never leaves your machine.</p>
-  <h2>Option B - the CLI (scriptable / server-side)</h2>
-  <pre><code>pip install openom-core openom-cli
+  <h2>Option A - embed in your browser (no install at all)</h2>
+  <p>Open the <a href="/embed/"><strong>web authoring companion</strong></a>, drop in your OM PDF,
+     fill the deal fields, and <strong>assert &amp; embed</strong> - then download the openOM PDF. The
+     bytes never leave your browser, the visible pages are untouched, and you review every field before
+     it is stamped with your name and the date (that page is the assertion gate). Nothing to install.</p>
+  <h2>Option B - the browser extension</h2>
+  <p>Install the extension (Chrome 116+), open your OM, use <em>author mode</em> to review the fields,
+     then <strong>assert</strong> and embed. Optional on-device extraction pre-fills a draft - and never
+     leaves your machine. Same assertion gate as the web companion.</p>
+  <h2>Option C - the CLI (scriptable / server-side / whole back-catalog)</h2>
+  <p>From a clone of the repo (a published PyPI package is on the way). Grab a
+     <a href="/sample/deal.json" download><code>deal.json</code> starter payload</a>, edit the values,
+     then:</p>
+  <pre><code>pip install -e core -e cli    # from a checkout; PyPI package coming soon
+curl -O https://openom.app/sample/deal.json   # a valid starter payload to edit
 
 om embed offering.pdf --payload deal.json --out offering.openom.pdf --asserted-date 2026-08-18
 om read  offering.openom.pdf          # confirm the payload round-trips
@@ -294,6 +302,11 @@ om validate deal.json                 # schema errors block; consistency warning
   <p>Every payload needs <code>assertedBy</code> + <code>assertedDate</code> and an
      <code>noiType</code> (<code>in-place</code> or <code>pro-forma</code>). Re-embedding
      <em>replaces</em> (never stacks) and records <code>meta.supersedes</code>.</p>
+  <h2>Then: get it in front of buyers</h2>
+  <p><strong>Upload the openOM PDF exactly as-is.</strong> Don't let a listing portal re-export,
+     flatten, or "optimize" it - re-exporting silently strips the embedded payload (the file still
+     looks identical). Confirm a live listing survived by running its URL back through the
+     <a href="/verify/">verify tool</a>.</p>
   <p>Next: the <a href="/docs/schema-reference.html">field reference</a> for exactly
      what goes in <code>deal.json</code>.</p>
 """
@@ -340,8 +353,10 @@ def _quickstart_developer() -> str:
         differential-fuzz corpus. Reproduce them exactly.</li>
   </ul>
   <h2>Reference implementations</h2>
-  <pre><code>pip install openom-core     # Python: embed/read/inspect/extract/validate
-npm  install openom-js       # TypeScript: byte-parity with the Python core</code></pre>
+  <p>Published packages (<code>openom-core</code> on PyPI, <code>openom-js</code> on npm) are on the
+     way; until then, install from a clone of the repo:</p>
+  <pre><code>pip install -e core          # Python: embed/read/inspect/extract/validate
+npm  install ./js            # TypeScript: byte-parity with the Python core</code></pre>
   <h2>Validation model</h2>
   <p>Two tiers: <strong>schema errors block</strong>; <strong>consistency warnings never block</strong>;
      market truth is out of scope forever. See the
@@ -492,6 +507,15 @@ def _verify_tool() -> str:
        it back in below to watch it verify.</p>
   </div>
   <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
+
+  <div class="card" style="margin-top:14px;">
+    <p style="margin:0 0 8px;"><b>Published it already?</b> Paste the live listing's PDF URL to confirm
+       the openOM payload <b>survived the rehost</b> - portals often re-export PDFs on upload and
+       silently strip the attachment.</p>
+    <p style="margin:0;"><input type="url" id="u" placeholder="https://portal.example.com/listing/deal.pdf"
+       style="width:min(100%,420px);padding:6px 8px;" /> <button id="ub" type="button">Check URL</button></p>
+  </div>
+
   <div id="badge" style="margin:1rem 0;"></div>
   <pre id="out" hidden></pre>
   <script src="/widget/openom-badge.js" defer></script>
@@ -499,11 +523,14 @@ def _verify_tool() -> str:
     const f = document.getElementById("f");
     const out = document.getElementById("out");
     const badge = document.getElementById("badge");
-    f.addEventListener("change", async () => {
-      const file = f.files && f.files[0];
-      if (!file || !window.openOM) return;
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const r = await window.openOM.readPayloadFromBytes(bytes);
+    // A real, colored trust pill (matches the <openom-badge> widget), not plain text.
+    const PILL = {
+      "hash-mismatch": ["#7f1d1d", "#fef2f2", "⚠"],
+      "integrity-ok": ["#374151", "#f3f4f6", "✓"],
+      "origin-verified": ["#065f46", "#ecfdf5", "✓✓"],
+      "signature-verified": ["#065f46", "#ecfdf5", "✓✓"],
+    };
+    function showResult(r) {
       const present = r.state === "present" || r.state === "hash-mismatch";
       const view = window.openOM.computeBadge({
         present,
@@ -511,17 +538,202 @@ def _verify_tool() -> str:
         originVerified: false,
         signatureValid: r.verification.signatureValid,
       });
-      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " - " + view.caption;
+      badge.replaceChildren();
+      if (view.state === "absent") { badge.textContent = "No openOM data in this PDF."; }
+      else {
+        const c = PILL[view.state] || PILL["integrity-ok"];
+        const pill = document.createElement("span");
+        pill.setAttribute("role", "img");
+        pill.setAttribute("aria-label", view.ariaLabel);
+        pill.style.cssText = "display:inline-flex;align-items:center;gap:.4em;font:600 14px/1.4 system-ui,sans-serif;padding:.3em .7em;border-radius:999px;color:" + c[0] + ";background:" + c[1] + ";border:1px solid " + c[0] + "22;";
+        pill.textContent = c[2] + " " + view.label;
+        badge.appendChild(pill);
+        badge.appendChild(document.createTextNode(" " + view.caption));
+      }
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
       else { out.hidden = true; }
+    }
+    f.addEventListener("change", async () => {
+      const file = f.files && f.files[0];
+      if (!file || !window.openOM) return;
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      showResult(await window.openOM.readPayloadFromBytes(bytes));
+    });
+    document.getElementById("ub").addEventListener("click", async () => {
+      const url = (document.getElementById("u").value || "").trim();
+      if (!url || !window.openOM) return;
+      badge.textContent = "Fetching " + url + " …";
+      out.hidden = true;
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        showResult(await window.openOM.readPayloadFromBytes(bytes));
+      } catch (e) {
+        // Cross-origin hosts that don't send CORS headers block a browser fetch. That's a browser
+        // limit, not a verdict on the file - fall back honestly, never a scary state.
+        badge.textContent =
+          "Couldn't fetch that URL from the browser (the host may block cross-site reads, or the link is wrong). " +
+          "Download the PDF and drop it in above, or open the page with the openOM extension installed.";
+      }
     });
   </script>
+  <p><small>Want to <b>create</b> an openOM PDF? Use the free in-browser
+     <a href="/embed/">authoring companion</a> - no install.</small></p>
   <p><small>Origin verification (the domain-vouch layer) needs a hosted mirror and isn't available
      for a local file; this tool shows integrity only. For a live page, use the
      <a href="/docs/quickstart-portal.html">embeddable badge</a>.</small></p>
 """
     _d = 'Verify an openOM offering-memorandum PDF entirely in your browser: check its embedded, unaltered, broker-asserted data. Bytes never leave your machine.'
     return _page("Verify a PDF", body, description=_d, canonical="/verify/", jsonld=_jsonld(_article("Verify a PDF", _d, "/verify/"), _breadcrumb("/verify/", "Verify a PDF")), seo_title="Verify an openOM offering-memorandum PDF in your browser")
+
+
+def _verified_view() -> str:
+    # [M3] A shareable, backend-free verified-view page: a broker hands a buyer openom.app/v/?src=<pdf>
+    # and the buyer sees the trust badge + the deal card + a download - all rendered CLIENT-SIDE from
+    # the re-fetched, hash-verified payload (window.openOM). No server, no account. Cross-origin hosts
+    # that block CORS fall back honestly (download + drop into /verify), never a scary or fake state.
+    body = """
+  <style>
+    .vv-deal{width:100%;border-collapse:collapse;margin:14px 0}
+    .vv-deal th{text-align:left;font-family:var(--mono);font-size:12px;color:var(--ink-soft);padding:6px 12px 6px 0;white-space:nowrap;vertical-align:top}
+    .vv-deal td{font-size:15px;font-weight:600;padding:6px 0}
+    .vv-actions{margin-top:14px}
+    .vv-note{color:var(--ink-soft);font-size:14px}
+  </style>
+  <h1>Verified offering memorandum</h1>
+  <div id="vv-badge" style="margin:8px 0 4px"></div>
+  <div id="vv-body"><p class="vv-note" id="vv-status">Loading…</p></div>
+  <script src="/widget/openom-badge.js" defer></script>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const src = q.get("src");
+    const badge = document.getElementById("vv-badge");
+    const body = document.getElementById("vv-body");
+    const money = (v) => typeof v === "number" ? "$" + v.toLocaleString("en-US") : null;
+    const pct = (v) => typeof v === "number" ? (v * 100).toFixed(2) + "%" : null;
+    function row(label, value) {
+      if (value === null || value === undefined || value === "") return "";
+      const tr = document.createElement("tr");
+      const th = document.createElement("th"); th.textContent = label;
+      const td = document.createElement("td"); td.textContent = String(value);
+      tr.append(th, td); return tr;
+    }
+    function card(p) {
+      const prop = p.property || {}, addr = prop.address || {}, deal = p.deal || {}, lease = p.lease || {}, by = p.assertedBy || {};
+      const t = document.createElement("table"); t.className = "vv-deal";
+      const rows = [
+        ["Property", addr.streetAddress],
+        ["Location", [addr.addressLocality, addr.addressRegion, addr.postalCode].filter(Boolean).join(", ") || null],
+        ["Type", prop.propertyType],
+        ["Asking price", money(deal.askingPrice)],
+        ["Cap rate", pct(deal.capRate)],
+        ["NOI", money(deal.noi) && (money(deal.noi) + (deal.noiType ? " (" + deal.noiType + ")" : ""))],
+        ["Tenant", lease.tenantEntity],
+        ["Lease type", lease.leaseTypeAsserted],
+        ["Asserted by", [by.broker, by.brokerage].filter(Boolean).join(", ") || null],
+        ["Asserted", p.assertedDate],
+      ];
+      for (const [l, v] of rows) { const r = row(l, v); if (r) t.appendChild(r); }
+      return t;
+    }
+    async function run() {
+      if (!src) { document.getElementById("vv-status").textContent = "No document specified. This is a shareable verified-view link: openom.app/v/?src=<the OM's URL>."; return; }
+      try {
+        const resp = await fetch(src);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const r = await window.openOM.readPayloadFromBytes(bytes);
+        const present = r.state === "present" || r.state === "hash-mismatch";
+        const view = window.openOM.computeBadge({ present, hashValid: r.verification.hashValid, originVerified: false, signatureValid: r.verification.signatureValid });
+        badge.textContent = view.state === "absent" ? "This PDF carries no openOM data." : view.label + " - " + view.caption;
+        body.replaceChildren();
+        if (r.payload) body.appendChild(card(r.payload));
+        const a = document.createElement("a"); a.href = src; a.textContent = "Download the OM (PDF)"; a.className = "spec-link";
+        const act = document.createElement("p"); act.className = "vv-actions"; act.appendChild(a); body.appendChild(act);
+      } catch (e) {
+        badge.textContent = "";
+        body.innerHTML = '<p class="vv-note">This document can\\'t be read from your browser (the host may block cross-site reads). <a href="' + (src ? src.replace(/"/g,"") : "#") + '">Download the OM</a>, then drop it into the <a href="/verify/">verify tool</a> to confirm it.</p>';
+      }
+    }
+    window.addEventListener("load", run);
+  </script>
+  <p class="vv-note" style="margin-top:18px">This page verifies provenance - <b>who</b> asserted the data and that it is <b>unaltered</b> - never that the figures are true. <a href="/docs/">How openOM works</a>.</p>
+"""
+    _d = ("A shareable, verifiable view of an openOM offering memorandum: the trust badge, the deal card "
+          "(price, cap, NOI, tenant), and a download - rendered in your browser from the hash-verified payload.")
+    return _page("Verified OM", body, description=_d, canonical="/v/",
+                 jsonld=_jsonld(_article("Verified OM", _d, "/v/"), _breadcrumb("/v/", "Verified OM")),
+                 seo_title="Verified openOM offering memorandum")
+
+
+def _embed_tool() -> str:
+    # The hosted, fully client-side authoring companion (#B1): drop an OM -> fill the deal -> assert ->
+    # download the embedded OM, with NO install of any toolchain. Bytes never leave the browser (embed
+    # runs via the deployed openom-author bundle's window.openOMAuthor, the exact deterministic
+    # openom-js embed path the CLI + extension use). This is the zero-install broker embed path.
+    body = """
+  <style>
+    .author-note{color:var(--ink-soft);font-size:14.5px}
+    .author-reprice{margin:12px 0;padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #f5d67a;color:#7a5b00}
+    .author-stage section{margin:18px 0;padding:14px 16px;border:1px solid var(--rule);border-radius:10px}
+    .author-stage h3{font-size:15px;margin:0 0 10px}
+    .author-field,.rent-cell{display:block;margin:8px 0;font-size:14px}
+    .author-field input,.author-field select,.rent-cell input{margin-left:8px;padding:5px 7px;border:1px solid var(--rule);border-radius:6px;font:inherit}
+    .rent-row{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:8px 0;padding:8px;border:1px dashed var(--rule);border-radius:8px}
+    .rent-add,.rent-rm{padding:6px 10px;border:1px solid var(--rule);border-radius:6px;background:#fff;cursor:pointer}
+    .author-status{margin:16px 0}
+    .author-errors{padding:10px 12px;border-radius:8px;background:#fef2f2;border:1px solid #fca5a5;color:#7f1d1d;margin:8px 0}
+    .author-warnings{padding:10px 12px;border-radius:8px;background:#fffbeb;border:1px solid #f5d67a;color:#7a5b00;margin:8px 0}
+    .author-ok{color:#065f46;font-weight:600}
+    .author-recap{margin:8px 0;padding:12px 14px;border:1px solid var(--rule);border-radius:10px;background:var(--paper)}
+    .recap-list{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;margin:8px 0 0}
+    .recap-list dt{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+    .recap-list dd{margin:0;font-size:14px;font-weight:600}
+    .recap-note{margin:8px 0 0;font-size:13px;color:var(--ink-soft)}
+    .author-preview{margin:10px 0}
+    .author-preview summary{cursor:pointer;font-size:13px;color:var(--link)}
+    .author-preview pre{max-height:280px;overflow:auto;font-size:12px;background:#0f172a0a;padding:10px;border-radius:8px}
+    .author-done{margin-top:12px;padding:10px 12px;border-radius:8px;background:#ecfdf5;border:1px solid #6ee7b7;color:#065f46}
+    .author-assert{margin-top:8px;padding:10px 16px;border:1px solid #111;border-radius:8px;background:#ffde59;font-weight:700;cursor:pointer}
+    .author-assert:disabled{opacity:.5;cursor:not-allowed}
+  </style>
+  <h1>Embed openOM data - in your browser</h1>
+  <p>Turn an ordinary offering-memorandum PDF into an openOM PDF that carries a verifiable,
+     broker-asserted data payload - <strong>with no software to install</strong>. The PDF is read,
+     filled, and embedded <strong>entirely in your browser</strong>; the bytes never leave your machine,
+     and the visible pages are untouched.</p>
+  <div class="card" style="border-color:#065f46;background:#ecfdf5;">
+    <p style="margin:0;"><b>Just trying it?</b> Download a
+       <a href="/sample/openom-sample.pdf" download><b>sample OM PDF</b></a>, drop it in below, edit a
+       field, and re-embed to see the flow end to end.</p>
+  </div>
+  <div id="author-app"><p class="author-note">Loading the authoring companion…</p></div>
+  <script src="/widget/openom-author.js" defer></script>
+  <script>
+    window.addEventListener("load", function () {
+      var mount = window.openOMAuthor && window.openOMAuthor.mountAuthor;
+      var app = document.getElementById("author-app");
+      if (mount && app) mount(app);
+      else if (app) app.textContent = "The authoring companion failed to load. Please reload the page.";
+    });
+  </script>
+  <h2>After you embed: get it in front of buyers</h2>
+  <p><strong>Upload the file you just downloaded, exactly as-is.</strong> Do not let your listing
+     portal re-export, flatten, or "optimize" it - re-exporting strips the embedded payload (the PDF
+     will still look identical, so the loss is silent). To confirm the payload survived a rehost, run
+     the live PDF back through the <a href="/verify/">verify tool</a>.</p>
+  <p>You review every field before it is stamped with your name and the date - this page is the
+     <b>assertion gate</b>. Everything here is deterministic: no AI, no guessing, nothing sent anywhere.
+     Prefer a scriptable path or a whole back-catalog? See the
+     <a href="/docs/quickstart-broker.html">broker quick-start</a> and the <code>om</code> CLI.</p>
+"""
+    _d = ('Embed verifiable, broker-asserted openOM data into an offering-memorandum PDF entirely in '
+          'your browser - no install. Bytes never leave your machine; the visible pages are untouched.')
+    return _page("Embed openOM data", body, description=_d, canonical="/embed/",
+                 jsonld=_jsonld(_article("Embed openOM data", _d, "/embed/"),
+                                _breadcrumb("/embed/", "Embed")),
+                 seo_title="Embed openOM data into an offering-memorandum PDF in your browser")
 
 
 def _grounding_ai() -> str:
@@ -652,6 +864,7 @@ def _what_is_om() -> str:
     <li><b>Brokers:</b> <a href="/docs/quickstart-broker.html">publish a verifiable OM →</a></li>
     <li><b>Portals / consumers:</b> <a href="/docs/quickstart-portal.html">read and trust openOM data →</a></li>
     <li><b>AI builders:</b> <a href="/docs/grounding-ai.html">ground your agent in verified OM facts →</a></li>
+    <li><b>Embed one now (no install):</b> <a href="/embed/">create an openOM PDF in your browser →</a></li>
     <li><b>Verify one now:</b> <a href="/verify/">check an OM PDF in your browser →</a></li>
   </ul>
   <p><small>openOM is published by <a href="https://verveliolabs.com">Vervelio Labs</a>. The engine is
@@ -768,6 +981,8 @@ def docs_pages() -> dict[str, str]:
     """Return ``{relative_path_under_site: html}`` for the whole docs tree. Deterministic."""
     return {
         "verify/index.html": _verify_tool(),
+        "embed/index.html": _embed_tool(),
+        "v/index.html": _verified_view(),
         "privacy/index.html": _privacy(),
         "docs/index.html": _docs_index(),
         "docs/what-is-an-offering-memorandum.html": _what_is_om(),

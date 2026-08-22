@@ -6,7 +6,7 @@ import {
   setLinkBadging,
   isLinkBadgingDomain,
 } from "../../src/storage.js";
-import { refetchPdf } from "../../src/detect.js";
+import { refetchPdf, refetchPdfResult } from "../../src/detect.js";
 import { guardedMirrorFetch, mirrorUrlFor } from "../../src/mirror.js";
 
 function fakeChrome() {
@@ -118,6 +118,20 @@ describe("refetchPdf - re-fetch bytes, size-capped", () => {
         throw new Error("net");
       }),
     ).toBeNull();
+  });
+  test("[M6] refetchPdfResult distinguishes oversize from fetch-failure and success", async () => {
+    const ok = await refetchPdfResult("https://h/x.pdf", 1000, async () => resp(PDF));
+    expect(ok).toEqual({ ok: true, bytes: PDF });
+    const big = await refetchPdfResult("https://h/x.pdf", 1000, async () => resp(new Uint8Array(2000)));
+    expect(big).toEqual({ ok: false, reason: "oversize" });
+    const declared = await refetchPdfResult("https://h/x.pdf", 1000, async () =>
+      resp(PDF, true, { "content-length": "9999" }),
+    );
+    expect(declared).toEqual({ ok: false, reason: "oversize" });
+    const neterr = await refetchPdfResult("https://h/x.pdf", 1000, async () => {
+      throw new Error("net");
+    });
+    expect(neterr).toEqual({ ok: false, reason: "fetch" });
   });
   test("#122 SSRF: refuses an internal/metadata target WITHOUT fetching", async () => {
     const spy = vi.fn(async () => resp(PDF));

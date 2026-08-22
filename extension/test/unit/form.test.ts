@@ -8,6 +8,7 @@ const cbs = (): FormCallbacks => ({
   onEvidence: vi.fn(),
   onAddRentPeriod: vi.fn(),
   onRemoveRentPeriod: vi.fn(),
+  onViewPage: vi.fn(),
 });
 
 describe("buildForm (#77/#93)", () => {
@@ -42,6 +43,18 @@ describe("buildForm (#77/#93)", () => {
     q.value = "Cap Rate 6%";
     q.dispatchEvent(new Event("input"));
     expect(cb.onEvidence).toHaveBeenCalledWith("/deal/capRate", { page: undefined, quote: "Cap Rate 6%" });
+  });
+
+  test("[M7] a cited field offers a 'view page' jump to the source OM page", () => {
+    const root = document.createElement("div");
+    const cb = cbs();
+    // A draft whose capRate carries page evidence.
+    let d = newDraft({ deal: { capRate: 0.06 } });
+    d = { ...d, evidence: { "/deal/capRate": { page: 3, quote: "Cap Rate 6%" } } };
+    buildForm(root, d, cb);
+    const row = root.querySelector('[data-path="/deal/capRate"]')!.closest(".review-field")!;
+    (row.querySelector("button.ev-view") as HTMLButtonElement).click();
+    expect(cb.onViewPage).toHaveBeenCalledWith(3);
   });
 
   test("rent-schedule editor fires add/remove callbacks; advanced raw JSON present", () => {

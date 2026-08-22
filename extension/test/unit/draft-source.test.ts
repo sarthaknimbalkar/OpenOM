@@ -107,6 +107,7 @@ describe("pickDraftSource - deterministic connector wins over an inference extra
       label: "x",
       deterministic: false,
       available: async () => false,
+      readiness: async () => "unavailable",
       draft: async () => ({ fields: [] }),
     };
     expect(await pickDraftSource([off])).toBeNull();

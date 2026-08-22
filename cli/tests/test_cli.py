@@ -167,6 +167,195 @@ def test_buildout_manifest_bridge_end_to_end(tmp_path: Path) -> None:
     assert json.loads(rr.output)["payload"]["lease"]["tenantEntity"] == "Example Retail Stores, LLC"
 
 
+def test_buildout_mapper_fills_and_derives_high_value_fields() -> None:
+    # [M4] propertyType is mapped; pricePerUnit/pricePerSF/termMonths are derived deterministically.
+    from openom_cli.buildout import listing_to_payload
+
+    fixture = Path(__file__).parent / "fixtures" / "buildout-listing-sample.json"
+    listing = json.loads(fixture.read_text(encoding="utf-8"))
+    p = listing_to_payload(
+        listing, asserted_by={"broker": "J", "brokerage": "B", "license": "L"},
+        asserted_date="2026-08-22", noi_type="pro-forma",
+    )
+    assert p["property"]["propertyType"] == "retail"
+    assert p["deal"]["pricePerUnit"] == 1_850_000  # 1,850,000 / 1 unit
+    assert p["deal"]["pricePerSF"] == round(1_850_000 / 9100, 2)  # /9,100 SF
+    assert p["lease"]["termMonths"] == 179  # 2019-05-01 → 2034-04-30
+
+
+def test_buildout_manifest_overrides_and_coverage(tmp_path: Path) -> None:
+    # M8: per-listing assertion identity (overrides) + a coverage report + reasoned skips.
+    fixture = Path(__file__).parent / "fixtures" / "buildout-listing-sample.json"
+    listings = tmp_path / "listings"
+    listings.mkdir()
+    (listings / "aaa.json").write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+    (listings / "bbb.json").write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+    (listings / "ccc.json").write_text("{}", encoding="utf-8")  # sparse + no pdf -> skipped
+    pdfs = tmp_path / "oms"
+    pdfs.mkdir()
+    _base_pdf(pdfs / "aaa.pdf")
+    _base_pdf(pdfs / "bbb.pdf")  # ccc has no pdf on purpose
+    overrides = tmp_path / "ov.json"
+    overrides.write_text(json.dumps({
+        "bbb": {"broker": "Bob Other", "brokerage": "Other LLC",
+                "license": "MI 9", "noiType": "in-place"}
+    }), encoding="utf-8")
+    staged = tmp_path / "staged"
+
+    m = runner.invoke(app, [
+        "buildout-manifest", "--listings-dir", str(listings), "--pdf-dir", str(pdfs),
+        "--out-dir", str(staged), "--broker", "Jane Broker", "--brokerage", "Example NL",
+        "--license", "MI 0", "--asserted-date", "2026-08-22", "--noi-type", "pro-forma",
+        "--overrides", str(overrides),
+    ])
+    assert m.exit_code == 0, m.output
+    a = json.loads((staged / "aaa.om.json").read_text(encoding="utf-8"))
+    b = json.loads((staged / "bbb.om.json").read_text(encoding="utf-8"))
+    assert a["assertedBy"]["broker"] == "Jane Broker" and a["deal"]["noiType"] == "pro-forma"
+    assert b["assertedBy"]["broker"] == "Bob Other" and b["deal"]["noiType"] == "in-place"
+    assert not (staged / "ccc.om.json").exists()  # skipped: no OM PDF
+    cov = json.loads((staged / "coverage.json").read_text(encoding="utf-8"))
+    assert {c["id"] for c in cov["listings"]} == {"aaa", "bbb"}
+    assert all(c["filled"] >= 3 for c in cov["listings"])  # the real fixture is well-covered
+
+
+def test_buildout_pull_orchestrator(tmp_path: Path) -> None:
+    # B3: the pure pull() with a fake MCP transport + fake pdf fetch (deterministic, no network).
+    from openom_cli.buildout_pull import pull
+
+    listings = {
+        "1": {"core": {"x": 1}, "om_url": "https://x.example/1.pdf"},
+        "2": {"documents": [{"url": "https://x.example/2.pdf"}]},
+        "3": {"core": {"no": "om"}},  # no discoverable pdf -> no-om
+    }
+
+    def get_listing(_tool: str, args: dict) -> dict:
+        return listings[args["ref"]]
+
+    def fetch_pdf(url: str) -> bytes:
+        return f"%PDF-{url}".encode()
+
+    out = tmp_path / "pull"
+    summary = pull(
+        ["1", "2", "3"], get_listing=get_listing, fetch_pdf=fetch_pdf,
+        out_listings_dir=out / "listings", out_pdf_dir=out / "pdfs",
+    )
+    assert summary["pulled"] == 2
+    statuses = {r["id"]: r["status"] for r in summary["results"]}
+    assert statuses == {"1": "ok", "2": "ok", "3": "no-om"}
+    assert (out / "listings" / "1.json").exists()
+    assert (out / "pdfs" / "2.pdf").read_bytes() == b"%PDF-https://x.example/2.pdf"
+    assert not (out / "pdfs" / "3.pdf").exists()
+
+
+def test_buildout_pull_skip_existing_and_counts(tmp_path: Path) -> None:
+    # Resume: an already-pulled listing is skipped (no re-fetch); counts summarize the run.
+    from openom_cli.buildout_pull import pull
+
+    out = tmp_path / "pull"
+    (out / "listings").mkdir(parents=True)
+    (out / "pdfs").mkdir(parents=True)
+    (out / "listings" / "1.json").write_text("{}", encoding="utf-8")
+    (out / "pdfs" / "1.pdf").write_bytes(b"%PDF-old")
+
+    calls: list[str] = []
+
+    def get_listing(_tool: str, args: dict) -> dict:
+        calls.append(args["ref"])
+        return {"om_url": f"https://x.example/{args['ref']}.pdf"}
+
+    summary = pull(
+        ["1", "2"], get_listing=get_listing, fetch_pdf=lambda u: b"%PDF-new",
+        out_listings_dir=out / "listings", out_pdf_dir=out / "pdfs", skip_existing=True,
+    )
+    assert calls == ["2"]  # id 1 skipped, never fetched
+    assert summary["counts"] == {"exists": 1, "ok": 1}
+    assert (out / "pdfs" / "1.pdf").read_bytes() == b"%PDF-old"  # untouched
+
+
+def test_buildout_pull_concurrent_preserves_order(tmp_path: Path) -> None:
+    from openom_cli.buildout_pull import pull
+
+    out = tmp_path / "pull"
+    summary = pull(
+        ["a", "b", "c", "d"],
+        get_listing=lambda _t, args: {"om_url": f"https://x/{args['ref']}.pdf"},
+        fetch_pdf=lambda u: b"%PDF-" + u.encode(),
+        out_listings_dir=out / "listings", out_pdf_dir=out / "pdfs", jobs=4,
+    )
+    assert [r["id"] for r in summary["results"]] == ["a", "b", "c", "d"]
+    assert summary["pulled"] == 4
+
+
+def test_buildout_pull_search_enumeration() -> None:
+    from openom_cli.buildout_pull import ids_from_search_result
+
+    assert ids_from_search_result([1, 2, 3]) == ["1", "2", "3"]
+    assert ids_from_search_result({"listings": [{"id": 7}, {"listing_id": 8}]}) == ["7", "8"]
+    assert ids_from_search_result({"results": [{"ref": "x"}, {"ref": "x"}]}) == ["x"]  # de-duped
+    assert ids_from_search_result({"nope": 1}) == []
+
+
+def test_buildout_pull_mcp_parsing() -> None:
+    # The MCP wire-format helpers (JSON + SSE + text-block + structuredContent).
+    from openom_cli.buildout_pull import listing_from_result, parse_rpc
+
+    j = parse_rpc("application/json", json.dumps({"result": {"structuredContent": {"a": 1}}}))
+    assert listing_from_result(j) == {"a": 1}
+
+    sse = "event: message\ndata: " + json.dumps(
+        {"result": {"content": [{"type": "text", "text": json.dumps({"b": 2})}]}}
+    ) + "\n\n"
+    assert listing_from_result(parse_rpc("text/event-stream", sse)) == {"b": 2}
+
+    err = {"error": {"code": -32000, "message": "nope"}}
+    try:
+        listing_from_result(err)
+        raise AssertionError("expected error")
+    except RuntimeError as e:
+        assert "nope" in str(e)
+
+
+def test_buildout_pull_cli_needs_ids(tmp_path: Path) -> None:
+    r = runner.invoke(app, ["buildout-pull", "--endpoint", "https://mcp.example/mcp",
+                            "--out-dir", str(tmp_path / "o")])
+    assert r.exit_code == 2, r.output
+
+
+def test_mirror_bytes_hash_equals_embedded_payload_hash(tmp_path: Path) -> None:
+    # [M2] the JSON-LD mirror is the exact canonical preimage: its byte hash == the embedded
+    # payloadHash, which is precisely what the domain-origin badge checks.
+    from openom_core.canonical import hash_bytes
+
+    base = _base_pdf(tmp_path / "base.pdf")
+    stnl = SPEC / "samples" / "valid-stnl.json"
+    out = tmp_path / "out.pdf"
+    e = runner.invoke(app, ["embed", str(base), "--payload", str(stnl), "--out", str(out),
+                            "--asserted-date", "2026-08-16", "--mirror"])
+    assert e.exit_code == 0, e.output
+    mirror_path = out.with_suffix(".jsonld")
+    assert mirror_path.exists()  # embed --mirror wrote the sidecar
+
+    # The embedded payloadHash (from read) equals hash of the mirror bytes.
+    rr = json.loads(runner.invoke(app, ["read", str(out)]).output)
+    # om read omits payloadHash; recompute from the mirror + compare to a standalone mirror.
+    m = runner.invoke(app, ["mirror", str(out), "--out", str(tmp_path / "m2.jsonld")])
+    assert m.exit_code == 0, m.output
+    assert (tmp_path / "m2.jsonld").read_bytes() == mirror_path.read_bytes()  # deterministic
+    # The mirror hash matches the payload the PDF carries.
+    from openom_core.canonical import canonicalize
+    assert hash_bytes(mirror_path.read_bytes()) == hash_bytes(canonicalize(rr["payload"]))
+
+
+def test_mirror_from_payload_json(tmp_path: Path) -> None:
+    stnl = SPEC / "samples" / "valid-stnl.json"
+    m = runner.invoke(app, ["mirror", str(stnl), "--out", str(tmp_path / "p.jsonld")])
+    assert m.exit_code == 0, m.output
+    from openom_core.canonical import canonicalize
+    expected = canonicalize(json.loads(stnl.read_text(encoding="utf-8")))
+    assert (tmp_path / "p.jsonld").read_bytes() == expected
+
+
 def test_embed_warns_on_backwards_asserted_date(tmp_path: Path) -> None:
     base = _base_pdf(tmp_path / "base.pdf")
     stnl = SPEC / "samples" / "valid-stnl.json"
