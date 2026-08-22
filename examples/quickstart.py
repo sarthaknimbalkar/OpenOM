@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """openOM 60-second quickstart: embed -> read -> validate, end to end, no edits needed.
 
-    pip install openom-core
+    pip install -e core               # from a clone; PyPI package coming soon
     python examples/quickstart.py     # run from the repo root
 
 Uses a blank stand-in PDF + a committed sample payload so it runs anywhere. Swap in your own OM

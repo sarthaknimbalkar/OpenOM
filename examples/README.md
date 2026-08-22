@@ -7,8 +7,9 @@ byte-parity across the Python (`openom-core`) and TypeScript (`openom-js`) cores
 
 - **In your browser** - drop a PDF into the verifier at **<https://openom.app/verify/>** (or download
   the [sample OM](https://openom.app/sample/openom-sample.pdf) first). Nothing leaves your machine.
-- **End to end, locally** - `pip install openom-core && python examples/quickstart.py`
+- **End to end, locally** - from a clone, `pip install -e core && python examples/quickstart.py`
   ([quickstart.py](quickstart.py)) embeds → reads → validates a payload and prints the result.
+  _(Published `openom-core` on PyPI is on the way; until then install from the checkout.)_
 - **Ground an AI agent** - point any MCP client at the free endpoint with
   [mcp-config.json](mcp-config.json) (`https://mcp.openom.app/mcp`), then ask it to `om_read` an OM.
 - **A trust badge on a page** - [badge.html](badge.html) is a drop-in `<script>` + file input that
@@ -26,7 +27,7 @@ const payload = JSON.parse(readFileSync("deal.json", "utf8"));
 writeFileSync("offering.openom.pdf", await embedPayload(pdf, payload)); // page content untouched
 ```
 
-Python equivalent (`pip install openom-core`):
+Python equivalent (`pip install -e core` from a clone; PyPI package coming soon):
 
 ```python
 from openom_core.embed import embed
