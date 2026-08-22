@@ -72,6 +72,40 @@ describe("worker dispatch + [M5] JSON-RPC batch", () => {
     expect((j.result.structuredContent.warnings ?? []).length).toBeGreaterThan(0);
   });
 
+  test("[Ma9] om_validate returns the canonical {ok, canonical.hash} contract (Python parity)", async () => {
+    const res = await worker.fetch(
+      post({
+        jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: "om_validate", arguments: { payload: validPayload } },
+      }),
+    );
+    const sc = (await res.json()).result.structuredContent as {
+      ok: boolean;
+      canonical: { hash: string };
+      errors: unknown[];
+    };
+    expect(sc.ok).toBe(true); // not just `blocked` — the Python-canonical `ok`
+    expect(sc.canonical.hash).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+
+  test("[Ma9] om_read returns specVersion + sourceDocHash (Python parity)", async () => {
+    const doc = await PDFDocument.create();
+    doc.addPage([200, 200]);
+    const embedded = await embedPayload(new Uint8Array(await doc.save()), validPayload);
+    const res = await worker.fetch(
+      post({
+        jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: "om_read", arguments: { pdfBase64: toB64(embedded) } },
+      }),
+    );
+    const sc = (await res.json()).result.structuredContent as {
+      specVersion: string | null;
+      sourceDocHash: string | null;
+    };
+    expect(sc.specVersion).toBe("0.1");
+    expect(sc.sourceDocHash).toMatch(/^sha256:[0-9a-f]{64}$/); // read from the embedded marker
+  });
+
   test("a single request still works (initialize)", async () => {
     const res = await worker.fetch(post({ jsonrpc: "2.0", id: 9, method: "initialize" }));
     const j = (await res.json()) as { id: number; result?: { serverInfo?: unknown } };
