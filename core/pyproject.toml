@@ -50,11 +50,11 @@ Repository = "https://github.com/sarthaknimbalkar/OpenOM"
 [tool.hatch.build.targets.wheel]
 packages = ["src/openom_core"]
 
-# Ship the JSON Schema INSIDE the wheel (#149) so a pip-installed openom-core/-mcp can load it via
-# importlib.resources - no reliance on an adjacent /spec dir. /spec stays the single source; this is a
-# build-time copy (openom_core.schema.load_schema prefers it, falls back to /spec for editable installs).
-[tool.hatch.build.targets.wheel.force-include]
-"../spec/om-0.1.schema.json" = "openom_core/om-0.1.schema.json"
+# Ship the JSON Schema INSIDE the package (#149) so a pip-installed openom-core/-mcp can load it via
+# importlib.resources - no reliance on an adjacent /spec dir. It is committed as ordinary package data
+# at src/openom_core/om-0.1.schema.json (NOT a force-include from ../spec, which cannot survive into a
+# self-contained sdist -> `python -m build` would fail building the wheel from the sdist). /spec stays
+# the single source of truth; the in-package copy is drift-locked to it by tests/test_schema_packaged.py.
 
 [tool.ruff]
 line-length = 100

@@ -2,3 +2,5 @@ dist
 node_modules
 coverage
 test-results/
+src/schema.ts
+src/payload-types.ts

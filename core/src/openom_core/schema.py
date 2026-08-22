@@ -28,8 +28,10 @@ def load_schema() -> dict[str, Any]:
     try:
         packaged = resources.files("openom_core").joinpath(SCHEMA_NAME)
         if packaged.is_file():
-            return json.loads(packaged.read_text(encoding="utf-8"))
+            parsed: dict[str, Any] = json.loads(packaged.read_text(encoding="utf-8"))
+            return parsed
     except (FileNotFoundError, ModuleNotFoundError, TypeError):
         pass
     repo = Path(__file__).resolve().parents[3] / "spec" / SCHEMA_NAME
-    return json.loads(repo.read_text(encoding="utf-8"))
+    fallback: dict[str, Any] = json.loads(repo.read_text(encoding="utf-8"))
+    return fallback

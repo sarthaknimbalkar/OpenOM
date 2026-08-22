@@ -117,7 +117,7 @@ class S3BlobStore(BlobStore):
     def _make_client(  # pragma: no cover - real boto3 client; moto tests inject a client
         endpoint_url: str, access_key: str, secret_key: str
     ) -> Any:
-        import boto3  # type: ignore[import-not-found,import-untyped]
+        import boto3
 
         return boto3.client(
             "s3", endpoint_url=endpoint_url,
@@ -157,7 +157,7 @@ class S3BlobStore(BlobStore):
         return {"blobId": blob_id, "presignedGet": url, "expiresAt": self._expires()}
 
     def get(self, blob_id: str, principal: str) -> bytes:
-        from botocore.exceptions import ClientError  # type: ignore[import-not-found,import-untyped]
+        from botocore.exceptions import ClientError
 
         try:  # authz first, from the server-written owner record (anti-IDOR, anti-forge)
             owner = self.s3.get_object(Bucket=self.bucket, Key=self._owner_key(blob_id))

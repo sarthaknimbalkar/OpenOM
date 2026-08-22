@@ -18,6 +18,9 @@ byte-parity across the Python (`openom-core`) and TypeScript (`openom-js`) cores
 
 ## Embed at the source (Node - a producer/authoring tool)
 
+_(`openom-js` is not yet on npm; until then, from a clone `npm install ../js` — it builds itself on
+install — then `import` works exactly as shown.)_
+
 ```ts
 import { readFileSync, writeFileSync } from "node:fs";
 import { embedPayload } from "openom-js";
