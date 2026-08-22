@@ -15,12 +15,15 @@ Docs, the verifier, and the namespace live at **[openom.app](https://openom.app)
 
 ## Try it in 60 seconds
 
+- **Embed a payload in your browser** - <https://openom.app/embed/> turns an OM into an openOM PDF
+  with no install; bytes never leave your machine.
 - **Verify a PDF in your browser** - <https://openom.app/verify/> (or grab the downloadable
   [sample OM](https://openom.app/sample/openom-sample.pdf) first). Bytes never leave your machine.
 - **Ground an AI agent** - point any MCP client at the free public endpoint
   `https://mcp.openom.app/mcp` ([config](examples/mcp-config.json)) and ask it to `om_read` an OM.
-- **Run it locally** - `pip install openom-core && python examples/quickstart.py` (embed → read →
-  validate, end to end). More in [`examples/`](examples/).
+- **Run it locally** - from a clone, `pip install -e core && python examples/quickstart.py` (embed →
+  read → validate, end to end). More in [`examples/`](examples/). _(A published `openom-core` PyPI
+  package is on the way; until then, install from the checkout.)_
 - **Read the docs** - <https://openom.app/docs/>.
 
 ## Why
@@ -95,8 +98,10 @@ npm --prefix extension run build      # → extension/dist (load this unpacked)
 npm --prefix extension run package    # → extension/openom-extension-<version>.zip (Web Store upload)
 ```
 
-**Install (until it's on the Web Store):** open `chrome://extensions`, enable **Developer mode**, click
-**Load unpacked**, and select `extension/dist`. The same build loads in **Edge** (`edge://extensions`);
+**Install:** the extension is in review for the Chrome Web Store; until it lists, open
+`chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select `extension/dist`
+(or unzip the packaged `extension/openom-extension-<version>.zip`). No toolchain? Embed in the browser
+at <https://openom.app/embed/> instead. The same build loads in **Edge** (`edge://extensions`);
 **Firefox** is roadmapped (see [extension/README](extension/README.md#browser-support-145)). Consumer
 mode is the toolbar popup; author mode opens from the popup's **“Embed a payload…”** button (a side panel).
 
