@@ -120,7 +120,7 @@ scope forever.
 
 ## Current state (2026-08)
 **M1 + M1.x shipped and at peak** (2026-08-17), on `main`. Built: `/core` (embed/read/inspect/
-extract/text/validate), `/cli` (`om embed/embed-batch/read/inspect/validate/check/extract/conformance`),
+extract/text/validate), `/cli` (`om embed/embed-batch/buildout-manifest/read/inspect/validate/check/extract/conformance`),
 `/mcp` (stdio, six deterministic tools), `/js` (embed/read/validate/consistency at byte-parity
 with Python), `/spec` (schema 0.1, samples, vectors, `@context`, changelog), and the seeded-defect
 gate (`fixtures/seeded_defects` + `core/tests/test_consistency.py`). The cross-impl anti-fork
@@ -245,7 +245,11 @@ covered in-browser as well as via the CLI (100% corpus coverage from either surf
 - **Buildout ingestion activated** (decision memo §3.1): `extension/src/author/extract/connectors/`
   (`buildout.ts` mapper + `buildout-http.ts` MCP-HTTP client + `load.ts` factory), config in the options
   page (endpoint + secret-store token), wired into `panel.ts` (offered on a Buildout listing tab;
-  on-device Nano is the fallback). Only the real MCP's exact tool/field names remain to reconcile.
+  on-device Nano is the fallback). **Q2 closed** (real Buildout MCP = the `Phil` connector): the
+  deterministic Buildout→openOM mapper + the `om buildout-manifest` bridge are built in `/cli`
+  (`buildout.py`), grounded in the real nested `get_listing` shape and **proven end-to-end on a live
+  Vervelio Labs OM** (map → embed-batch → verified). The `/js` extension client still uses the assumed flat
+  shape - reconciling it to the nested response (Python mapper is the reference) is the remaining bit.
 - **Repo made public-ready.** Internal strategy docs (recon, decision memo, the old normative/handoff
   drafts) were **purged from git history** (git-filter-repo) and kept local-only; the CF account id was
   scrubbed; commit authorship unified to nimbalkarsarthak7@gmail.com. Dependabot cleared (dev-dep

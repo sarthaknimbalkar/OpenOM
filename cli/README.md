@@ -12,6 +12,39 @@ om validate deal.json
 om check    out.pdf               # consistency only
 ```
 
+## Bulk / back-catalog embed
+
+Embed openOM data into many OMs in one run - the adoption path (seed supply at the source):
+
+```sh
+# a folder of *.pdf, each paired with a sibling <name>.om.json payload:
+om embed-batch --dir ./catalog --out-dir ./embedded --asserted-date 2026-08-22 \
+   --schema ../spec/om-0.1.schema.json
+#   --dry-run        preview (validate + report, write nothing)
+#   --skip-existing  resume a large run;  --force  overwrite;  --jobs 4  parallel
+
+# or a JSON manifest of {pdf, payload, out?, assertedDate?} items:
+om embed-batch --manifest ./manifest.json --out-dir ./embedded --schema ../spec/om-0.1.schema.json
+```
+
+Deterministic, non-destructive, idempotent (re-embed replaces + records `supersedes`); schema errors
+skip that item (never embedded); emits a JSON summary (per-status counts) and `--report FILE`.
+
+### From Buildout (connector -> manifest)
+
+Turn fetched Buildout listings into an `embed-batch` manifest. Save each `buildout_get_listing` JSON
+as `<id>.json` and its OM PDF as `<id>.pdf`, then:
+
+```sh
+om buildout-manifest --listings-dir ./listings --pdf-dir ./oms --out-dir ./staged \
+   --broker "Jane Broker" --brokerage "Acme NNN" --license "MI 000" \
+   --asserted-date 2026-08-22 --noi-type in-place
+om embed-batch --manifest ./staged/manifest.json --out-dir ./embedded --schema ../spec/om-0.1.schema.json
+```
+
+The map is deterministic (names/units normalized, absent fields omitted, `cap_rate_derived` used);
+the assertion identity is yours (flags), never inferred. Review the staged payloads before embedding.
+
 ## Watch-folder (server-side automation)
 
 Drop `<name>.pdf` + `<name>.json` pairs into a folder and get embedded OMs out - no UI:
