@@ -46,6 +46,7 @@ ARTIFACTS: dict[str, tuple[Path, str]] = {
         SPEC / "webhook-subscription-0.1.schema.json",
         "application/schema+json",
     ),
+    "spec/requirements.json": (SPEC / "requirements.json", "application/json"),
 }
 
 
