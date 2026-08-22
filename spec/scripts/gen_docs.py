@@ -706,10 +706,69 @@ def _what_is_om() -> str:
     )
 
 
+def _privacy() -> str:
+    """The extension privacy policy, served at /privacy (the Chrome Web Store privacy-policy URL)."""
+    body = """
+  <h1>openOM extension - Privacy Policy</h1>
+  <p><small>Last updated: 2026-08-18 · Publisher: Vervelio Labs</small></p>
+  <p>The openOM browser extension is <b>local-first and deterministic</b>. It reads offering-memorandum
+     PDFs, verifies their embedded openOM data, and (in author mode) embeds broker-asserted data - all
+     on your device. It contains <b>no analytics, no tracking, no advertising, and no telemetry</b>, and
+     it sends <b>no data to Vervelio Labs</b>.</p>
+
+  <h2>What the extension processes</h2>
+  <ul>
+    <li><b>PDF bytes of the page you are viewing or a file you choose</b> - processed in memory on your
+        device to detect, read, verify, decrypt (empty-password OMs), and embed openOM data. PDFs are
+        not uploaded anywhere by the extension.</li>
+    <li><b>Your broker profile and settings</b> (name, brokerage, license, webhook endpoints, per-domain
+        link-badging preferences, and any connector credentials) - stored <b>only</b> in the browser's
+        local extension storage on your device; secrets are encrypted at rest.</li>
+  </ul>
+
+  <h2>The only network requests the extension makes</h2>
+  <ol>
+    <li><b>Re-fetching PDF bytes</b> from the page's own URL, to read/verify from the source (never by
+        scraping the browser's PDF viewer).</li>
+    <li><b>Fetching a <code>.well-known</code> mirror</b> from the OM's stated domain, to verify
+        domain-origin. This is a request to the broker's own site, carrying no personal data.</li>
+    <li><b>Delivering a change-notification webhook</b> - only to an endpoint <b>you</b> configure, when
+        you choose to publish, signed with your configured key.</li>
+  </ol>
+  <p>There are no other network requests. On-device extraction makes <b>zero</b> off-device requests
+     (all inference runs locally, enforced by an automated egress-zero test). The extension never sends
+     your PDFs, profile, or settings to Vervelio Labs or any third party.</p>
+
+  <h2>Data sharing and retention</h2>
+  <p>No data is shared with anyone. Data you enter stays in local extension storage until you remove it
+     or uninstall the extension; uninstalling deletes its local storage.</p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><b>activeTab</b> - read the URL/PDF of the tab you act on, only when you invoke the extension.</li>
+    <li><b>storage</b> - save your broker profile and settings locally on your device.</li>
+    <li><b>sidePanel</b> - open author mode in the browser side panel.</li>
+    <li><b>Host access to <code>https://*/*</code></b> - re-fetch PDF bytes and mirror files from the
+        sites you view, and badge openOM links on pages where you enable it. Used only to read
+        PDFs/mirrors, never to collect browsing data.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>Questions: <a href="mailto:hello@vervelio.com">hello@vervelio.com</a> ·
+     Source: <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a></p>
+"""
+    _d = "Privacy policy for the openOM browser extension: local-first, deterministic, no tracking, no telemetry, no data sent to the publisher."
+    return _page("Privacy Policy", body, description=_d, canonical="/privacy/",
+                 jsonld=_jsonld(_article("openOM extension Privacy Policy", _d, "/privacy/"),
+                                _breadcrumb("/privacy/", "Privacy")),
+                 seo_title="openOM extension - Privacy Policy")
+
+
 def docs_pages() -> dict[str, str]:
     """Return ``{relative_path_under_site: html}`` for the whole docs tree. Deterministic."""
     return {
         "verify/index.html": _verify_tool(),
+        "privacy/index.html": _privacy(),
         "docs/index.html": _docs_index(),
         "docs/what-is-an-offering-memorandum.html": _what_is_om(),
         "docs/grounding-ai.html": _grounding_ai(),
