@@ -21,7 +21,11 @@ describe("buildoutRefFromUrl", () => {
   });
 });
 
-const LISTING = { addressLine1: "1 A St", city: "Townville", state: "TX", capRatePct: 6.25 };
+const LISTING = {
+  financials: { cap_rate_derived: 6.25, noi: 115625 },
+  core: { "research_property_attributes.state": "MI - Michigan" },
+  custom_fields: { Tenant: "Example Retail Stores, LLC" },
+};
 
 function fakeFetch(toolBody: { ct: string; body: string }): typeof fetch {
   const calls: Array<Record<string, unknown>> = [];
@@ -65,7 +69,7 @@ describe("httpMcpBuildoutClient", () => {
       }),
     });
     const listing = await httpMcpBuildoutClient(cfg, token, f).getListing("123");
-    expect(listing.capRatePct).toBe(6.25);
+    expect(listing.financials?.cap_rate_derived).toBe(6.25);
     const calls = (f as unknown as { calls: Array<{ method: string }> }).calls;
     expect(calls.map((c) => c.method)).toEqual([
       "initialize",
@@ -81,7 +85,7 @@ describe("httpMcpBuildoutClient", () => {
       result: { structuredContent: LISTING },
     })}\n\n`;
     const listing = await httpMcpBuildoutClient(cfg, token, fakeFetch({ ct: "text/event-stream", body: sse })).getListing("123");
-    expect(listing.state).toBe("TX");
+    expect(listing.custom_fields?.Tenant).toBe("Example Retail Stores, LLC");
   });
 
   test("surfaces an MCP error instead of returning garbage", async () => {

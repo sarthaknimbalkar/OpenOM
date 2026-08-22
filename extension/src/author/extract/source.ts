@@ -14,10 +14,9 @@
 // SCOPE: the generic, reusable scaffold. The concrete Buildout connector (`connectors/buildout.ts` +
 // the MCP-HTTP client `connectors/buildout-http.ts`) and the panel wiring are now built - author mode
 // offers a Buildout pull when configured (options page) on a Buildout listing tab, with on-device as
-// the fallback. The real Buildout get_listing shape is now known (see cli/src/openom_cli/buildout.py,
-// the reference Buildout->openOM mapper, proven on live data); this /js client still consumes the
-// assumed flat `BuildoutListing`, so its adapter should flatten the real nested response.
-// `partialPayloadToFields` is dependency-free so it can move to /js for a CLI/hosted run.
+// the fallback. `connectors/buildout.ts` maps the REAL nested Buildout get_listing shape (byte-parity
+// with the reference Python mapper cli/src/openom_cli/buildout.py); `partialPayloadToFields` is
+// dependency-free so it can move to /js for a CLI/hosted run.
 import type {
   Extractor,
   ExtractionResult,

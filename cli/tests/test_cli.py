@@ -133,24 +133,24 @@ def test_embed_batch_requires_exactly_one_source(tmp_path: Path) -> None:
 
 def test_buildout_manifest_bridge_end_to_end(tmp_path: Path) -> None:
     # The connector->manifest bridge on a REAL Buildout listing shape: map -> manifest -> embed-batch.
-    fixture = Path(__file__).parent / "fixtures" / "buildout-listing-a listing.json"
+    fixture = Path(__file__).parent / "fixtures" / "buildout-listing-sample.json"
     listings = tmp_path / "listings"; listings.mkdir()
-    (listings / "a listing.json").write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+    (listings / "sample.json").write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
     pdfs = tmp_path / "oms"; pdfs.mkdir()
-    _base_pdf(pdfs / "a listing.pdf")  # stands in for the fetched OM PDF
+    _base_pdf(pdfs / "sample.pdf")  # stands in for the fetched OM PDF
     staged = tmp_path / "staged"
 
     m = runner.invoke(app, [
         "buildout-manifest", "--listings-dir", str(listings), "--pdf-dir", str(pdfs),
-        "--out-dir", str(staged), "--broker", "a broker", "--brokerage", "Example Net Lease",
+        "--out-dir", str(staged), "--broker", "Jane Broker", "--brokerage", "Example Net Lease",
         "--license", "MI 0000", "--asserted-date", "2026-08-22", "--noi-type", "pro-forma",
     ])
     assert m.exit_code == 0, m.output
     # the mapped payload is schema-valid and internally consistent (NOI/price == capRate)
-    payload = json.loads((staged / "a listing.om.json").read_text(encoding="utf-8"))
-    assert payload["deal"]["capRate"] == 0.0635
-    assert payload["property"]["address"]["addressRegion"] == "GA"
-    v = runner.invoke(app, ["validate", str(staged / "a listing.om.json"),
+    payload = json.loads((staged / "sample.om.json").read_text(encoding="utf-8"))
+    assert payload["deal"]["capRate"] == 0.0625
+    assert payload["property"]["address"]["addressRegion"] == "MI"
+    v = runner.invoke(app, ["validate", str(staged / "sample.om.json"),
                             "--schema", str(SPEC / "om-0.1.schema.json")])
     assert v.exit_code == 0, v.output  # schema-valid
 
@@ -158,8 +158,8 @@ def test_buildout_manifest_bridge_end_to_end(tmp_path: Path) -> None:
     b = runner.invoke(app, ["embed-batch", "--manifest", str(staged / "manifest.json"),
                             "--out-dir", str(out), "--schema", str(SPEC / "om-0.1.schema.json")])
     assert b.exit_code == 0, b.output
-    rr = runner.invoke(app, ["read", str(out / "a listing.pdf")])
-    assert json.loads(rr.output)["payload"]["lease"]["tenantEntity"] == "a retail tenant"
+    rr = runner.invoke(app, ["read", str(out / "sample.pdf")])
+    assert json.loads(rr.output)["payload"]["lease"]["tenantEntity"] == "Example Retail Stores, LLC"
 
 
 def test_embed_warns_on_backwards_asserted_date(tmp_path: Path) -> None:
