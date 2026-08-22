@@ -1,6 +1,9 @@
 # openOM
 
 [![ci](https://github.com/sarthaknimbalkar/OpenOM/actions/workflows/ci.yml/badge.svg)](https://github.com/sarthaknimbalkar/OpenOM/actions/workflows/ci.yml)
+[![toolchain: MIT](https://img.shields.io/badge/toolchain-MIT-green.svg)](LICENSE)
+[![spec: CC-BY-4.0](https://img.shields.io/badge/spec-CC--BY--4.0-blue.svg)](spec/LICENSE)
+[![spec version: 0.1](https://img.shields.io/badge/spec-0.1-informational.svg)](spec/)
 
 > An open standard + toolchain that embeds a machine-readable, broker-asserted data payload
 > inside commercial-real-estate offering-memorandum (OM) PDFs, and exposes the same payload as
@@ -8,6 +11,17 @@
 
 Published by **[Vervelio Labs](https://verveliolabs.com)** (neutral steward). Dual-licensed: the
 toolchain is MIT, the specification is CC-BY-4.0 (see [License](#license)).
+Docs, the verifier, and the namespace live at **[openom.app](https://openom.app)**.
+
+## Try it in 60 seconds
+
+- **Verify a PDF in your browser** - <https://openom.app/verify/> (or grab the downloadable
+  [sample OM](https://openom.app/sample/openom-sample.pdf) first). Bytes never leave your machine.
+- **Ground an AI agent** - point any MCP client at the free public endpoint
+  `https://mcp.openom.app/mcp` ([config](examples/mcp-config.json)) and ask it to `om_read` an OM.
+- **Run it locally** - `pip install openom-core && python examples/quickstart.py` (embed → read →
+  validate, end to end). More in [`examples/`](examples/).
+- **Read the docs** - <https://openom.app/docs/>.
 
 ## Why
 
@@ -43,7 +57,7 @@ warnings never do.
 | [`core/`](core/) | Python library - deterministic PDF/data verbs (embed, read, inspect, extract, validate). The heart of the standard. Zero inference deps. |
 | [`cli/`](cli/) | The `om` command over `core`. |
 | [`spec/`](spec/) | JSON Schema, sample payloads, `@context`/vocabulary, and the conformance **vectors** (JCS oracles + golden PDFs). **The product.** |
-| [`mcp/`](mcp/) | Deterministic MCP server - the 6-tool surface (`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`) over `core`. stdio (M1); hosted HTTP is M3. |
+| [`mcp/`](mcp/) | Deterministic MCP server - the 6-tool surface (`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`) over `core`. Self-host stdio/HTTP (`om-mcp`/`om-mcp-http`); a free public read-only grounding endpoint (`om_read`+`om_validate`) runs on a Cloudflare Worker at [mcp.openom.app](https://mcp.openom.app/mcp) ([`mcp-worker/`](mcp-worker/)). |
 | [`js/`](js/) | TypeScript reference implementation (`openom-js`) - embed/read/validate/verify/decrypt - powering the extension + web/Node consumers. Byte-parity with `core`. |
 | [`extension/`](extension/) | MV3 Chrome extension: consumer mode (detect/verify/badge/publish) + author mode (capture/review/assert/embed, on-device extraction). |
 | [`process/`](process/) | Extraction/mapping playbook (`SKILL.md` + agent-instructions) for authoring clients. No code. |
@@ -91,8 +105,9 @@ mode is the toolbar popup; author mode opens from the popup's **“Embed a paylo
 - **CI / server-side:** the [openom-embed GitHub Action](.github/actions/openom-embed/) embeds or
   validates payloads in a broker's pipeline, and the `om` CLI does the same locally - no browser, no
   inference.
-- **Verify without installing anything:** the hosted, fully client-side tool at `…/openom/verify/`
-  reads a PDF in your browser and shows its openOM state (bytes never leave your machine).
+- **Verify without installing anything:** the hosted, fully client-side tool at
+  <https://openom.app/verify/> reads a PDF in your browser and shows its openOM state (bytes never
+  leave your machine).
 - **Portals:** the embeddable [`<openom-badge>`](js/widget/) shows the trust badge next to a listing
   with one script tag.
 
@@ -109,14 +124,15 @@ pytest cli  -q --cov=openom_cli  --cov-fail-under=90
 python core/scripts/gen_vectors.py       # regenerate vectors (must be a no-op = no drift)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and [SECURITY.md](SECURITY.md) for
-the threat model.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, [GOVERNANCE.md](GOVERNANCE.md) for how the
+standard evolves (RFCs, versioning, stability guarantees), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
+and [SECURITY.md](SECURITY.md) for the threat model.
 
 ## Status
 
 **Pre-1.0, active development - the full toolchain is shipped and green.** Implemented: `core`
-(embed/read/inspect/extract/validate), `cli` (`om`), `mcp` (six deterministic tools, stdio +
-hosted Streamable HTTP), `js` (`openom-js`, byte-parity with `core`), `spec` (schema 0.1, vectors,
+(embed/read/inspect/extract/validate), `cli` (`om`), `mcp` (six deterministic tools, self-host stdio/HTTP;
+public read-only Worker at mcp.openom.app), `js` (`openom-js`, byte-parity with `core`), `spec` (schema 0.1, vectors,
 `@context`, webhook envelope, codes registry), `process` (extraction playbook), and the two-persona
 `extension` (consumer + author). Non-destructive embedding is proven across ~60 real producers; the
 cross-implementation, JCS-differential-fuzz, and RFC 8785 anti-fork gates run in CI. The schema is
