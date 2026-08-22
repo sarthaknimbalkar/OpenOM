@@ -120,7 +120,7 @@ scope forever.
 
 ## Current state (2026-08)
 **M1 + M1.x shipped and at peak** (2026-08-17), on `main`. Built: `/core` (embed/read/inspect/
-extract/text/validate), `/cli` (`om embed/read/inspect/validate/check/extract/conformance`),
+extract/text/validate), `/cli` (`om embed/embed-batch/read/inspect/validate/check/extract/conformance`),
 `/mcp` (stdio, six deterministic tools), `/js` (embed/read/validate/consistency at byte-parity
 with Python), `/spec` (schema 0.1, samples, vectors, `@context`, changelog), and the seeded-defect
 gate (`fixtures/seeded_defects` + `core/tests/test_consistency.py`). The cross-impl anti-fork

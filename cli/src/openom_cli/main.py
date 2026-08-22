@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 """The ``om`` CLI over openom-core (spec §5a). Thin, deterministic, zero inference.
 
-Commands: embed · read · inspect · validate · check · extract · conformance · version. JSON goes
+Commands: embed · embed-batch · read · inspect · validate · check · extract · conformance ·
+version. JSON goes
 to stdout (``--format pretty|compact``; ``--quiet`` suppresses it). A path of ``-`` means stdin
 (input) or stdout (``embed --out -``) for pipe-friendly use. Exit codes: 0 ok · 1 validation/
 conformance failure · 2 usage (typer) · 3 data/IO error (bad PDF/JSON, OM-IO-*). Warnings never
@@ -158,6 +159,76 @@ def embed(
     # Status to stderr so `--out -` keeps a clean binary PDF on stdout for piping.
     if not _output.quiet:
         typer.echo(f"embedded om.json -> {'<stdout>' if str(out) == '-' else out}", err=True)
+
+
+@app.command(name="embed-batch")
+@_guard
+def embed_batch(
+    manifest: Annotated[
+        Path, typer.Option(help="JSON array of {pdf, payload, out?, assertedDate?} items")
+    ],
+    out_dir: Annotated[
+        Path, typer.Option(help="Default output dir for items that omit 'out'")
+    ] = Path("openom-out"),
+    asserted_date: Annotated[
+        str | None, typer.Option(help="Default ISO 8601 assertion date for items without one")
+    ] = None,
+    schema: Annotated[
+        Path | None, typer.Option(help="JSON Schema; schema-invalid payloads are skipped")
+    ] = None,
+) -> None:
+    """Embed openOM payloads into many OMs in one run - back-catalog seeding (adoption).
+
+    The manifest is a JSON array; each item maps a source PDF to its payload JSON. Paths resolve
+    relative to the manifest file. Deterministic, non-destructive, idempotent (re-embed replaces and
+    records ``supersedes``). Schema errors skip that item; consistency warnings never block.
+    Emits a JSON summary and exits non-zero if any item failed or was skipped.
+    """
+    items = json.loads(_read_bytes(manifest).decode("utf-8"))
+    if not isinstance(items, list):
+        typer.echo("error: OM-IO manifest must be a JSON array", err=True)
+        raise typer.Exit(3)
+    base = manifest.resolve().parent
+    schema_obj = _load_json(schema) if schema is not None else None
+    results: list[dict[str, Any]] = []
+    embedded = 0
+    for i, item in enumerate(items):
+        rec: dict[str, Any] = {"index": i}
+        try:
+            if not isinstance(item, dict) or "pdf" not in item or "payload" not in item:
+                raise ValueError("item needs 'pdf' and 'payload'")
+            pdf_path = (base / str(item["pdf"])).resolve()
+            date = str(item.get("assertedDate") or asserted_date or "")
+            if not date:
+                raise ValueError("no assertedDate (set it on the item or pass --asserted-date)")
+            out_path = (
+                (base / str(item["out"])).resolve()
+                if item.get("out")
+                else (out_dir.resolve() / f"{pdf_path.stem}.pdf")
+            )
+            rec |= {"pdf": str(pdf_path), "out": str(out_path)}
+            if out_path == pdf_path:
+                raise ValueError("output would overwrite the input PDF")
+            payload = _load_json(base / str(item["payload"]))
+            report = _validate(payload, schema=schema_obj, as_of=date)
+            rec["warnings"] = [f.code for f in report.warnings]
+            if not report.ok:
+                rec["status"] = "skipped"
+                rec["errors"] = [f"{f.code}: {f.path}" for f in report.errors]
+                results.append(rec)
+                continue
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            _write_bytes(out_path, _embed(_read_bytes(pdf_path), payload, asserted_date=date))
+            rec["status"] = "embedded"
+            embedded += 1
+        except Exception as e:  # one bad item must never abort the batch  # noqa: BLE001
+            rec["status"] = "error"
+            rec.setdefault("errors", []).append(str(e))
+        results.append(rec)
+    if not _output.quiet:
+        typer.echo(f"embed-batch: {embedded}/{len(items)} embedded", err=True)
+    _emit({"total": len(items), "embedded": embedded, "results": results})
+    raise typer.Exit(code=0 if embedded == len(items) else 1)
 
 
 @app.command()
