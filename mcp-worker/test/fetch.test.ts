@@ -112,13 +112,13 @@ describe("fetchPdf ([#36] follow bounded, re-pinned redirects)", () => {
       }
       return undefined;
     };
-    expect(await codeOf(fetchPdf("http://x.example.com/a.pdf"))).toBe("OM-IO-SSRF");
-    expect(await codeOf(fetchPdf("https://127.0.0.1/a.pdf"))).toBe("OM-IO-SSRF");
+    expect(await codeOf(fetchPdf("http://x.example.com/a.pdf"))).toBe("OM-IO-008");
+    expect(await codeOf(fetchPdf("https://127.0.0.1/a.pdf"))).toBe("OM-IO-002");
     const big = scriptedFetch([{ status: 200, body: new Uint8Array(30_000_000) }]);
-    expect(await codeOf(fetchPdf("https://cdn.example.com/big.pdf", big.impl))).toBe("OM-IO-BOMB");
+    expect(await codeOf(fetchPdf("https://cdn.example.com/big.pdf", big.impl))).toBe("OM-IO-005");
     const bad = scriptedFetch([{ status: 404 }]);
-    expect(await codeOf(fetchPdf("https://cdn.example.com/missing.pdf", bad.impl))).toBe("OM-IO-FETCH");
+    expect(await codeOf(fetchPdf("https://cdn.example.com/missing.pdf", bad.impl))).toBe("OM-IO-001");
     const loop = scriptedFetch([{ status: 302, location: "https://a.example.com/n" }]);
-    expect(await codeOf(fetchPdf("https://cdn.example.com/x.pdf", loop.impl))).toBe("OM-IO-REDIRECT");
+    expect(await codeOf(fetchPdf("https://cdn.example.com/x.pdf", loop.impl))).toBe("OM-IO-009");
   });
 });

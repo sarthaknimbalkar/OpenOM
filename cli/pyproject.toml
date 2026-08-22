@@ -8,7 +8,8 @@ version = "0.1.0"
 description = "openOM CLI - the `om` command over openom-core. Zero inference."
 requires-python = ">=3.11"
 license = "MIT"
-dependencies = ["openom-core", "typer>=0.12"]
+# openom-core pinned to the same 0.x spec line (a 0.2 core may change the payload contract).
+dependencies = ["openom-core>=0.1,<0.2", "typer>=0.12"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov>=5", "mypy>=1.10", "ruff>=0.5"]

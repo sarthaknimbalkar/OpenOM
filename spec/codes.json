@@ -3,126 +3,157 @@
   "description": "Canonical openOM finding-code registry (#151): code -> requirement back-reference + severity. Single source both cores drift-lock to (validate.py _REQUIREMENT / consistency.ts REQUIREMENT). Adding a code means editing here + both maps; the drift tests fail if they diverge.",
   "codes": {
     "OMI-I001": {
+      "message": "currency member absent; the payload is interpreted as USD",
       "requirement": "OM-DD-002",
       "severity": "info"
     },
     "OMI-I002": {
+      "message": "rentPeriod source omitted; provenance defaults to 'asserted'",
       "requirement": "OM-DD-004",
       "severity": "info"
     },
     "OMI-I003": {
+      "message": "advisory context for a skipped or non-applicable consistency check",
       "requirement": "OM-ERR-014",
       "severity": "info"
     },
     "OMV-E001": {
+      "message": "payload does not conform to the openOM 0.1 JSON Schema",
       "requirement": "OM-DD-001",
       "severity": "error"
     },
     "OMV-E002": {
-      "requirement": "OM-DD",
+      "message": "noiType and noiAsOfDate are required when deal.noi is present",
+      "requirement": "OM-DD-003",
       "severity": "error"
     },
     "OMV-E003": {
+      "message": "meta.signature is neither null nor the reserved {alg,keyId,value} shape",
       "requirement": "OM-ERR-090",
       "severity": "error"
     },
     "OMV-E010": {
+      "message": "meta.supersedes is not a 'sha256:'<64-hex> string or null",
       "requirement": "OM-ERR-013",
       "severity": "error"
     },
     "OMW-W010": {
+      "message": "capRate disagrees with noi / askingPrice beyond tolerance",
       "requirement": "OM-CONS-010",
       "severity": "warning"
     },
     "OMW-W011": {
+      "message": "pricePerSF disagrees with askingPrice / buildingSF beyond tolerance",
       "requirement": "OM-CONS-011",
       "severity": "warning"
     },
     "OMW-W012": {
+      "message": "pro-forma NOI given without a noiAsOfDate",
       "requirement": "OM-CONS-012",
       "severity": "warning"
     },
     "OMW-W013": {
+      "message": "capRate falls outside the plausibility band",
       "requirement": "OM-CONS-013",
       "severity": "warning"
     },
     "OMW-W014": {
+      "message": "a monetary or area value is present but non-positive",
       "requirement": "OM-CONS-014",
       "severity": "warning"
     },
     "OMW-W020": {
+      "message": "year-1 scheduled rent disagrees with the stated in-place NOI",
       "requirement": "OM-CONS-020",
       "severity": "warning"
     },
     "OMW-W021": {
+      "message": "a gap exists between consecutive rent-schedule periods",
       "requirement": "OM-CONS-021",
       "severity": "warning"
     },
     "OMW-W022": {
+      "message": "rent-schedule periods overlap in time",
       "requirement": "OM-CONS-022",
       "severity": "warning"
     },
     "OMW-W023": {
+      "message": "escalationFromPrior disagrees with the actual rent step",
       "requirement": "OM-CONS-023",
       "severity": "warning"
     },
     "OMW-W024": {
+      "message": "rentPSF disagrees with annualRent / SF",
       "requirement": "OM-CONS-024",
       "severity": "warning"
     },
     "OMW-W025": {
+      "message": "monthlyRent disagrees with annualRent / 12",
       "requirement": "OM-CONS-025",
       "severity": "warning"
     },
     "OMW-W026": {
+      "message": "a rent period falls outside the lease term",
       "requirement": "OM-CONS-026",
       "severity": "warning"
     },
     "OMW-W030": {
+      "message": "remaining lease term disagrees with the term dates",
       "requirement": "OM-CONS-030",
       "severity": "warning"
     },
     "OMW-W031": {
+      "message": "total lease term disagrees with the term dates",
       "requirement": "OM-CONS-031",
       "severity": "warning"
     },
     "OMW-W032": {
+      "message": "assertedDate is in the future relative to the processing date",
       "requirement": "OM-CONS-032",
       "severity": "warning"
     },
     "OMW-W033": {
+      "message": "noiAsOfDate is later than assertedDate",
       "requirement": "OM-CONS-033",
       "severity": "warning"
     },
     "OMW-W034": {
+      "message": "lease expiration is on or before its commencement",
       "requirement": "OM-CONS-034",
       "severity": "warning"
     },
     "OMW-W040": {
+      "message": "a net-lease type is stated but pass-throughs are missing/inconsistent",
       "requirement": "OM-CONS-040",
       "severity": "warning"
     },
     "OMW-W041": {
+      "message": "stated lease type disagrees with the expense responsibilities",
       "requirement": "OM-CONS-041",
       "severity": "warning"
     },
     "OMW-W050": {
+      "message": "meta.supersedes equals this payload's own hash (self-supersede no-op)",
       "requirement": "OM-CONS-050",
       "severity": "warning"
     },
     "OMW-W060": {
+      "message": "a source claims 'verified' that the tooling cannot verify",
       "requirement": "OM-CONS-060",
       "severity": "warning"
     },
     "OMW-W061": {
+      "message": "currency absent; USD assumed (paired with OMI-I001)",
       "requirement": "OM-DD-002",
       "severity": "warning"
     },
     "OMW-W051": {
+      "message": "a same-domain mirror carries a newer, superseding assertion (stale)",
       "requirement": "OM-TRUST-009",
       "severity": "warning"
     },
     "OMW-W052": {
+      "message": "a same-domain mirror shows different, non-superseding content (diverged)",
       "requirement": "OM-TRUST-010",
       "severity": "warning"
     }

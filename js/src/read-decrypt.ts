@@ -6,6 +6,7 @@
 import { verifyIntegrity } from "./verify.js";
 import { parsePayload } from "./parse.js";
 import type { ReadResult, ReadVerification } from "./read.js";
+import type { OMPayload } from "./payload-types.js";
 
 /** The shape readPayloadFromBytes accepts as its optional decrypt fallback. */
 export type DecryptRead = (pdfBytes: Uint8Array, encrypted: boolean) => Promise<ReadResult>;
@@ -16,9 +17,9 @@ const UNVERIFIED: ReadVerification = {
   signatureValid: null,
 };
 
-function safeParse(bytes: Uint8Array): Record<string, unknown> | null {
+function safeParse(bytes: Uint8Array): OMPayload | null {
   try {
-    return parsePayload(bytes);
+    return parsePayload(bytes) as OMPayload; // read convenience; trust only when hashValid [Ma3]
   } catch {
     return null;
   }
@@ -32,6 +33,7 @@ export const pdfjsDecryptRead: DecryptRead = async (pdfBytes, encrypted = false)
     try {
       const meta = await pdf.getMetadata();
       const expectedHash = meta.metadata?.get("omspec:payloadhash") ?? null;
+      const sourceDocHash = meta.metadata?.get("omspec:sourcedochash") ?? null;
       const attachments = await pdf.getAttachments();
       const bytes: Uint8Array | null = attachments?.["om.json"]?.content ?? null;
       if (bytes === null) {
@@ -39,18 +41,26 @@ export const pdfjsDecryptRead: DecryptRead = async (pdfBytes, encrypted = false)
           state: "absent",
           payload: null,
           payloadHash: expectedHash,
+          sourceDocHash,
           verification: UNVERIFIED,
         };
       }
       const payload = safeParse(bytes);
       if (expectedHash === null) {
-        return { state: "present", payload, payloadHash: null, verification: { ...UNVERIFIED } };
+        return {
+          state: "present",
+          payload,
+          payloadHash: null,
+          sourceDocHash,
+          verification: { ...UNVERIFIED },
+        };
       }
       const { hashValid, computedHash } = verifyIntegrity(bytes, expectedHash);
       return {
         state: hashValid ? "present" : "hash-mismatch",
         payload,
         payloadHash: computedHash,
+        sourceDocHash,
         verification: { hashValid, originVerified: null, signatureValid: null },
       };
     } finally {
@@ -61,6 +71,7 @@ export const pdfjsDecryptRead: DecryptRead = async (pdfBytes, encrypted = false)
       state: encrypted ? "encrypted" : "absent",
       payload: null,
       payloadHash: null,
+      sourceDocHash: null,
       verification: UNVERIFIED,
     };
   }

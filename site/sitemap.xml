@@ -7,6 +7,7 @@
   <url><loc>https://openom.app/docs/quickstart-broker</loc></url>
   <url><loc>https://openom.app/docs/quickstart-developer</loc></url>
   <url><loc>https://openom.app/docs/quickstart-portal</loc></url>
+  <url><loc>https://openom.app/docs/requirements</loc></url>
   <url><loc>https://openom.app/docs/schema-reference</loc></url>
   <url><loc>https://openom.app/docs/what-is-an-offering-memorandum</loc></url>
   <url><loc>https://openom.app/embed/</loc></url>
@@ -17,4 +18,5 @@
   <url><loc>https://openom.app/spec/om-0.1.schema.json</loc></url>
   <url><loc>https://openom.app/spec/webhook-envelope-0.1.schema.json</loc></url>
   <url><loc>https://openom.app/spec/webhook-subscription-0.1.schema.json</loc></url>
+  <url><loc>https://openom.app/spec/requirements.json</loc></url>
 </urlset>

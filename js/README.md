@@ -41,10 +41,12 @@ const out = await embedPayload(pdfBytes, payload); // non-destructive: page cont
 
 ```ts
 import { validatePayload } from "openom-js";
-import schema from "openom-js/spec/om-0.1.schema.json"; // or your copy of the schema
 
-const report = validatePayload(payload, schema);
+const report = validatePayload(payload); // the 0.1 schema is bundled — no separate file needed
 // report.errors (block embed) · report.warnings (OMW-W###) · report.info (OMI-I###)
+
+// Need the schema itself (e.g. to feed another validator)? It ships with the package:
+import { OM_SCHEMA, SPEC_VERSION } from "openom-js"; // SPEC_VERSION === "0.1"
 ```
 
 ## Verify a webhook delivery (receiver side, §Y)

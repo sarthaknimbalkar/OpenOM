@@ -91,8 +91,8 @@ def test_every_pinned_url_resolves_to_committed_bytes() -> None:
 
 
 def test_portal_pins_the_immutable_versioned_widget_with_sri() -> None:
-    """[polish] the portal quick-start must pin a content-versioned, immutable widget URL with a valid
-    sha384 SRI, and that exact versioned file must be served (URL == emitted bytes, no drift)."""
+    """[polish] the portal quick-start must pin a content-versioned, immutable widget URL with a
+    valid sha384 SRI, and the exact versioned file must be served (URL == bytes == SRI)."""
     import base64
     import hashlib
 
@@ -102,7 +102,8 @@ def test_portal_pins_the_immutable_versioned_widget_with_sri() -> None:
     sri = "sha384-" + base64.b64encode(hashlib.sha384(bundle).digest()).decode()
     assert versioned in page, "portal quick-start does not reference the versioned widget URL"
     assert sri in page, "portal quick-start SRI does not match the served bundle"
-    assert (SITE / "widget" / versioned).read_bytes() == bundle, "versioned widget file missing/stale"
+    served = (SITE / "widget" / versioned).read_bytes()
+    assert served == bundle, "versioned widget file missing/stale"
 
 
 def _live_get(url: str) -> tuple[int, str, bytes]:  # pragma: no cover - manual post-deploy only

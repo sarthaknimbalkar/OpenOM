@@ -1,0 +1,642 @@
+{
+  "$comment": "openOM 0.1 requirement registry. Each OM-* requirement ID cited by the schema, codes, samples, or reference implementation resolves here to its normative clause. Generated+verified from the committed reference implementation; drift-locked by spec/tests/test_requirements.py. /spec is the source of truth.",
+  "specVersion": "0.1",
+  "requirements": {
+    "OM-CANON-001": {
+      "title": "RFC 8785 JCS serialization",
+      "section": "§C",
+      "keyword": "MUST",
+      "clause": "An openOM payload MUST be serialized to canonical bytes using RFC 8785 JSON Canonicalization Scheme (JCS) - UTF-8 with no BOM, member keys sorted by UTF-16 code unit, no insignificant whitespace, and the ECMAScript number model - after the §C.1 preprocessing is applied."
+    },
+    "OM-CANON-003": {
+      "title": "Signature excluded from integrity preimage",
+      "section": "§C",
+      "keyword": "MUST",
+      "clause": "The integrity hash MUST be computed over the payload with meta.signature removed (not nulled) and MUST be expressed as \"sha256:\" followed by the lowercase hex SHA-256 digest, so that adding a signature in a later version does not disturb the hash."
+    },
+    "OM-CANON-005": {
+      "title": "Producer stores exact preimage bytes",
+      "section": "§C",
+      "keyword": "MUST",
+      "clause": "A Producer MUST embed as the om.json stream exactly the canonical preimage bytes (the JCS of the payload with meta.signature removed) that were hashed, so a Consumer's byte-recompute of the stored stream equals the stored payloadHash directly."
+    },
+    "OM-CANON-007": {
+      "title": "capRate is a decimal fraction",
+      "section": "§C",
+      "keyword": "MUST",
+      "clause": "The capRate value MUST be expressed as a decimal fraction (e.g. 0.0625 for 6.25%), not as a percentage number."
+    },
+    "OM-CANON-008": {
+      "title": "Consumer hashes bytes as received",
+      "section": "§C",
+      "keyword": "MUST",
+      "clause": "A Consumer verifying integrity MUST hash the stored payload bytes exactly as received and compare that digest to the marker hash; it MUST NOT re-canonicalize or re-normalize (NFC) the received payload before verifying."
+    },
+    "OM-CANON-009": {
+      "title": "Reject duplicate member names",
+      "section": "§C.1",
+      "keyword": "MUST",
+      "clause": "Canonicalization MUST reject a payload containing two object member names that collide after NFC normalization, raising OM-IO-DUPKEY."
+    },
+    "OM-CANON-010": {
+      "title": "Reject malformed Unicode and bad structure",
+      "section": "§C.1",
+      "keyword": "MUST",
+      "clause": "Canonicalization MUST reject strings or member names containing a lone/unpaired UTF-16 surrogate (OM-IO-BADUTF8) and MUST reject a payload whose top-level value is not a JSON object or that exceeds the nesting-depth guard (OM-IO-STRUCTURE)."
+    },
+    "OM-CANON-013": {
+      "title": "Reject non-representable integers",
+      "section": "§C",
+      "keyword": "MUST",
+      "clause": "Canonicalization MUST reject any integer-valued number whose magnitude exceeds 2^53-1 (the ECMAScript safe-integer limit), raising OM-IO-NUMRANGE, since such values would be silently rounded by the number model."
+    },
+    "OM-CANON-015": {
+      "title": "JCS number formatting",
+      "section": "§C",
+      "keyword": "MUST",
+      "clause": "An in-range number MUST be serialized using the RFC 8785 / ECMAScript Number-to-string rules - negative zero as 0, exponent notation only outside the ES fixed-notation range, and safe integers with no exponent."
+    },
+    "OM-CANON-016": {
+      "title": "Integrity-hash preimage definition",
+      "section": "§C.3",
+      "keyword": "MUST",
+      "clause": "The integrity hash preimage MUST be the JCS canonical bytes of the payload with meta.signature removed, and the hash MUST be SHA-256 over those bytes."
+    },
+    "OM-CANON-017": {
+      "title": "Only signature excluded from preimage",
+      "section": "§C.3",
+      "keyword": "MUST",
+      "clause": "Only meta.signature may be excluded from the integrity preimage; every other field - including meta.sourceDocHash and meta.supersedes - MUST be part of the hashed preimage."
+    },
+    "OM-CONS-010": {
+      "title": "Cap rate vs NOI/price",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W010 when deal.capRate differs from deal.noi divided by deal.askingPrice by more than the absolute cap-rate tolerance (default 0.005)."
+    },
+    "OM-CONS-011": {
+      "title": "Price per SF vs price/SF",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W011 when deal.pricePerSF differs from deal.askingPrice divided by property.buildingSF by more than the relative monetary tolerance (default 0.01)."
+    },
+    "OM-CONS-012": {
+      "title": "Pro-forma NOI without as-of",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W012 when deal.noiType is 'pro-forma' but deal.noiAsOfDate is absent."
+    },
+    "OM-CONS-013": {
+      "title": "Cap rate plausibility band",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W013 when deal.capRate falls outside the plausibility band (default [0.02, 0.20])."
+    },
+    "OM-CONS-014": {
+      "title": "Non-positive money/area",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W014 when deal.askingPrice, deal.noi, or property.buildingSF is present and non-positive (<= 0)."
+    },
+    "OM-CONS-020": {
+      "title": "Year-1 rent vs in-place NOI",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W020 when noiType is 'in-place' and the first rent-schedule period's annualRent differs from deal.noi by more than the relative monetary tolerance (default 0.01)."
+    },
+    "OM-CONS-021": {
+      "title": "Gap between rent periods",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W021 when a rent-schedule period starts more than one day after the prior period's periodEnd (a gap between consecutive periods)."
+    },
+    "OM-CONS-022": {
+      "title": "Overlapping rent periods",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W022 when a rent-schedule period's periodStart is on or before the prior period's periodEnd (overlapping consecutive periods)."
+    },
+    "OM-CONS-023": {
+      "title": "Escalation vs rent step",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W023 when a period's escalationFromPrior differs from the implied annualRent step (annual/prevAnnual - 1) by more than the absolute rate tolerance (default 0.005)."
+    },
+    "OM-CONS-024": {
+      "title": "rentPSF vs annualRent/SF",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W024 when a period's rentPSF differs from its annualRent divided by property.buildingSF by more than the relative monetary tolerance (default 0.01)."
+    },
+    "OM-CONS-025": {
+      "title": "monthlyRent vs annualRent/12",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W025 when a period's monthlyRent differs from its annualRent divided by 12 by more than the relative monetary tolerance (default 0.01)."
+    },
+    "OM-CONS-026": {
+      "title": "Rent period outside lease term",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W026 when a rent period's periodStart is before lease.commencement or its periodEnd is after lease.expiration."
+    },
+    "OM-CONS-030": {
+      "title": "Remaining term vs dates",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W030 when lease.remainingTermMonths disagrees with (expiration - as_of reference date) beyond the remaining-term-days tolerance (default 31 days), using 30.4375 days per month."
+    },
+    "OM-CONS-031": {
+      "title": "Total term vs dates",
+      "section": "H.4",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W031 when lease.termMonths disagrees with (expiration - commencement) beyond the lease-term-days tolerance (default 31 days), using 30.4375 days per month."
+    },
+    "OM-CONS-032": {
+      "title": "assertedDate in future",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W032 when assertedDate is later than a caller-supplied processing date (never the system clock, so it is silent on the default path)."
+    },
+    "OM-CONS-033": {
+      "title": "noiAsOfDate after assertedDate",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W033 when deal.noiAsOfDate is later than assertedDate."
+    },
+    "OM-CONS-034": {
+      "title": "Expiration on/before commencement",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W034 when lease.expiration is on or before lease.commencement."
+    },
+    "OM-CONS-040": {
+      "title": "Net lease vs pass-throughs",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W040 when leaseTypeAsserted is a net type (NN, NNN, absolute-net) yet landlordResponsibilities marks taxes, insurance, or cam as landlord-borne."
+    },
+    "OM-CONS-041": {
+      "title": "Lease type vs responsibilities",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W041 when a gross/modified-gross lease records no landlord responsibilities, or an absolute-net lease records structural/HVAC (roof, structure, parking, hvac) landlord responsibilities."
+    },
+    "OM-CONS-050": {
+      "title": "Self-supersede no-op",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W050 when meta.supersedes equals the hash of this payload with the supersedes pointer removed (a no-op re-embed superseding content byte-identical to itself)."
+    },
+    "OM-CONS-051": {
+      "title": "Re-embed assertedDate regression",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "During re-embed, an implementation SHOULD emit warning OMW-W051 when the new payload hash differs from the embedded prior payload's hash and the new assertedDate is earlier than the prior embedded assertedDate (a superseding assertion dated before the one it replaces)."
+    },
+    "OM-CONS-060": {
+      "title": "Unverifiable 'verified' source",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W060 when a rent period's source is 'verified' but the 0.1 payload carries no corroborating verification metadata."
+    },
+    "OM-DD-001": {
+      "title": "Payload conforms to openOM 0.1 JSON Schema",
+      "section": "Part II §E / §H.1",
+      "keyword": "MUST",
+      "clause": "An openOM payload MUST validate against the openOM 0.1 JSON Schema (2020-12) — including the required top-level members @context, @type (const RealEstateListing), specVersion (const 0.1), assertedBy, assertedDate, and meta — and any JSON Schema violation not specialized to another code is reported as the blocking schema error OMV-E001."
+    },
+    "OM-DD-002": {
+      "title": "Currency defaults to USD when absent",
+      "section": "Part II §E / §H.1",
+      "keyword": "MAY",
+      "clause": "The top-level `currency` member is OPTIONAL and, when present, MUST be a three-letter ISO 4217 code (pattern ^[A-Z]{3}$); when it is absent the payload is interpreted as USD, and validators emit the non-blocking info finding OMI-I001 recording that the USD default was assumed (with warning OMW-W061 also mapped to this requirement)."
+    },
+    "OM-DD-003": {
+      "title": "noiType/noiAsOfDate required when noi present",
+      "section": "Part II §E / §H",
+      "keyword": "MUST",
+      "clause": "Whenever deal.noi is present, deal.noiType and deal.noiAsOfDate are REQUIRED; a payload carrying deal.noi but missing either member MUST be rejected as schema error OMV-E002."
+    },
+    "OM-DD-004": {
+      "title": "Per-field provenance via rentPeriod source; defaults to asserted",
+      "section": "Part II §E / §H.1",
+      "keyword": "SHOULD",
+      "clause": "In openOM 0.1 per-field provenance is carried ONLY by the OPTIONAL `source` member on each rentSchedule rentPeriod object, whose value MUST be one of `asserted`, `extracted`, or `verified`, and an absent `source` MUST be interpreted as `asserted`, with validators emitting the non-blocking info finding OMI-I002 when any rentPeriod omits it."
+    },
+    "OM-EMB-002": {
+      "title": "Catalog /AF references the payload",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "An embedding implementation MUST add the om.json payload's Filespec to the PDF catalog's /AF (associated-files) array, since populating only the /EmbeddedFiles name tree does not create the required /AF association."
+    },
+    "OM-EMB-004": {
+      "title": "Embedded stream /Subtype is application/ld+json",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "The embedded-file stream(s) for om.json MUST carry /Subtype = application/ld+json (name-escaped as /application#2Fld+json) on each of their /EF /F and /EF /UF entries."
+    },
+    "OM-EMB-007": {
+      "title": "/EF /F and /UF share one stream",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "The Filespec's /EF dictionary MUST provide both /F and /UF entries, and both MUST reference the same single embedded-file stream object."
+    },
+    "OM-EMB-010": {
+      "title": "Store exact JCS payload bytes verbatim",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "The exact JCS-canonicalized payload bytes MUST be stored verbatim as the embedded-file content (the implementation must never let the PDF library re-serialize them), and the integrity hash is computed over those same bytes."
+    },
+    "OM-EMB-011": {
+      "title": "No timestamps written (determinism)",
+      "section": "§D",
+      "keyword": "MUST-NOT",
+      "clause": "The embed operation MUST NOT write any generation or modification timestamps (e.g. Filespec /CreationDate or /ModDate, or any wall-clock time-of-embed) into the output, so that output is deterministic and byte-reproducible. (The payload's assertedDate is an author-supplied assertion date, not a generation timestamp, and IS written to the XMP marker.)"
+    },
+    "OM-EMB-014": {
+      "title": "Locate payload by decoded filename om.json",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "A reader locating the payload MUST resolve the catalog /AF Filespec whose decoded filename (/UF preferred, else /F) equals \"om.json\", then read its /EF stream."
+    },
+    "OM-EMB-020": {
+      "title": "Incremental byte-preserving save",
+      "section": "§D",
+      "keyword": "SHOULD",
+      "clause": "An implementation SHOULD perform an incremental, byte-preserving PDF save on embed (appending an update rather than a full load→save re-serialization) so the original bytes are preserved; this matters chiefly for signed OMs and is currently a documented follow-up not yet implemented."
+    },
+    "OM-ERR-001": {
+      "title": "Finding is the validation result unit",
+      "section": "§H",
+      "keyword": "MUST",
+      "clause": "Every result produced by validation MUST be expressed as a Finding record carrying a stable code, a severity of error, warning, or info, a payload path, and a human-readable message."
+    },
+    "OM-ERR-002": {
+      "title": "Configurable consistency tolerances",
+      "section": "§H.4",
+      "keyword": "MUST",
+      "clause": "Consistency-tier checks MUST compare values against numeric tolerances (cap-rate absolute, monetary relative, rate absolute, term-day, and cap-rate plausibility band) that are configurable by the caller and default to the spec-defined §H.4 values."
+    },
+    "OM-ERR-004": {
+      "title": "blocked equals errorCount > 0",
+      "section": "§H",
+      "keyword": "MUST",
+      "clause": "The validation report's `blocked` flag MUST equal `summary.errorCount > 0`, so that a payload is blocked from embed if and only if at least one error-tier finding is present."
+    },
+    "OM-ERR-007": {
+      "title": "Finding record shape",
+      "section": "§H",
+      "keyword": "MUST",
+      "clause": "A Finding MUST expose `code`, `severity`, `path`, and `message`, and MAY carry an optional `requirement` back-reference plus optional `expected`/`actual` values."
+    },
+    "OM-ERR-008": {
+      "title": "JSON Pointer path and requirement back-reference",
+      "section": "§H.1",
+      "keyword": "MUST",
+      "clause": "A Finding's `path` MUST be an RFC 6901 JSON Pointer into the payload, with the empty string denoting the whole document; a Finding MAY additionally carry a `requirement` back-reference to the spec requirement it enforces (populated for every currently-defined code)."
+    },
+    "OM-ERR-009": {
+      "title": "Deterministic finding order",
+      "section": "§H.1",
+      "keyword": "MUST",
+      "clause": "Findings MUST be emitted in a deterministic order — by severity, then by code ascending, then by path as a byte string — identical across runs and across implementations."
+    },
+    "OM-ERR-010": {
+      "title": "om_validate report envelope",
+      "section": "§H",
+      "keyword": "MUST",
+      "clause": "The `om_validate` result MUST be a report envelope containing `specVersion`, `validatorVersion`, the `errors`/`warnings`/`info` finding arrays, a `summary` of error/warning/info counts, and the `blocked` flag."
+    },
+    "OM-ERR-013": {
+      "title": "meta.supersedes format (OMV-E010)",
+      "section": "§H",
+      "keyword": "MUST",
+      "clause": "A present `meta.supersedes` value MUST be either null or a string of the form `sha256:<64 hex chars>`; any other value MUST be reported as error OMV-E010."
+    },
+    "OM-ERR-014": {
+      "title": "Advisory info tier / skipped-check context",
+      "section": "§H.4",
+      "keyword": "INFO",
+      "clause": "The validator SHOULD emit advisory info-tier findings (e.g. OMI-I003 when a consistency cross-check is skipped because a required input is absent); info findings never block and MUST NOT mutate the payload."
+    },
+    "OM-ERR-090": {
+      "title": "meta.signature shape (OMV-E003)",
+      "section": "§H",
+      "keyword": "MUST",
+      "clause": "`meta.signature` MUST be either null or the reserved `{alg, keyId, value}` shape; any other value MUST be reported as error OMV-E003."
+    },
+    "OM-HOOK-002": {
+      "title": "Change-notification webhook envelope",
+      "section": "§Y (spec Part II §5b)",
+      "keyword": "MUST",
+      "clause": "A §Y change-notification delivery MUST carry a JSON envelope with envelopeVersion, event, id, publishedAt (RFC 3339 UTC 'Z'), sourceUrl, specVersion, payloadHash, verification, and payload, conforming to webhook-envelope-0.1.schema.json, that a consumer POSTs to a broker-configured receiver and the receiver validates on parse."
+    },
+    "OM-HOOK-003": {
+      "title": "HMAC signature over exact body with replay window",
+      "section": "§Y",
+      "keyword": "MUST",
+      "clause": "Each §Y delivery MUST be signed with an HMAC-SHA-256 'OpenOM-Signature: t=<unix>,v1=<hex>' header computed over the exact '<timestamp>.<rawBody>' preimage, and a receiver MUST verify it by recomputing that HMAC, comparing in constant time, and rejecting when |now - t| exceeds the tolerance window (default 300s)."
+    },
+    "OM-HOOK-006": {
+      "title": "Sign/verify the exact transmitted bytes",
+      "section": "§Y",
+      "keyword": "MUST-NOT",
+      "clause": "The signature MUST be computed and verified over the exact raw body bytes as transmitted/received; the envelope MUST NOT be re-serialized on either the sending or receiving side."
+    },
+    "OM-HOOK-011": {
+      "title": "SSRF-safe webhook target",
+      "section": "§Y (with [OM-SEC-001])",
+      "keyword": "MUST",
+      "clause": "Before delivering to a webhook target the sender MUST reject an unsafe destination URL: the scheme MUST be https and the host MUST NOT be a loopback/private/link-local/CGNAT/metadata host or an IP literal in any encoding (dotted-quad, dword, octal, hex, short forms, and IPv4-mapped/compressed IPv6)."
+    },
+    "OM-IO-001": {
+      "title": "Upstream fetch / DNS failure",
+      "section": "MCP hosted transport — url fetch",
+      "keyword": "MUST",
+      "clause": "When the hosted transport fetches a PDF from an https URL, a DNS resolution that yields no addresses, or a connection/read failure from the upstream host, MUST be reported as a retryable OM-IO-001 error rather than any partial or fabricated result."
+    },
+    "OM-IO-002": {
+      "title": "SSRF blocked address range",
+      "section": "MCP hosted transport — SSRF hardening",
+      "keyword": "MUST",
+      "clause": "The hosted url fetch MUST resolve the host first and refuse the request with OM-IO-002 when any resolved IP falls in a blocked (internal/loopback/private) address range, and this check MUST be re-applied on every redirect hop so a redirect cannot reach a blocked host."
+    },
+    "OM-IO-003": {
+      "title": "Operation / fetch timeout",
+      "section": "MCP hosted transport — bounded execution",
+      "keyword": "MUST",
+      "clause": "A fetch that exceeds the connect/read timeout, or a guarded parse operation that exceeds its wall-clock timeout, MUST be aborted and reported as a retryable OM-IO-003 timeout error rather than being allowed to hang."
+    },
+    "OM-IO-005": {
+      "title": "Size / page ceiling never silently truncated",
+      "section": "MCP hosted transport — resource caps",
+      "keyword": "MUST",
+      "clause": "An input that exceeds a resource cap — a fetched body larger than max_bytes, content lacking the %PDF- header, or a document whose page count exceeds the per-call page ceiling — MUST be rejected with OM-IO-005 and MUST NOT be silently truncated."
+    },
+    "OM-IO-006": {
+      "title": "Blob missing or expired",
+      "section": "MCP hosted transport — blob store",
+      "keyword": "MUST",
+      "clause": "A request referencing a blobId that does not exist, has expired past its TTL, or has been deleted MUST fail with OM-IO-006 (not found or expired)."
+    },
+    "OM-IO-007": {
+      "title": "Blob authorization (anti-IDOR)",
+      "section": "MCP hosted transport — blob store authz",
+      "keyword": "MUST",
+      "clause": "A blobId that exists but is bound to a different principal MUST be rejected with OM-IO-007 (not authorized), so a principal can never read another principal's blob, and this ownership binding cannot be forged or omitted through the data PUT."
+    },
+    "OM-IO-008": {
+      "title": "Unsupported PDF reference for transport",
+      "section": "MCP transport — PdfRef resolution (§6d)",
+      "keyword": "MUST",
+      "clause": "A PDF reference that the active transport cannot serve MUST be rejected with OM-IO-008: the PdfRef must carry exactly one of path/url/blobId, on stdio url/blobId and request-upload are unavailable, on the hosted transport a local path is refused, and only https URLs are fetched."
+    },
+    "OM-IO-009": {
+      "title": "Redirect limit exceeded",
+      "section": "MCP hosted transport — url fetch",
+      "keyword": "MUST",
+      "clause": "The hosted url fetch MUST follow at most max_redirects redirect hops and, once that limit is exceeded, MUST stop and fail with OM-IO-009 rather than following further redirects."
+    },
+    "OM-IO-010": {
+      "title": "Malformed PDF / parser crash",
+      "section": "MCP — untrusted-PDF parse isolation",
+      "keyword": "MUST",
+      "clause": "A PDF that cannot be read or parsed — a malformed document, an unreadable path, or a guarded-subprocess crash or in-child exception (including a rejected memory limit) — MUST surface as OM-IO-010 and MUST NOT take down the server."
+    },
+    "OM-IO-012": {
+      "title": "Malformed / out-of-bounds page range",
+      "section": "core text extraction — page range",
+      "keyword": "MUST",
+      "clause": "A page-range argument that is malformed or refers to pages outside the document MUST be rejected with OM-IO-012 rather than silently clamped or ignored."
+    },
+    "OM-IO-013": {
+      "title": "Malformed / mismatched pagination cursor",
+      "section": "core text extraction — pagination cursor",
+      "keyword": "MUST",
+      "clause": "A pagination cursor that is malformed, or presented against a different input than the one that produced it, MUST be rejected with OM-IO-013."
+    },
+    "OM-IO-014": {
+      "title": "Rate limit / quota exceeded",
+      "section": "MCP hosted transport — rate limiting",
+      "keyword": "MUST",
+      "clause": "A principal exceeding its fixed-window call limit (in-memory, distributed, or per-API-key quota) MUST be denied with a retryable OM-IO-014 error carrying a retry_after hint, and a multi-instance deploy MUST enforce one global limit per principal via a shared counter store."
+    },
+    "OM-IO-402": {
+      "title": "Inference extraction is a separate paid service",
+      "section": "MCP boundary — deterministic-only server",
+      "keyword": "MUST-NOT",
+      "clause": "The open deterministic server MUST NOT perform hosted inference extraction; the InferenceExtractor seam is implemented only by the separate commercial service, and a hosted deployment representing an unentitled inference-extraction request MUST return the non-retryable OM-IO-402 payment-required seam, which the deterministic tools never raise."
+    },
+    "OM-MCP-004": {
+      "title": "Tool error envelope",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "Every openOM MCP tool MUST map any expected failure to the error envelope `{\"error\": {code, message, retryable, details?}}` (with optional `retryAfter`) and MUST NOT let an exception propagate out of the tool."
+    },
+    "OM-MCP-005": {
+      "title": "Cursor scoped to input",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "An om_extract_text pagination cursor MUST be bound to the specific input document (a sha256-derived tag of the PDF bytes), and a cursor whose tag does not match the current input MUST be rejected as a CursorError rather than resumed against a different document."
+    },
+    "OM-MCP-007": {
+      "title": "No network, no inference in MCP",
+      "section": "§I/§V",
+      "keyword": "MUST-NOT",
+      "clause": "The openOM MCP tool layer MUST NOT perform any network access or any LLM/inference call — the deterministic cardinal boundary applies to every tool body."
+    },
+    "OM-MCP-008": {
+      "title": "Per-call page ceiling",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "On the hosted (http) transport, a document whose page count exceeds the configured per-call page ceiling MUST be rejected with OM-IO-005 rather than silently truncated, and the page count MUST itself run inside the bounded subprocess so a malicious page tree cannot hang or OOM the host."
+    },
+    "OM-MCP-010": {
+      "title": "om_inspect classify and profile",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "om_inspect MUST be a read-only tool that classifies and profiles the document, returning class, classConfidence, pages, payload summary, images, textCoverage and ocrOverlay without mutating the input."
+    },
+    "OM-MCP-011": {
+      "title": "om_read payload with hash guard",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "om_read MUST return the broker-asserted openOM payload together with a verification block, and MUST surface a hash-mismatched payload as null (never as a trusted payload) so an altered payload is never presented as unaltered."
+    },
+    "OM-MCP-012": {
+      "title": "om_extract_text paginated",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "om_extract_text MUST be a read-only tool that returns paginated text plus best-effort tables for the selected page range, honoring the max_chars budget and the input-scoped cursor for continuation."
+    },
+    "OM-MCP-013": {
+      "title": "om_extract_images manifest only",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "om_extract_images MUST be read-only and MUST return an image manifest referencing local file paths (with xref, dimensions, colorspace, hasSMask, mime, byte size and contentHash) rather than inlining raw image bytes into the response."
+    },
+    "OM-MCP-014": {
+      "title": "om_validate two-tier report",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "om_validate MUST return a two-tier report of errors, warnings and info plus the canonical payload hash, and the call itself MUST be treated as a success even when the payload contains errors (validity means well-formed and self-consistent, not market truth)."
+    },
+    "OM-MCP-015": {
+      "title": "om_embed validate-then-embed",
+      "section": "§I",
+      "keyword": "MUST",
+      "clause": "om_embed is the only mutating tool and MUST validate the payload before embedding, refusing the embed with OMV-E001 when the payload has schema errors."
+    },
+    "OM-PROF-004": {
+      "title": "Null verification is conformant",
+      "section": "§10",
+      "keyword": "MUST-NOT",
+      "clause": "A verification layer that could not be evaluated (originVerified for the §10 layer-3 domain-origin check, or signatureValid for the layer-4 reserved signature) MUST be reported as null and MUST NOT be reported as false, because null means the check was not run (no domain to check against, or not yet verifiable) whereas false would assert that the check ran and failed."
+    },
+    "OM-REF-002": {
+      "title": "Conformance suite reproduces published vectors",
+      "section": "§T",
+      "keyword": "MUST",
+      "clause": "A conforming implementation MUST provide a conformance suite that reproduces the published reference vectors and sample outcomes locally — for each vector, recomputing the JCS-canonicalized payload hash and matching it to the vector's expected `jcs_sha256`, and (where a vector PDF exists) confirming the embedded payload reads back present with a valid hash; and for each sample, validating it against the schema so that valid samples produce no errors and invalid samples both fail validation and produce (at least) all of their declared `errorCodes` — passing (exit 0) only if every check passes."
+    },
+    "OM-SEC-001": {
+      "title": "SSRF-hardened URL fetch",
+      "section": "§ SSRF fetch (OM-SEC-001/011/014)",
+      "keyword": "MUST",
+      "clause": "When fetching a PDF from a client-supplied URL, an implementation MUST accept only https, MUST resolve the host and reject the request if any resolved address falls in a private, loopback, link-local (including cloud-metadata 169.254.169.254), CGNAT, or IPv6 ULA/loopback range, and MUST connect to the pinned validated IP (resolve-then-pin, no re-resolution) to defeat DNS rebinding; the in-browser webhook/fetch path, unable to resolve DNS, MUST at minimum enforce https-only and reject every literal encoding of a blocked IP."
+    },
+    "OM-SEC-002": {
+      "title": "Decompressed payload size cap",
+      "section": "§J",
+      "keyword": "MUST",
+      "clause": "An implementation MUST cap the decompressed om.json payload at a fixed maximum and MUST abort with OM-IO-BOMB rather than inflating past the cap, on both the embed side and the read side, to prevent a decompression-bomb attack. The default cap is the Python core's MAX_PAYLOAD_BYTES = 5,000,000 bytes; the /js implementation's DEFAULT_MAX_PAYLOAD_BYTES = 5 x 1024 x 1024 = 5,242,880 bytes (5 MiB) and is overridable per call via maxBytes."
+    },
+    "OM-SEC-006": {
+      "title": "Single-use presigned upload target",
+      "section": "§I / §K",
+      "keyword": "MUST",
+      "clause": "On the hosted transport, an implementation MUST hand clients a reserved, single-use presigned upload target (blobId + presignedPut + expiresAt) for supplying PDF bytes rather than accepting arbitrary inbound uploads, and MUST refuse the request (OM-IO-008) where no blob store exists (e.g. stdio)."
+    },
+    "OM-SEC-010": {
+      "title": "Bounded untrusted-PDF parse",
+      "section": "§ MCP guard (OM-SEC-010 / OM-MCP-008)",
+      "keyword": "MUST",
+      "clause": "On a network-facing server, parsing of an untrusted PDF MUST run in a killable subprocess bounded by a wall-clock timeout and (on POSIX) an address-space memory cap, mapping a timeout to OM-IO-003 and any crash or in-child failure to OM-IO-010, so that a malicious PDF can never hang or exhaust the server; where an in-process memory cap is unavailable (non-POSIX), the deployment MUST bound memory externally and the tool warns once."
+    },
+    "OM-SEC-012": {
+      "title": "Per-principal rate limiting",
+      "section": "§ hosted rate limit (OM-SEC-012)",
+      "keyword": "MUST",
+      "clause": "The hosted transport MUST enforce a per-principal fixed-window rate limit and, when a principal exceeds the allowed calls per window, MUST reject the call with OM-IO-014 and a retry_after value; rate limiting only bounds resource use and never weakens a correctness or verification guarantee."
+    },
+    "OM-SEC-013": {
+      "title": "Unguessable, owner-scoped blob IDs",
+      "section": "§K",
+      "keyword": "MUST",
+      "clause": "Every blob MUST be keyed by an unguessable id carrying at least 128 bits of entropy, and blob access MUST perform existence-then-authz (anti-IDOR): a blob is returned only to its recording principal, with a principal mismatch raising OM-IO-007 and a missing/expired blob raising OM-IO-006, ownership being server-written and never derived from client-supplied metadata."
+    },
+    "OM-TRUST-001": {
+      "title": "Badge strict-precedence state machine",
+      "section": "§AA / §10",
+      "keyword": "MUST",
+      "clause": "A consumer trust badge MUST derive its state deterministically by strict precedence over the four provenance layers - returning 'absent' when no payload is present, the terminal 'hash-mismatch' when the payload's hash is not valid (never evaluating higher layers), 'integrity-ok' when integrity passes but origin is unverified, and 'origin-verified' when the domain vouch also passes - so a higher trust state is never shown unless every lower check it depends on passed."
+    },
+    "OM-TRUST-002": {
+      "title": "Signature layer reserved, unreachable in 0.1",
+      "section": "§10 layer 4",
+      "keyword": "MUST-NOT",
+      "clause": "The layer-4 cryptographic-signature verification MUST remain reserved and unevaluated in spec 0.1 - signatureValid is null forever and the 'signature-verified' badge state is never returned - so no signature-based trust may be asserted in this version."
+    },
+    "OM-TRUST-003": {
+      "title": "UI honesty: forbidden overclaim words",
+      "section": "§AA",
+      "keyword": "MUST-NOT",
+      "clause": "Consumer UI copy MUST be honest by construction: an integrity-only pass MUST NOT use the words 'verified', 'authentic', 'signed', 'official', or 'genuine' (it proves 'unaltered since embed', not authorship or truth of figures), and every badge label/caption MUST come only from the shared honestLabel function."
+    },
+    "OM-TRUST-005": {
+      "title": "Cross-domain rehost degrades, never errors",
+      "section": "§10.1 (L3 domain-origin)",
+      "keyword": "MUST",
+      "clause": "Domain-origin (layer-3) verification proves that the entity controlling the source domain vouches for this exact payload - source and its JSON-LD mirror are HTTPS, share the same registrable domain (eTLD+1), and the mirror's canonical hash equals the embedded payloadHash - and a rehost to another domain or an unreachable/mismatched mirror MUST degrade gracefully to origin-unverified, never raise an error."
+    },
+    "OM-TRUST-009": {
+      "title": "Stale/superseded mirror warning",
+      "section": "§AA (OMW-W051)",
+      "keyword": "MUST",
+      "clause": "When the embedded payload's hash differs from the same-domain mirror's current hash AND the mirror is a genuine newer assertion - it either names the embedded payload's hash in meta.supersedes or carries a strictly later valid assertedDate - the consumer MUST classify the embedded copy as stale/superseded and surface warning OMW-W051 (keeping the badge), rather than treating it as tampering."
+    },
+    "OM-TRUST-010": {
+      "title": "Diverged same-domain mirror warning",
+      "section": "§AA (OMW-W052)",
+      "keyword": "MUST",
+      "clause": "When the same-domain mirror is reachable and integrity of the embedded payload passes but the mirror serves different, non-superseding content (edited/wrong figures, not a newer assertion), the consumer MUST surface warning OMW-W052 ('the source domain shows different data') instead of a clean integrity pass, and this MUST NOT override a hash-mismatch state."
+    },
+    "OM-VAL-002": {
+      "title": "Cross-implementation schema-validation parity",
+      "section": "VAL-01 / §H",
+      "keyword": "MUST",
+      "clause": "Schema validation MUST be performed with full-mode format assertion enabled (Python jsonschema Draft202012Validator with FORMAT_CHECKER; ajv with ajv-formats mode:\"full\"), so that format-constrained fields such as date-typed assertedDate are asserted (not annotation-only) and every implementation — the Python core, the /js library, and the eval-free MV3 standalone validator — produces bit-for-bit identical validation results."
+    },
+    "OM-VAL-006": {
+      "title": "Consumer hash-mismatch handling",
+      "section": "§C.4 / §X.4",
+      "keyword": "MUST",
+      "clause": "A conformant consumer MUST recompute the SHA-256 hash over the payload bytes exactly as received and compare it to the expected omspec:payloadHash, reporting hashValid=false on mismatch; on a mismatch the payload is still returned but the consumer MUST NOT present or trust it as verified."
+    },
+    "OM-VEC-004": {
+      "title": "Conformance sample matrix",
+      "section": "§B",
+      "keyword": "MUST",
+      "clause": "Both implementations MUST reproduce, for every sample in spec/samples/manifest.json, the recorded schema-tier and consistency-tier outcome: a sample marked valid MUST produce zero errors and not block, an invalid sample MUST block and surface each listed error code, and each listed warning code MUST be present."
+    },
+    "OM-VER-003": {
+      "title": "Forward-compatible unknown members",
+      "section": "Spec Part II §E (schema description)",
+      "keyword": "MUST",
+      "clause": "An openOM payload processor MUST accept a payload that carries unknown OPTIONAL members: the 0.1 schema leaves additionalProperties open across all objects, so unrecognized top-level or nested fields do not produce schema errors, preserving forward compatibility (non-standard/vendor fields nonetheless belong under the `ext` object to avoid colliding with future core terms)."
+    },
+    "OM-XMP-002": {
+      "title": "Required omspec XMP marker",
+      "section": "§D.2.1",
+      "keyword": "MUST",
+      "clause": "The embed operation MUST write the required omspec XMP marker properties (specName, specVersion, payloadFilename, payloadHash, assertedDate) into the PDF catalog /Metadata packet as a conformant, namespaced omspec: RDF block, with the PDF/A extension-schema description preceding it, and MUST replace any prior omspec block rather than stacking. (The Python core (xmp.py) injects the block alongside existing dc/pdf XMP, preserving it; the /js writer (embed.ts) emits a fresh XMP packet and does not preserve pre-existing XMP.)"
+    },
+    "OM-XMP-003": {
+      "title": "Payload detection order",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "The reader MUST locate the embedded om.json stream in a fixed detection order — authoritative path catalog /AF → Filespec whose /UF or /F equals om.json → /EF (preferring /UF over /F) — and MUST fall back to the /EmbeddedFiles name tree for producers that populate only that."
+    },
+    "OM-XMP-004": {
+      "title": "Idempotent re-embed (replace not stack)",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "A re-embed MUST strip any existing om.json attachment (its catalog /AF reference and its /EmbeddedFiles name-tree entry) before attaching the new payload so it replaces rather than stacks a second copy, such that repeated embeds produce an output payload hash byte-equal to a single direct embed."
+    },
+    "OM-XMP-005": {
+      "title": "Read orchestration pipeline",
+      "section": "§D.2.2",
+      "keyword": "MUST",
+      "clause": "The deterministic read operation MUST orchestrate detect (XMP omspec:payloadHash) → extract (om.json via /AF → /Filespec → /EF) → decompress → recompute the §C hash and compare, returning a detection state of absent, present, hash-mismatch, or encrypted."
+    },
+    "OM-XMP-006": {
+      "title": "Parse object streams / compressed xref",
+      "section": "§D.2.2",
+      "keyword": "MUST",
+      "clause": "The reader MUST parse PDF structure that uses compressed object streams and compressed cross-reference streams (relied on via pdf-lib in the /js implementation) in order to locate the embedded payload."
+    },
+    "OM-XMP-008": {
+      "title": "Degraded producer: no reference hash",
+      "section": "§D.2.2",
+      "keyword": "MUST-NOT",
+      "clause": "When the om.json payload is present but the PDF carries no omspec:payloadHash reference hash (a degraded producer), the reader MUST NOT report hashValid as true — integrity stays unverified (hashValid null / payloadHash null)."
+    },
+    "OM-XMP-011": {
+      "title": "Omit supersedes when null",
+      "section": "§D.2.1",
+      "keyword": "MUST",
+      "clause": "The omspec:supersedes XMP property MUST be omitted entirely from the marker when there is no prior payload (null), rather than written as an empty value."
+    }
+  }
+}

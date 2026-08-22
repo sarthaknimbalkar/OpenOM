@@ -13,7 +13,8 @@ keywords = [
   "openom", "mcp", "model-context-protocol", "offering-memorandum", "commercial-real-estate",
   "cre", "proptech", "json-ld", "open-standard", "ai-agents",
 ]
-dependencies = ["openom-core", "mcp>=2.0", "httpx>=0.27", "uvicorn>=0.30"]
+# openom-core pinned to the same 0.x spec line (SemVer: a 0.2 core may change the payload contract).
+dependencies = ["openom-core>=0.1,<0.2", "mcp>=2.0,<3", "httpx>=0.27", "uvicorn>=0.30"]
 
 [project.optional-dependencies]
 dev = [
@@ -45,9 +46,17 @@ select = ["E", "F", "I", "B", "UP", "W"]
 python_version = "3.11"
 strict = true
 files = ["src"]
+# The MCP server SDK exposes an untyped @tool() decorator; the tool fns themselves are fully typed.
+disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
-module = ["mcp", "mcp.*", "pymupdf", "pymupdf.*"]
+# Third-party SDK + OPTIONAL runtime deps (boto3/uvicorn/redis are lazy extras, absent in the base
+# env). ignore_missing_imports keeps mypy green whether or not they're installed - no per-line,
+# env-fragile `type: ignore` comments needed.
+module = [
+    "mcp", "mcp.*", "pymupdf", "pymupdf.*",
+    "boto3", "botocore", "botocore.*", "uvicorn", "redis",
+]
 ignore_missing_imports = true
 follow_imports = "skip"
 

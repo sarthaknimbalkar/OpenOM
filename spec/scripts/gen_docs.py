@@ -238,6 +238,8 @@ def _docs_index() -> str:
         - generated from the JSON Schema.</li>
     <li><a href="/docs/codes.html">Validation code catalog</a>
         - every error/warning/info code the validator emits.</li>
+    <li><a href="/docs/requirements.html">Requirement reference</a>
+        - every <code>OM-*</code> requirement ID resolved to its normative clause.</li>
     <li><a href="/verify/">Verify a PDF</a>
         - drop a PDF and check its openOM state, entirely in your browser.</li>
     <li><a href="/spec/om-0.1.schema.json">Raw JSON Schema</a> ·
@@ -517,6 +519,58 @@ def _schema_reference() -> str:
     return _page("Field reference", body, description=_d, canonical="/docs/schema-reference", jsonld=_jsonld(_article("Field reference", _d, "/docs/schema-reference"), _breadcrumb("/docs/schema-reference", "Field reference"), _dataset), seo_title="openOM payload field reference (JSON Schema)")
 
 
+def _requirements_reference() -> str:
+    """[Ma11] The normative requirement reference: every OM-* ID the schema / codes / samples /
+    reference implementation cite, resolved to its clause. Generated from spec/requirements.json
+    (drift-locked to the code by spec/tests/test_requirements.py). Makes every OM-* back-reference
+    resolvable for a third party building an independent conformant implementation."""
+    data = json.loads((SPEC / "requirements.json").read_text("utf-8"))
+    reqs = data["requirements"]
+    families: dict[str, list[tuple[str, dict]]] = {}
+    for rid, meta in reqs.items():
+        families.setdefault(rid.rsplit("-", 1)[0], []).append((rid, meta))
+    blocks = []
+    for fam in sorted(families):
+        rows = []
+        for rid, meta in families[fam]:
+            kw = html.escape(meta["keyword"])
+            sec = html.escape(meta["section"]) if meta.get("section") else ""
+            rows.append(
+                f'<tr id="{html.escape(rid)}">'
+                f'<td><code>{html.escape(rid)}</code></td>'
+                f'<td><b>{html.escape(meta["title"])}</b><br /><span class="kw">{kw}</span>'
+                f'{f" &middot; {sec}" if sec else ""}<br />{html.escape(meta["clause"])}</td></tr>'
+            )
+        blocks.append(
+            f'<h2 id="{html.escape(fam)}">{html.escape(fam)}-*</h2>'
+            f"<table><tbody>{''.join(rows)}</tbody></table>"
+        )
+    body = f"""
+  <h1>Requirement reference (0.1)</h1>
+  <p>Every <code>OM-*</code> requirement ID cited by the schema, the
+     <a href="/docs/codes">code catalog</a>, the samples, and the reference implementation resolves
+     here to its normative clause. <strong>MUST</strong>/<strong>MUST&#8209;NOT</strong> are binding;
+     <strong>SHOULD</strong>/<strong>MAY</strong> are recommendations; <strong>INFO</strong> is
+     advisory. Machine-readable: <a href="/spec/requirements.json"><code>/spec/requirements.json</code></a>.</p>
+  <style>.kw{{font-family:var(--mono);font-size:.8em;color:var(--link);font-weight:600}}</style>
+  {"".join(blocks)}
+"""
+    _d = "openOM 0.1 requirement reference: every OM-* requirement ID resolved to its normative clause (canonicalization, embedding, XMP, validation, consistency, transport, security)."
+    _dataset = {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "name": "openOM 0.1 requirement reference",
+        "description": _d,
+        "url": SITE + "/docs/requirements",
+        "license": "https://opensource.org/licenses/MIT",
+        "creator": ORG,
+        "publisher": ORG,
+        "keywords": ["openOM", "specification", "requirements", "conformance", "offering memorandum"],
+        "isAccessibleForFree": True,
+    }
+    return _page("Requirement reference", body, description=_d, canonical="/docs/requirements", jsonld=_jsonld(_article("Requirement reference", _d, "/docs/requirements"), _breadcrumb("/docs/requirements", "Requirement reference"), _dataset), seo_title="openOM requirement reference - every OM-* clause")
+
+
 def _codes_catalog() -> str:
     data = json.loads((SPEC / "codes.json").read_text("utf-8"))
     codes = data["codes"]
@@ -526,7 +580,9 @@ def _codes_catalog() -> str:
         rows.append(
             f'<tr><td><code>{html.escape(code)}</code></td>'
             f'<td class="sev-{sev}">{sev}</td>'
-            f'<td><code>{html.escape(meta["requirement"])}</code></td></tr>'
+            f'<td>{html.escape(meta.get("message", ""))}</td>'
+            f'<td><a href="/docs/requirements#{html.escape(meta["requirement"])}">'
+            f'<code>{html.escape(meta["requirement"])}</code></a></td></tr>'
         )
     body = f"""
   <h1>Validation code catalog</h1>
@@ -534,7 +590,7 @@ def _codes_catalog() -> str:
      cores drift-lock to). <strong>error</strong> blocks; <strong>warning</strong> and
      <strong>info</strong> never block.</p>
   <table>
-    <thead><tr><th>Code</th><th>Severity</th><th>Requirement</th></tr></thead>
+    <thead><tr><th>Code</th><th>Severity</th><th>Meaning</th><th>Requirement</th></tr></thead>
     <tbody>
       {"".join(rows)}
     </tbody>
@@ -1075,4 +1131,5 @@ def docs_pages() -> dict[str, str]:
         "docs/quickstart-developer.html": _quickstart_developer(),
         "docs/schema-reference.html": _schema_reference(),
         "docs/codes.html": _codes_catalog(),
+        "docs/requirements.html": _requirements_reference(),
     }
