@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verified openOM offering memorandum</title>
+  <meta name="description" content="A shareable, verifiable view of an openOM offering memorandum: the trust badge, the deal card (price, cap, NOI, tenant), and a download - rendered in your browser from the hash-verified payload." />
+  <link rel="canonical" href="https://openom.app/v/" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta name="author" content="Vervelio Labs" />
+  <meta name="theme-color" content="#171A20" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="openOM" />
+  <meta property="og:title" content="Verified openOM offering memorandum" />
+  <meta property="og:description" content="A shareable, verifiable view of an openOM offering memorandum: the trust badge, the deal card (price, cap, NOI, tenant), and a download - rendered in your browser from the hash-verified payload." />
+  <meta property="og:url" content="https://openom.app/v/" />
+  <meta property="og:image" content="https://openom.app/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Verified openOM offering memorandum" />
+  <meta name="twitter:description" content="A shareable, verifiable view of an openOM offering memorandum: the trust badge, the deal card (price, cap, NOI, tenant), and a download - rendered in your browser from the hash-verified payload." />
+  <meta name="twitter:image" content="https://openom.app/og.png" />
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Verified OM", "description": "A shareable, verifiable view of an openOM offering memorandum: the trust badge, the deal card (price, cap, NOI, tenant), and a download - rendered in your browser from the hash-verified payload.", "url": "https://openom.app/v/", "inLanguage": "en", "author": {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}, "publisher": {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}, "isPartOf": {"@type": "WebSite", "name": "openOM", "url": "https://openom.app/"}, "about": "commercial real estate offering memorandum machine-readable data standard"}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "openOM", "item": "https://openom.app/"}, {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://openom.app/docs/"}, {"@type": "ListItem", "position": 3, "name": "Verified OM", "item": "https://openom.app/v/"}]}</script>
+  <style>
+    :root {
+      --page:#EDEEE9; --paper:#FBFAF5; --ink:#171A20; --ink-soft:#4B5160; --navy:#0F1D30;
+      --hl:#FFDE59; --rule:#D6D7CF; --link:#0F5132;
+      --sans:'Schibsted Grotesk',system-ui,sans-serif; --serif:'Source Serif 4',Georgia,serif;
+      --mono:'Spline Sans Mono',ui-monospace,monospace;
+    }
+    * { box-sizing:border-box; }
+    body { background:var(--page); color:var(--ink); font-family:var(--sans); font-size:17px;
+            line-height:1.6; margin:0; -webkit-font-smoothing:antialiased; }
+    .bar { border-bottom:1px solid var(--rule); background:var(--paper); }
+    .bar-in { max-width:52rem; margin:0 auto; padding:16px 1.25rem; display:flex;
+               align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .wordmark { font-weight:800; font-size:19px; letter-spacing:-.02em; text-decoration:none; color:var(--ink); }
+    .wordmark .om { background:var(--hl); padding:1px 6px 2px; border-radius:3px; }
+    .bar nav a { font-family:var(--mono); font-size:12.5px; letter-spacing:.04em; text-transform:uppercase;
+                  color:var(--ink-soft); text-decoration:none; margin-left:16px; }
+    .bar nav a:hover { color:var(--ink); }
+    main { max-width:52rem; margin:0 auto; padding:2.4rem 1.25rem 5rem; }
+    a { color:var(--link); text-underline-offset:2px; }
+    h1 { font-family:var(--serif); font-size:clamp(30px,4vw,42px); font-weight:700; line-height:1.1;
+          letter-spacing:-.02em; margin:.2rem 0 1rem; }
+    h2 { font-family:var(--serif); font-size:clamp(22px,2.6vw,28px); font-weight:700;
+          letter-spacing:-.01em; margin:2.4rem 0 .6rem; }
+    h3 { font-size:19px; font-weight:700; margin:1.6rem 0 .4rem; }
+    h4 { font-size:16.5px; font-weight:700; margin:1rem 0 .3rem; }
+    code { background:#EFEFE8; padding:.1em .35em; border-radius:4px; font-family:var(--mono); font-size:.86em; }
+    pre { background:var(--navy); color:#e6edf3; padding:1rem 1.1rem; border-radius:10px; overflow-x:auto;
+           font-family:var(--mono); font-size:13px; line-height:1.7; }
+    pre code { background:none; color:inherit; padding:0; font-size:inherit; }
+    table { border-collapse:collapse; width:100%; font-size:.92em; margin:1rem 0; }
+    th, td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--rule); vertical-align:top; }
+    th { background:#F0EFE7; font-family:var(--mono); font-size:.78em; letter-spacing:.04em;
+          text-transform:uppercase; color:var(--ink-soft); }
+    nav.crumbs { font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase;
+                  color:var(--ink-soft); margin-bottom:1.6rem; }
+    nav.crumbs a { color:var(--ink-soft); }
+    .cards { display:grid; gap:1rem; grid-template-columns:1fr; margin:1.2rem 0; }
+    @media (min-width:40rem) { .cards { grid-template-columns:1fr 1fr 1fr; } }
+    .card { border:1px solid var(--rule); border-radius:12px; padding:1.1rem 1.2rem; background:var(--paper); }
+    .card h3 { margin:0 0 .3rem; }
+    .sev-error { color:#7f1d1d; font-weight:600; }
+    .sev-warning { color:#92400e; }
+    .sev-info { color:#374151; }
+    .req { color:#b91c1c; font-weight:600; }
+    small { color:var(--ink-soft); }
+    input[type=file] { font-family:var(--mono); font-size:13px; }
+  </style>
+</head>
+<body>
+  <header class="bar"><div class="bar-in">
+    <a class="wordmark" href="/">open<span class="om">OM</span></a>
+    <nav><a href="/docs/">docs</a><a href="/verify/">verify</a><a href="https://github.com/sarthaknimbalkar/OpenOM">github</a></nav>
+  </div></header>
+  <main>
+  <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
+
+  <style>
+    .vv-deal{width:100%;border-collapse:collapse;margin:14px 0}
+    .vv-deal th{text-align:left;font-family:var(--mono);font-size:12px;color:var(--ink-soft);padding:6px 12px 6px 0;white-space:nowrap;vertical-align:top}
+    .vv-deal td{font-size:15px;font-weight:600;padding:6px 0}
+    .vv-actions{margin-top:14px}
+    .vv-note{color:var(--ink-soft);font-size:14px}
+  </style>
+  <h1>Verified offering memorandum</h1>
+  <div id="vv-badge" style="margin:8px 0 4px"></div>
+  <div id="vv-body"><p class="vv-note" id="vv-status">Loading…</p></div>
+  <script src="/widget/openom-badge.js" defer></script>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const src = q.get("src");
+    const badge = document.getElementById("vv-badge");
+    const body = document.getElementById("vv-body");
+    const money = (v) => typeof v === "number" ? "$" + v.toLocaleString("en-US") : null;
+    const pct = (v) => typeof v === "number" ? (v * 100).toFixed(2) + "%" : null;
+    function row(label, value) {
+      if (value === null || value === undefined || value === "") return "";
+      const tr = document.createElement("tr");
+      const th = document.createElement("th"); th.textContent = label;
+      const td = document.createElement("td"); td.textContent = String(value);
+      tr.append(th, td); return tr;
+    }
+    function card(p) {
+      const prop = p.property || {}, addr = prop.address || {}, deal = p.deal || {}, lease = p.lease || {}, by = p.assertedBy || {};
+      const t = document.createElement("table"); t.className = "vv-deal";
+      const rows = [
+        ["Property", addr.streetAddress],
+        ["Location", [addr.addressLocality, addr.addressRegion, addr.postalCode].filter(Boolean).join(", ") || null],
+        ["Type", prop.propertyType],
+        ["Asking price", money(deal.askingPrice)],
+        ["Cap rate", pct(deal.capRate)],
+        ["NOI", money(deal.noi) && (money(deal.noi) + (deal.noiType ? " (" + deal.noiType + ")" : ""))],
+        ["Tenant", lease.tenantEntity],
+        ["Lease type", lease.leaseTypeAsserted],
+        ["Asserted by", [by.broker, by.brokerage].filter(Boolean).join(", ") || null],
+        ["Asserted", p.assertedDate],
+      ];
+      for (const [l, v] of rows) { const r = row(l, v); if (r) t.appendChild(r); }
+      return t;
+    }
+    async function run() {
+      if (!src) { document.getElementById("vv-status").textContent = "No document specified. This is a shareable verified-view link: openom.app/v/?src=<the OM's URL>."; return; }
+      try {
+        const resp = await fetch(src);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const r = await window.openOM.readPayloadFromBytes(bytes);
+        const present = r.state === "present" || r.state === "hash-mismatch";
+        const view = window.openOM.computeBadge({ present, hashValid: r.verification.hashValid, originVerified: false, signatureValid: r.verification.signatureValid });
+        badge.textContent = view.state === "absent" ? "This PDF carries no openOM data." : view.label + " - " + view.caption;
+        body.replaceChildren();
+        if (r.payload) body.appendChild(card(r.payload));
+        const a = document.createElement("a"); a.href = src; a.textContent = "Download the OM (PDF)"; a.className = "spec-link";
+        const act = document.createElement("p"); act.className = "vv-actions"; act.appendChild(a); body.appendChild(act);
+      } catch (e) {
+        badge.textContent = "";
+        body.innerHTML = '<p class="vv-note">This document can\'t be read from your browser (the host may block cross-site reads). <a href="' + (src ? src.replace(/"/g,"") : "#") + '">Download the OM</a>, then drop it into the <a href="/verify/">verify tool</a> to confirm it.</p>';
+      }
+    }
+    window.addEventListener("load", run);
+  </script>
+  <p class="vv-note" style="margin-top:18px">This page verifies provenance - <b>who</b> asserted the data and that it is <b>unaltered</b> - never that the figures are true. <a href="/docs/">How openOM works</a>.</p>
+
+  </main>
+</body>
+</html>

@@ -87,13 +87,21 @@
   <h1>Quick-start · broker / author</h1>
   <p>Goal: turn an existing OM PDF into an openOM PDF that carries a verifiable,
      broker-asserted payload - without changing a single visible pixel.</p>
-  <h2>Option A - the browser extension (no install of a toolchain)</h2>
-  <p>Load the extension (Chrome 116+), open your OM, use <em>author mode</em> to review
-     the extracted fields, then <strong>assert</strong> and embed. You review every field
-     before it is stamped with your name and the date - the review panel is the assertion
-     gate. Extraction (if you use on-device assist) never leaves your machine.</p>
-  <h2>Option B - the CLI (scriptable / server-side)</h2>
-  <pre><code>pip install openom-core openom-cli
+  <h2>Option A - embed in your browser (no install at all)</h2>
+  <p>Open the <a href="/embed/"><strong>web authoring companion</strong></a>, drop in your OM PDF,
+     fill the deal fields, and <strong>assert &amp; embed</strong> - then download the openOM PDF. The
+     bytes never leave your browser, the visible pages are untouched, and you review every field before
+     it is stamped with your name and the date (that page is the assertion gate). Nothing to install.</p>
+  <h2>Option B - the browser extension</h2>
+  <p>Install the extension (Chrome 116+), open your OM, use <em>author mode</em> to review the fields,
+     then <strong>assert</strong> and embed. Optional on-device extraction pre-fills a draft - and never
+     leaves your machine. Same assertion gate as the web companion.</p>
+  <h2>Option C - the CLI (scriptable / server-side / whole back-catalog)</h2>
+  <p>From a clone of the repo (a published PyPI package is on the way). Grab a
+     <a href="/sample/deal.json" download><code>deal.json</code> starter payload</a>, edit the values,
+     then:</p>
+  <pre><code>pip install -e core -e cli    # from a checkout; PyPI package coming soon
+curl -O https://openom.app/sample/deal.json   # a valid starter payload to edit
 
 om embed offering.pdf --payload deal.json --out offering.openom.pdf --asserted-date 2026-08-18
 om read  offering.openom.pdf          # confirm the payload round-trips
@@ -101,6 +109,11 @@ om validate deal.json                 # schema errors block; consistency warning
   <p>Every payload needs <code>assertedBy</code> + <code>assertedDate</code> and an
      <code>noiType</code> (<code>in-place</code> or <code>pro-forma</code>). Re-embedding
      <em>replaces</em> (never stacks) and records <code>meta.supersedes</code>.</p>
+  <h2>Then: get it in front of buyers</h2>
+  <p><strong>Upload the openOM PDF exactly as-is.</strong> Don't let a listing portal re-export,
+     flatten, or "optimize" it - re-exporting silently strips the embedded payload (the file still
+     looks identical). Confirm a live listing survived by running its URL back through the
+     <a href="/verify/">verify tool</a>.</p>
   <p>Next: the <a href="/docs/schema-reference.html">field reference</a> for exactly
      what goes in <code>deal.json</code>.</p>
 

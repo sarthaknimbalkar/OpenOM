@@ -94,6 +94,15 @@
        it back in below to watch it verify.</p>
   </div>
   <p><input type="file" id="f" accept="application/pdf,.pdf" /></p>
+
+  <div class="card" style="margin-top:14px;">
+    <p style="margin:0 0 8px;"><b>Published it already?</b> Paste the live listing's PDF URL to confirm
+       the openOM payload <b>survived the rehost</b> - portals often re-export PDFs on upload and
+       silently strip the attachment.</p>
+    <p style="margin:0;"><input type="url" id="u" placeholder="https://portal.example.com/listing/deal.pdf"
+       style="width:min(100%,420px);padding:6px 8px;" /> <button id="ub" type="button">Check URL</button></p>
+  </div>
+
   <div id="badge" style="margin:1rem 0;"></div>
   <pre id="out" hidden></pre>
   <script src="/widget/openom-badge.js" defer></script>
@@ -101,11 +110,14 @@
     const f = document.getElementById("f");
     const out = document.getElementById("out");
     const badge = document.getElementById("badge");
-    f.addEventListener("change", async () => {
-      const file = f.files && f.files[0];
-      if (!file || !window.openOM) return;
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const r = await window.openOM.readPayloadFromBytes(bytes);
+    // A real, colored trust pill (matches the <openom-badge> widget), not plain text.
+    const PILL = {
+      "hash-mismatch": ["#7f1d1d", "#fef2f2", "⚠"],
+      "integrity-ok": ["#374151", "#f3f4f6", "✓"],
+      "origin-verified": ["#065f46", "#ecfdf5", "✓✓"],
+      "signature-verified": ["#065f46", "#ecfdf5", "✓✓"],
+    };
+    function showResult(r) {
       const present = r.state === "present" || r.state === "hash-mismatch";
       const view = window.openOM.computeBadge({
         present,
@@ -113,11 +125,48 @@
         originVerified: false,
         signatureValid: r.verification.signatureValid,
       });
-      badge.textContent = view.state === "absent" ? "No openOM data in this PDF." : view.label + " - " + view.caption;
+      badge.replaceChildren();
+      if (view.state === "absent") { badge.textContent = "No openOM data in this PDF."; }
+      else {
+        const c = PILL[view.state] || PILL["integrity-ok"];
+        const pill = document.createElement("span");
+        pill.setAttribute("role", "img");
+        pill.setAttribute("aria-label", view.ariaLabel);
+        pill.style.cssText = "display:inline-flex;align-items:center;gap:.4em;font:600 14px/1.4 system-ui,sans-serif;padding:.3em .7em;border-radius:999px;color:" + c[0] + ";background:" + c[1] + ";border:1px solid " + c[0] + "22;";
+        pill.textContent = c[2] + " " + view.label;
+        badge.appendChild(pill);
+        badge.appendChild(document.createTextNode(" " + view.caption));
+      }
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
       else { out.hidden = true; }
+    }
+    f.addEventListener("change", async () => {
+      const file = f.files && f.files[0];
+      if (!file || !window.openOM) return;
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      showResult(await window.openOM.readPayloadFromBytes(bytes));
+    });
+    document.getElementById("ub").addEventListener("click", async () => {
+      const url = (document.getElementById("u").value || "").trim();
+      if (!url || !window.openOM) return;
+      badge.textContent = "Fetching " + url + " …";
+      out.hidden = true;
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        showResult(await window.openOM.readPayloadFromBytes(bytes));
+      } catch (e) {
+        // Cross-origin hosts that don't send CORS headers block a browser fetch. That's a browser
+        // limit, not a verdict on the file - fall back honestly, never a scary state.
+        badge.textContent =
+          "Couldn't fetch that URL from the browser (the host may block cross-site reads, or the link is wrong). " +
+          "Download the PDF and drop it in above, or open the page with the openOM extension installed.";
+      }
     });
   </script>
+  <p><small>Want to <b>create</b> an openOM PDF? Use the free in-browser
+     <a href="/embed/">authoring companion</a> - no install.</small></p>
   <p><small>Origin verification (the domain-vouch layer) needs a hosted mirror and isn't available
      for a local file; this tool shows integrity only. For a live page, use the
      <a href="/docs/quickstart-portal.html">embeddable badge</a>.</small></p>

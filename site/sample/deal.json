@@ -1,0 +1,26 @@
+{
+  "@context": ["https://schema.org", "https://openom.app/ns/0.1"],
+  "@type": "RealEstateListing",
+  "specVersion": "0.1",
+  "assertedBy": { "broker": "Jane Example", "brokerage": "Example Net Lease Advisors", "license": "MI 6501-000000" },
+  "assertedDate": "2026-08-15",
+  "property": {
+    "address": { "streetAddress": "1000 Example Rd", "addressLocality": "Sampleville", "addressRegion": "MI", "postalCode": "48000", "addressCountry": "US" },
+    "geo": { "latitude": 42.0, "longitude": -83.0 },
+    "apn": "00-000-000-000", "buildingSF": 9100, "lotAcres": 1.25, "yearBuilt": 2019
+  },
+  "deal": { "askingPrice": 1850000, "capRate": 0.0625, "noi": 115625, "noiType": "in-place", "noiAsOfDate": "2026-06-30", "status": "active" },
+  "lease": {
+    "tenantEntity": "Example Retail Stores, LLC",
+    "guarantor": { "name": "Example Retail Corp.", "type": "corporate" },
+    "landlordResponsibilities": { "roof": false, "structure": false, "parking": false, "hvac": false, "taxes": false, "insurance": false, "cam": false },
+    "leaseTypeAsserted": "NNN",
+    "commencement": "2019-05-01", "expiration": "2034-04-30",
+    "rentSchedule": [
+      { "periodStart": "2024-05-01", "periodEnd": "2029-04-30", "annualRent": 115625, "rentPSF": 12.70, "source": "asserted" },
+      { "periodStart": "2029-05-01", "periodEnd": "2034-04-30", "annualRent": 127188, "rentPSF": 13.98, "escalationFromPrior": 0.10, "source": "asserted" }
+    ],
+    "options": [{ "count": 4, "lengthYears": 5, "escalation": "10% per option" }]
+  },
+  "meta": { "sourceDocHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "supersedes": null }
+}
