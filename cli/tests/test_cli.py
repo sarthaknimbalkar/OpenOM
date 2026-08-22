@@ -41,6 +41,63 @@ def test_embed_then_read(tmp_path: Path) -> None:
     assert parsed["verification"]["hashValid"] is True
 
 
+def test_embed_batch_embeds_many_and_reports(tmp_path: Path) -> None:
+    # Two valid OMs + one item pointing at a missing PDF - the batch embeds the good ones, records the
+    # failure, and exits non-zero. Proves the back-catalog seeding path end to end.
+    sample = json.loads((SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8"))
+    (tmp_path / "data").mkdir()
+    _base_pdf(tmp_path / "a.pdf")
+    _base_pdf(tmp_path / "b.pdf")
+    (tmp_path / "data" / "a.json").write_text(json.dumps(sample), encoding="utf-8")
+    (tmp_path / "data" / "b.json").write_text(json.dumps(sample), encoding="utf-8")
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            [
+                {"pdf": "a.pdf", "payload": "data/a.json"},
+                {"pdf": "b.pdf", "payload": "data/b.json"},
+                {"pdf": "missing.pdf", "payload": "data/a.json"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    out_dir = tmp_path / "out"
+    r = runner.invoke(
+        app,
+        ["embed-batch", "--manifest", str(manifest), "--out-dir", str(out_dir),
+         "--asserted-date", "2026-08-15"],
+    )
+    assert r.exit_code == 1, r.output  # one item failed → non-zero
+    report = json.loads(r.output[r.output.index("{"):])
+    assert report["total"] == 3 and report["embedded"] == 2
+    statuses = [x["status"] for x in report["results"]]
+    assert statuses == ["embedded", "embedded", "error"]
+    # the embedded outputs round-trip
+    for name in ("a.pdf", "b.pdf"):
+        rr = runner.invoke(app, ["read", str(out_dir / name)])
+        assert rr.exit_code == 0
+        assert json.loads(rr.output)["verification"]["hashValid"] is True
+
+
+def test_embed_batch_skips_schema_invalid(tmp_path: Path) -> None:
+    # With a schema, an invalid payload is SKIPPED (not embedded), per Rule 6 (schema errors block).
+    _base_pdf(tmp_path / "a.pdf")
+    (tmp_path / "bad.json").write_text(json.dumps({"specVersion": "0.1"}), encoding="utf-8")
+    manifest = tmp_path / "m.json"
+    manifest.write_text(json.dumps([{"pdf": "a.pdf", "payload": "bad.json"}]), encoding="utf-8")
+    r = runner.invoke(
+        app,
+        ["embed-batch", "--manifest", str(manifest), "--out-dir", str(tmp_path / "o"),
+         "--asserted-date", "2026-08-15", "--schema", str(SPEC / "om-0.1.schema.json")],
+    )
+    assert r.exit_code == 1, r.output
+    report = json.loads(r.output[r.output.index("{"):])
+    assert report["embedded"] == 0
+    assert report["results"][0]["status"] == "skipped"
+    assert report["results"][0]["errors"]  # schema errors reported
+    assert not (tmp_path / "o" / "a.pdf").exists()  # nothing written for a skipped item
+
+
 def test_embed_warns_on_backwards_asserted_date(tmp_path: Path) -> None:
     base = _base_pdf(tmp_path / "base.pdf")
     stnl = SPEC / "samples" / "valid-stnl.json"
