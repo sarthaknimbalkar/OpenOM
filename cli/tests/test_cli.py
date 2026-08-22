@@ -131,6 +131,37 @@ def test_embed_batch_requires_exactly_one_source(tmp_path: Path) -> None:
     assert r.exit_code == 2  # neither --manifest nor --dir
 
 
+def test_buildout_manifest_bridge_end_to_end(tmp_path: Path) -> None:
+    # The connector->manifest bridge on a REAL Buildout listing shape: map -> manifest -> embed-batch.
+    fixture = Path(__file__).parent / "fixtures" / "buildout-listing-a listing.json"
+    listings = tmp_path / "listings"; listings.mkdir()
+    (listings / "a listing.json").write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+    pdfs = tmp_path / "oms"; pdfs.mkdir()
+    _base_pdf(pdfs / "a listing.pdf")  # stands in for the fetched OM PDF
+    staged = tmp_path / "staged"
+
+    m = runner.invoke(app, [
+        "buildout-manifest", "--listings-dir", str(listings), "--pdf-dir", str(pdfs),
+        "--out-dir", str(staged), "--broker", "a broker", "--brokerage", "Example Net Lease",
+        "--license", "MI 0000", "--asserted-date", "2026-08-22", "--noi-type", "pro-forma",
+    ])
+    assert m.exit_code == 0, m.output
+    # the mapped payload is schema-valid and internally consistent (NOI/price == capRate)
+    payload = json.loads((staged / "a listing.om.json").read_text(encoding="utf-8"))
+    assert payload["deal"]["capRate"] == 0.0635
+    assert payload["property"]["address"]["addressRegion"] == "GA"
+    v = runner.invoke(app, ["validate", str(staged / "a listing.om.json"),
+                            "--schema", str(SPEC / "om-0.1.schema.json")])
+    assert v.exit_code == 0, v.output  # schema-valid
+
+    out = tmp_path / "embedded"
+    b = runner.invoke(app, ["embed-batch", "--manifest", str(staged / "manifest.json"),
+                            "--out-dir", str(out), "--schema", str(SPEC / "om-0.1.schema.json")])
+    assert b.exit_code == 0, b.output
+    rr = runner.invoke(app, ["read", str(out / "a listing.pdf")])
+    assert json.loads(rr.output)["payload"]["lease"]["tenantEntity"] == "a retail tenant"
+
+
 def test_embed_warns_on_backwards_asserted_date(tmp_path: Path) -> None:
     base = _base_pdf(tmp_path / "base.pdf")
     stnl = SPEC / "samples" / "valid-stnl.json"

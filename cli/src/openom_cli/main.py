@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 """The ``om`` CLI over openom-core (spec §5a). Thin, deterministic, zero inference.
 
-Commands: embed · embed-batch · read · inspect · validate · check · extract · conformance ·
-version. JSON goes
+Commands: embed · embed-batch · buildout-manifest · read · inspect · validate · check · extract ·
+conformance · version. JSON goes
 to stdout (``--format pretty|compact``; ``--quiet`` suppresses it). A path of ``-`` means stdin
 (input) or stdout (``embed --out -``) for pipe-friendly use. Exit codes: 0 ok · 1 validation/
 conformance failure · 2 usage (typer) · 3 data/IO error (bad PDF/JSON, OM-IO-*). Warnings never
@@ -33,6 +33,8 @@ from openom_core.errors import CanonicalizationError, PayloadTooLargeError
 from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
+
+from openom_cli.buildout import listing_to_payload
 
 SPEC_VERSION = "0.1"
 
@@ -309,6 +311,63 @@ def embed_batch(  # noqa: C901 - a linear orchestrator (resolve -> dispatch -> r
     _emit(summary)
     failed = counts.get("error", 0) + counts.get("skipped", 0)
     raise typer.Exit(code=1 if failed else 0)
+
+
+@app.command(name="buildout-manifest")
+@_guard
+def buildout_manifest(
+    listings_dir: Annotated[
+        Path, typer.Option(help="Dir of Buildout get_listing JSON files (named <id>.json)")
+    ],
+    pdf_dir: Annotated[
+        Path, typer.Option(help="Dir with the OM PDFs (named <id>.pdf) for those listings")
+    ],
+    out_dir: Annotated[
+        Path, typer.Option(help="Where payload sidecars + manifest.json are written")
+    ],
+    broker: Annotated[str, typer.Option(help="assertedBy.broker (who is asserting)")],
+    brokerage: Annotated[str, typer.Option(help="assertedBy.brokerage")],
+    license: Annotated[str, typer.Option(help="assertedBy.license")],  # noqa: A002
+    asserted_date: Annotated[str, typer.Option(help="ISO 8601 assertion date")],
+    noi_type: Annotated[str, typer.Option(help="in-place | pro-forma (a required assertion)")],
+    noi_as_of: Annotated[
+        str | None, typer.Option(help="deal.noiAsOfDate (default: --asserted-date)")
+    ] = None,
+) -> None:
+    """Bridge: turn fetched Buildout listings into an ``om embed-batch`` manifest (catalog seed).
+
+    Deterministic, zero inference: each get_listing JSON is mapped to a schema-valid openOM payload
+    (assertion identity from the flags, never inferred), written as <id>.om.json, and paired with
+    <id>.pdf in a manifest. Review/edit the payloads (the assertion gate), then run
+    ``om embed-batch --manifest <out-dir>/manifest.json``. Listings with no OM PDF are skipped.
+    """
+    asserted_by = {"broker": broker, "brokerage": brokerage, "license": license}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest: list[dict[str, str]] = []
+    skipped: list[str] = []
+    for jf in sorted(listings_dir.glob("*.json")):
+        listing = json.loads(jf.read_text(encoding="utf-8"))
+        pdf = pdf_dir / f"{jf.stem}.pdf"
+        if not pdf.exists():
+            skipped.append(f"{jf.stem} (no {pdf.name})")
+            continue
+        payload = listing_to_payload(
+            listing, asserted_by=asserted_by, asserted_date=asserted_date,
+            noi_type=noi_type, noi_as_of=noi_as_of,
+        )
+        sidecar = out_dir / f"{jf.stem}.om.json"
+        sidecar.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        manifest.append(
+            {"pdf": str(pdf.resolve()), "payload": str(sidecar.resolve()),
+             "assertedDate": asserted_date}
+        )
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    if not _output.quiet:
+        typer.echo(
+            f"buildout-manifest: {len(manifest)} mapped, {len(skipped)} skipped -> {out_dir}",
+            err=True,
+        )
+    _emit({"mapped": len(manifest), "skipped": skipped, "manifest": str(out_dir / "manifest.json")})
 
 
 @app.command()
