@@ -10,12 +10,9 @@
 import Ajv2020, { type ErrorObject } from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 
-/** The events a subscription may filter on. Absent/empty `events` = deliver all. */
-export const SUBSCRIPTION_EVENTS = [
-  "om.payload.published",
-  "om.payload.superseded",
-  "om.test.ping",
-] as const;
+/** The events a subscription may filter on - only events the tooling actually emits ([#3]). Absent/
+ * empty `events` = deliver all. The set is additive across 0.1.x as new events are defined+emitted. */
+export const SUBSCRIPTION_EVENTS = ["om.payload.published", "om.test.ping"] as const;
 
 export const SUBSCRIPTION_SCHEMA = {
   $schema: "https://json-schema.org/draft/2020-12/schema",

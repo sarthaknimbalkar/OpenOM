@@ -14,7 +14,7 @@ const valid = {
   specVersion: "0.1",
   receiverUrl: "https://portal.example.com/hooks/openom",
   secret: "a-strong-shared-secret-1234",
-  events: ["om.payload.published", "om.payload.superseded"],
+  events: ["om.payload.published"],
   active: true,
 };
 
@@ -46,9 +46,10 @@ describe("validateSubscription ([B2] §Y subscription object)", () => {
     expect(validateSubscription({ ...valid, extra: 1 }).valid).toBe(false);
   });
 
-  test("known events include published/superseded/ping", () => {
+  test("event enum lists only events the tooling actually emits ([#3])", () => {
     expect(SUBSCRIPTION_EVENTS).toContain("om.payload.published");
-    expect(SUBSCRIPTION_EVENTS).toContain("om.payload.superseded");
+    expect(SUBSCRIPTION_EVENTS).toContain("om.test.ping");
+    expect(SUBSCRIPTION_EVENTS).not.toContain("om.payload.superseded"); // not emitted yet
   });
 
   test("SUBSCRIPTION_SCHEMA equals the published spec/webhook-subscription-0.1.schema.json", () => {

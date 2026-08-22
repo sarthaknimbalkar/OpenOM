@@ -19,6 +19,7 @@ import {
   evaluateBadge,
   computeBadge,
   viewForState,
+  readByUrl,
   absentView,
   sanitizeHref,
   type BadgeView,
@@ -33,6 +34,7 @@ declare global {
       evaluateBadge: typeof evaluateBadge;
       computeBadge: typeof computeBadge;
       readPayloadFromBytes: typeof readPayloadFromBytes;
+      readByUrl: typeof readByUrl;
     };
   }
 }
@@ -58,9 +60,11 @@ export function paintBadge(host: HTMLElement, view: BadgeView, details?: string)
   wrap.setAttribute("role", "img");
   wrap.setAttribute("aria-label", view.ariaLabel);
   wrap.title = view.caption;
+  wrap.setAttribute("part", "badge"); // [polish] host theming via ::part(badge) + the CSS vars below
   wrap.style.cssText =
-    `display:inline-flex;align-items:center;gap:.4em;font:600 13px/1.4 system-ui,sans-serif;` +
-    `padding:.25em .6em;border-radius:999px;color:${c.fg};background:${c.bg};` +
+    `display:inline-flex;align-items:center;gap:.4em;` +
+    `font:var(--openom-badge-font, 600 13px/1.4 system-ui,sans-serif);` +
+    `padding:.25em .6em;border-radius:var(--openom-badge-radius,999px);color:${c.fg};background:${c.bg};` +
     `border:1px solid ${c.fg}22;`;
   const mark = document.createElement("span");
   mark.textContent = c.mark;
@@ -77,6 +81,13 @@ export function paintBadge(host: HTMLElement, view: BadgeView, details?: string)
     stale.style.cssText = "font-weight:400;opacity:.85;";
     wrap.append(stale);
   }
+  if (view.diverged) {
+    // [M8] The source domain currently shows different figures than this copy - a strong warning.
+    const diverged = document.createElement("span");
+    diverged.textContent = "· source shows different data";
+    diverged.style.cssText = "font-weight:600;color:#7a5b00;";
+    wrap.append(diverged);
+  }
   if (link) {
     const a = document.createElement("a");
     a.href = link;
@@ -91,6 +102,8 @@ export function paintBadge(host: HTMLElement, view: BadgeView, details?: string)
 /** The custom element. Reflects `src`/`mirror`/`details`; re-evaluates on attribute change. */
 export class OpenOmBadgeElement extends HTMLElement {
   #io: IntersectionObserver | null = null;
+  #lastKey: string | null = null; // [polish] src|mirror of the last evaluate, to skip a re-fetch
+  #lastView: BadgeView | null = null; // cached view, repainted on a details-only change
   static get observedAttributes(): string[] {
     // [B1] `state` renders a precomputed badge with NO fetch (portals emit it from ingest-time om_read).
     return ["src", "mirror", "details", "state"];
@@ -123,24 +136,52 @@ export class OpenOmBadgeElement extends HTMLElement {
     // Only re-run for a meaningful change; `details` alone repaints without a re-fetch (handled in refresh).
     if (this.isConnected && oldV !== newV) void this.refresh();
   }
+  /** [polish] Notify the host after each evaluate/paint so it can log coverage or show its own fallback. */
+  #emit(view: BadgeView, error = false): void {
+    this.#lastView = view;
+    this.dispatchEvent(
+      new CustomEvent("openom:state", {
+        bubbles: true,
+        detail: {
+          state: view.state,
+          present: view.state !== "absent",
+          stale: view.stale ?? null,
+          diverged: view.diverged ?? null,
+          error,
+        },
+      }),
+    );
+  }
   async refresh(): Promise<void> {
     const details = this.getAttribute("details") ?? undefined;
     const state = this.getAttribute("state");
     if (state) {
       // Zero-fetch precomputed render (honesty preserved: label/caption from honestLabel only).
-      paintBadge(this, viewForState(state), details);
+      const v = viewForState(state);
+      paintBadge(this, v, details);
+      this.#emit(v);
       return;
     }
     const src = this.getAttribute("src");
     if (!src) return;
     const mirror = this.getAttribute("mirror");
+    const key = `${src}|${mirror ?? ""}`;
+    // [polish] a details-only change (src/mirror unchanged) repaints the cached view - never re-fetches.
+    if (key === this.#lastKey && this.#lastView) {
+      paintBadge(this, this.#lastView, details);
+      return;
+    }
     try {
       const view = await evaluateBadge(mirror ? { src, mirror } : { src });
+      this.#lastKey = key;
       paintBadge(this, view, details);
+      this.#emit(view);
     } catch {
       // A fetch/parse failure is not evidence of tampering: fail closed to "absent" (render nothing)
       // rather than show a scary state the bytes don't justify (§AA honesty).
-      paintBadge(this, absentView());
+      const v = absentView();
+      paintBadge(this, v);
+      this.#emit(v, true);
     }
   }
 }
@@ -157,5 +198,5 @@ if (typeof document !== "undefined") defineOpenOmBadge();
 
 // Expose the read/verify primitives for the hosted verify tool (#145).
 if (typeof window !== "undefined") {
-  window.openOM = { evaluateBadge, computeBadge, readPayloadFromBytes };
+  window.openOM = { evaluateBadge, computeBadge, readPayloadFromBytes, readByUrl };
 }
