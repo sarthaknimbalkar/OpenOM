@@ -77,11 +77,14 @@ function rpcError(id: unknown, code: number, message: string): Response {
 class ToolError extends Error {
   constructor(
     readonly code:
-      | "OM-IO-SSRF" // non-https / internal/loopback target (incl. via a redirect)
-      | "OM-IO-REDIRECT" // redirect refused / limit exceeded / no Location
-      | "OM-IO-FETCH" // upstream returned a non-2xx
-      | "OM-IO-BOMB" // PDF exceeds the size cap
-      | "OM-IO-ARGS", // bad tool arguments
+      // [Ma9] Canonical numeric OM-IO-* codes — the SAME set the Python server (fetch.py) emits and
+      // spec/requirements.json defines, so a client branching on `code` works against either server.
+      | "OM-IO-001" // upstream fetch failed (non-2xx / DNS / connection)
+      | "OM-IO-002" // SSRF: resolves to a blocked/internal address range
+      | "OM-IO-005" // size cap exceeded / not a PDF
+      | "OM-IO-008" // unsupported or absent PDF reference (non-https, or no pdfBase64/url)
+      | "OM-IO-009" // redirect refused / limit exceeded / no Location
+      | "OM-IO-010", // malformed PDF / read failure
     message: string,
   ) {
     super(message);
@@ -103,7 +106,7 @@ function base64ToBytes(b64: string): Uint8Array {
  */
 export function safeUrl(raw: string): URL {
   const u = new URL(raw);
-  if (u.protocol !== "https:") throw new ToolError("OM-IO-SSRF", "only https URLs are allowed");
+  if (u.protocol !== "https:") throw new ToolError("OM-IO-008", "only https URLs are fetched");
   const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, ""); // strip IPv6 brackets
   const blocked =
     h === "localhost" ||
@@ -126,7 +129,7 @@ export function safeUrl(raw: string): URL {
     // IPv4-mapped IPv6 (the URL parser normalizes ::ffff:169.254.169.254 -> ::ffff:a9fe:a9fe, so
     // block the whole mapped form - a legitimate public target never uses a mapped literal).
     /^::ffff:/.test(h);
-  if (blocked) throw new ToolError("OM-IO-SSRF", "refusing an internal/loopback host");
+  if (blocked) throw new ToolError("OM-IO-002", "refusing an internal/loopback host");
   return u;
 }
 
@@ -150,18 +153,18 @@ export async function fetchPdf(
     const res = await fetchImpl(url, { redirect: "manual", cf: { cacheTtl: 300, cacheEverything: true } });
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get("location");
-      if (!loc) throw new ToolError("OM-IO-REDIRECT", "redirect without a Location header");
+      if (!loc) throw new ToolError("OM-IO-009", "redirect without a Location header");
       url = safeUrl(new URL(loc, url).toString()).toString(); // resolve relative + re-pin SSRF
       continue;
     }
-    if (!res.ok) throw new ToolError("OM-IO-FETCH", `fetch failed: ${res.status}`);
+    if (!res.ok) throw new ToolError("OM-IO-001", `fetch failed: ${res.status}`);
     const len = Number(res.headers.get("content-length") ?? "0");
-    if (len > MAX_BYTES) throw new ToolError("OM-IO-BOMB", "PDF exceeds the size limit");
+    if (len > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
     const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.length > MAX_BYTES) throw new ToolError("OM-IO-BOMB", "PDF exceeds the size limit");
+    if (buf.length > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
     return buf;
   }
-  throw new ToolError("OM-IO-REDIRECT", `redirect limit (${MAX_REDIRECTS}) exceeded`);
+  throw new ToolError("OM-IO-009", `redirect limit (${MAX_REDIRECTS}) exceeded`);
 }
 
 async function omRead(args: Record<string, unknown>): Promise<unknown> {
@@ -169,8 +172,8 @@ async function omRead(args: Record<string, unknown>): Promise<unknown> {
   const sourceUrl = typeof args.url === "string" ? args.url : null;
   if (typeof args.pdfBase64 === "string") bytes = base64ToBytes(args.pdfBase64);
   else if (sourceUrl) bytes = await fetchPdf(sourceUrl);
-  else throw new ToolError("OM-IO-ARGS", "provide pdfBase64 or url");
-  if (bytes.length > MAX_BYTES) throw new ToolError("OM-IO-BOMB", "PDF exceeds the size limit");
+  else throw new ToolError("OM-IO-008", "provide pdfBase64 or url");
+  if (bytes.length > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
   const r = await readPayloadFromBytes(bytes);
 
   // [M1/M8] When read from a URL and the payload declares a same-domain canonicalUrl mirror, verify
@@ -228,14 +231,22 @@ async function omRead(args: Record<string, unknown>): Promise<unknown> {
     }
   }
 
+  const outPayload = r.state === "present" ? r.payload : null;
   return {
     state: r.state, // present | absent | hash-mismatch | encrypted
     payloadHash: r.payloadHash, // [M5] dedupe key - a caller skips re-processing an unchanged payload
+    // [Ma9] specVersion + sourceDocHash mirror the Python om_read shape so a client written against
+    // one server works against the other (the Worker response is a superset of the reference shape).
+    specVersion:
+      outPayload && typeof outPayload === "object"
+        ? ((outPayload as Record<string, unknown>).specVersion ?? null)
+        : null,
+    sourceDocHash: r.sourceDocHash,
     verification: { ...(r.verification ?? {}), originVerified },
     ...(stale ? { stale } : {}),
     ...(diverged ? { diverged } : {}),
     ...(warnings ? { warnings } : {}),
-    payload: r.state === "present" ? r.payload : null,
+    payload: outPayload,
     note:
       r.state === "hash-mismatch"
         ? "Payload present but altered (hash mismatch) - do not trust it."
@@ -248,7 +259,20 @@ function omValidate(args: Record<string, unknown>): unknown {
   const report = validatePayload(args.payload, schema as Record<string, unknown>, {
     validate: precompiledValidate,
   });
-  return report;
+  // [Ma9] Return the canonical Python om_validate contract ({ok, errors, warnings, info,
+  // canonical:{hash}}) as a superset of the JS ValidationReport, so a client can branch on `ok`/
+  // `canonical.hash` against either server. The raw report fields are kept for back-compat.
+  return {
+    ok: !report.blocked,
+    errors: report.errors,
+    warnings: report.warnings,
+    info: report.info,
+    canonical: { hash: payloadHash(args.payload as Record<string, unknown>) },
+    specVersion: report.specVersion,
+    validatorVersion: report.validatorVersion,
+    summary: report.summary,
+    blocked: report.blocked,
+  };
 }
 
 async function callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
@@ -287,7 +311,7 @@ async function handleRpc(msg: RpcMsg): Promise<Record<string, unknown> | null> {
         return { jsonrpc: "2.0", id, result: await callTool(name, args) };
       } catch (e) {
         // tool errors are returned in-band (isError) per MCP. [M4] carry a stable machine code.
-        const code = e instanceof ToolError ? e.code : "OM-IO-UNKNOWN";
+        const code = e instanceof ToolError ? e.code : "OM-IO-010";
         return {
           jsonrpc: "2.0",
           id,

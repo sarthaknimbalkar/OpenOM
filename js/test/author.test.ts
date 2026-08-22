@@ -9,6 +9,7 @@ import {
 } from "../src/author.js";
 import type { ValidationReport } from "../src/validate.js";
 import type { ReadResult } from "../src/read.js";
+import type { OMPayload } from "../src/payload-types.js";
 
 const profile = { broker: "Jane Broker", brokerage: "Example Realty", license: "RE-1" };
 
@@ -89,7 +90,7 @@ describe("captureFromBytes", () => {
 
   test("present payload becomes the reprice base", async () => {
     const cap = await captureFromBytes(new Uint8Array([1]), async () =>
-      mk({ state: "present", payload: { a: 1 }, payloadHash: "h" }),
+      mk({ state: "present", payload: { a: 1 } as unknown as OMPayload, payloadHash: "h" }),
     );
     expect(cap.prior?.payloadHash).toBe("h");
     expect(cap.priorUnverified).toBe(false);
@@ -98,7 +99,7 @@ describe("captureFromBytes", () => {
 
   test("hash-mismatch is flagged, not used as a base", async () => {
     const cap = await captureFromBytes(new Uint8Array([1]), async () =>
-      mk({ state: "hash-mismatch", payload: { a: 1 }, payloadHash: "h" }),
+      mk({ state: "hash-mismatch", payload: { a: 1 } as unknown as OMPayload, payloadHash: "h" }),
     );
     expect(cap.prior).toBeNull();
     expect(cap.priorUnverified).toBe(true);

@@ -21,11 +21,12 @@ import jsonschema
 
 from .canonical import payload_hash
 from .errors import Finding, Severity
+from .schema import load_schema
 
 # Requirement back-references (§H.1) keyed by finding code.
 _REQUIREMENT = {
     "OMV-E001": "OM-DD-001",
-    "OMV-E002": "OM-DD",
+    "OMV-E002": "OM-DD-003",
     "OMV-E003": "OM-ERR-090",
     "OMV-E010": "OM-ERR-013",
     "OMW-W010": "OM-CONS-010",
@@ -49,7 +50,7 @@ _REQUIREMENT = {
     "OMW-W041": "OM-CONS-041",
     "OMW-W050": "OM-CONS-050",
     "OMW-W051": "OM-TRUST-009",  # stale/superseded (mirror carries a newer assertion)
-    "OMW-W052": "OM-TRUST-010",  # diverged (same-domain mirror shows different, non-supersede content)
+    "OMW-W052": "OM-TRUST-010",  # diverged (same-domain mirror shows different, non-superseding)
     "OMW-W060": "OM-CONS-060",
     "OMW-W061": "OM-DD-002",
     "OMI-I001": "OM-DD-002",
@@ -124,6 +125,11 @@ def validate(
     tolerances: Tolerances | None = None,
     as_of: str | None = None,
 ) -> Report:
+    # [Ma2] Default to the bundled 0.1 schema so the ergonomic `validate(payload)` performs FULL
+    # schema validation. The old default (schema=None -> a two-rule subset) silently skipped every
+    # structural/type/required/format error and could report ok=True on a schema-invalid payload.
+    if schema is None:
+        schema = load_schema()
     report = Report()
     tol = tolerances or Tolerances()
     # Reference date for term checks (OMW-W030): explicit as_of, else the payload's assertedDate,
@@ -168,15 +174,10 @@ def _validator_for(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator
     return validator
 
 
-def _error_tier(
-    payload: Mapping[str, Any], schema: Mapping[str, Any] | None, report: Report
-) -> None:
-    if schema is not None:
-        validator = _validator_for(schema)
-        for err in sorted(validator.iter_errors(dict(payload)), key=str):
-            report.errors.append(_map_schema_error(err))
-    else:
-        _schema_free_checks(payload, report)
+def _error_tier(payload: Mapping[str, Any], schema: Mapping[str, Any], report: Report) -> None:
+    validator = _validator_for(schema)
+    for err in sorted(validator.iter_errors(dict(payload)), key=str):
+        report.errors.append(_map_schema_error(err))
 
 
 def _map_schema_error(err: jsonschema.ValidationError) -> Finding:
@@ -192,21 +193,6 @@ def _map_schema_error(err: jsonschema.ValidationError) -> Finding:
     if path == "/meta/supersedes":
         return _mk("OMV-E010", "/meta/supersedes", "meta.supersedes must be sha256:<64hex>/null")
     return _mk("OMV-E001", path, err.message)
-
-
-def _schema_free_checks(payload: Mapping[str, Any], report: Report) -> None:
-    """The subset of error checks reproducible without a schema (schema=None path)."""
-    deal = payload.get("deal") or {}
-    if "noi" in deal and (deal.get("noiType") is None or deal.get("noiAsOfDate") is None):
-        report.errors.append(_mk("OMV-E002", "/deal", "noi present without noiType/noiAsOfDate"))
-    # #117: null OR the reserved {alg,keyId,value} shape (accepted then ignored); else OMV-E003 -
-    # checked here too so the schema-free path matches the schema tier.
-    sig = (payload.get("meta") or {}).get("signature")
-    if sig is not None and not (
-        isinstance(sig, dict)
-        and all(isinstance(sig.get(k), str) and sig.get(k) for k in ("alg", "keyId", "value"))
-    ):
-        report.errors.append(_mk("OMV-E003", "/meta/signature", _SIG_MSG))
 
 
 def _warning_tier(

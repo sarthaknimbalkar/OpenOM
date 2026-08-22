@@ -510,7 +510,7 @@ export function mountAuthor(root: HTMLElement): void {
       // [P7] a copy-paste trust badge a portal drops next to the listing (one script tag + element).
       snippet.hidden = false;
       snippet.textContent =
-        `<script src="https://openom.app/widget/openom-badge.js" defer><\/script>\n` +
+        `<script src="https://openom.app/widget/openom-badge.js" defer></script>\n` +
         `<openom-badge src="${u}"></openom-badge>`;
     });
     box.append(
