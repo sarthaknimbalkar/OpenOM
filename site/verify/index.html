@@ -122,7 +122,7 @@
       const view = window.openOM.computeBadge({
         present,
         hashValid: r.verification.hashValid,
-        originVerified: false,
+        originVerified: r.verification.originVerified === true,
         signatureValid: r.verification.signatureValid,
       });
       badge.replaceChildren();
@@ -136,9 +136,23 @@
         pill.textContent = c[2] + " " + view.label;
         badge.appendChild(pill);
         badge.appendChild(document.createTextNode(" " + view.caption));
+        if (r.stale) badge.appendChild(document.createTextNode(" · superseded — a newer version exists"));
+        if (r.diverged) badge.appendChild(document.createTextNode(" · the source domain shows different data"));
       }
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
       else { out.hidden = true; }
+      // [M7] emit the verified payload as machine-readable JSON-LD (+ rel=alternate to its mirror), so
+      // a crawler/agent lifts it without re-parsing the PDF. Replaces any prior emitted block.
+      document.querySelectorAll("script.om-ld,link.om-ld").forEach((n) => n.remove());
+      if (r.payload && r.state === "present") {
+        const ld = document.createElement("script"); ld.type = "application/ld+json"; ld.className = "om-ld";
+        ld.textContent = JSON.stringify(r.payload); document.head.appendChild(ld);
+        const cu = (r.payload.meta || {}).canonicalUrl;
+        if (typeof cu === "string") {
+          const link = document.createElement("link"); link.rel = "alternate";
+          link.type = "application/ld+json"; link.href = cu; link.className = "om-ld"; document.head.appendChild(link);
+        }
+      }
     }
     f.addEventListener("change", async () => {
       const file = f.files && f.files[0];
@@ -152,48 +166,13 @@
       badge.textContent = "Checking " + url + " …";
       out.hidden = true;
       try {
-        showResult(await window.omReadUrl(url));
+        showResult(await window.openOM.readByUrl(url));
       } catch (e) {
         badge.textContent =
           "Couldn't read that URL (" + (e && e.message ? e.message : "unreadable") + "). " +
           "Check the link, or download the PDF and drop it in above.";
       }
     });
-  </script>
-  <script>
-    // Read a PDF by URL: try a direct browser fetch first (same-origin / CORS-enabled hosts - fast, no
-    // round-trip), then fall back to the public MCP worker, which fetches server-side (following
-    // presigned/CDN redirects) and hash-verifies deterministically - so cross-origin listing PDFs work
-    // without CORS or an extension. Zero inference either way (om_read is deterministic).
-    window.omReadUrl = async function (url) {
-      try {
-        const resp = await fetch(url);
-        if (resp.ok) {
-          const bytes = new Uint8Array(await resp.arrayBuffer());
-          const r = await window.openOM.readPayloadFromBytes(bytes);
-          return { state: r.state, payload: r.payload,
-            verification: { hashValid: r.verification.hashValid, signatureValid: r.verification.signatureValid } };
-        }
-      } catch (e) { /* CORS/network blocked - fall through to the worker */ }
-      let abs;
-      try { abs = new URL(url, location.href); } catch (e) { throw new Error("invalid URL"); }
-      if (abs.protocol !== "https:") throw new Error("only https URLs can be checked remotely");
-      const resp = await fetch("https://mcp.openom.app/mcp", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
-          params: { name: "om_read", arguments: { url: abs.href } } }),
-      });
-      const j = await resp.json();
-      if (j.error) throw new Error(j.error.message || "read failed");
-      const rr = j.result || {};
-      const text = rr.content && rr.content[0] && rr.content[0].text;
-      if (rr.isError) throw new Error((text || "read failed").replace(/^Error:\s*/, ""));
-      if (!text) throw new Error("empty response");
-      const d = JSON.parse(text);
-      return { state: d.state, payload: d.payload,
-        verification: { hashValid: d.verification && d.verification.hashValid,
-          signatureValid: d.verification && d.verification.signatureValid } };
-    };
   </script>
   <p><small>Want to <b>create</b> an openOM PDF? Use the free in-browser
      <a href="/embed/">authoring companion</a> - no install.</small></p>
