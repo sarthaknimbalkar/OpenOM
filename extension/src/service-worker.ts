@@ -13,7 +13,7 @@ import {
   verifyOrigin,
 } from "openom-js";
 import schema from "../../spec/om-0.1.schema.json";
-import { refetchPdf } from "./detect.js";
+import { refetchPdf, refetchPdfResult } from "./detect.js";
 import { accepts } from "./message-gate.js";
 import { guardedMirrorFetch, mirrorUrlFor } from "./mirror.js";
 import { classifyStale } from "./stale.js";
@@ -221,8 +221,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     // Author mode (M5b) - capture re-fetches PDF bytes SW-side (page CSP can't block it); embed runs
     // the deterministic /js embedPayload. Zero inference; the human assertion happens in the panel.
     if (msg?.type === "author:fetch" && typeof msg.url === "string") {
-      refetchPdf(msg.url)
-        .then((bytes) => sendResponse({ b64: bytes ? toB64(bytes) : null }))
+      // [M6] return a typed reason so the panel can say "too big - use the file picker/CLI" instead
+      // of a generic network error (image-heavy OMs routinely exceed the 25MB re-fetch ceiling).
+      refetchPdfResult(msg.url)
+        .then((r) =>
+          sendResponse(r.ok ? { b64: toB64(r.bytes) } : { b64: null, reason: r.reason }),
+        )
         .catch((e) => sendResponse({ error: String(e?.stack ?? e) }));
       return true;
     }

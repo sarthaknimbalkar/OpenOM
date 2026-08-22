@@ -65,6 +65,16 @@ const leaseType = (v: unknown): string | undefined => {
   if (s.includes("GROSS")) return "gross";
   return String(v);
 };
+/** Whole months between two ISO (YYYY-MM-DD) dates, or undefined ([M4]; parity with the Python mapper). */
+const monthsBetween = (start?: string, end?: string): number | undefined => {
+  if (!start || !end) return undefined;
+  const [sy, sm, sd] = start.split("-").map(Number);
+  const [ey, em, ed] = end.split("-").map(Number);
+  if (![sy, sm, sd, ey, em, ed].every(Number.isInteger)) return undefined;
+  let months = (ey - sy) * 12 + (em - sm);
+  if (ed < sd) months -= 1;
+  return months >= 0 ? months : undefined;
+};
 
 /** Drop absent values (undefined / '' / empty object) so we emit only what Buildout has. */
 function compact<T extends Record<string, unknown>>(obj: T): Partial<T> {
@@ -95,30 +105,42 @@ export function buildoutListingToPayload(l: BuildoutListing): Record<string, unk
   const lotAcres = String(rp("lot_size_units") ?? "").toLowerCase().startsWith("acre")
     ? num(rp("lot_size"))
     : undefined;
+  const buildingSF = int(rp("building_size"));
+  const units = int(rp("number_of_units"));
+  // propertyType ([M4]): primary asset-class filter; omitted (never guessed) when absent.
+  const propType = rp("property_type") ?? rp("property_sub_type") ?? cf["Property type"];
   const property = compact({
+    propertyType: propType ? String(propType).trim().toLowerCase() : undefined,
     address: Object.keys(address).length ? address : undefined,
     geo,
-    buildingSF: int(rp("building_size")),
+    buildingSF,
     yearBuilt: int(rp("year_built")),
     lotAcres,
-    units: int(rp("number_of_units")),
+    units,
     occupancy: pctToFraction(rp("occupancy_pct")),
   });
 
   // deal.noiType / noiAsOfDate are the human's at the review gate - NOT imported here (memo Q4).
+  const price = int(fin.sale_price);
   const deal = compact({
-    askingPrice: int(fin.sale_price),
+    askingPrice: price,
     capRate: pctToFraction(fin.cap_rate_derived ?? fin.cap_rate),
     noi: int(fin.noi ?? cf.NOI),
+    // Derived deterministically from mapped values ([M4]) - parity with the Python mapper.
+    pricePerUnit: price !== undefined && units ? Math.round(price / units) : undefined,
+    pricePerSF: price !== undefined && buildingSF ? Math.round((price / buildingSF) * 100) / 100 : undefined,
     status: "active",
   });
 
+  const commencement = isoDate(cf["Lease start date"]);
+  const expiration = isoDate(cf["Lease expiration date"]);
   const guarantorName = cf["Lease guarantor"];
   const lease = compact({
     tenantEntity: cf.Tenant,
     leaseTypeAsserted: leaseType(cf["Lease type"]),
-    commencement: isoDate(cf["Lease start date"]),
-    expiration: isoDate(cf["Lease expiration date"]),
+    commencement,
+    expiration,
+    termMonths: monthsBetween(commencement, expiration), // [M4] derived from the two dates
     guarantor: guarantorName ? { name: guarantorName, type: "corporate" } : undefined,
   });
 

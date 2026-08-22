@@ -50,6 +50,33 @@ describe("onDeviceExtractor - Prompt API adapter", () => {
     expect(await onDeviceExtractor.available()).toBe(true);
   });
 
+  test("[M5] readiness() distinguishes ready / needs-download / unavailable", async () => {
+    expect(await onDeviceExtractor.readiness!()).toBe("unavailable"); // no global
+    installFakeModel({ fields: [] }, "available");
+    expect(await onDeviceExtractor.readiness!()).toBe("ready");
+    installFakeModel({ fields: [] }, "downloadable");
+    expect(await onDeviceExtractor.readiness!()).toBe("needs-download");
+    installFakeModel({ fields: [] }, "downloading");
+    expect(await onDeviceExtractor.readiness!()).toBe("needs-download");
+    installFakeModel({ fields: [] }); // shim without availability() → presence = ready
+    expect(await onDeviceExtractor.readiness!()).toBe("ready");
+  });
+
+  test("[M5] extract reports model-download progress via the create() monitor", async () => {
+    const seen: number[] = [];
+    g.LanguageModel = {
+      availability: async () => "downloadable",
+      create: async (opts?: { monitor?: (m: { addEventListener: (t: string, cb: (e: { loaded: number }) => void) => void }) => void }) => {
+        opts?.monitor?.({ addEventListener: (_t, cb) => cb({ loaded: 0.5 }) });
+        return { prompt: async () => JSON.stringify({ fields: [] }), destroy: () => {} };
+      },
+    };
+    await onDeviceExtractor.extract([{ page: 1, text: "x" }], {
+      onDownloadProgress: (f) => seen.push(f),
+    });
+    expect(seen).toContain(0.5);
+  });
+
   test("extract releases the model session (#89)", async () => {
     installFakeModel({ fields: [] });
     await onDeviceExtractor.extract([{ page: 1, text: "x" }]);

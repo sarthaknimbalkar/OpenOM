@@ -90,10 +90,22 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
   if (result.state === "integrity-ok" || result.state === "origin-verified") {
     root.appendChild(renderCard(result));
 
-    const publish = el("section", "publish");
-    publish.appendChild(el("h3", undefined, "Publish"));
+    // [M3] This is a developer integration (a signed §Y webhook to a connected CRM/portal), NOT
+    // buyer distribution. Frame it as such and tuck it behind an "Advanced" disclosure so a broker
+    // isn't misled into thinking "Publish" sends the deal to buyers. To share with a buyer, a broker
+    // rehosts the embedded PDF (or uses the openom.app verified link, when hosted).
+    const publish = el("details", "publish") as HTMLDetailsElement;
+    const sum = el("summary", undefined, "Advanced: send to a connected system (webhook)");
+    publish.appendChild(sum);
+    publish.appendChild(
+      el(
+        "p",
+        "publish-hint",
+        "Sends an HMAC change-notification to your own CRM/portal endpoint. This is not how buyers receive the OM - for that, rehost the embedded PDF.",
+      ),
+    );
     const target = el("input", "wh-target") as HTMLInputElement;
-    target.placeholder = "https://your-webhook…";
+    target.placeholder = "https://your-crm-endpoint…";
     target.value = webhook?.url ?? "";
     const secret = el("input", "wh-secret") as HTMLInputElement;
     secret.type = "password";
@@ -102,7 +114,7 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
     publish.append(target, secret);
     for (const [label, action] of [
       ["Test fire", "test-fire"],
-      ["Publish", "publish"],
+      ["Send", "publish"],
       ["Copy", "copy"],
       ["Download", "download"],
     ] as const) {

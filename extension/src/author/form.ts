@@ -12,6 +12,8 @@ export interface FormCallbacks {
   onEvidence: (path: string, ev: { page?: number; quote?: string }) => void;
   onAddRentPeriod: () => void;
   onRemoveRentPeriod: (index: number) => void;
+  /** [M7] Open the source OM at a cited page so the broker can check the number against the document. */
+  onViewPage?: (page: number) => void;
 }
 
 /** Common mapping-guide fields shown first (in order); the rest go under "More fields". */
@@ -108,6 +110,17 @@ function fieldRow(desc: FieldDescriptor, draft: Draft, flagged: Set<string>, cb:
   page.addEventListener("input", emitEv);
   quote.addEventListener("input", emitEv);
   ev.append(page, quote);
+  // [M7] "view page" affordance: jump to the cited page in the source OM to check the number.
+  if (cb.onViewPage) {
+    const view = el("button", "ev-view", "view page") as HTMLButtonElement;
+    view.type = "button";
+    view.title = "Open the source OM at this page";
+    view.addEventListener("click", () => {
+      const n = Number(page.value);
+      if (Number.isInteger(n) && n > 0) cb.onViewPage?.(n);
+    });
+    ev.append(view);
+  }
   row.appendChild(ev);
 
   if (flagged.has(desc.path)) row.appendChild(el("span", "field-flag", "no evidence - please cite"));
