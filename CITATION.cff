@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use openOM, please cite it as below."
+title: openOM
+abstract: >-
+  An open (MIT) standard and toolchain that embeds machine-readable, broker-asserted,
+  hash-verified data inside commercial real estate offering-memorandum PDFs, and mirrors
+  the same payload as JSON-LD on the web. Deterministic core, inference at the edges.
+type: software
+authors:
+  - name: Vervelio Labs
+    website: "https://verveliolabs.com"
+repository-code: "https://github.com/sarthaknimbalkar/OpenOM"
+url: "https://openom.app"
+license: MIT
+version: "0.1"
+keywords:
+  - commercial real estate
+  - offering memorandum
+  - JSON-LD
+  - JSON Schema
+  - open standard
+  - proptech
