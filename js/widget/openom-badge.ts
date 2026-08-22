@@ -67,6 +67,15 @@ export function paintBadge(host: HTMLElement, view: BadgeView, details?: string)
   const label = document.createElement("span");
   label.textContent = view.label; // static honestLabel copy only - no payload text
   wrap.append(mark, label);
+  if (view.stale) {
+    // [M2] A superseded PDF: the badge is genuine but a newer assertion exists on the domain mirror.
+    const stale = document.createElement("span");
+    stale.textContent = view.mirrorAssertedDate
+      ? `· superseded (newer dated ${view.mirrorAssertedDate})`
+      : "· superseded — newer version available";
+    stale.style.cssText = "font-weight:400;opacity:.85;";
+    wrap.append(stale);
+  }
   if (link) {
     const a = document.createElement("a");
     a.href = link;

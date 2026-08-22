@@ -9,17 +9,18 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const built = readFileSync(resolve(here, "../widget/dist/openom-badge.js"), "utf8").replace(
-  /\n\/\/# sourceMappingURL=.*\s*$/,
-  "\n",
-);
-const committed = readFileSync(resolve(here, "../../spec/assets/openom-badge.js"), "utf8");
-
-if (built !== committed) {
-  console.error(
-    "spec/assets/openom-badge.js is STALE vs a fresh widget build.\n" +
-      "Refresh it: npm --prefix js run build:widget && node js/scripts/refresh-widget-artifact.mjs",
+for (const name of ["openom-badge.js", "openom-author.js"]) {
+  const built = readFileSync(resolve(here, "../widget/dist", name), "utf8").replace(
+    /\n\/\/# sourceMappingURL=.*\s*$/,
+    "\n",
   );
-  process.exit(1);
+  const committed = readFileSync(resolve(here, "../../spec/assets", name), "utf8");
+  if (built !== committed) {
+    console.error(
+      `spec/assets/${name} is STALE vs a fresh widget build.\n` +
+        "Refresh it: npm --prefix js run build:widget && node js/scripts/refresh-widget-artifact.mjs",
+    );
+    process.exit(1);
+  }
 }
-console.log("widget artifact is fresh (matches a deterministic build).");
+console.log("widget artifacts are fresh (match a deterministic build).");
