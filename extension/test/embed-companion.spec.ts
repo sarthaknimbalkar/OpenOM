@@ -191,6 +191,6 @@ test.describe("verify URL tool (/verify/)", () => {
     await page.waitForFunction(() => Boolean((window as { openOM?: unknown }).openOM));
     await page.locator("#u").fill("/no/such/file.pdf");
     await page.locator("#ub").click();
-    await expect(page.locator("#badge")).toContainText(/Couldn't fetch that URL/i, { timeout: 10_000 });
+    await expect(page.locator("#badge")).toContainText(/Couldn't read that URL/i, { timeout: 10_000 });
   });
 });

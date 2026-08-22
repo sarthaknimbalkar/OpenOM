@@ -51,6 +51,24 @@ describe("renderPopup", () => {
     expect(labels).not.toContain("Publish");
   });
 
+  test("[M3] card shows assertion metadata + formatted numbers; notices show messages", () => {
+    const root = render({
+      state: "integrity-ok",
+      label: "Unaltered since embed",
+      caption: "Integrity checks out; origin not yet confirmed.",
+      payload: { ...PAYLOAD, assertedDate: "2026-05-31", deal: { ...PAYLOAD.deal, noi: 143750, noiAsOfDate: "2026-03-31" } },
+      findings: ["OMW-W020"],
+      notices: [{ code: "OMW-W020", message: "cap rate vs NOI/price is off", severity: "warning", path: "/deal" }],
+    });
+    const text = root.textContent!;
+    expect(text).toContain("$2,500,000"); // formatted, not 2500000
+    expect(text).toContain("5.75%"); // cap rate as %, not 0.0575
+    expect(text).toMatch(/in-place/); // noiType surfaced
+    expect(text).toContain("as of 2026-03-31"); // noiAsOfDate surfaced
+    expect(text).toContain("2026-05-31"); // assertedDate surfaced
+    expect(text).toContain("cap rate vs NOI/price is off (OMW-W020)"); // message, not bare code
+  });
+
   test("origin-verified: shows the domain-vouch caption + card", () => {
     const root = render({
       state: "origin-verified",

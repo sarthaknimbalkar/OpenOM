@@ -15,6 +15,13 @@ function assertedDate(p: Record<string, unknown> | null): string | null {
   return typeof d === "string" ? d : null;
 }
 
+/** Parse an assertedDate to a comparable epoch, or null if it isn't a valid date (no silent skip). */
+function parseDate(s: string | null): number | null {
+  if (!s) return null;
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? null : t;
+}
+
 function supersedes(p: Record<string, unknown> | null): string | null {
   const meta = p?.["meta"];
   if (meta && typeof meta === "object") {
@@ -36,7 +43,12 @@ export function classifyStale(a: {
   const mirrorSupersedesUs = supersedes(a.mirrorPayload) === a.embeddedHash;
   const ours = assertedDate(a.embeddedPayload);
   const theirs = assertedDate(a.mirrorPayload);
-  const mirrorIsNewer = ours !== null && theirs !== null && theirs > ours;
+  // [polish] Compare as real dates, not lexicographically: a datetime / slashed / malformed date must
+  // NOT silently skip the downgrade. When both parse, use the date; otherwise fall back to the
+  // unambiguous `supersedes` branch (never a false "not stale" from a string quirk).
+  const od = parseDate(ours);
+  const td = parseDate(theirs);
+  const mirrorIsNewer = od !== null && td !== null && td > od;
 
   if (mirrorSupersedesUs || mirrorIsNewer) {
     const out: StaleResult = { stale: true, code: "OMW-W051" };

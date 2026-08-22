@@ -54,9 +54,10 @@ if (errors.length) process.exit(1); // schema errors block; warnings/info never 
 ## Receive change-notification webhooks (§Y - a portal/CRM)
 
 The canonical receiver flow - **verify signature → validate envelope → verify payloadHash binds the
-payload** - is [`js/examples/webhook-receiver.ts`](../js/examples/webhook-receiver.ts) (CI-tested).
-Copy that file into your project and change its one import to `openom-js`; then wire it into any HTTP
-server, passing the RAW request body text (never a re-serialized object):
+payload → guard `sourceUrl` (SSRF) → dedupe by event id** - is
+[`js/examples/webhook-receiver.ts`](../js/examples/webhook-receiver.ts) (CI-tested). Copy that file
+into your project and change its one import to `openom-js`; then wire it into any HTTP server, passing
+the RAW request body text (never a re-serialized object):
 
 ```ts
 import { createServer } from "node:http";
@@ -73,10 +74,17 @@ createServer((req, res) => {
       nowUnix: Math.floor(Date.now() / 1000),
     });
     res.writeHead(r.accepted ? 200 : 400).end(r.reason);
-    if (r.accepted) ingest(r.payload);
+    if (r.accepted) ingest(r.payload); // record r.eventId to dedupe retries (pass `seen` next time)
   });
 }).listen(8099);
 ```
 
-See [`/js`](../js) for the full SDK surface and [`/spec`](../spec) for the schema, vectors, and the
-webhook-envelope contract.
+**Responding to deliveries (the retry contract):** return **2xx** = accepted (the sender stops);
+**4xx** = permanent, do NOT retry (a bad signature / malformed envelope — don't 4xx a transient outage
+or you lose the update); **5xx / timeout** = the sender retries with backoff (the reference publisher:
+3 attempts). Delivery is **at-least-once**: retries re-send the same `OpenOM-Event-Id`, so record
+processed ids and pass a `seen(eventId)` to `receiveWebhook` to drop duplicates. Treat the envelope's
+`verification.*` as the **sender's self-report** — recompute your own; never surface it as your trust.
+
+See [`/js`](../js) for the full SDK surface and [`/spec`](../spec) for the schema, vectors, the
+webhook-envelope + [subscription](../spec/webhook-subscription-0.1.schema.json) contracts.

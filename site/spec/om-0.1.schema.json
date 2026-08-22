@@ -172,7 +172,13 @@
           ],
           "description": "Reserved (#117, §11.1 layer-4). Either null/absent OR the {alg,keyId,value} envelope. 0.1 consumers MUST IGNORE a populated value (no trust weight); it is excluded from the integrity preimage ([OM-CANON-003]) so it stays additive. A value that is neither null nor the reserved shape is OMV-E003."
         },
-        "imageRights": { "type": "string" }
+        "imageRights": { "type": "string" },
+        "canonicalUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "description": "OPTIONAL ([M1]). The canonical HTTPS URL where this exact payload is mirrored as JSON-LD on the web, on the SAME registrable domain as assertedBy.website. A consumer auto-derives the origin-verification mirror from it (no per-listing config), reaching the domain-origin (✓✓) and staleness states. The mirror MUST serve the exact JCS payload bytes (its byte-hash equals payloadHash). Same-domain enforced at verify time; a cross-domain value simply does not verify."
+        }
       }
     },
     "ext": {

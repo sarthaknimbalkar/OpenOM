@@ -130,20 +130,30 @@
     async function run() {
       if (!src) { document.getElementById("vv-status").textContent = "No document specified. This is a shareable verified-view link: openom.app/v/?src=<the OM's URL>."; return; }
       try {
-        const resp = await fetch(src);
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        const bytes = new Uint8Array(await resp.arrayBuffer());
-        const r = await window.openOM.readPayloadFromBytes(bytes);
+        // Direct fetch first, else server-side read via the public worker (redirects, no CORS).
+        const r = await window.openOM.readByUrl(src);
         const present = r.state === "present" || r.state === "hash-mismatch";
-        const view = window.openOM.computeBadge({ present, hashValid: r.verification.hashValid, originVerified: false, signatureValid: r.verification.signatureValid });
-        badge.textContent = view.state === "absent" ? "This PDF carries no openOM data." : view.label + " - " + view.caption;
+        const view = window.openOM.computeBadge({ present, hashValid: r.verification.hashValid, originVerified: r.verification.originVerified === true, signatureValid: r.verification.signatureValid });
+        let extra = r.stale ? " - superseded (a newer version exists)" : (r.diverged ? " - the source domain shows different data" : "");
+        badge.textContent = view.state === "absent" ? "This PDF carries no openOM data." : view.label + " - " + view.caption + extra;
         body.replaceChildren();
         if (r.payload) body.appendChild(card(r.payload));
         const a = document.createElement("a"); a.href = src; a.textContent = "Download the OM (PDF)"; a.className = "spec-link";
         const act = document.createElement("p"); act.className = "vv-actions"; act.appendChild(a); body.appendChild(act);
+        // [M7] Emit the verified payload as machine-readable JSON-LD so a crawler/LLM lifts the deal
+        // without re-parsing the PDF, plus a rel=alternate to its canonical same-domain mirror.
+        if (r.payload && r.state === "present") {
+          const ld = document.createElement("script"); ld.type = "application/ld+json";
+          ld.textContent = JSON.stringify(r.payload); document.head.appendChild(ld);
+          const meta = r.payload.meta || {};
+          if (typeof meta.canonicalUrl === "string") {
+            const link = document.createElement("link"); link.rel = "alternate";
+            link.type = "application/ld+json"; link.href = meta.canonicalUrl; document.head.appendChild(link);
+          }
+        }
       } catch (e) {
         badge.textContent = "";
-        body.innerHTML = '<p class="vv-note">This document can\'t be read from your browser (the host may block cross-site reads). <a href="' + (src ? src.replace(/"/g,"") : "#") + '">Download the OM</a>, then drop it into the <a href="/verify/">verify tool</a> to confirm it.</p>';
+        body.innerHTML = '<p class="vv-note">This document couldn\'t be read (' + ((e && e.message) ? e.message : "unreadable") + '). <a href="' + (src ? src.replace(/"/g,"") : "#") + '">Download the OM</a>, then drop it into the <a href="/verify/">verify tool</a> to confirm it.</p>';
       }
     }
     window.addEventListener("load", run);

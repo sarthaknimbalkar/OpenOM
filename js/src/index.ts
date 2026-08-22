@@ -13,7 +13,7 @@ export { reembedWarnings } from "./reembed.js";
 export { integrityHashOfBytes, verifyIntegrity, type IntegrityResult } from "./verify.js";
 export { parsePayload, DEFAULT_MAX_PAYLOAD_BYTES, type ParseOptions } from "./parse.js";
 export { sha256Hex, hmacSha256Hex, timingSafeEqualHex } from "./crypto.js";
-export { verifyOrigin, type OriginResult, type MirrorFetch } from "./origin.js";
+export { verifyOrigin, canonicalMirrorUrl, type OriginResult, type MirrorFetch } from "./origin.js";
 export { badgeState, honestLabel, FORBIDDEN, type BadgeState } from "./badge.js";
 export {
   buildEnvelope,
@@ -47,6 +47,13 @@ export {
   ENVELOPE_SCHEMA,
   type EnvelopeValidation,
 } from "./envelope.js";
+export {
+  validateSubscription,
+  SUBSCRIPTION_SCHEMA,
+  SUBSCRIPTION_EVENTS,
+  type SubscriptionValidation,
+} from "./subscription.js";
+export { summarizeDeal, type DealSummary } from "./summary.js";
 export { decryptPdf } from "./decrypt.js";
 export { pdfHasSignature } from "./signature.js";
 export { classifyStale, type StaleResult } from "./stale.js";
