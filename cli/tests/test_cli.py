@@ -42,7 +42,7 @@ def test_embed_then_read(tmp_path: Path) -> None:
 
 
 def test_embed_batch_embeds_many_and_reports(tmp_path: Path) -> None:
-    # Two valid OMs + one item pointing at a missing PDF - the batch embeds the good ones, records the
+    # Two valid OMs + one item with a missing PDF - the batch embeds the good ones, records the
     # failure, and exits non-zero. Proves the back-catalog seeding path end to end.
     sample = json.loads((SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8"))
     (tmp_path / "data").mkdir()
@@ -102,9 +102,12 @@ def test_embed_batch_dir_mode_dry_run_and_resume(tmp_path: Path) -> None:
     # --dir pairs each PDF with a sibling .om.json; --dry-run writes nothing; a second run with
     # --skip-existing resumes without re-embedding.
     sample = (SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8")
-    src = tmp_path / "in"; src.mkdir()
-    _base_pdf(src / "deal-a.pdf"); (src / "deal-a.om.json").write_text(sample, encoding="utf-8")
-    _base_pdf(src / "deal-b.pdf"); (src / "deal-b.om.json").write_text(sample, encoding="utf-8")
+    src = tmp_path / "in"
+    src.mkdir()
+    _base_pdf(src / "deal-a.pdf")
+    (src / "deal-a.om.json").write_text(sample, encoding="utf-8")
+    _base_pdf(src / "deal-b.pdf")
+    (src / "deal-b.om.json").write_text(sample, encoding="utf-8")
     out = tmp_path / "pub"
 
     dry = runner.invoke(app, ["embed-batch", "--dir", str(src), "--out-dir", str(out),
@@ -132,11 +135,13 @@ def test_embed_batch_requires_exactly_one_source(tmp_path: Path) -> None:
 
 
 def test_buildout_manifest_bridge_end_to_end(tmp_path: Path) -> None:
-    # The connector->manifest bridge on a REAL Buildout listing shape: map -> manifest -> embed-batch.
+    # The connector->manifest bridge on the Buildout listing shape: map -> manifest -> embed-batch.
     fixture = Path(__file__).parent / "fixtures" / "buildout-listing-sample.json"
-    listings = tmp_path / "listings"; listings.mkdir()
+    listings = tmp_path / "listings"
+    listings.mkdir()
     (listings / "sample.json").write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
-    pdfs = tmp_path / "oms"; pdfs.mkdir()
+    pdfs = tmp_path / "oms"
+    pdfs.mkdir()
     _base_pdf(pdfs / "sample.pdf")  # stands in for the fetched OM PDF
     staged = tmp_path / "staged"
 
