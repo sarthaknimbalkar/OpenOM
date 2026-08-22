@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from gen_docs import docs_pages  # noqa: E402  (local sibling module)
+from gen_docs import docs_pages, widget_badge_versioned  # noqa: E402  (local sibling module)
 
 SPEC = Path(__file__).resolve().parent.parent
 ROOT = SPEC.parent
@@ -40,6 +40,10 @@ ARTIFACTS: dict[str, tuple[Path, str]] = {
     "spec/om-0.1.schema.json": (SPEC / "om-0.1.schema.json", "application/schema+json"),
     "spec/webhook-envelope-0.1.schema.json": (
         SPEC / "webhook-envelope-0.1.schema.json",
+        "application/schema+json",
+    ),
+    "spec/webhook-subscription-0.1.schema.json": (
+        SPEC / "webhook-subscription-0.1.schema.json",
         "application/schema+json",
     ),
 }
@@ -696,7 +700,11 @@ def generate() -> None:
     # spec/assets/openom-badge.js when the widget source changes.
     widget = SITE / "widget"
     widget.mkdir(parents=True, exist_ok=True)
-    (widget / "openom-badge.js").write_bytes((SPEC / "assets" / "openom-badge.js").read_bytes())
+    _badge_bytes = (SPEC / "assets" / "openom-badge.js").read_bytes()
+    (widget / "openom-badge.js").write_bytes(_badge_bytes)
+    # Immutable, content-versioned copy a portal pins with SRI (URL changes with the bytes, so a pin
+    # never breaks). Same bytes; filename from gen_docs so the emitted file == the documented URL.
+    (widget / widget_badge_versioned()).write_bytes(_badge_bytes)
     # Authoring companion (window.openOMAuthor) - powers the zero-install /embed/ page. Same
     # committed-artifact discipline as the badge above.
     (widget / "openom-author.js").write_bytes((SPEC / "assets" / "openom-author.js").read_bytes())

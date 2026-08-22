@@ -16,4 +16,5 @@
   <url><loc>https://openom.app/ns/0.1</loc></url>
   <url><loc>https://openom.app/spec/om-0.1.schema.json</loc></url>
   <url><loc>https://openom.app/spec/webhook-envelope-0.1.schema.json</loc></url>
+  <url><loc>https://openom.app/spec/webhook-subscription-0.1.schema.json</loc></url>
 </urlset>

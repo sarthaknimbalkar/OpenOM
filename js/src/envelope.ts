@@ -41,7 +41,12 @@ export const ENVELOPE_SCHEMA = {
       format: "date-time",
       description: "RFC 3339 UTC with a Z designator",
     },
-    sourceUrl: { type: "string", minLength: 1 },
+    sourceUrl: {
+      type: "string",
+      minLength: 1,
+      description:
+        "[M6] Attacker-controlled data even on a valid signature (the signer only proves it holds the shared secret). MUST be https; a receiver MUST re-check it with assertSafeUrl before fetching (SSRF), never fetch it blindly.",
+    },
     specVersion: { const: "0.1" },
     payloadHash: {
       type: "string",
@@ -53,6 +58,8 @@ export const ENVELOPE_SCHEMA = {
       type: "object",
       required: ["hashValid", "originVerified", "signatureValid"],
       additionalProperties: false,
+      description:
+        "[M6] The SENDER's self-reported results. A receiver MUST recompute its own (signature + payloadHash, and origin from sourceUrl if it wants an origin claim) and MUST NOT surface these values as its own trust state - doing so would let a sender self-assert 'origin verified'.",
       properties: {
         hashValid: { type: ["boolean", "null"] },
         originVerified: { type: ["boolean", "null"] },

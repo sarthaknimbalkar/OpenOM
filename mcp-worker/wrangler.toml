@@ -11,3 +11,11 @@ command = "node scripts/gen-validator.mjs"
 
 [observability]
 enabled = true
+
+# Per-client rate limit for the open, unauthenticated public endpoint (no KV needed - CF's native
+# Rate Limiting binding). 120 requests / 60s per client IP; over → 429 + Retry-After. Enforced in
+# prod where the binding is provisioned; absent in local tests (the code guards on its presence).
+[[ratelimit]]
+binding = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 120, period = 60 }

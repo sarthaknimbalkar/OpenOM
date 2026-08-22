@@ -17,12 +17,32 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "envelopeVersion": { "const": "1" },
-    "event": { "type": "string", "minLength": 1, "description": "e.g. om.payload.published, om.test.ping" },
-    "id": { "type": "string", "minLength": 1, "description": "stable event id (== OpenOM-Event-Id, stable across retries)" },
-    "publishedAt": { "type": "string", "format": "date-time", "description": "RFC 3339 UTC with a Z designator" },
-    "sourceUrl": { "type": "string", "minLength": 1 },
-    "specVersion": { "const": "0.1" },
+    "envelopeVersion": {
+      "const": "1"
+    },
+    "event": {
+      "type": "string",
+      "minLength": 1,
+      "description": "e.g. om.payload.published, om.test.ping"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "stable event id (== OpenOM-Event-Id, stable across retries)"
+    },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC with a Z designator"
+    },
+    "sourceUrl": {
+      "type": "string",
+      "minLength": 1,
+      "description": "[M6] Attacker-controlled data even on a valid signature (the signer only proves it holds the shared secret). MUST be https; a receiver MUST re-check it with assertSafeUrl before fetching (SSRF), never fetch it blindly."
+    },
+    "specVersion": {
+      "const": "0.1"
+    },
     "payloadHash": {
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$",
@@ -30,14 +50,36 @@
     },
     "verification": {
       "type": "object",
-      "required": ["hashValid", "originVerified", "signatureValid"],
+      "required": [
+        "hashValid",
+        "originVerified",
+        "signatureValid"
+      ],
       "additionalProperties": false,
+      "description": "[M6] The SENDER's self-reported results. A receiver MUST recompute its own (signature + payloadHash, and origin from sourceUrl if it wants an origin claim) and MUST NOT surface these values as its own trust state - doing so would let a sender self-assert 'origin verified'.",
       "properties": {
-        "hashValid": { "type": ["boolean", "null"] },
-        "originVerified": { "type": ["boolean", "null"] },
-        "signatureValid": { "type": ["boolean", "null"] }
+        "hashValid": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "originVerified": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "signatureValid": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
       }
     },
-    "payload": { "type": "object" }
+    "payload": {
+      "type": "object"
+    }
   }
 }

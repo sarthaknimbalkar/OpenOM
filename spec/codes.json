@@ -117,6 +117,14 @@
     "OMW-W061": {
       "requirement": "OM-DD-002",
       "severity": "warning"
+    },
+    "OMW-W051": {
+      "requirement": "OM-TRUST-009",
+      "severity": "warning"
+    },
+    "OMW-W052": {
+      "requirement": "OM-TRUST-010",
+      "severity": "warning"
     }
   }
 }

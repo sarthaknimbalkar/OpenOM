@@ -31,7 +31,9 @@ export function badgeState(v: {
 export function honestLabel(state: BadgeState): { label: string; caption: string } {
   switch (state) {
     case "absent":
-      return { label: "No openOM data", caption: "No embedded payload found - vision fallback." };
+      // [polish] neutral for the generic consumer - "vision fallback" is an author-side concept a
+      // portal/CRM/badge never runs; don't leak it into the shared honest label.
+      return { label: "No openOM data", caption: "No embedded openOM data in this PDF." };
     case "hash-mismatch":
       return {
         label: "Altered payload",
