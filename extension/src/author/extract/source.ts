@@ -20,6 +20,7 @@
 import type {
   Extractor,
   ExtractionResult,
+  ExtractorReadiness,
   FieldExtraction,
   PageText,
 } from "./types.js";
@@ -27,6 +28,8 @@ import type {
 /** What a draft source is given. Inference extractors use `pages`; connectors ignore it. */
 export interface DraftContext {
   pages: PageText[];
+  /** Surfaced to the UI while an on-device model downloads before first use ([M5]). */
+  onDownloadProgress?: (fraction: number) => void;
 }
 
 /** A source of a DRAFT payload for the review gate. `deterministic` connectors carry no inference. */
@@ -35,6 +38,9 @@ export interface DraftSource {
   readonly label: string;
   readonly deterministic: boolean;
   available(): Promise<boolean>;
+  /** Finer than `available()`: "needs-download" lets the UI warn before a large model download ([M5]).
+   * Deterministic connectors are always "ready". */
+  readiness(): Promise<ExtractorReadiness>;
   draft(ctx: DraftContext): Promise<ExtractionResult>;
 }
 
@@ -48,7 +54,11 @@ export function extractorSource(
     label,
     deterministic: false,
     available: () => extractor.available(),
-    draft: (ctx) => extractor.extract(ctx.pages),
+    readiness: () =>
+      extractor.readiness
+        ? extractor.readiness()
+        : extractor.available().then((a) => (a ? "ready" : "unavailable")),
+    draft: (ctx) => extractor.extract(ctx.pages, { onDownloadProgress: ctx.onDownloadProgress }),
   };
 }
 
@@ -76,6 +86,7 @@ export function connectorSource(
     label: connector.label,
     deterministic: true,
     available: () => connector.available(),
+    readiness: async () => ((await connector.available()) ? "ready" : "unavailable"),
     draft: async () => partialPayloadToFields(await connector.fetch(ref)),
   };
 }

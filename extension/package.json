@@ -13,7 +13,8 @@
     "pretest:consumer": "node build.mjs",
     "test:consumer": "playwright test",
     "assert-no-inference": "node scripts/assert-no-inference.mjs dist",
-    "test:live": "playwright test -c playwright.live.config.ts"
+    "test:live": "playwright test -c playwright.live.config.ts",
+    "test:site": "playwright test -c playwright.site.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

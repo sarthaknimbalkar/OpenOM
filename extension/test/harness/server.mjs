@@ -43,6 +43,7 @@ const files = {
   "/author/embedded.pdf": ["application/pdf", "author/embedded.pdf"],
   "/author/text.pdf": ["application/pdf", "author/text.pdf"],
   "/author/encrypted.pdf": ["application/pdf", "author/encrypted.pdf"],
+  "/author/signed.pdf": ["application/pdf", "author/signed.pdf"],
 };
 
 let lastHook = null;

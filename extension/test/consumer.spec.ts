@@ -55,6 +55,7 @@ test("rehosted to another domain (no mirror) degrades gracefully to integrity-ok
 
 test("publish test-fire → receiver validates the HMAC signature", async ({ context, extensionId }) => {
   const page = await openPopup(context, extensionId, `${BROKER}/valid/deal.pdf`);
+  await page.locator("details.publish > summary").click(); // [M3] webhook is behind an advanced disclosure
   await page.fill("input.wh-target", `${BROKER}/hook`);
   await page.fill("input.wh-secret", "test-secret");
   await page.click('[data-action="test-fire"]');

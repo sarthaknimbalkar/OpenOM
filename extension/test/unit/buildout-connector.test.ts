@@ -28,6 +28,7 @@ const LISTING: BuildoutListing = {
     "research_property_attributes.number_of_units": "1",
     "research_property_attributes.lot_size": "1.25",
     "research_property_attributes.lot_size_units": "Acres",
+    "research_property_attributes.property_type": "Retail",
   },
   custom_fields: {
     Tenant: "Example Retail Stores, LLC",
@@ -56,6 +57,14 @@ describe("buildoutListingToPayload (real nested shape)", () => {
     expect(p.deal.askingPrice).toBe(1850000);
     expect(p.deal.capRate).toBe(0.0625); // cap_rate_derived 6.25 -> 0.0625 (matches NOI/price)
     expect(p.deal.noi).toBe(115625);
+  });
+
+  test("[M4] maps propertyType and derives pricePerUnit/pricePerSF/termMonths (parity w/ Python)", () => {
+    const p = buildoutListingToPayload(LISTING) as Record<string, any>;
+    expect(p.property.propertyType).toBe("retail");
+    expect(p.deal.pricePerUnit).toBe(1850000); // /1 unit
+    expect(p.deal.pricePerSF).toBe(Math.round((1850000 / 9100) * 100) / 100);
+    expect(p.lease.termMonths).toBe(179); // 2019-05-01 -> 2034-04-30
   });
 
   test("maps lease terms: tenant, NNN, ISO dates, guarantor", () => {

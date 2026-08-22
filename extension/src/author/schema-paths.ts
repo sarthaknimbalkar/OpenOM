@@ -1,14 +1,15 @@
 // Derive the broker-fillable leaf paths from the JSON Schema ([#92]) so the review panel's "omitted
 // (confirm or supply)" section reflects the WHOLE field map, not a hardcoded handful. Walks the
-// human-relevant sections (property / deal / lease + assertedBy), excluding the gate-set noi fields.
-// Pure; the schema is passed in.
+// human-relevant sections (property / deal / lease), excluding the gate-set noi fields.
+// [M7] assertedBy is NOT walked: it is the broker profile, stamped at Assert - listing it here made
+// the panel show "you omitted your own name" on every draft. Pure; the schema is passed in.
 
 interface SchemaNode {
   type?: string;
   properties?: Record<string, SchemaNode>;
 }
 
-const SECTIONS = ["assertedBy", "property", "deal", "lease"] as const;
+const SECTIONS = ["property", "deal", "lease"] as const;
 const GATE_SET = new Set(["/deal/noiType", "/deal/noiAsOfDate"]); // confirmed by the human, not "omitted"
 
 export function schemaExpectedPaths(schema: { properties?: Record<string, unknown> }): string[] {
