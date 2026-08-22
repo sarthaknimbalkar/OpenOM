@@ -48,6 +48,8 @@ _REQUIREMENT = {
     "OMW-W040": "OM-CONS-040",
     "OMW-W041": "OM-CONS-041",
     "OMW-W050": "OM-CONS-050",
+    "OMW-W051": "OM-TRUST-009",  # stale/superseded (mirror carries a newer assertion)
+    "OMW-W052": "OM-TRUST-010",  # diverged (same-domain mirror shows different, non-supersede content)
     "OMW-W060": "OM-CONS-060",
     "OMW-W061": "OM-DD-002",
     "OMI-I001": "OM-DD-002",

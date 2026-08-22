@@ -89,6 +89,7 @@
     "keyId": "om:keyId",
     "value": "om:value",
     "imageRights": "om:imageRights",
+    "canonicalUrl": { "@id": "om:canonicalUrl", "@type": "@id" },
     "ext": "om:ext"
   }
 }
