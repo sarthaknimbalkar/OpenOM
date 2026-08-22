@@ -7,10 +7,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const built = readFileSync(resolve(here, "../widget/dist/openom-badge.js"), "utf8").replace(
-  /\n\/\/# sourceMappingURL=.*\s*$/,
-  "\n",
-);
-const dest = resolve(here, "../../spec/assets/openom-badge.js");
-writeFileSync(dest, built, "utf8");
-console.log(`refreshed ${dest} (${built.length} bytes)`);
+for (const name of ["openom-badge.js", "openom-author.js"]) {
+  const built = readFileSync(resolve(here, "../widget/dist", name), "utf8").replace(
+    /\n\/\/# sourceMappingURL=.*\s*$/,
+    "\n",
+  );
+  const dest = resolve(here, "../../spec/assets", name);
+  writeFileSync(dest, built, "utf8");
+  console.log(`refreshed ${dest} (${built.length} bytes)`);
+}

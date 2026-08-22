@@ -8,17 +8,25 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-await build({
-  entryPoints: [resolve(here, "openom-badge.ts")],
-  outfile: resolve(here, "dist/openom-badge.js"),
-  bundle: true,
-  format: "iife",
-  target: "es2020",
-  platform: "browser",
-  minify: true,
-  sourcemap: true,
-  legalComments: "none",
-  logLevel: "info",
-});
+// Two self-contained IIFE bundles, both deterministic + inference-free (assert-no-inference gates
+// widget/dist): openom-badge.js (read/verify - the badge + /verify tool) and openom-author.js (the
+// hosted client-side authoring companion - embed/validate - the zero-install broker embed path #B1).
+const ENTRIES = ["openom-badge.ts", "openom-author.ts"];
 
-console.log("wrote widget/dist/openom-badge.js");
+for (const entry of ENTRIES) {
+  const out = entry.replace(/\.ts$/, ".js");
+  await build({
+    entryPoints: [resolve(here, entry)],
+    outfile: resolve(here, "dist", out),
+    bundle: true,
+    format: "iife",
+    target: "es2020",
+    platform: "browser",
+    minify: true,
+    sourcemap: true,
+    legalComments: "none",
+    loader: { ".json": "json" },
+    logLevel: "info",
+  });
+  console.log(`wrote widget/dist/${out}`);
+}

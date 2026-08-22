@@ -5,8 +5,14 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["widget/openom-badge.ts", "widget/badge-core.ts", "src/**/*.ts"],
+  "include": [
+    "widget/openom-badge.ts",
+    "widget/openom-author.ts",
+    "widget/badge-core.ts",
+    "src/**/*.ts"
+  ],
   "exclude": []
 }
