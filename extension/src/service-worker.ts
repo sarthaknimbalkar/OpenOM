@@ -36,7 +36,14 @@ export interface DetectResult {
     signatureValid: null;
   };
   findings: string[];
+  /** [M3] full residual findings (code + human message + severity + path), not just bare codes, so a
+   * consumer/portal shows "Cap rate vs NOI/price off (OMW-W020)" instead of an opaque token. */
+  notices?: { code: string; message: string; severity: string; path: string }[];
   stale?: "OMW-W051";
+  /** [M4] why state is "absent" when it's really an encrypted OM (the browser can't read it, but the
+   * CLI/Python path can) - so programmatic ingest can route it deterministically instead of parsing a
+   * caption. Absent on a genuinely payload-free PDF. */
+  reason?: "encrypted";
 }
 
 export interface DetectDeps {
@@ -69,14 +76,15 @@ export async function handleDetect(
   const read = bytes ? await readFn(bytes) : null;
 
   let state: BadgeState;
-  const findings: string[] = [];
+  // [debt#3] `notices` is the single source of truth for validation findings; `findings` (the bare
+  // code list) is DERIVED from it at return, so the two can't drift.
+  const notices: DetectResult["notices"] = [];
   let stale: "OMW-W051" | undefined;
   let payload: Record<string, unknown> | null = null;
   const encrypted = read?.state === "encrypted"; // #72 - distinct from a plain "no payload" PDF
 
   if (!read || read.state === "absent" || read.state === "encrypted") {
     state = "absent";
-    if (encrypted) findings.push("encrypted");
   } else if (
     read.state === "hash-mismatch" ||
     read.verification.hashValid !== true
@@ -88,7 +96,10 @@ export async function handleDetect(
     const report = validatePayload(payload, schema as Record<string, unknown>, {
       validate: precompiledValidate,
     });
-    findings.push(...report.warnings.map((w) => w.code));
+    // [M3] carry the full finding (message/severity/path), not only the code.
+    for (const w of [...report.warnings, ...report.info]) {
+      notices.push({ code: w.code, message: w.message, severity: w.severity, path: w.path });
+    }
 
     const mirrorUrl = mirrorUrlFor(url);
     const mirrorRes = await mirrorFetch(mirrorUrl);
@@ -115,8 +126,7 @@ export async function handleDetect(
           mirrorPayload,
         });
         if (s.stale && s.code) {
-          stale = s.code;
-          findings.push(s.code); // surfaced; badge NOT downgraded below integrity-ok
+          stale = s.code; // surfaced (also in derived findings); badge NOT downgraded below integrity-ok
         }
       } catch {
         /* malformed mirror → treat as a plain origin miss, no stale claim */
@@ -150,7 +160,14 @@ export async function handleDetect(
       originVerified: state === "origin-verified",
       signatureValid: null,
     },
-    findings,
+    // [debt#3] derived from `notices` (+ the encrypted/stale signals) - one source, no drift.
+    findings: [
+      ...(encrypted ? ["encrypted"] : []),
+      ...notices.filter((n) => n.severity !== "info").map((n) => n.code),
+      ...(stale ? [stale] : []),
+    ],
+    notices,
+    ...(encrypted ? { reason: "encrypted" as const } : {}),
     ...(stale ? { stale } : {}),
   };
 }

@@ -122,7 +122,7 @@
       const view = window.openOM.computeBadge({
         present,
         hashValid: r.verification.hashValid,
-        originVerified: false,
+        originVerified: r.verification.originVerified === true,
         signatureValid: r.verification.signatureValid,
       });
       badge.replaceChildren();
@@ -136,9 +136,23 @@
         pill.textContent = c[2] + " " + view.label;
         badge.appendChild(pill);
         badge.appendChild(document.createTextNode(" " + view.caption));
+        if (r.stale) badge.appendChild(document.createTextNode(" · superseded — a newer version exists"));
+        if (r.diverged) badge.appendChild(document.createTextNode(" · the source domain shows different data"));
       }
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
       else { out.hidden = true; }
+      // [M7] emit the verified payload as machine-readable JSON-LD (+ rel=alternate to its mirror), so
+      // a crawler/agent lifts it without re-parsing the PDF. Replaces any prior emitted block.
+      document.querySelectorAll("script.om-ld,link.om-ld").forEach((n) => n.remove());
+      if (r.payload && r.state === "present") {
+        const ld = document.createElement("script"); ld.type = "application/ld+json"; ld.className = "om-ld";
+        ld.textContent = JSON.stringify(r.payload); document.head.appendChild(ld);
+        const cu = (r.payload.meta || {}).canonicalUrl;
+        if (typeof cu === "string") {
+          const link = document.createElement("link"); link.rel = "alternate";
+          link.type = "application/ld+json"; link.href = cu; link.className = "om-ld"; document.head.appendChild(link);
+        }
+      }
     }
     f.addEventListener("change", async () => {
       const file = f.files && f.files[0];
@@ -149,19 +163,14 @@
     document.getElementById("ub").addEventListener("click", async () => {
       const url = (document.getElementById("u").value || "").trim();
       if (!url || !window.openOM) return;
-      badge.textContent = "Fetching " + url + " …";
+      badge.textContent = "Checking " + url + " …";
       out.hidden = true;
       try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        const bytes = new Uint8Array(await resp.arrayBuffer());
-        showResult(await window.openOM.readPayloadFromBytes(bytes));
+        showResult(await window.openOM.readByUrl(url));
       } catch (e) {
-        // Cross-origin hosts that don't send CORS headers block a browser fetch. That's a browser
-        // limit, not a verdict on the file - fall back honestly, never a scary state.
         badge.textContent =
-          "Couldn't fetch that URL from the browser (the host may block cross-site reads, or the link is wrong). " +
-          "Download the PDF and drop it in above, or open the page with the openOM extension installed.";
+          "Couldn't read that URL (" + (e && e.message ? e.message : "unreadable") + "). " +
+          "Check the link, or download the PDF and drop it in above.";
       }
     });
   </script>

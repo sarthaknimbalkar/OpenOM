@@ -21,6 +21,19 @@ export interface OriginResult {
   mirrorHash?: string;
 }
 
+/** The payload's declared canonical same-domain JSON-LD mirror URL ([M1] meta.canonicalUrl), else
+ * undefined. Single source for the badge + the worker so the discovery rule can't diverge. */
+export function canonicalMirrorUrl(
+  payload: Record<string, unknown> | null | undefined,
+): string | undefined {
+  const meta = payload?.["meta"];
+  if (meta && typeof meta === "object") {
+    const u = (meta as Record<string, unknown>)["canonicalUrl"];
+    if (typeof u === "string" && u.startsWith("https://")) return u;
+  }
+  return undefined;
+}
+
 export type MirrorFetch = (url: string) => Promise<{ https: boolean; body: Uint8Array } | null>;
 
 export async function verifyOrigin(a: {

@@ -75,6 +75,7 @@ Payload path → where it typically appears in an OM → notes.
 | `meta.supersedes` | - | `null` on first embed; prior payload hash on a reprice re-embed. |
 | `meta.sourceDocHash` | - | Optional; hash of the source doc if tracked. |
 | `meta.imageRights` | Disclaimer / photo credits | Optional rights statement for the OM's imagery. |
+| `meta.canonicalUrl` | - | Optional; the HTTPS URL (same registrable domain as `assertedBy.website`) where this exact payload is mirrored as JSON-LD, so consumers reach domain-origin (✓✓) + staleness. Set by the author/host, NOT extracted from the OM. |
 | `ext` | - | Optional (#115). Vendor/non-standard fields ONLY, namespaced by vendor (`ext.<vendor>.…`). Never extracted into core paths; preserved untouched. |
 
 ## Vocabularies & units (the traps)
