@@ -93,7 +93,7 @@
       "if": { "required": ["noi"] },
       "then": {
         "required": ["noiType", "noiAsOfDate"],
-        "description": "noiType + noiAsOfDate REQUIRED whenever noi is present ([OM-DD] / OMV-E002)."
+        "description": "noiType + noiAsOfDate REQUIRED whenever noi is present ([OM-DD-003] / OMV-E002)."
       }
     },
     "lease": {
