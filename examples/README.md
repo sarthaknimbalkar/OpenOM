@@ -3,6 +3,18 @@
 Runnable, copy-paste snippets for the three integration audiences. The library APIs are stable and
 byte-parity across the Python (`openom-core`) and TypeScript (`openom-js`) cores.
 
+## Try it in 60 seconds
+
+- **In your browser** - drop a PDF into the verifier at **<https://openom.app/verify/>** (or download
+  the [sample OM](https://openom.app/sample/openom-sample.pdf) first). Nothing leaves your machine.
+- **End to end, locally** - `pip install openom-core && python examples/quickstart.py`
+  ([quickstart.py](quickstart.py)) embeds → reads → validates a payload and prints the result.
+- **Ground an AI agent** - point any MCP client at the free endpoint with
+  [mcp-config.json](mcp-config.json) (`https://mcp.openom.app/mcp`), then ask it to `om_read` an OM.
+- **A trust badge on a page** - [badge.html](badge.html) is a drop-in `<script>` + file input that
+  reads and labels a PDF entirely client-side.
+- **Seed a whole back-catalog** - `om embed-batch --dir ./catalog ...` (see [`/cli`](../cli)).
+
 ## Embed at the source (Node - a producer/authoring tool)
 
 ```ts

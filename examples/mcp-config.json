@@ -1,0 +1,8 @@
+{
+  "$comment": "Point any MCP client (Claude Desktop, Cursor, ...) at the free public openOM grounding endpoint. To self-host the full six-tool surface instead: pip install openom-mcp, then use { \"command\": \"om-mcp\" }.",
+  "mcpServers": {
+    "openom": {
+      "url": "https://mcp.openom.app/mcp"
+    }
+  }
+}

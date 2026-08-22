@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>openOM badge example</title>
+<!-- Drop-in trust badge. Pick a PDF; it is read entirely client-side (bytes never leave the page). -->
+<h1>openOM badge</h1>
+<input id="f" type="file" accept="application/pdf,.pdf" />
+<div id="badge" style="margin-top:1rem;font:16px system-ui"></div>
+<script src="https://openom.app/widget/openom-badge.js" defer></script>
+<script>
+  document.getElementById("f").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file || !window.openOM) return;
+    const r = await window.openOM.readPayloadFromBytes(new Uint8Array(await file.arrayBuffer()));
+    const view = window.openOM.computeBadge({
+      present: r.state === "present" || r.state === "hash-mismatch",
+      hashValid: r.verification.hashValid,
+      originVerified: false,
+      signatureValid: r.verification.signatureValid,
+    });
+    document.getElementById("badge").textContent =
+      view.state === "absent" ? "No openOM data in this PDF." : view.label + " - " + view.caption;
+  });
+</script>
