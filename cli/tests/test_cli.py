@@ -69,7 +69,7 @@ def test_embed_batch_embeds_many_and_reports(tmp_path: Path) -> None:
     )
     assert r.exit_code == 1, r.output  # one item failed → non-zero
     report = json.loads(r.output[r.output.index("{"):])
-    assert report["total"] == 3 and report["embedded"] == 2
+    assert report["total"] == 3 and report["counts"].get("embedded") == 2
     statuses = [x["status"] for x in report["results"]]
     assert statuses == ["embedded", "embedded", "error"]
     # the embedded outputs round-trip
@@ -92,10 +92,43 @@ def test_embed_batch_skips_schema_invalid(tmp_path: Path) -> None:
     )
     assert r.exit_code == 1, r.output
     report = json.loads(r.output[r.output.index("{"):])
-    assert report["embedded"] == 0
+    assert report["counts"].get("embedded", 0) == 0
     assert report["results"][0]["status"] == "skipped"
     assert report["results"][0]["errors"]  # schema errors reported
     assert not (tmp_path / "o" / "a.pdf").exists()  # nothing written for a skipped item
+
+
+def test_embed_batch_dir_mode_dry_run_and_resume(tmp_path: Path) -> None:
+    # --dir pairs each PDF with a sibling .om.json; --dry-run writes nothing; a second run with
+    # --skip-existing resumes without re-embedding.
+    sample = (SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8")
+    src = tmp_path / "in"; src.mkdir()
+    _base_pdf(src / "deal-a.pdf"); (src / "deal-a.om.json").write_text(sample, encoding="utf-8")
+    _base_pdf(src / "deal-b.pdf"); (src / "deal-b.om.json").write_text(sample, encoding="utf-8")
+    out = tmp_path / "pub"
+
+    dry = runner.invoke(app, ["embed-batch", "--dir", str(src), "--out-dir", str(out),
+                              "--asserted-date", "2026-08-15", "--dry-run"])
+    assert dry.exit_code == 0, dry.output
+    drep = json.loads(dry.output[dry.output.index("{"):])
+    assert drep["dryRun"] is True and drep["counts"].get("would-embed") == 2
+    assert not out.exists()  # dry-run wrote nothing
+
+    real = runner.invoke(app, ["embed-batch", "--dir", str(src), "--out-dir", str(out),
+                               "--asserted-date", "2026-08-15"])
+    assert real.exit_code == 0, real.output
+    assert (out / "deal-a.pdf").exists() and (out / "deal-b.pdf").exists()
+
+    resume = runner.invoke(app, ["embed-batch", "--dir", str(src), "--out-dir", str(out),
+                                 "--asserted-date", "2026-08-15", "--skip-existing"])
+    assert resume.exit_code == 0, resume.output
+    rrep = json.loads(resume.output[resume.output.index("{"):])
+    assert rrep["counts"].get("skipped-existing") == 2  # resumed, nothing re-embedded
+
+
+def test_embed_batch_requires_exactly_one_source(tmp_path: Path) -> None:
+    r = runner.invoke(app, ["embed-batch", "--asserted-date", "2026-08-15"])
+    assert r.exit_code == 2  # neither --manifest nor --dir
 
 
 def test_embed_warns_on_backwards_asserted_date(tmp_path: Path) -> None:

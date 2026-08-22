@@ -17,6 +17,7 @@ import json
 import sys
 import time
 from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 from pathlib import Path
@@ -161,14 +162,58 @@ def embed(
         typer.echo(f"embedded om.json -> {'<stdout>' if str(out) == '-' else out}", err=True)
 
 
+def _embed_one(task: dict[str, Any]) -> dict[str, Any]:
+    """Process one batch item. Top-level + picklable so it runs in a worker process (--jobs). Pure
+    given resolved paths; re-imports the core so ProcessPoolExecutor spawn works everywhere."""
+    from openom_core.embed import embed as _e
+    from openom_core.embed import reembed_warnings as _rw
+    from openom_core.validate import validate as _v
+
+    rec: dict[str, Any] = {"index": task["index"], "pdf": task["pdf"], "out": task["out"]}
+    try:
+        payload = json.loads(Path(task["payload"]).read_text(encoding="utf-8"))
+        date = task["date"]
+        report = _v(payload, schema=task["schema"], as_of=date)
+        rec["warnings"] = [f.code for f in report.warnings]
+        if not report.ok:  # schema errors block this item (Rule 6)
+            rec["status"] = "skipped"
+            rec["errors"] = [f"{f.code}: {f.path}" for f in report.errors]
+            return rec
+        src = Path(task["pdf"]).read_bytes()
+        # supersedes / backwards-date notes surfaced per item
+        rec["reembed"] = [w.code for w in _rw(src, payload, asserted_date=date)]
+        out = Path(task["out"])
+        if out.exists() and task["skip_existing"]:
+            rec["status"] = "skipped-existing"
+            return rec
+        if out.exists() and not task["force"]:
+            rec["status"] = "error"
+            rec["errors"] = ["output exists (use --force, or --skip-existing to resume)"]
+            return rec
+        if task["dry_run"]:
+            rec["status"] = "would-embed"
+            return rec
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(_e(src, payload, asserted_date=date))
+        rec["status"] = "embedded"
+    except Exception as e:  # one bad item never aborts the batch  # noqa: BLE001
+        rec["status"] = "error"
+        rec.setdefault("errors", []).append(str(e))
+    return rec
+
+
 @app.command(name="embed-batch")
 @_guard
-def embed_batch(
+def embed_batch(  # noqa: C901 - a linear orchestrator (resolve -> dispatch -> report), read top-down
     manifest: Annotated[
-        Path, typer.Option(help="JSON array of {pdf, payload, out?, assertedDate?} items")
-    ],
+        Path | None, typer.Option(help="JSON array of {pdf, payload, out?, assertedDate?} items")
+    ] = None,
+    dir: Annotated[  # noqa: A002 - the user-facing flag name
+        Path | None,
+        typer.Option(help="Directory of *.pdf, each paired with a sibling *.om.json (or *.json)"),
+    ] = None,
     out_dir: Annotated[
-        Path, typer.Option(help="Default output dir for items that omit 'out'")
+        Path, typer.Option(help="Output dir for items without an explicit 'out'")
     ] = Path("openom-out"),
     asserted_date: Annotated[
         str | None, typer.Option(help="Default ISO 8601 assertion date for items without one")
@@ -176,27 +221,50 @@ def embed_batch(
     schema: Annotated[
         Path | None, typer.Option(help="JSON Schema; schema-invalid payloads are skipped")
     ] = None,
+    dry_run: Annotated[bool, typer.Option(help="Validate + report only; write nothing")] = False,
+    skip_existing: Annotated[
+        bool, typer.Option(help="Skip items whose output already exists (resume a large run)")
+    ] = False,
+    force: Annotated[bool, typer.Option(help="Overwrite existing outputs")] = False,
+    jobs: Annotated[int, typer.Option(help="Parallel workers (processes) for large catalogs")] = 1,
+    report: Annotated[Path | None, typer.Option(help="Write the JSON summary to this file")] = None,
 ) -> None:
     """Embed openOM payloads into many OMs in one run - back-catalog seeding (adoption).
 
-    The manifest is a JSON array; each item maps a source PDF to its payload JSON. Paths resolve
-    relative to the manifest file. Deterministic, non-destructive, idempotent (re-embed replaces and
-    records ``supersedes``). Schema errors skip that item; consistency warnings never block.
-    Emits a JSON summary and exits non-zero if any item failed or was skipped.
+    Source the batch from a --manifest (JSON array; paths relative to the manifest) OR a --dir of
+    PDFs each with a sibling <name>.om.json payload. Deterministic, non-destructive, idempotent
+    (re-embed replaces + records ``supersedes``; those notes are surfaced per item). Schema errors
+    skip that item (Rule 6); consistency warnings never block. --dry-run previews, --skip-existing
+    resumes, --jobs parallelizes. Emits a JSON summary (counts + per-item results); exits non-zero
+    if any item errored or was schema-skipped.
     """
-    items = json.loads(_read_bytes(manifest).decode("utf-8"))
-    if not isinstance(items, list):
-        typer.echo("error: OM-IO manifest must be a JSON array", err=True)
-        raise typer.Exit(3)
-    base = manifest.resolve().parent
+    if bool(manifest) == bool(dir):
+        typer.echo("error: pass exactly one of --manifest or --dir", err=True)
+        raise typer.Exit(2)
+    if dir:
+        base = dir.resolve()
+        raw_items: list[dict[str, Any]] = []
+        for p in sorted(base.glob("*.pdf")):
+            names = (f"{p.stem}.om.json", f"{p.stem}.json")
+            sidecar = next((s for s in names if (base / s).exists()), None)
+            raw_items.append({"pdf": p.name, "payload": sidecar} if sidecar else {"pdf": p.name})
+    else:
+        assert manifest is not None
+        loaded = json.loads(_read_bytes(manifest).decode("utf-8"))
+        if not isinstance(loaded, list):
+            typer.echo("error: OM-IO manifest must be a JSON array", err=True)
+            raise typer.Exit(3)
+        raw_items = loaded
+        base = manifest.resolve().parent
+
     schema_obj = _load_json(schema) if schema is not None else None
-    results: list[dict[str, Any]] = []
-    embedded = 0
-    for i, item in enumerate(items):
-        rec: dict[str, Any] = {"index": i}
+    tasks: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []  # normalization failures, kept out of the worker pool
+    seen_out: dict[str, int] = {}
+    for i, item in enumerate(raw_items):
         try:
-            if not isinstance(item, dict) or "pdf" not in item or "payload" not in item:
-                raise ValueError("item needs 'pdf' and 'payload'")
+            if not isinstance(item, dict) or not item.get("pdf") or not item.get("payload"):
+                raise ValueError("item needs 'pdf' and a resolvable 'payload' (sidecar missing?)")
             pdf_path = (base / str(item["pdf"])).resolve()
             date = str(item.get("assertedDate") or asserted_date or "")
             if not date:
@@ -206,29 +274,41 @@ def embed_batch(
                 if item.get("out")
                 else (out_dir.resolve() / f"{pdf_path.stem}.pdf")
             )
-            rec |= {"pdf": str(pdf_path), "out": str(out_path)}
             if out_path == pdf_path:
                 raise ValueError("output would overwrite the input PDF")
-            payload = _load_json(base / str(item["payload"]))
-            report = _validate(payload, schema=schema_obj, as_of=date)
-            rec["warnings"] = [f.code for f in report.warnings]
-            if not report.ok:
-                rec["status"] = "skipped"
-                rec["errors"] = [f"{f.code}: {f.path}" for f in report.errors]
-                results.append(rec)
-                continue
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            _write_bytes(out_path, _embed(_read_bytes(pdf_path), payload, asserted_date=date))
-            rec["status"] = "embedded"
-            embedded += 1
-        except Exception as e:  # one bad item must never abort the batch  # noqa: BLE001
-            rec["status"] = "error"
-            rec.setdefault("errors", []).append(str(e))
-        results.append(rec)
+            if str(out_path) in seen_out:
+                raise ValueError(f"two items target the same output ({out_path})")
+            seen_out[str(out_path)] = i
+            tasks.append({
+                "index": i, "pdf": str(pdf_path),
+                "payload": str((base / str(item["payload"])).resolve()),
+                "out": str(out_path), "date": date, "schema": schema_obj,
+                "dry_run": dry_run, "skip_existing": skip_existing, "force": force,
+            })
+        except Exception as e:  # noqa: BLE001
+            errors.append({"index": i, "pdf": str(item.get("pdf", "?")),
+                           "status": "error", "errors": [str(e)]})
+
+    if jobs > 1 and len(tasks) > 1 and not dry_run:
+        with ProcessPoolExecutor(max_workers=jobs) as ex:
+            done = list(ex.map(_embed_one, tasks))
+    else:
+        done = [_embed_one(t) for t in tasks]
+
+    results = sorted([*errors, *done], key=lambda r: r["index"])
+    counts: dict[str, int] = {}
+    for r in results:
+        counts[r["status"]] = counts.get(r["status"], 0) + 1
+    summary = {"total": len(results), "counts": counts, "dryRun": dry_run, "results": results}
+    if report is not None:
+        report.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     if not _output.quiet:
-        typer.echo(f"embed-batch: {embedded}/{len(items)} embedded", err=True)
-    _emit({"total": len(items), "embedded": embedded, "results": results})
-    raise typer.Exit(code=0 if embedded == len(items) else 1)
+        ok = counts.get("embedded", 0) + counts.get("would-embed", 0)
+        tally = " ".join(f"{k}={v}" for k, v in counts.items())
+        typer.echo(f"embed-batch: {ok}/{len(results)} ok - {tally}", err=True)
+    _emit(summary)
+    failed = counts.get("error", 0) + counts.get("skipped", 0)
+    raise typer.Exit(code=1 if failed else 0)
 
 
 @app.command()
