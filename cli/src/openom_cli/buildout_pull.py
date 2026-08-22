@@ -161,8 +161,10 @@ def parse_rpc(content_type: str, body: str) -> dict[str, Any]:
         ]
         if not data:
             raise ValueError("empty SSE response")
-        return json.loads(data[-1])
-    return json.loads(body)
+        parsed: dict[str, Any] = json.loads(data[-1])
+        return parsed
+    body_parsed: dict[str, Any] = json.loads(body)
+    return body_parsed
 
 
 def listing_from_result(rpc: dict[str, Any]) -> dict[str, Any]:
@@ -176,7 +178,8 @@ def listing_from_result(rpc: dict[str, Any]) -> dict[str, Any]:
         return sc
     for block in result.get("content") or []:
         if isinstance(block, dict) and block.get("type") == "text" and block.get("text"):
-            return json.loads(block["text"])
+            text_parsed: dict[str, Any] = json.loads(block["text"])
+            return text_parsed
     raise RuntimeError("Buildout MCP returned no listing content")
 
 
@@ -227,5 +230,6 @@ def mcp_http_call_tool(
 
 def http_fetch_pdf(url: str, *, opener: Callable[[str], Any] = urllib.request.urlopen) -> bytes:
     """Download PDF bytes from an https URL (network)."""
-    with opener(url) as r:  # type: ignore[call-arg]
-        return r.read()
+    with opener(url) as r:
+        data: bytes = r.read()
+        return data
