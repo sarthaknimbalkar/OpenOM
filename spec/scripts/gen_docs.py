@@ -324,14 +324,42 @@ def _quickstart_portal() -> str:
 &lt;openom-badge src="https://cdn.example.com/deal.pdf"&gt;&lt;/openom-badge&gt;</code></pre>
   <p>The badge re-fetches the bytes and runs the deterministic read/verify path. It shows
      <em>Unaltered since embed</em> for integrity, <em>Origin-verified</em> only when a
-     same-domain mirror matches, and <em>nothing</em> when there is no payload.</p>
+     same-domain mirror matches, and <em>nothing</em> when there is no payload.
+     The badge <strong>lazy-loads</strong> (it only fetches when scrolled into view) and
+     <strong>caches</strong> by URL, so a page with many badges is cheap.</p>
+  <p><strong>CORS:</strong> the PDF host must send <code>Access-Control-Allow-Origin</code> for the
+     browser to read the bytes. Most listing CDNs don't - so for list/results pages, use the
+     precomputed path below (zero client fetch) instead.</p>
+  <h2>Search / results pages: precompute the state (no client download)</h2>
+  <p>On a grid of many listings you do <em>not</em> want each badge downloading a multi-MB PDF. Run the
+     read once at ingest (server-side, no CORS) and emit the known state - the badge renders instantly
+     with no fetch:</p>
+  <pre><code># at ingest, server-side (no install, no CORS): the public deterministic endpoint
+curl -s https://mcp.openom.app/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,
+  "method":"tools/call","params":{"name":"om_read","arguments":{"url":"https://cdn.example.com/deal.pdf"}}}'
+# store the returned state (present/absent/hash-mismatch), then on your page:
+&lt;openom-badge state="integrity-ok"&gt;&lt;/openom-badge&gt;   &lt;!-- renders from known state, zero fetch --&gt;</code></pre>
   <h2>In your own code (Node)</h2>
+  <p><em>Packages are on the way; until published, install from a clone:</em> <code>npm install ./js</code>.
+     No install at all? Call the public <code>om_read</code> endpoint above (server-side, deterministic).</p>
   <pre><code>import { readPayloadFromBytes } from "openom-js";
 const r = await readPayloadFromBytes(pdfBytes);
 if (r.state === "present" &amp;&amp; r.verification.hashValid) useIt(r.payload);</code></pre>
-  <p>Change notifications: verify webhook deliveries with the
+  <h2>Change notifications (webhooks)</h2>
+  <p><b>Subscribe:</b> you give a publisher (a broker/platform) a
+     <a href="/spec/webhook-subscription-0.1.schema.json">subscription</a> - your HTTPS
+     <code>receiverUrl</code>, a per-pair HMAC <code>secret</code> (exchanged out-of-band; unique per
+     receiver, never reused), an optional <code>events</code> filter, and <code>active</code>. In 0.1
+     provisioning is out-of-band (the publisher configures it however they onboard you); the schema
+     standardizes the shape.</p>
+  <p><b>Receive:</b> verify each delivery with the
      <a href="https://github.com/sarthaknimbalkar/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
-     - signature → envelope → payloadHash binding, in that order.</p>
+     - signature → envelope shape → <code>payloadHash</code> binding, in that order. Guard
+     <code>sourceUrl</code> before fetching it (it's attacker-controlled even on a valid signature), and
+     dedupe by <code>OpenOM-Event-Id</code> (retries re-deliver the same id): ingest is at-least-once,
+     not idempotent. Treat the envelope's <code>verification.*</code> as the sender's self-report -
+     recompute your own.</p>
+  <pre><code>2xx = accepted · 4xx = permanent (do not retry) · 5xx/timeout = retried with backoff</code></pre>
 """
     _d = 'Read and trust openOM data on offering memoranda you host or receive: the drop-in <openom-badge> widget and the openom-js reader, with an honest trust badge.'
     return _page("Portal quick-start", body, description=_d, canonical="/docs/quickstart-portal", jsonld=_jsonld(_article("Portal quick-start", _d, "/docs/quickstart-portal"), _breadcrumb("/docs/quickstart-portal", "Portal quick-start")), seo_title="Read & trust openOM data on offering memoranda - portal quick-start")
@@ -562,21 +590,51 @@ def _verify_tool() -> str:
     document.getElementById("ub").addEventListener("click", async () => {
       const url = (document.getElementById("u").value || "").trim();
       if (!url || !window.openOM) return;
-      badge.textContent = "Fetching " + url + " …";
+      badge.textContent = "Checking " + url + " …";
       out.hidden = true;
       try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        const bytes = new Uint8Array(await resp.arrayBuffer());
-        showResult(await window.openOM.readPayloadFromBytes(bytes));
+        showResult(await window.omReadUrl(url));
       } catch (e) {
-        // Cross-origin hosts that don't send CORS headers block a browser fetch. That's a browser
-        // limit, not a verdict on the file - fall back honestly, never a scary state.
         badge.textContent =
-          "Couldn't fetch that URL from the browser (the host may block cross-site reads, or the link is wrong). " +
-          "Download the PDF and drop it in above, or open the page with the openOM extension installed.";
+          "Couldn't read that URL (" + (e && e.message ? e.message : "unreadable") + "). " +
+          "Check the link, or download the PDF and drop it in above.";
       }
     });
+  </script>
+  <script>
+    // Read a PDF by URL: try a direct browser fetch first (same-origin / CORS-enabled hosts - fast, no
+    // round-trip), then fall back to the public MCP worker, which fetches server-side (following
+    // presigned/CDN redirects) and hash-verifies deterministically - so cross-origin listing PDFs work
+    // without CORS or an extension. Zero inference either way (om_read is deterministic).
+    window.omReadUrl = async function (url) {
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const bytes = new Uint8Array(await resp.arrayBuffer());
+          const r = await window.openOM.readPayloadFromBytes(bytes);
+          return { state: r.state, payload: r.payload,
+            verification: { hashValid: r.verification.hashValid, signatureValid: r.verification.signatureValid } };
+        }
+      } catch (e) { /* CORS/network blocked - fall through to the worker */ }
+      let abs;
+      try { abs = new URL(url, location.href); } catch (e) { throw new Error("invalid URL"); }
+      if (abs.protocol !== "https:") throw new Error("only https URLs can be checked remotely");
+      const resp = await fetch("https://mcp.openom.app/mcp", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
+          params: { name: "om_read", arguments: { url: abs.href } } }),
+      });
+      const j = await resp.json();
+      if (j.error) throw new Error(j.error.message || "read failed");
+      const rr = j.result || {};
+      const text = rr.content && rr.content[0] && rr.content[0].text;
+      if (rr.isError) throw new Error((text || "read failed").replace(/^Error:\\s*/, ""));
+      if (!text) throw new Error("empty response");
+      const d = JSON.parse(text);
+      return { state: d.state, payload: d.payload,
+        verification: { hashValid: d.verification && d.verification.hashValid,
+          signatureValid: d.verification && d.verification.signatureValid } };
+    };
   </script>
   <p><small>Want to <b>create</b> an openOM PDF? Use the free in-browser
      <a href="/embed/">authoring companion</a> - no install.</small></p>
@@ -640,10 +698,8 @@ def _verified_view() -> str:
     async function run() {
       if (!src) { document.getElementById("vv-status").textContent = "No document specified. This is a shareable verified-view link: openom.app/v/?src=<the OM's URL>."; return; }
       try {
-        const resp = await fetch(src);
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        const bytes = new Uint8Array(await resp.arrayBuffer());
-        const r = await window.openOM.readPayloadFromBytes(bytes);
+        // Direct fetch first, else server-side read via the public worker (redirects, no CORS).
+        const r = await window.omReadUrl(src);
         const present = r.state === "present" || r.state === "hash-mismatch";
         const view = window.openOM.computeBadge({ present, hashValid: r.verification.hashValid, originVerified: false, signatureValid: r.verification.signatureValid });
         badge.textContent = view.state === "absent" ? "This PDF carries no openOM data." : view.label + " - " + view.caption;
@@ -653,9 +709,39 @@ def _verified_view() -> str:
         const act = document.createElement("p"); act.className = "vv-actions"; act.appendChild(a); body.appendChild(act);
       } catch (e) {
         badge.textContent = "";
-        body.innerHTML = '<p class="vv-note">This document can\\'t be read from your browser (the host may block cross-site reads). <a href="' + (src ? src.replace(/"/g,"") : "#") + '">Download the OM</a>, then drop it into the <a href="/verify/">verify tool</a> to confirm it.</p>';
+        body.innerHTML = '<p class="vv-note">This document couldn\\'t be read (' + ((e && e.message) ? e.message : "unreadable") + '). <a href="' + (src ? src.replace(/"/g,"") : "#") + '">Download the OM</a>, then drop it into the <a href="/verify/">verify tool</a> to confirm it.</p>';
       }
     }
+    // Read by URL: direct fetch first (same-origin/CORS), else the public worker (redirects, no CORS).
+    window.omReadUrl = async function (url) {
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const bytes = new Uint8Array(await resp.arrayBuffer());
+          const r = await window.openOM.readPayloadFromBytes(bytes);
+          return { state: r.state, payload: r.payload,
+            verification: { hashValid: r.verification.hashValid, signatureValid: r.verification.signatureValid } };
+        }
+      } catch (e) { /* CORS/network blocked - fall through to the worker */ }
+      let abs;
+      try { abs = new URL(url, location.href); } catch (e) { throw new Error("invalid URL"); }
+      if (abs.protocol !== "https:") throw new Error("only https URLs can be checked remotely");
+      const resp = await fetch("https://mcp.openom.app/mcp", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call",
+          params: { name: "om_read", arguments: { url: abs.href } } }),
+      });
+      const j = await resp.json();
+      if (j.error) throw new Error(j.error.message || "read failed");
+      const rr = j.result || {};
+      const text = rr.content && rr.content[0] && rr.content[0].text;
+      if (rr.isError) throw new Error((text || "read failed").replace(/^Error:\\s*/, ""));
+      if (!text) throw new Error("empty response");
+      const d = JSON.parse(text);
+      return { state: d.state, payload: d.payload,
+        verification: { hashValid: d.verification && d.verification.hashValid,
+          signatureValid: d.verification && d.verification.signatureValid } };
+    };
     window.addEventListener("load", run);
   </script>
   <p class="vv-note" style="margin-top:18px">This page verifies provenance - <b>who</b> asserted the data and that it is <b>unaltered</b> - never that the figures are true. <a href="/docs/">How openOM works</a>.</p>

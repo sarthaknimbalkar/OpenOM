@@ -58,6 +58,38 @@ export interface BadgeOptions {
   fetchImpl?: typeof fetch;
 }
 
+/**
+ * [B1] Render a badge from a PRECOMPUTED state, with NO fetch. A portal that ran om_read once at ingest
+ * (server-side) stores the state and emits `<openom-badge state="integrity-ok">` on its list pages, so
+ * a results grid of N listings costs zero client PDF downloads. Honesty is preserved: the label/caption
+ * come only from honestLabel, and an unknown/absent state renders nothing.
+ */
+export function viewForState(state: string): BadgeView {
+  const known: BadgeState[] = [
+    "absent",
+    "hash-mismatch",
+    "integrity-ok",
+    "origin-verified",
+    "signature-verified",
+  ];
+  const s = (known as string[]).includes(state) ? (state as BadgeState) : "absent";
+  const { label, caption } = honestLabel(s);
+  const overclaims =
+    s === "integrity-ok" &&
+    FORBIDDEN.some((w) => (label + " " + caption).toLowerCase().includes(w));
+  return {
+    state: s,
+    label,
+    caption,
+    ariaLabel: s === "absent" ? "" : `openOM: ${label}. ${caption}`,
+    honest: !overclaims,
+  };
+}
+
+// [B1] Module-level result cache keyed by src|mirror, so N badges pointing at the same PDF (or a
+// re-render) never re-download it. Stores the in-flight promise (dedupes concurrent evaluates too).
+const _evalCache = new Map<string, Promise<BadgeView>>();
+
 const ABSENT = {
   present: false,
   hashValid: null,
@@ -71,8 +103,30 @@ async function bytesOf(url: string, f: typeof fetch): Promise<Uint8Array> {
   return new Uint8Array(await res.arrayBuffer());
 }
 
-/** Run the full read→verify pipeline and return the view to render. Deterministic; no inference. */
-export async function evaluateBadge(opts: BadgeOptions): Promise<BadgeView> {
+/**
+ * Run the full read→verify pipeline and return the view. Deterministic; no inference. [B1] Result is
+ * cached by src|mirror so repeated/duplicate badges for the same PDF fetch once. Pass a `fetchImpl`
+ * (tests / a custom fetcher) to bypass the cache implicitly-not — the cache key ignores fetchImpl, so
+ * tests that need a fresh run should vary src or call `clearBadgeCache()`.
+ */
+export function evaluateBadge(opts: BadgeOptions): Promise<BadgeView> {
+  const key = `${opts.src}|${opts.mirror ?? ""}`;
+  const hit = _evalCache.get(key);
+  if (hit) return hit;
+  const p = _evaluate(opts).catch((e) => {
+    _evalCache.delete(key); // don't cache a transient failure
+    throw e;
+  });
+  _evalCache.set(key, p);
+  return p;
+}
+
+/** Drop the badge result cache (tests, or a portal that knows a PDF changed). */
+export function clearBadgeCache(): void {
+  _evalCache.clear();
+}
+
+async function _evaluate(opts: BadgeOptions): Promise<BadgeView> {
   const f = opts.fetchImpl ?? fetch;
   const read = await readPayloadFromBytes(await bytesOf(opts.src, f));
   if (read.state === "absent" || read.state === "encrypted") return computeBadge(ABSENT);

@@ -47,6 +47,12 @@ export {
   ENVELOPE_SCHEMA,
   type EnvelopeValidation,
 } from "./envelope.js";
+export {
+  validateSubscription,
+  SUBSCRIPTION_SCHEMA,
+  SUBSCRIPTION_EVENTS,
+  type SubscriptionValidation,
+} from "./subscription.js";
 export { decryptPdf } from "./decrypt.js";
 export { pdfHasSignature } from "./signature.js";
 export { classifyStale, type StaleResult } from "./stale.js";

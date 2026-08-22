@@ -92,14 +92,42 @@
 &lt;openom-badge src="https://cdn.example.com/deal.pdf"&gt;&lt;/openom-badge&gt;</code></pre>
   <p>The badge re-fetches the bytes and runs the deterministic read/verify path. It shows
      <em>Unaltered since embed</em> for integrity, <em>Origin-verified</em> only when a
-     same-domain mirror matches, and <em>nothing</em> when there is no payload.</p>
+     same-domain mirror matches, and <em>nothing</em> when there is no payload.
+     The badge <strong>lazy-loads</strong> (it only fetches when scrolled into view) and
+     <strong>caches</strong> by URL, so a page with many badges is cheap.</p>
+  <p><strong>CORS:</strong> the PDF host must send <code>Access-Control-Allow-Origin</code> for the
+     browser to read the bytes. Most listing CDNs don't - so for list/results pages, use the
+     precomputed path below (zero client fetch) instead.</p>
+  <h2>Search / results pages: precompute the state (no client download)</h2>
+  <p>On a grid of many listings you do <em>not</em> want each badge downloading a multi-MB PDF. Run the
+     read once at ingest (server-side, no CORS) and emit the known state - the badge renders instantly
+     with no fetch:</p>
+  <pre><code># at ingest, server-side (no install, no CORS): the public deterministic endpoint
+curl -s https://mcp.openom.app/mcp -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,
+  "method":"tools/call","params":{"name":"om_read","arguments":{"url":"https://cdn.example.com/deal.pdf"}}}'
+# store the returned state (present/absent/hash-mismatch), then on your page:
+&lt;openom-badge state="integrity-ok"&gt;&lt;/openom-badge&gt;   &lt;!-- renders from known state, zero fetch --&gt;</code></pre>
   <h2>In your own code (Node)</h2>
+  <p><em>Packages are on the way; until published, install from a clone:</em> <code>npm install ./js</code>.
+     No install at all? Call the public <code>om_read</code> endpoint above (server-side, deterministic).</p>
   <pre><code>import { readPayloadFromBytes } from "openom-js";
 const r = await readPayloadFromBytes(pdfBytes);
 if (r.state === "present" &amp;&amp; r.verification.hashValid) useIt(r.payload);</code></pre>
-  <p>Change notifications: verify webhook deliveries with the
+  <h2>Change notifications (webhooks)</h2>
+  <p><b>Subscribe:</b> you give a publisher (a broker/platform) a
+     <a href="/spec/webhook-subscription-0.1.schema.json">subscription</a> - your HTTPS
+     <code>receiverUrl</code>, a per-pair HMAC <code>secret</code> (exchanged out-of-band; unique per
+     receiver, never reused), an optional <code>events</code> filter, and <code>active</code>. In 0.1
+     provisioning is out-of-band (the publisher configures it however they onboard you); the schema
+     standardizes the shape.</p>
+  <p><b>Receive:</b> verify each delivery with the
      <a href="https://github.com/sarthaknimbalkar/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
-     - signature → envelope → payloadHash binding, in that order.</p>
+     - signature → envelope shape → <code>payloadHash</code> binding, in that order. Guard
+     <code>sourceUrl</code> before fetching it (it's attacker-controlled even on a valid signature), and
+     dedupe by <code>OpenOM-Event-Id</code> (retries re-deliver the same id): ingest is at-least-once,
+     not idempotent. Treat the envelope's <code>verification.*</code> as the sender's self-report -
+     recompute your own.</p>
+  <pre><code>2xx = accepted · 4xx = permanent (do not retry) · 5xx/timeout = retried with backoff</code></pre>
 
   </main>
 </body>

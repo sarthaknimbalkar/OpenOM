@@ -18,6 +18,7 @@
 import {
   evaluateBadge,
   computeBadge,
+  viewForState,
   absentView,
   sanitizeHref,
   type BadgeView,
@@ -89,19 +90,49 @@ export function paintBadge(host: HTMLElement, view: BadgeView, details?: string)
 
 /** The custom element. Reflects `src`/`mirror`/`details`; re-evaluates on attribute change. */
 export class OpenOmBadgeElement extends HTMLElement {
+  #io: IntersectionObserver | null = null;
   static get observedAttributes(): string[] {
-    return ["src", "mirror", "details"];
+    // [B1] `state` renders a precomputed badge with NO fetch (portals emit it from ingest-time om_read).
+    return ["src", "mirror", "details", "state"];
   }
   connectedCallback(): void {
+    // [B1] Precomputed state → paint immediately, never fetch. A src with no state → lazy-mount: only
+    // fetch when scrolled into view, so a results grid of N badges doesn't download N PDFs on load.
+    if (this.getAttribute("state")) {
+      void this.refresh();
+      return;
+    }
+    if (typeof IntersectionObserver !== "undefined" && this.getAttribute("src")) {
+      this.#io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          this.#io?.disconnect();
+          this.#io = null;
+          void this.refresh();
+        }
+      });
+      this.#io.observe(this);
+      return;
+    }
     void this.refresh();
   }
-  attributeChangedCallback(): void {
-    if (this.isConnected) void this.refresh();
+  disconnectedCallback(): void {
+    this.#io?.disconnect();
+    this.#io = null;
+  }
+  attributeChangedCallback(_name: string, oldV: string | null, newV: string | null): void {
+    // Only re-run for a meaningful change; `details` alone repaints without a re-fetch (handled in refresh).
+    if (this.isConnected && oldV !== newV) void this.refresh();
   }
   async refresh(): Promise<void> {
+    const details = this.getAttribute("details") ?? undefined;
+    const state = this.getAttribute("state");
+    if (state) {
+      // Zero-fetch precomputed render (honesty preserved: label/caption from honestLabel only).
+      paintBadge(this, viewForState(state), details);
+      return;
+    }
     const src = this.getAttribute("src");
     if (!src) return;
-    const details = this.getAttribute("details") ?? undefined;
     const mirror = this.getAttribute("mirror");
     try {
       const view = await evaluateBadge(mirror ? { src, mirror } : { src });
