@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/sarthaknimbalkar/OpenOM/security/policy
+    about: Report privately per SECURITY.md - never in a public issue.
+  - name: Docs & live tools
+    url: https://openom.app/docs/
+    about: Read the docs, verify a PDF, and grounding guides.
