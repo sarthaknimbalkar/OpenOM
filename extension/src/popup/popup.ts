@@ -6,6 +6,7 @@ import { wordmark } from "../wordmark.js";
 import { envelopeText, publishWithRetry, testFire } from "../publish.js";
 import type { DetectResult } from "../service-worker.js";
 import { getWebhook, setWebhook, type Webhook } from "../storage.js";
+import { summarizeDeal } from "openom-js";
 
 const el = (tag: string, cls?: string, text?: string): HTMLElement => {
   const n = document.createElement(tag);
@@ -17,19 +18,27 @@ const el = (tag: string, cls?: string, text?: string): HTMLElement => {
 function renderCard(result: DetectResult): HTMLElement {
   const card = el("section", "card");
   const p = result.payload ?? {};
-  const deal = (p.deal as Record<string, unknown>) ?? {};
   const lease = (p.lease as Record<string, unknown>) ?? {};
-  const by = (p.assertedBy as Record<string, unknown>) ?? {};
-  const addr = ((p.property as Record<string, unknown>)?.address as Record<string, unknown>) ?? {};
+  // [M3] one typed, formatted, currency-aware view - includes the assertion metadata (noiType, as-of,
+  // asserted date/brokerage) that makes this an ASSERTION, not a bare number.
+  const s = summarizeDeal(p);
 
-  const rows: [string, unknown][] = [
-    ["Broker", by.broker],
-    ["Address", [addr.streetAddress, addr.addressLocality, addr.addressRegion].filter(Boolean).join(", ")],
-    ["Asking price", deal.askingPrice],
-    ["Cap rate", deal.capRate],
-    ["NOI", deal.noi],
-    ["Tenant", lease.tenantEntity],
-    ["Lease type", lease.leaseTypeAsserted],
+  const noiText =
+    s.noiText && (s.noiType || s.noiAsOfDate)
+      ? `${s.noiText} (${[s.noiType, s.noiAsOfDate ? `as of ${s.noiAsOfDate}` : null].filter(Boolean).join(", ")})`
+      : s.noiText;
+  const rows: [string, string | null][] = [
+    ["Property", s.propertyType],
+    ["Address", s.address],
+    ["Asking price", s.askingPriceText],
+    ["Cap rate", s.capRateText],
+    ["NOI", noiText],
+    ["$/SF", s.pricePerSFText],
+    ["Tenant", s.tenant],
+    ["Lease type", s.leaseType],
+    ["Lease term", s.termMonths ? `${s.termMonths} mo` : null],
+    ["Asserted by", [s.assertedByBroker, s.assertedByBrokerage].filter(Boolean).join(", ") || null],
+    ["Asserted", s.assertedDate],
   ];
   const dl = el("dl", "fields");
   for (const [k, v] of rows) {
@@ -81,7 +90,13 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
   }
   if (result.findings.length) {
     const warn = el("ul", "findings");
-    for (const code of result.findings) warn.appendChild(el("li", undefined, code));
+    // [M3] show the human message ("Cap rate vs NOI/price off (OMW-W020)"), falling back to the bare
+    // code only when a notice message isn't available.
+    const notices = result.notices ?? [];
+    for (const code of result.findings) {
+      const n = notices.find((x) => x.code === code);
+      warn.appendChild(el("li", undefined, n ? `${n.message} (${n.code})` : code));
+    }
     root.appendChild(el("h3", undefined, "Notices"));
     root.appendChild(warn);
   }
