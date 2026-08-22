@@ -3,14 +3,24 @@
 // is a browser global, NOT an npm dependency, so assert-no-inference stays green. It touches the model
 // ONLY - never fetch/XHR/WebSocket, so extraction never leaves the device ([OM-PRIV-001]). Its output
 // is a DRAFT for the human review gate; nothing here asserts or embeds.
-import type { Extractor, ExtractionResult, FieldExtraction, PageText } from "./types.js";
+import type {
+  Extractor,
+  ExtractionResult,
+  ExtractOptions,
+  ExtractorReadiness,
+  FieldExtraction,
+  PageText,
+} from "./types.js";
 
+interface CreateMonitor {
+  addEventListener(type: "downloadprogress", cb: (e: { loaded: number }) => void): void;
+}
 interface PromptSession {
   prompt(input: string, opts?: { responseConstraint?: unknown }): Promise<string>;
   destroy?(): void;
 }
 interface PromptFactory {
-  create(): Promise<PromptSession>;
+  create(opts?: { monitor?: (m: CreateMonitor) => void }): Promise<PromptSession>;
   /** Chrome's readiness signal ([#101]); older shims omit it. */
   availability?(): Promise<"unavailable" | "downloadable" | "downloading" | "available">;
 }
@@ -27,9 +37,10 @@ function promptFactory(): PromptFactory | null {
 // Key instructions only - the payload paths the model may fill (mirrors process/mapping-guide.md).
 const FIELD_MAP_HINT = [
   "Fill only these payload paths when the OM states them (omit anything unstated, never guess):",
+  "property.propertyType (retail|office|industrial|multifamily|land|mixed-use|hospitality|self-storage),",
   "property.address.{streetAddress,addressLocality,addressRegion,postalCode}, property.buildingSF,",
   "deal.askingPrice, deal.capRate (DECIMAL fraction: 6.25% -> 0.0625), deal.noi, deal.pricePerSF,",
-  "lease.tenantEntity, lease.leaseTypeAsserted, lease.commencement, lease.expiration,",
+  "lease.tenantEntity, lease.leaseTypeAsserted, lease.commencement, lease.expiration, lease.termMonths,",
   'lease.rentSchedule[] = {periodStart,periodEnd,annualRent,rentPSF?,source:"extracted"}.',
   "Do NOT fill assertedBy/assertedDate/noiType/noiAsOfDate - those are set by the human at review.",
 ].join(" ");
@@ -108,20 +119,30 @@ export function buildPrompt(pages: PageText[]): string {
   ].join("\n");
 }
 
+/** [M5] Ready to use now, present-but-needs-download, or absent - so the UI never claims "ready" for a
+ * model that would first trigger a multi-GB download on click. */
+async function onDeviceReadiness(): Promise<ExtractorReadiness> {
+  const lm = promptFactory();
+  if (!lm) return "unavailable";
+  if (typeof lm.availability !== "function") return "ready"; // older shim: presence is all we know
+  const a = await lm.availability();
+  if (a === "available") return "ready";
+  if (a === "downloadable" || a === "downloading") return "needs-download";
+  return "unavailable";
+}
+
 export const onDeviceExtractor: Extractor = {
   kind: "on-device",
-  available: async () => {
-    const lm = promptFactory();
-    if (!lm) return false;
-    // Prefer Chrome's real readiness signal; only "unavailable" is a hard no. Fall back to presence
-    // for shims without availability() ([#101]).
-    if (typeof lm.availability === "function") return (await lm.availability()) !== "unavailable";
-    return true;
-  },
-  extract: async (pages: PageText[]): Promise<ExtractionResult> => {
+  available: async () => (await onDeviceReadiness()) !== "unavailable",
+  readiness: onDeviceReadiness,
+  extract: async (pages: PageText[], opts?: ExtractOptions): Promise<ExtractionResult> => {
     const lm = promptFactory();
     if (!lm) throw new Error("on-device Prompt API is unavailable");
-    const session = await lm.create();
+    // [M5] pass a monitor so a first-use model download reports progress instead of hanging silently.
+    const session = await lm.create({
+      monitor: (m) =>
+        m.addEventListener("downloadprogress", (e) => opts?.onDownloadProgress?.(e.loaded)),
+    });
     try {
       // Extract each context-sized chunk, merging fields first-wins by path ([#88]).
       const merged = new Map<string, FieldExtraction>();

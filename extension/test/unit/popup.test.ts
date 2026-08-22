@@ -40,8 +40,15 @@ describe("renderPopup", () => {
     for (const w of FORBIDDEN) expect(new RegExp(`\\b${w}\\b`).test(text)).toBe(false);
     expect(text).toContain("500 example blvd");
     expect(text).toContain("[asserted]"); // rent period source tag
-    expect(root.querySelectorAll("button[data-action]").length).toBe(4); // test-fire, publish, copy, download
+    expect(root.querySelectorAll("button[data-action]").length).toBe(4); // test-fire, send, copy, download
     expect(root.querySelector("input.wh-target")).not.toBeNull();
+    // [M3] the webhook is framed as an advanced developer integration, not buyer "Publish".
+    const publish = root.querySelector("details.publish");
+    expect(publish).not.toBeNull();
+    expect(publish!.querySelector("summary")!.textContent!.toLowerCase()).toContain("webhook");
+    const labels = [...root.querySelectorAll("button[data-action]")].map((b) => b.textContent);
+    expect(labels).toContain("Send"); // relabeled from the misleading "Publish"
+    expect(labels).not.toContain("Publish");
   });
 
   test("origin-verified: shows the domain-vouch caption + card", () => {

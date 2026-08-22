@@ -19,8 +19,19 @@ export interface ExtractionResult {
   fields: FieldExtraction[];
 }
 
+/** Readiness of an on-device model ([M5]): usable now, present but needs a (large) download, or absent. */
+export type ExtractorReadiness = "ready" | "needs-download" | "unavailable";
+
+/** Optional per-run hooks - e.g. surfacing model-download progress to the review panel ([M5]). */
+export interface ExtractOptions {
+  /** Called with a 0..1 fraction while an on-device model downloads before first use. */
+  onDownloadProgress?: (fraction: number) => void;
+}
+
 export interface Extractor {
   readonly kind: "on-device" | "hosted-stub" | "test";
   available(): Promise<boolean>;
-  extract(pages: PageText[]): Promise<ExtractionResult>;
+  /** Finer-grained than `available()`: distinguishes ready from a pending model download ([M5]). */
+  readiness?(): Promise<ExtractorReadiness>;
+  extract(pages: PageText[], opts?: ExtractOptions): Promise<ExtractionResult>;
 }

@@ -48,3 +48,21 @@ export {
   type EnvelopeValidation,
 } from "./envelope.js";
 export { decryptPdf } from "./decrypt.js";
+export { pdfHasSignature } from "./signature.js";
+export { classifyStale, type StaleResult } from "./stale.js";
+export {
+  schemaFieldDescriptors,
+  humanizeField,
+  type FieldDescriptor,
+  type FieldKind,
+} from "./fields.js";
+export {
+  finalizePayload,
+  assertAndEmbed,
+  suggestedFilename,
+  looksLikePdf,
+  captureFromBytes,
+  OM_CONTEXT,
+  type AssertedByProfile,
+  type Capture,
+} from "./author.js";

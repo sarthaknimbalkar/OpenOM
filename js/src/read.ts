@@ -176,7 +176,8 @@ async function inflate(raw: Uint8Array, maxBytes: number): Promise<Uint8Array> {
   // `import("node:zlib")` triggers a blocked cross-origin fetch (console error) even though the
   // catch would fall through - so gate it and go straight to DecompressionStream instead.
   const isNode =
-    typeof process !== "undefined" && !!(process as { versions?: { node?: string } }).versions?.node;
+    typeof process !== "undefined" &&
+    !!(process as { versions?: { node?: string } }).versions?.node;
   let zlib: typeof import("node:zlib") | null = null;
   if (isNode) {
     try {

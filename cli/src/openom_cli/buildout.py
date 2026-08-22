@@ -79,6 +79,50 @@ def _compact(d: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in d.items() if v not in (None, "", {}, [])}
 
 
+def _months_between(start_iso: str | None, end_iso: str | None) -> int | None:
+    """Whole months between two ISO (YYYY-MM-DD) dates, or None. Deterministic (no clock)."""
+    if not start_iso or not end_iso:
+        return None
+    try:
+        sy, sm, sd = (int(x) for x in start_iso.split("-"))
+        ey, em, ed = (int(x) for x in end_iso.split("-"))
+    except ValueError:
+        return None
+    months = (ey - sy) * 12 + (em - sm)
+    if ed < sd:  # a partial trailing month doesn't count
+        months -= 1
+    return months if months >= 0 else None
+
+
+# Canonical fields tracked for a back-catalog coverage report (the numbers a buyer underwrites).
+# Used to flag near-empty payloads before a bulk embed (Rule 6: review at scale).
+_COVERAGE_FIELDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("askingPrice", ("deal", "askingPrice")),
+    ("capRate", ("deal", "capRate")),
+    ("noi", ("deal", "noi")),
+    ("address", ("property", "address")),
+    ("buildingSF", ("property", "buildingSF")),
+    ("tenant", ("lease", "tenantEntity")),
+    ("leaseType", ("lease", "leaseTypeAsserted")),
+    ("expiration", ("lease", "expiration")),
+)
+
+
+def payload_coverage(payload: dict[str, Any]) -> dict[str, Any]:
+    """Which tracked fields a mapped payload actually carries - for a pre-embed coverage report."""
+    present: list[str] = []
+    missing: list[str] = []
+    for name, path in _COVERAGE_FIELDS:
+        cur: Any = payload
+        for seg in path:
+            cur = cur.get(seg) if isinstance(cur, dict) else None
+        (present if cur not in (None, "", {}, []) else missing).append(name)
+    return {
+        "filled": len(present), "of": len(_COVERAGE_FIELDS),
+        "present": present, "missing": missing,
+    }
+
+
 def listing_to_payload(
     listing: dict[str, Any],
     *,
@@ -107,31 +151,45 @@ def listing_to_payload(
     lat, lng = _num(rp("latitude")), _num(rp("longitude"))
     geo = {"latitude": lat, "longitude": lng} if lat is not None and lng is not None else None
     lot = _num(rp("lot_size")) if str(rp("lot_size_units")).lower().startswith("acre") else None
+    building_sf = _int(rp("building_size"))
+    units = _int(rp("number_of_units"))
+    # propertyType ([M4]): the primary asset-class filter, trivially mappable and never auto-filled
+    # before. Buildout exposes it as a research attribute; omitted (never guessed) when absent.
+    prop_type = rp("property_type") or rp("property_sub_type") or cf.get("Property type")
     property_ = _compact({
+        "propertyType": str(prop_type).strip().lower() if prop_type else None,
         "address": address or None,
         "geo": geo,
-        "buildingSF": _int(rp("building_size")),
+        "buildingSF": building_sf,
         "yearBuilt": _int(rp("year_built")),
         "lotAcres": lot,
-        "units": _int(rp("number_of_units")),
+        "units": units,
         "occupancy": _pct_to_fraction(rp("occupancy_pct")),
     })
 
+    price = _int(fin.get("sale_price"))
     deal = _compact({
-        "askingPrice": _int(fin.get("sale_price")),
+        "askingPrice": price,
         "capRate": _pct_to_fraction(fin.get("cap_rate_derived") or fin.get("cap_rate")),
         "noi": _int(fin.get("noi") or cf.get("NOI")),
+        # Deterministically derived from mapped values ([M4]); not in Buildout, computed here.
+        "pricePerUnit": round(price / units) if price and units else None,
+        "pricePerSF": round(price / building_sf, 2) if price and building_sf else None,
         "noiType": noi_type,
         "noiAsOfDate": noi_as_of or asserted_date,
         "status": "active",
     })
 
+    commencement = _iso_date(cf.get("Lease start date"))
+    expiration = _iso_date(cf.get("Lease expiration date"))
     guarantor_name = cf.get("Lease guarantor")
     lease = _compact({
         "tenantEntity": cf.get("Tenant"),
         "leaseTypeAsserted": _lease_type(cf.get("Lease type")),
-        "commencement": _iso_date(cf.get("Lease start date")),
-        "expiration": _iso_date(cf.get("Lease expiration date")),
+        "commencement": commencement,
+        "expiration": expiration,
+        # termMonths ([M4]): derived from the two dates above, deterministic (no clock).
+        "termMonths": _months_between(commencement, expiration),
         "guarantor": {"name": guarantor_name, "type": "corporate"} if guarantor_name else None,
     })
 

@@ -79,6 +79,23 @@ test("[#4] encrypted OM → decrypted in-browser, notice shown, embed produces a
   expect(p.assertedBy.broker).toBe("Jane Broker");
 });
 
+test("[M1] signed OM → Assert blocked until the invalidation is acknowledged", async ({
+  context,
+  extensionId,
+}) => {
+  const page = await openPanel(context, extensionId, `${BROKER}/author/signed.pdf`);
+  await expect(page.locator(".signed-warning")).toContainText("digitally signed");
+  await fillProfile(page);
+  // Profile complete but Assert is still blocked - the signature acknowledgement is required.
+  await expect(page.locator("#assert")).toBeDisabled();
+  await page.check(".signed-ack");
+  await expect(page.locator("#assert")).toBeEnabled();
+  await page.click("#assert");
+  const read = await readDownloadedPayload(page);
+  expect(read.state).toBe("present");
+  expect(read.verification.hashValid).toBe(true);
+});
+
 test("assert-gated → a schema-invalid draft disables Assert until fixed", async ({
   context,
   extensionId,
@@ -149,6 +166,22 @@ const FAKE_MODEL = () => {
     }),
   };
 };
+
+test("[M5] on-device model not downloaded → honest 'Download…' label, no silent hang", async ({
+  context,
+  extensionId,
+}) => {
+  // A model that is present-but-downloadable must not masquerade as ready.
+  await context.addInitScript(() => {
+    (globalThis as unknown as { LanguageModel: unknown }).LanguageModel = {
+      availability: async () => "downloadable",
+      create: async () => ({ prompt: async () => JSON.stringify({ fields: [] }) }),
+    };
+  });
+  const page = await openPanel(context, extensionId, `${BROKER}/author/plain.pdf`);
+  await expect(page.locator(".extract-btn")).toContainText(/Download on-device AI/i);
+  await expect(page.locator(".extract-hint")).toContainText(/enter the fields manually/i);
+});
 
 test("[OM-PRIV-001] extraction makes ZERO network requests leave the device", async ({
   context,

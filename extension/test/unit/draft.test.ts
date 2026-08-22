@@ -24,6 +24,28 @@ describe("draft model - immutable payload + per-field evidence", () => {
     expect(fieldsWithoutEvidence(d)).not.toContain("/deal/capRate");
   });
 
+  test("[P2] flags material figures for citation, not objective fields (address/enums/dates)", () => {
+    let d = setField(newDraft(), "/deal/capRate", 0.06); // material → flagged
+    d = setField(d, "/property/address/streetAddress", "1 Main St"); // objective → not flagged
+    d = setField(d, "/lease/leaseTypeAsserted", "NNN"); // enum → not flagged
+    d = setField(d, "/lease/commencement", "2020-01-01"); // date → not flagged
+    const flagged = fieldsWithoutEvidence(d);
+    expect(flagged).toContain("/deal/capRate");
+    expect(flagged).not.toContain("/property/address/streetAddress");
+    expect(flagged).not.toContain("/lease/leaseTypeAsserted");
+    expect(flagged).not.toContain("/lease/commencement");
+  });
+
+  test("[M7] does NOT flag rentSchedule/options rows or assertedBy for missing evidence", () => {
+    let d = setField(newDraft(), "/lease/rentSchedule/0/annualRent", 100);
+    d = setField(d, "/lease/options/0/type", "renewal");
+    d = setField(d, "/assertedBy/broker", "Jane");
+    const flagged = fieldsWithoutEvidence(d);
+    expect(flagged.some((p) => p.startsWith("/lease/rentSchedule"))).toBe(false);
+    expect(flagged.some((p) => p.startsWith("/lease/options"))).toBe(false);
+    expect(flagged.some((p) => p.startsWith("/assertedBy"))).toBe(false);
+  });
+
   test("newDraft(seed) seeds the payload for reprice", () => {
     const d = newDraft({ deal: { noi: 100 } });
     expect((d.payload.deal as Record<string, unknown>).noi).toBe(100);

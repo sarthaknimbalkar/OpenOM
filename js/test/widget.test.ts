@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { computeBadge, evaluateBadge, type BadgeOptions } from "../widget/badge-core.js";
 import { FORBIDDEN } from "../src/badge.js";
 import { embedPayload } from "../src/embed.js";
+import { preimageBytes } from "../src/hash.js";
 import { PDFDocument } from "pdf-lib";
 
 async function blankPdfBytes(): Promise<Uint8Array> {
@@ -79,5 +80,26 @@ describe("evaluateBadge (read pipeline)", () => {
     });
     expect(v.state).toBe("integrity-ok");
     expect(v.honest).toBe(true);
+  });
+
+  test("[M2] a domain mirror with a NEWER assertion → integrity-ok + stale (OMW-W051)", async () => {
+    const embedded = await embedPayload(await blankPdfBytes(), {
+      ...payload,
+      assertedDate: "2026-01-01",
+    });
+    // The mirror is a newer assertion (exact JCS preimage bytes, as `om mirror` emits).
+    const mirror = preimageBytes({ ...payload, assertedDate: "2026-06-01" });
+    const byUrl: typeof fetch = (async (u: string) =>
+      new Response(u.endsWith(".jsonld") ? mirror : embedded, {
+        status: 200,
+      })) as unknown as typeof fetch;
+    const v = await evaluateBadge({
+      src: "https://broker.example.com/deal.pdf",
+      mirror: "https://broker.example.com/deal.jsonld",
+      fetchImpl: byUrl,
+    });
+    expect(v.state).toBe("integrity-ok"); // genuine, but…
+    expect(v.stale).toBe("OMW-W051"); // …superseded by the newer mirror
+    expect(v.mirrorAssertedDate).toBe("2026-06-01");
   });
 });

@@ -51,6 +51,28 @@ describe("renderDerived - assert gate + finalized preview", () => {
     renderDerived(c, newDraft({}), { report: withError, diff: null, finalized: {} });
     expect((c.querySelector("#assert") as HTMLButtonElement).disabled).toBe(true);
   });
+
+  test("[M7] errors + reprice diff read in human language, not JSON pointers or a raw hash", () => {
+    const c = document.createElement("div");
+    renderDerived(c, newDraft({}), {
+      report: withError,
+      diff: {
+        added: [],
+        changed: [["/deal/askingPrice", 1_000_000, 1_200_000]],
+        removed: [],
+        supersedes: "sha256:" + "a".repeat(58),
+      },
+      finalized: {},
+    });
+    const err = c.querySelector(".schema-error")?.textContent ?? "";
+    expect(err).toContain("Deal › Cap Rate"); // humanized, not "/deal/capRate"
+    expect(err).not.toContain("/deal/capRate");
+    const changed = c.querySelector(".diff-changed")?.textContent ?? "";
+    expect(changed).toContain("Deal › Asking Price");
+    const sup = c.querySelector(".diff-supersedes")?.textContent ?? "";
+    expect(sup).toContain("replaces your prior assertion");
+    expect(sup).not.toContain("a".repeat(58)); // not the full 64-char hash
+  });
 });
 
 describe("repriceDiff", () => {

@@ -200,9 +200,9 @@ _LANDING_BODY = """<body>
        The PDF looks exactly the same to people - and every AI assistant, CRM, and analyst can read the
        whole deal in seconds.</p>
     <div class="cta-row">
-      <a class="btn primary" href="/docs/">Read the docs</a>
+      <a class="btn primary" href="/embed/">Embed an OM - free, in-browser</a>
       <a class="btn ghost" href="/verify/">Verify a PDF</a>
-      <a class="spec-link" href="/docs/schema-reference">read the spec &rarr;</a>
+      <a class="spec-link" href="/docs/">read the docs &rarr;</a>
     </div>
   </div></section>
 
@@ -319,7 +319,7 @@ _LANDING_BODY = """<body>
         <h4>Sees the data layer everywhere</h4>
         <p class="sub">One extension, two jobs - whichever side of the deal you're on.</p>
         <div class="persona"><div class="p-label">If you list</div><h5>Embed in one click</h5>
-          <p>It catches your OM as it downloads, drafts the fields, and opens a review panel. Approve, embed, rehost. A private on-device option means the document never leaves your machine. <a href="/docs/quickstart-broker">Broker guide &rarr;</a></p></div>
+          <p>It catches your OM as it downloads, drafts the fields, and opens a review panel. Approve, embed, rehost. A private on-device option means the document never leaves your machine. Prefer no install? <a href="/embed/">Embed one in your browser</a>. <a href="/docs/quickstart-broker">Broker guide &rarr;</a></p></div>
         <div class="persona"><div class="p-label">If you buy</div><h5>Know before you read</h5>
           <p>The icon lights up when a PDF carries a payload. Open the deal card - price, cap, NOI, term - in seconds. Then push it anywhere with a webhook. <a href="/docs/quickstart-portal">Portal guide &rarr;</a></p></div>
       </div>
@@ -687,6 +687,9 @@ def generate() -> None:
     sample_dir.mkdir(parents=True, exist_ok=True)
     # A real openOM-embedded OM PDF visitors can download, open (looks like an OM), then verify.
     (sample_dir / "openom-sample.pdf").write_bytes((SPEC / "assets" / "openom-sample.pdf").read_bytes())
+    # [P1] A starter payload the broker quick-start's `om embed --payload deal.json` refers to - so the
+    # first CLI command has a real, valid file to run against (edit the values, keep the shape).
+    (sample_dir / "deal.json").write_bytes((SPEC / "samples" / "valid-stnl.json").read_bytes())
     # Embeddable badge widget (window.openOM) - powers /verify/ and the <openom-badge> element in the
     # portal quick-start. Committed pre-built artifact (js/widget/dist is gitignored + built in the JS
     # CI job, not this Python drift job); rebuild via `npm --prefix js run build:widget` then refresh
@@ -694,6 +697,9 @@ def generate() -> None:
     widget = SITE / "widget"
     widget.mkdir(parents=True, exist_ok=True)
     (widget / "openom-badge.js").write_bytes((SPEC / "assets" / "openom-badge.js").read_bytes())
+    # Authoring companion (window.openOMAuthor) - powers the zero-install /embed/ page. Same
+    # committed-artifact discipline as the badge above.
+    (widget / "openom-author.js").write_bytes((SPEC / "assets" / "openom-author.js").read_bytes())
     (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
     (SITE / "404.html").write_text(_not_found_html(), "utf-8", newline="\n")  # Pages custom 404
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")

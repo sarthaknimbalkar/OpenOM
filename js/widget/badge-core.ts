@@ -7,6 +7,8 @@
 import { readPayloadFromBytes } from "../src/read.js";
 import { verifyOrigin, type MirrorFetch } from "../src/origin.js";
 import { badgeState, honestLabel, FORBIDDEN, type BadgeState } from "../src/badge.js";
+import { classifyStale } from "../src/stale.js";
+import { payloadHash } from "../src/hash.js";
 
 export interface BadgeView {
   state: BadgeState;
@@ -16,6 +18,11 @@ export interface BadgeView {
   ariaLabel: string;
   /** Invariant guard: the chosen label/caption must not overclaim for integrity-only. */
   honest: boolean;
+  /** Set when the domain mirror carries a NEWER assertion than the embedded payload (OMW-W051): the
+   * PDF is stale/superseded. The badge stays (it is genuine), but the reader should be told ([M2]). */
+  stale?: "OMW-W051";
+  /** The mirror's assertedDate, when stale - "a newer version dated …". */
+  mirrorAssertedDate?: string;
 }
 
 /** Pure §AA state→view mapping. The honesty-critical core; DOM-free and fully unit-tested. */
@@ -71,15 +78,15 @@ export async function evaluateBadge(opts: BadgeOptions): Promise<BadgeView> {
   if (read.state === "absent" || read.state === "encrypted") return computeBadge(ABSENT);
 
   let originVerified = false;
+  let mirrorBody: Uint8Array | null = null;
   if (opts.mirror && read.payloadHash) {
     const fetchMirror: MirrorFetch = async (url) => {
       try {
         const res = await f(url);
         if (!res.ok) return null;
-        return {
-          https: new URL(res.url || url).protocol === "https:",
-          body: new Uint8Array(await res.arrayBuffer()),
-        };
+        const body = new Uint8Array(await res.arrayBuffer());
+        mirrorBody = body; // keep for the staleness check below
+        return { https: new URL(res.url || url).protocol === "https:", body };
       } catch {
         return null;
       }
@@ -92,12 +99,38 @@ export async function evaluateBadge(opts: BadgeOptions): Promise<BadgeView> {
     });
     originVerified = o.originVerified;
   }
-  return computeBadge({
+
+  const view = computeBadge({
     present: true,
     hashValid: read.verification.hashValid,
     originVerified,
     signatureValid: read.verification.signatureValid,
   });
+
+  // [M2] If the domain mirror carries a NEWER assertion than the embedded payload, mark it stale so
+  // the reader isn't shown a confident badge on a superseded deal (OMW-W051). Only when we have a
+  // mirror body AND our own payload; a genuine mismatch (not a supersede) is left to the badge state.
+  if (mirrorBody && read.payload && read.payloadHash) {
+    try {
+      const mirrorPayload = JSON.parse(new TextDecoder().decode(mirrorBody)) as Record<
+        string,
+        unknown
+      >;
+      const s = classifyStale({
+        embeddedHash: read.payloadHash,
+        mirrorHash: payloadHash(mirrorPayload),
+        embeddedPayload: read.payload,
+        mirrorPayload,
+      });
+      if (s.stale && s.code) {
+        view.stale = s.code;
+        if (s.mirrorAssertedDate) view.mirrorAssertedDate = s.mirrorAssertedDate;
+      }
+    } catch {
+      /* malformed mirror → no stale claim */
+    }
+  }
+  return view;
 }
 
 /** Absent view - for fail-closed rendering (a fetch/parse error is not evidence of tampering). */
