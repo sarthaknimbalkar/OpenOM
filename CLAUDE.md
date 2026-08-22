@@ -7,7 +7,7 @@
 An open (MIT) **standard + toolchain** that embeds a machine-readable, broker-asserted data
 payload inside commercial-real-estate offering-memorandum PDFs (Factur-X mechanism), and exposes
 the same payload as JSON-LD on the web. One extraction at the source, infinite cheap consumption
-downstream. Published under **Vervelio** (neutral steward).
+downstream. Published under **Vervelio Labs** (neutral steward).
 
 **The spec is the product; the tool is a commodity.** What compounds is the versioned schema,
 validator, vocabulary, and governance - ship those with the code.
@@ -247,9 +247,11 @@ covered in-browser as well as via the CLI (100% corpus coverage from either surf
   page (endpoint + secret-store token), wired into `panel.ts` (offered on a Buildout listing tab;
   on-device Nano is the fallback). **Q2 closed** (real Buildout MCP = the `Phil` connector): the
   deterministic Buildout→openOM mapper + the `om buildout-manifest` bridge are built in `/cli`
-  (`buildout.py`), grounded in the real nested `get_listing` shape and **proven end-to-end on a live
-  Vervelio Labs OM** (map → embed-batch → verified). The `/js` extension client still uses the assumed flat
-  shape - reconciling it to the nested response (Python mapper is the reference) is the remaining bit.
+  (`buildout.py`), grounded in the real nested `get_listing` shape and **proven end-to-end on a real live
+  OM** (map → embed-batch → verified). The `/js` extension connector (`buildout.ts`) is
+  **reconciled to the same real nested shape** (byte-parity with the Python mapper's normalizations),
+  so the extension author path and the CLI bulk path agree. Only the real MCP's tool name stays a
+  configurable default (`toolName`, default `get_listing`) since a broker may connect a different one.
 - **Repo made public-ready.** Internal strategy docs (recon, decision memo, the old normative/handoff
   drafts) were **purged from git history** (git-filter-repo) and kept local-only; the CF account id was
   scrubbed; commit authorship unified to nimbalkarsarthak7@gmail.com. Dependabot cleared (dev-dep

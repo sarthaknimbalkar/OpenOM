@@ -4,10 +4,9 @@
 // data-fetch, no inference) and injected into `makeBuildoutConnector`, so it sits on the
 // deterministic side of the cardinal rule.
 //
-// The one contract this ASSUMES (the memo's Q2 - another product's private API): the tool name
-// (`get_listing`) and that it returns a JSON listing object matching `BuildoutListing`. Both are
-// isolated here + in the mapper, so reconciling them with the real Buildout MCP is a one-line change
-// and cannot leak into the rest of openOM.
+// The listing shape is the real nested get_listing object (see buildout.ts). The only configurable
+// bit is the tool NAME (`toolName`, default `get_listing`), since a broker may connect a Buildout MCP
+// that names it differently; that is isolated here and cannot leak into the rest of openOM.
 import type { BuildoutClient, BuildoutListing } from "./buildout.js";
 
 export interface BuildoutHttpConfig {
@@ -23,8 +22,8 @@ export function buildoutRefFromUrl(url: string | undefined): string | null {
   try {
     const u = new URL(url);
     if (!/(^|\.)buildout\.com$/i.test(u.hostname)) return null;
-    // Buildout listing paths carry a numeric id, e.g. /listings/123456 or /.../123456. Take the last
-    // numeric path segment. (Assumed shape - reconcile with the real URL scheme if it differs.)
+    // Buildout listing URLs are buildout.com/properties/<id> (confirmed); take the last numeric path
+    // segment so /properties/123456 and similar all resolve to the id.
     const nums = u.pathname.split("/").filter((s) => /^\d+$/.test(s));
     return nums.length ? nums[nums.length - 1] : null;
   } catch {
