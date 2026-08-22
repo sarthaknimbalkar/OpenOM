@@ -1,6 +1,7 @@
 import { verifyIntegrity } from "./verify.js";
 import { parsePayload, DEFAULT_MAX_PAYLOAD_BYTES } from "./parse.js";
 import { OmIoError } from "./errors.js";
+import type { OMPayload } from "./payload-types.js";
 
 /** Detection outcome ([OM-XMP-005]); `ambiguous` is reserved for a later pass. `encrypted` = the PDF
  * is encrypted and could not be decrypted here, so no payload could be read (distinct from `absent`). */
@@ -17,8 +18,12 @@ export interface ReadVerification {
 
 export interface ReadResult {
   readonly state: ReadState;
-  readonly payload: Record<string, unknown> | null;
+  /** The embedded payload as the typed contract ([Ma3]); null when absent/unreadable. It is parsed
+   *  from untrusted bytes, so the type is a convenience — trust it only when verification.hashValid. */
+  readonly payload: OMPayload | null;
   readonly payloadHash: string | null;
+  /** The marker's `sourceDocHash` (provenance of the source PDF, stamped at embed), or null. #5 */
+  readonly sourceDocHash: string | null;
   readonly verification: ReadVerification;
 }
 
@@ -63,26 +68,41 @@ export async function readPayloadFromBytes(
       state: encrypted ? "encrypted" : "absent",
       payload: null,
       payloadHash: null,
+      sourceDocHash: null,
       verification: UNVERIFIED,
     };
   }
 
   const expectedHash = await readXmpPayloadHash(doc, pdfLib);
+  const sourceDocHash = await readXmpProp(doc, pdfLib, "sourceDocHash");
   const bytes = await extractOmJson(doc, pdfLib, DEFAULT_MAX_PAYLOAD_BYTES);
 
   if (bytes === null) {
-    return { state: "absent", payload: null, payloadHash: expectedHash, verification: UNVERIFIED };
+    return {
+      state: "absent",
+      payload: null,
+      payloadHash: expectedHash,
+      sourceDocHash,
+      verification: UNVERIFIED,
+    };
   }
   const payload = safeParse(bytes);
   if (expectedHash === null) {
     // Degraded producer: payload present, no reference hash ([OM-XMP-008]). Never report hashValid.
-    return { state: "present", payload, payloadHash: null, verification: { ...UNVERIFIED } };
+    return {
+      state: "present",
+      payload,
+      payloadHash: null,
+      sourceDocHash,
+      verification: { ...UNVERIFIED },
+    };
   }
   const { hashValid, computedHash } = verifyIntegrity(bytes, expectedHash);
   return {
     state: hashValid ? "present" : "hash-mismatch",
     payload,
     payloadHash: computedHash,
+    sourceDocHash,
     verification: { hashValid, originVerified: null, signatureValid: null },
   };
 }
@@ -227,9 +247,11 @@ async function inflateStream(raw: Uint8Array, maxBytes: number): Promise<Uint8Ar
 }
 
 /** Parse the payload, returning null if the bytes are not a valid payload. */
-function safeParse(bytes: Uint8Array): Record<string, unknown> | null {
+function safeParse(bytes: Uint8Array): OMPayload | null {
   try {
-    return parsePayload(bytes);
+    // Untrusted bytes: parsePayload guarantees an object; the OMPayload shape is a read convenience
+    // (the caller trusts it only when verification.hashValid). [Ma3]
+    return parsePayload(bytes) as OMPayload;
   } catch {
     return null;
   }

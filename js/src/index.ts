@@ -37,6 +37,8 @@ export {
   type ValidationReport,
   type PrecompiledValidate,
 } from "./validate.js";
+export { OM_SCHEMA, SPEC_VERSION, loadSchema } from "./schema.js";
+export type { OMPayload, RealEstateListing } from "./payload-types.js";
 export { consistencyFindings, DEFAULT_TOLERANCES, type Tolerances } from "./consistency.js";
 export { OmIoError, type OmIoCode } from "./errors.js";
 export { extractPageText, setPdfWorkerSrc, type PageText, type PageTextResult } from "./text.js";
