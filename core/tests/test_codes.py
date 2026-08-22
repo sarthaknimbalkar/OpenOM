@@ -21,3 +21,9 @@ def test_python_requirement_map_matches_registry() -> None:
 def test_registry_severity_matches_the_code_prefix() -> None:
     for code, e in REGISTRY.items():
         assert e["severity"] == _SEVERITY[code.split("-")[1][0]], code
+
+
+def test_every_code_is_self_describing() -> None:
+    """[Po10] codes.json must carry a human message per code so it is usable stand-alone."""
+    missing = sorted(c for c, e in REGISTRY.items() if not e.get("message", "").strip())
+    assert not missing, f"codes.json entries without a message: {missing}"
