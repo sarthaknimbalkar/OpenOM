@@ -79,7 +79,7 @@ implementation against the other's output on every commit (`[OM-VEC-002]`).
 ## Quick start (Python)
 
 ```bash
-pip install -e "core[dev]" -e "cli[dev]"
+pip install -e core -e cli          # consumer install (add [dev] only to contribute)
 
 om inspect  path/to/offering.pdf
 om embed    path/to/offering.pdf --payload deal.json --out out.pdf --asserted-date 2026-08-16
