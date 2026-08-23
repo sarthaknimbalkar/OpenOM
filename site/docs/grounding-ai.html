@@ -27,6 +27,7 @@
   <meta name="twitter:image" content="https://openom.app/og.png" />
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Grounding AI agents", "description": "Ground your commercial real estate AI agent in verified facts: read an offering memorandum's broker-asserted, hash-verified openOM payload deterministically via MCP instead of hallucination-prone PDF extraction.", "url": "https://openom.app/docs/grounding-ai", "inLanguage": "en", "author": {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}, "publisher": {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}, "isPartOf": {"@type": "WebSite", "name": "openOM", "url": "https://openom.app/"}, "about": "commercial real estate offering memorandum machine-readable data standard"}</script>
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "openOM", "item": "https://openom.app/"}, {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://openom.app/docs/"}, {"@type": "ListItem", "position": 3, "name": "Grounding AI agents", "item": "https://openom.app/docs/grounding-ai"}]}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebAPI", "name": "openOM MCP grounding endpoint", "description": "Deterministic, inference-free MCP server: read a broker-asserted, hash-verified openOM payload from an offering-memorandum PDF (om_read) and validate a payload (om_validate).", "documentation": "https://openom.app/docs/grounding-ai", "termsOfService": "https://openom.app/docs/grounding-ai", "provider": {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}, "isAccessibleForFree": true, "potentialAction": {"@type": "ConsumeAction", "target": {"@type": "EntryPoint", "urlTemplate": "https://mcp.openom.app/mcp", "contentType": "application/json"}}}</script>
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Can I ground an AI agent on offering memorandum data?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Point your MCP client at the openOM server and read a broker-asserted, hash-verified payload via om_read: deterministic ground truth instead of hallucination-prone PDF extraction."}}, {"@type": "Question", "name": "How does openOM reduce AI hallucination in commercial real estate?", "acceptedAnswer": {"@type": "Answer", "text": "It replaces per-document AI extraction with one at-source, hash-verified, broker-asserted fact attributed to a named party as of a date, so the model cites provenance instead of guessing."}}]}</script>
   <style>
     :root {
@@ -111,8 +112,18 @@
   <pre><code>// Public grounding endpoint (Streamable HTTP) - om_read + om_validate:
 { "mcpServers": { "openom": { "url": "https://mcp.openom.app/mcp" } } }
 
+// Client without native Streamable-HTTP? bridge it over stdio:
+{ "mcpServers": { "openom": { "command": "npx", "args": ["-y", "mcp-remote", "https://mcp.openom.app/mcp"] } } }
+
 // Self-host the full six tools (stdio) - pip install openom-mcp:
 { "mcpServers": { "openom": { "command": "om-mcp" } } }</code></pre>
+  <p><small><b>Rate limit:</b> the public endpoint allows ~120 requests / 60s per client IP; over the
+     limit it returns HTTP <code>429</code> with a <code>Retry-After</code> header - pace a bulk
+     back-catalog read against it (or self-host for no limit).</small></p>
+  <p><small><b>Input shape:</b> the public Worker's <code>om_read</code> takes flat
+     <code>{ pdfBase64 }</code> or <code>{ url }</code> (exactly one); the self-hosted server takes a
+     <code>pdf</code> object - <code>{ path }</code> (stdio) or <code>{ url }</code>/<code>{ blobId }</code>
+     (hosted). Both return the same result shape.</small></p>
   <p>Then the agent uses:</p>
   <ul>
     <li><code>om_read</code> - the broker-asserted payload + <code>verification.hashValid</code>
@@ -122,6 +133,24 @@
     <li><code>om_inspect</code> · <code>om_extract_text</code> · <code>om_extract_images</code> -
         classify, and pull text/images for the OMs that aren't openOM-enabled yet.</li>
   </ul>
+
+  <h2>Which path: read vs. extract</h2>
+  <p>A simple decision rule for your agent:</p>
+  <ol>
+    <li><code>om_inspect(pdf)</code> → if <code>payload.present</code>, call <code>om_read</code>:
+        deterministic, free, hash-verified. <b>Prefer this.</b></li>
+    <li>else the OM is not openOM-enabled → run <b>extraction</b> (your own model) following the
+        <a href="/docs/extraction-playbook">extraction playbook</a>, treat every field as an
+        <i>unverified guess</i> until a human asserts it, and (optionally) <code>om_embed</code> it so
+        the next read is deterministic.</li>
+  </ol>
+
+  <h2>Try it in one call</h2>
+  <p>Point your agent at the downloadable <a href="/sample/openom-sample.pdf">sample OM</a> and ask:</p>
+  <pre><code>User: "What in-place NOI does this OM assert, and who asserted it, as of when?"
+Agent → om_read({ "url": "https://openom.app/sample/openom-sample.pdf" })
+Agent: "The broker (per assertedBy) asserts in-place NOI = $115,625, as of 2026-06-30 -
+        unaltered since embed (hashValid: true). This is the broker's opinion, not verified truth."</code></pre>
 
   <h2>Tell your agent how to treat it (system-prompt snippet)</h2>
   <pre><code>When an openOM payload is present, use it as the broker's ASSERTED OPINION, not fact.
@@ -140,8 +169,10 @@
   </ul>
   <p><small>Cold-start reality: most OMs aren't openOM-enabled yet, so your agent still needs an
      extractor for those - treat that output as an unverified guess, and prefer openOM-enabled OMs as
-     the trusted path. See the <a href="/docs/quickstart-developer.html">developer
-     quick-start</a> and the <a href="/verify/">verify tool</a>.</small></p>
+     the trusted path. See the <a href="/docs/extraction-playbook">extraction playbook</a> (how to
+     turn a raw OM into a payload with your own model), the
+     <a href="/docs/quickstart-developer.html">developer quick-start</a>, and the
+     <a href="/verify/">verify tool</a>.</small></p>
 
   </main>
 </body>

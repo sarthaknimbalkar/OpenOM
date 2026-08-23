@@ -617,7 +617,10 @@ def _llms_file() -> str:
         f"- [What is an offering memorandum?]({BASE}/docs/what-is-an-offering-memorandum): the"
         " definition, an OM's contents, and why its data is an assertion not a fact.",
         f"- [Grounding AI agents in openOM]({BASE}/docs/grounding-ai): read verified OM facts"
-        " via MCP instead of hallucination-prone PDF extraction.",
+        " via MCP instead of hallucination-prone PDF extraction. The public MCP endpoint is"
+        " https://mcp.openom.app/mcp (om_read + om_validate; deterministic, free, no key).",
+        f"- [Extraction playbook]({BASE}/docs/extraction-playbook): how an AI agent turns a raw OM"
+        " into a reviewed, embedded payload (untrusted-content fenced, human-reviewed).",
         f"- [Broker quick-start]({BASE}/docs/quickstart-broker): publish an OM carrying"
         " verifiable data.",
         f"- [Portal quick-start]({BASE}/docs/quickstart-portal): read and trust openOM data.",
