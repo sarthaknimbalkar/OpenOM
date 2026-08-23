@@ -48,4 +48,4 @@ There are no other network requests. In particular:
 
 ## Contact
 
-Questions: hello@vervelio.com · Source: https://github.com/sarthaknimbalkar/OpenOM
+Questions: hello@vervelio.com · Source: https://github.com/Vervelio-Labs/OpenOM

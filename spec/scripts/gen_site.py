@@ -365,7 +365,7 @@ __FAQ__
     <div class="colophon">
       <span>An open standard published by <a href="https://verveliolabs.com">Vervelio Labs</a> &middot; MIT licensed</span>
       <span>Inspired by Factur-X - the embedded-invoice standard that became European law</span>
-      <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
+      <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="https://github.com/Vervelio-Labs/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
     </div>
   </div></section>
 """
@@ -639,7 +639,7 @@ def _llms_file() -> str:
         f"- [JSON-LD context]({BASE}/ns/0.1): the openOM 0.1 vocabulary.",
         f"- [JSON Schema]({BASE}/spec/om-0.1.schema.json): the openOM 0.1 payload schema.",
         f"- [Webhook envelope schema]({BASE}/spec/webhook-envelope-0.1.schema.json).",
-        "- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript,"
+        "- [Source and toolchain](https://github.com/Vervelio-Labs/OpenOM): Python + TypeScript,"
         " MIT.",
         "",
     ]

@@ -63,7 +63,7 @@
   "homepage": "https://openom.app",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sarthaknimbalkar/OpenOM.git",
+    "url": "https://github.com/Vervelio-Labs/OpenOM.git",
     "directory": "js"
   },
   "engines": {
