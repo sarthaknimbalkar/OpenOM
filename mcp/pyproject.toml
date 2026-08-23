@@ -48,6 +48,9 @@ strict = true
 files = ["src"]
 # The MCP server SDK exposes an untyped @tool() decorator; the tool fns themselves are fully typed.
 disallow_untyped_decorators = false
+# boto3/botocore ship no py.typed; when installed (CI) mypy emits import-untyped attributed to the
+# IMPORTING file (openom_mcp.blobstore), so it must be disabled globally, not on the boto3 override.
+disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
 # Third-party SDK + OPTIONAL runtime deps (boto3/uvicorn/redis are lazy extras, absent in the base
@@ -59,9 +62,6 @@ module = [
 ]
 ignore_missing_imports = true
 follow_imports = "skip"
-# boto3/botocore ship no py.typed, so when they ARE installed (CI) mypy emits import-untyped, which
-# ignore_missing_imports does NOT suppress. Disable it for these untyped third-party imports.
-disable_error_code = ["import-untyped"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
