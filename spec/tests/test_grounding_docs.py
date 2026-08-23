@@ -27,7 +27,7 @@ def test_grounding_example_matches_the_real_sample_om() -> None:
     import re
 
     figures = {m for m in re.findall(r"\$(\d{2,3},\d{3})", page)}
-    assert figures <= {f"{noi:,}"}, f"page shows an NOI figure that isn't the sample OM's: {figures}"
+    assert figures <= {f"{noi:,}"}, f"page shows an NOI that isn't the sample OM's: {figures}"
 
 
 def test_extraction_playbook_page_has_no_wrong_tool_calls() -> None:

@@ -45,7 +45,7 @@ dev = [
 [project.urls]
 Homepage = "https://openom.app"
 Documentation = "https://openom.app/docs/"
-Repository = "https://github.com/sarthaknimbalkar/OpenOM"
+Repository = "https://github.com/Vervelio-Labs/OpenOM"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/openom_core"]
