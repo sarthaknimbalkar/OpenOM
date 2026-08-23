@@ -5,7 +5,9 @@ The deterministic Python core of the [openOM](../README.md) standard: the PDF/da
 integrity. **Zero inference, ever** (CI's `boundary` job enforces it). Byte-parity with `js/`.
 
 ```sh
-pip install openom-core            # or, from a clone:  pip install -e "core[dev]"
+# From a clone (openom-core is not yet on PyPI):
+pip install -e core                 # add the [dev] extra only to contribute
+# Once published:  pip install openom-core
 ```
 
 ```python

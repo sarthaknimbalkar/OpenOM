@@ -113,6 +113,17 @@ describe("worker dispatch + [M5] JSON-RPC batch", () => {
     expect(j.result?.serverInfo).toBeTruthy();
   });
 
+  test("[Po8] initialize echoes a supported requested protocolVersion, else falls back", async () => {
+    const echo = await worker.fetch(
+      post({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18" } }),
+    );
+    expect((await echo.json()).result.protocolVersion).toBe("2025-06-18");
+    const fb = await worker.fetch(
+      post({ jsonrpc: "2.0", id: 2, method: "initialize", params: { protocolVersion: "1999-01-01" } }),
+    );
+    expect((await fb.json()).result.protocolVersion).toBe("2024-11-05");
+  });
+
   test("[polish] rate limiter (when bound) returns 429 + Retry-After; absent binding = no limit", async () => {
     const denyEnv = { RATE_LIMITER: { limit: async () => ({ success: false }) } };
     const res = await worker.fetch(post({ jsonrpc: "2.0", id: 1, method: "ping" }), denyEnv);

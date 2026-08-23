@@ -51,25 +51,20 @@ export function summarizeDeal(payload: Record<string, unknown>): DealSummary {
   const by = obj(payload.assertedBy);
   const currency = str(payload.currency) ?? "USD";
 
+  // [Mi22] Deterministic, currency-aware formatting that is BYTE-IDENTICAL to the Python
+  // summarize_deal (no locale-dependent Intl) so the two views match for a cross-impl parity vector.
+  // USD renders with a "$" prefix; every other currency as "<CUR> <grouped>".
+  const group = (n: number): string => n.toLocaleString("en-US"); // "1,850,000"
+  const group2 = (n: number): string =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const money = (v: number | null): string | null => {
     if (v === null) return null;
-    try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 0,
-      }).format(v);
-    } catch {
-      return `${currency} ${v.toLocaleString("en-US")}`;
-    }
+    const n = Math.round(v); // half-up; matches Python floor(v + 0.5)
+    return currency === "USD" ? `$${group(n)}` : `${currency} ${group(n)}`;
   };
   const money2 = (v: number | null): string | null => {
     if (v === null) return null;
-    try {
-      return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(v);
-    } catch {
-      return `${currency} ${v.toFixed(2)}`;
-    }
+    return currency === "USD" ? `$${group2(v)}` : `${currency} ${group2(v)}`;
   };
   const pct = (v: number | null): string | null => (v === null ? null : `${(v * 100).toFixed(2)}%`);
 

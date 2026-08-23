@@ -20,6 +20,14 @@ def _props(path: list[str]) -> set[str]:
     return set((node.get("properties") or {}).keys())
 
 
+def test_spec_version_matches_schema_const() -> None:
+    """[Po1] The exported SPEC_VERSION is the single source of truth — it must equal the schema's
+    specVersion const, so it can't drift from the contract."""
+    from openom_core import SPEC_VERSION
+
+    assert SPEC_VERSION == SCHEMA["properties"]["specVersion"]["const"]
+
+
 def test_typeddicts_match_schema_properties() -> None:
     cases = [
         (OMPayload, []),

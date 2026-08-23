@@ -5,11 +5,33 @@
   "license": "MIT",
   "type": "module",
   "main": "./dist/src/index.js",
+  "module": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js"
+    },
+    "./summary": {
+      "types": "./dist/src/summary.d.ts",
+      "import": "./dist/src/summary.js"
+    },
+    "./validate": {
+      "types": "./dist/src/validate.d.ts",
+      "import": "./dist/src/validate.js"
+    },
+    "./read": {
+      "types": "./dist/src/read.d.ts",
+      "import": "./dist/src/read.js"
+    },
+    "./badge": {
+      "types": "./dist/src/badge.d.ts",
+      "import": "./dist/src/badge.js"
+    },
+    "./codes": {
+      "types": "./dist/src/codes.d.ts",
+      "import": "./dist/src/codes.js"
     },
     "./widget/badge-core.js": {
       "types": "./dist/widget/badge-core.d.ts",
@@ -19,7 +41,8 @@
   "files": [
     "dist/src",
     "dist/widget",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "openom",
@@ -48,7 +71,7 @@
   },
   "scripts": {
     "gen:schema": "node scripts/gen-schema.mjs",
-    "prebuild": "node scripts/gen-schema.mjs && node scripts/gen-types.mjs",
+    "prebuild": "node scripts/gen-schema.mjs && node scripts/gen-types.mjs && node scripts/gen-codes.mjs",
     "build": "tsc -p tsconfig.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build",
@@ -59,7 +82,8 @@
     "build:widget": "node widget/build.mjs && node ../extension/scripts/assert-no-inference.mjs widget/dist",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "gen:types": "node scripts/gen-types.mjs"
+    "gen:types": "node scripts/gen-types.mjs",
+    "gen:codes": "node scripts/gen-codes.mjs"
   },
   "dependencies": {
     "@noble/ciphers": "^2.3.0",
@@ -68,7 +92,6 @@
     "ajv-formats": "^3.0.1",
     "canonicalize": "^2.1.0",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^4.10.38",
     "tldts": "^7.4.10"
   },
   "devDependencies": {
@@ -81,6 +104,15 @@
     "prettier": "^3.4.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.18.0",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "peerDependencies": {
+    "pdfjs-dist": "^4.10.38"
+  },
+  "peerDependenciesMeta": {
+    "pdfjs-dist": {
+      "optional": true
+    }
   }
 }

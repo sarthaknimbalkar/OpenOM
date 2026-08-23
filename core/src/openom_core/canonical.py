@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 import math
 from collections.abc import Mapping
 from typing import Any
@@ -82,6 +83,40 @@ def _prepare(obj: Any, depth: int = 0) -> Any:
     if obj is None:
         return None
     raise CanonicalizationError(IO_NUMRANGE, f"unsupported JSON type: {type(obj).__name__}")
+
+
+def _reject_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """json object_pairs_hook: reject duplicate member names (after NFC) rather than last-wins.
+    Preserves the ORIGINAL keys (does not normalize) so a reader returns the payload as stored."""
+    out: dict[str, Any] = {}
+    seen: set[str] = set()
+    for key, value in pairs:
+        nkey = normalize("NFC", key)
+        if nkey in seen:
+            raise CanonicalizationError(IO_DUPKEY, f"duplicate member name after NFC: {nkey!r}")
+        seen.add(nkey)
+        out[key] = value
+    return out
+
+
+def _check_depth(obj: Any, depth: int = 0) -> None:
+    if depth > MAX_DEPTH:
+        raise CanonicalizationError(IO_STRUCTURE, f"nesting exceeds {MAX_DEPTH}")
+    if isinstance(obj, Mapping):
+        for v in obj.values():
+            _check_depth(v, depth + 1)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            _check_depth(v, depth + 1)
+
+
+def parse_hardened(raw: bytes | str) -> Any:
+    """Parse an om.json payload with the §J read-side hardening the write path enforces
+    ([OM-CANON-009/010]): reject duplicate member names and over-deep nesting. Used by the reusable
+    ``read`` verb so a self-hoster calling core on untrusted PDFs gets the MCP invariants."""
+    obj = json.loads(raw, object_pairs_hook=_reject_duplicate_pairs)
+    _check_depth(obj)
+    return obj
 
 
 def canonicalize(payload: Mapping[str, Any]) -> bytes:

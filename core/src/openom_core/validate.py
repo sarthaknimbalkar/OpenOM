@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections import OrderedDict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -286,7 +286,10 @@ def _warning_tier(
 
 
 def _date_term_checks(
-    lease: Mapping[str, Any], as_of_date: dt.date | None, tol: Tolerances, warn: Any
+    lease: Mapping[str, Any],
+    as_of_date: dt.date | None,
+    tol: Tolerances,
+    warn: Callable[[Finding], None],
 ) -> None:
     """OMW-W030/W031: stated term fields vs the date arithmetic (§H.4)."""
     commencement = _date(lease.get("commencement"))
@@ -313,7 +316,7 @@ def _date_term_checks(
 
 def _date_sanity_checks(
     payload: Mapping[str, Any], deal: Mapping[str, Any], lease: Mapping[str, Any],
-    processing_date: dt.date | None, warn: Any,
+    processing_date: dt.date | None, warn: Callable[[Finding], None],
 ) -> None:
     """OMW-W032/W033/W034: date-ordering sanity (§H.3)."""
     asserted = _date(payload.get("assertedDate"))
@@ -338,7 +341,7 @@ def _date_sanity_checks(
                  "lease expiration is on or before commencement", actual=expiration.isoformat()))
 
 
-def _self_supersede_check(payload: Mapping[str, Any], warn: Any) -> None:
+def _self_supersede_check(payload: Mapping[str, Any], warn: Callable[[Finding], None]) -> None:
     """OMW-W050: self-supersede (§H.3).
 
     The integrity hash covers ``meta.supersedes`` itself, so ``supersedes == hash(full payload)``
@@ -363,7 +366,7 @@ def _self_supersede_check(payload: Mapping[str, Any], warn: Any) -> None:
 
 def _rent_schedule_checks(
     schedule: list[Any], building_sf: float | None, lease: Mapping[str, Any],
-    tol: Tolerances, warn: Any,
+    tol: Tolerances, warn: Callable[[Finding], None],
 ) -> None:
     commencement = _date(lease.get("commencement"))
     expiration = _date(lease.get("expiration"))
