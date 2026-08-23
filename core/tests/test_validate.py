@@ -301,3 +301,13 @@ def test_configurable_tolerances() -> None:
     assert "OMW-W010" not in _codes(validate(bad).warnings)  # within default 0.005
     strict = Tolerances(cap_rate_abs=0.001)
     assert "OMW-W010" in _codes(validate(bad, tolerances=strict).warnings)
+
+
+def test_non_object_payload_is_a_schema_error_not_a_crash() -> None:
+    """[Mi3] A non-object payload (str/int/None/list) returns an OMV-E001 report, never raises."""
+    from openom_core.validate import validate
+
+    for bad in ["notadict", 123, None, []]:
+        report = validate(bad)  # type: ignore[arg-type]
+        assert not report.ok
+        assert any(f.code == "OMV-E001" for f in report.errors)

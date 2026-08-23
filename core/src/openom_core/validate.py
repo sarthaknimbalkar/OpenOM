@@ -132,6 +132,13 @@ def validate(
         schema = load_schema()
     report = Report()
     tol = tolerances or Tolerances()
+    # [Mi3/Mi6] A non-object payload is a schema violation, not a crash: run only the schema
+    # tier (OMV-E001 for the wrong type) and skip the consistency/info tiers that need a mapping -
+    # mirrors the JS validatePayload guard. Prevents an AttributeError / miscoded IO error.
+    if not isinstance(payload, Mapping):
+        _error_tier(payload, schema, report)
+        report.errors.sort(key=lambda f: (f.code, f.path))
+        return report
     # Reference date for term checks (OMW-W030): explicit as_of, else the payload's assertedDate,
     # so the check is internal-consistency (§H.6) and deterministic rather than wall-clock.
     # processing_date is the wall-clock-free "now" for OMW-W032 - set ONLY when a caller passes
@@ -174,9 +181,11 @@ def _validator_for(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator
     return validator
 
 
-def _error_tier(payload: Mapping[str, Any], schema: Mapping[str, Any], report: Report) -> None:
+def _error_tier(payload: Any, schema: Mapping[str, Any], report: Report) -> None:
+    # Pass the payload as-is (not dict(payload)): jsonschema validates any JSON value, and a
+    # non-object payload must hit the type check as OMV-E001 rather than raising in dict() [Mi3].
     validator = _validator_for(schema)
-    for err in sorted(validator.iter_errors(dict(payload)), key=str):
+    for err in sorted(validator.iter_errors(payload), key=str):
         report.errors.append(_map_schema_error(err))
 
 

@@ -62,3 +62,22 @@ def test_stdio_ignores_page_limit(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
         assert "error" not in res  # trusted-local: no ceiling
     finally:
         tools.set_resolver(None)
+
+
+def test_extract_text_maxchars_is_clamped(tmp_path) -> None:
+    """[Mi14/Mi15] a request above the server ceiling is clamped, not an unbounded dump."""
+    import pymupdf
+
+    from openom_mcp import tools
+
+    doc = pymupdf.open()
+    para = "lorem ipsum dolor sit amet consectetur adipiscing elit. " * 200  # ~11k chars, wrapped
+    for _ in range(30):  # ~330k chars total, comfortably over the 200k ceiling
+        pg = doc.new_page(width=612, height=792)
+        pg.insert_textbox(pymupdf.Rect(36, 36, 576, 756), para, fontsize=7)
+    p = tmp_path / "big.pdf"
+    p.write_bytes(doc.tobytes())
+    doc.close()
+    res = tools.om_extract_text({"path": str(p)}, max_chars=10**9)  # ask for way more than the cap
+    assert len(res["text"]) <= tools._TEXT_MAX_CHARS
+    assert res["truncated"] and res["nextCursor"]

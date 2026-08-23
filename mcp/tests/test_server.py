@@ -79,3 +79,27 @@ def test_server_tools_delegate(tmp_path: Path) -> None:
         {"path": str(_blank(tmp_path / "b.pdf"))}, _sample(), outPath=str(tmp_path / "out.pdf")
     )
     assert out["xmp"]["specName"] == "openOM"
+
+
+def test_pdf_inputschema_documents_the_shape() -> None:
+    """[Mi11] The pdf {path|url|blobId} shape is in the machine inputSchema, not just prose."""
+    tools = {t.name: getattr(t, "inputSchema", getattr(t, "input_schema", {})) for t in
+             asyncio.run(server.mcp.list_tools())}
+    import json as _j
+    s = _j.dumps(tools["om_read"])
+    assert "PdfRef" in s and all(k in s for k in ("path", "url", "blobId"))
+
+
+def test_om_embed_has_no_dead_sourcedochash_param() -> None:
+    """[Mi13] the dead sourceDocHash no-op is gone from the LLM-visible signature."""
+    tools = {t.name: getattr(t, "inputSchema", getattr(t, "input_schema", {})) for t in
+             asyncio.run(server.mcp.list_tools())}
+    assert "sourceDocHash" not in str(tools["om_embed"])
+
+
+def test_om_read_description_surfaces_state_and_codes() -> None:
+    """[Mi8/Mi16] the LLM-visible description enumerates the state values + OM-IO codes."""
+    tools = {t.name: (t.description or "") for t in asyncio.run(server.mcp.list_tools())}
+    d = tools["om_read"]
+    assert "hash-mismatch" in d and "encrypted" in d  # state enum
+    assert "OM-IO-" in d  # branchable error codes
