@@ -1,4 +1,4 @@
-"""[#3][OM-PDF-006] A signed OM must survive embed: the payload is appended via an incremental
+"""[#3][OM-EMB-020] A signed OM must survive embed: the payload is appended via an incremental
 save so the signature's byte range stays cryptographically intact, instead of the default
 full-rewrite (which invalidates it).
 
