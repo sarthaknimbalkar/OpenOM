@@ -264,7 +264,7 @@
       "title": "Incremental byte-preserving save",
       "section": "§D",
       "keyword": "SHOULD",
-      "clause": "An implementation SHOULD perform an incremental, byte-preserving PDF save on embed (appending an update rather than a full load→save re-serialization) so the original bytes are preserved; this matters chiefly for signed OMs and is currently a documented follow-up not yet implemented."
+      "clause": "An implementation SHOULD perform an incremental, byte-preserving PDF save on embed (appending an update rather than a full load→save re-serialization) so the original bytes are preserved; this matters chiefly for signed OMs, whose byte-range signature a full re-serialization would invalidate. The reference implementation detects a signed input and appends the payload via an incremental-update save, preserving the signed bytes as a byte-exact prefix; unsigned inputs use the deterministic full-rewrite path."
     },
     "OM-ERR-001": {
       "title": "Finding is the validation result unit",

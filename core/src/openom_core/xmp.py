@@ -140,7 +140,7 @@ def _marker_props(
 def render_marker_xml(existing_xml: str | None, props: dict[str, str]) -> str:
     """Produce the XMP packet bytes for ``props``, injecting our block into ``existing_xml`` (or a
     fresh packet). Pure - the single source of marker bytes shared by the pikepdf full-rewrite path
-    (``write_marker``) and the fitz incremental-update path (#3 [OM-PDF-006]), so a signed OM's
+    (``write_marker``) and the fitz incremental-update path (#3 [OM-EMB-020]), so a signed OM's
     appended marker is byte-identical to the rewritten one. Idempotent: drops our prior blocks."""
     # The PDF/A extension schema precedes the marker so a validator sees the namespace described.
     block = f"{_pdfa_extension_description()}\n{_omspec_description(props)}"

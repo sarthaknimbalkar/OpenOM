@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: MIT
-"""Generate the committed signed-PDF fixture for the incremental-embed gate (#3 [OM-PDF-006]).
+"""Generate the committed signed-PDF fixture for the incremental-embed gate (#3 [OM-EMB-020]).
 
 A full-rewrite embed invalidates a byte-range digital signature; embed() detects a signed input and
 appends the payload via an incremental-update save instead, so the signed bytes stay intact. Proving
