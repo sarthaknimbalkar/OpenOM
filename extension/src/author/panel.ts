@@ -345,7 +345,7 @@ async function startReview(
   } catch {
     buildoutSource = null;
   }
-  // [a reviewer] the on-device-model download progress renders in a dedicated line RIGHT UNDER the extract
+  // the on-device-model download progress renders in a dedicated line RIGHT UNDER the extract
   // button, not the bottom status line - so a broker watching the download sees it where they clicked.
   let extractProgress: HTMLElement | null = null;
   const source = await pickDraftSource([

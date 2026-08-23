@@ -88,7 +88,7 @@ describe("repriceDiff", () => {
   });
 });
 
-describe("plain-English coaching (a reviewer: 'all validation errors, haha')", () => {
+describe("plain-English coaching (non-technical broker validation errors)", () => {
   test("cap-rate error renders as a decimal-fraction instruction, not the raw schema string", () => {
     const c = document.createElement("div");
     renderDerived(c, newDraft({}), { report: withError, diff: null, finalized: {} });

@@ -1,4 +1,4 @@
-"""In-flow guidance for the non-technical broker (the "a reviewer" fixes): `om init`, `om profile`,
+"""In-flow guidance for the non-technical broker: `om init`, `om profile`,
 plain-English validation coaching, and friendly embed errors that always name the next action.
 """
 
