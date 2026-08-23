@@ -23,13 +23,17 @@ mcp = MCPServer("openom")
 
 @mcp.tool()
 def om_inspect(pdf: dict[str, Any], verifyOrigin: bool = False) -> dict[str, Any]:
-    """Classify a PDF (native/hybrid/scanned) and report the payload/image/text profile."""
+    """Classify a PDF (native/hybrid/scanned) and report the payload/image/text profile.
+
+    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
     return tools.om_inspect(pdf, verify_origin=verifyOrigin)
 
 
 @mcp.tool()
 def om_read(pdf: dict[str, Any], verifyOrigin: bool = True) -> dict[str, Any]:
-    """Read + integrity-verify the embedded om.json payload (the cheap consumer path)."""
+    """Read + integrity-verify the embedded om.json payload (the cheap consumer path).
+
+    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
     return tools.om_read(pdf, verify_origin=verifyOrigin)
 
 
@@ -40,7 +44,9 @@ def om_extract_text(
     cursor: str | None = None,
     maxChars: int = 100_000,
 ) -> dict[str, Any]:
-    """Paginated text + best-effort tables for a page range."""
+    """Paginated text + best-effort tables for a page range.
+
+    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
     return tools.om_extract_text(pdf, page_range=pageRange, cursor=cursor, max_chars=maxChars)
 
 
@@ -51,7 +57,9 @@ def om_extract_images(
     pageRange: str | None = None,
     includeVector: bool = False,
 ) -> dict[str, Any]:
-    """Image manifest + local paths (SMask→RGBA, CMYK→sRGB, xref+content dedupe); never bytes."""
+    """Image manifest + local paths (SMask→RGBA, CMYK→sRGB, xref+content dedupe); never bytes.
+
+    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
     return tools.om_extract_images(
         pdf, out_dir=outDir, page_range=pageRange, include_vector=includeVector
     )
@@ -73,7 +81,9 @@ def om_embed(
     badge: bool = False,
     sourceDocHash: bool = False,
 ) -> dict[str, Any]:
-    """Validate-then-embed om.json into a NEW PDF; refuse on schema errors, warnings pass."""
+    """Validate-then-embed om.json into a NEW PDF; refuse on schema errors, warnings pass.
+
+    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
     return tools.om_embed(
         pdf, payload, out_path=outPath, badge=badge, source_doc_hash=sourceDocHash
     )

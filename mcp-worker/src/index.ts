@@ -20,7 +20,10 @@ import { precompiledValidate } from "./validator.js";
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB - an OM PDF ceiling
 const MAX_BATCH = 20; // [M5] max JSON-RPC requests per batch call (keeps fan-out bounded)
 const SERVER_INFO = { name: "openom", version: "0.1" };
-const PROTOCOL = "2024-11-05";
+const PROTOCOL = "2024-11-05"; // the version this stateless JSON server implements (fallback)
+// [Po8] Protocol versions whose initialize/tools shape this server is compatible with, so it can
+// echo the client's requested version instead of always forcing the oldest.
+const SUPPORTED_PROTOCOLS = new Set(["2024-11-05", "2025-03-26", "2025-06-18"]);
 
 const TOOLS = [
   {
@@ -292,12 +295,21 @@ interface RpcMsg {
 async function handleRpc(msg: RpcMsg): Promise<Record<string, unknown> | null> {
   const { id, method, params } = msg;
   switch (method) {
-    case "initialize":
+    case "initialize": {
+      // [Po8] Echo the client's requested protocolVersion when we support it, else our own.
+      const requested = (params as { protocolVersion?: unknown } | undefined)?.protocolVersion;
+      const negotiated =
+        typeof requested === "string" && SUPPORTED_PROTOCOLS.has(requested) ? requested : PROTOCOL;
       return {
         jsonrpc: "2.0",
         id,
-        result: { protocolVersion: PROTOCOL, capabilities: { tools: {} }, serverInfo: SERVER_INFO },
+        result: {
+          protocolVersion: negotiated,
+          capabilities: { tools: {} },
+          serverInfo: SERVER_INFO,
+        },
       };
+    }
     case "notifications/initialized":
       return null; // a notification: no response
     case "ping":

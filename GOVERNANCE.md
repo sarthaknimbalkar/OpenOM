@@ -25,6 +25,23 @@ payloads, the conformance vectors, and the changelog.
   version keeps resolving.
 - **Codes are stable.** Validation codes (`OMV-E###`, `OMW-W###`, `OMI-I###`) keep their meaning.
 
+### Consumer-side compatibility (what a minor/patch may change under you)
+
+The "additive only" rule above protects *producers* (an old payload stays valid). Consumers should
+also know what a **minor** release may change in what they RECEIVE:
+
+- **Emitted values.** A relaxed constraint (a widened numeric range, a loosened enum/pattern) means a
+  minor openOM may emit or accept values an older consumer didn't expect. Validate defensively; do not
+  hard-code the old bounds.
+- **New finding codes.** New `OMW-W###`/`OMI-I###` codes (never blocking) may appear in a minor. Treat
+  an unknown warning/info code as non-fatal; branch only on codes you recognize.
+- **Deprecation signaling.** An optional field slated to move is marked `deprecated` in the schema and
+  announced in `CHANGELOG.md` at least one minor before it changes; it never disappears within a `0.x`.
+- **Namespace permanence.** A published versioned namespace/schema URI (`.../ns/0.x`,
+  `.../spec/om-0.x.schema.json`) is immutable and **keeps resolving indefinitely** after its successor
+  ships — it is never taken down (the norm for versioned web namespaces: W3C, schema.org, JSON-LD
+  contexts). A pinned integration therefore does not break; upgrading to a new version is opt-in.
+
 ## The one invariant that never changes
 
 **Deterministic core, inference at the edges.** The open engine, MCP server, and consumer tooling

@@ -25,6 +25,7 @@ from typing import Annotated, Any, TypeVar, cast
 
 import pikepdf
 import typer
+from openom_core import SPEC_VERSION
 from openom_core.canonical import canonicalize, hash_bytes
 from openom_core.embed import embed as _embed
 from openom_core.embed import read as _read
@@ -35,8 +36,6 @@ from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
 
 from openom_cli.buildout import listing_to_payload, payload_coverage
-
-SPEC_VERSION = "0.1"
 
 
 def _force_utf8(stream: object) -> None:
@@ -102,6 +101,19 @@ class _Output:
 _output = _Output()
 
 
+def _tool_version() -> str:
+    try:
+        return _pkg_version("openom-cli")
+    except PackageNotFoundError:  # pragma: no cover - source tree
+        return "0.0.0-dev"
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(f"openom-cli {_tool_version()} (spec {SPEC_VERSION})")
+        raise typer.Exit(0)
+
+
 @app.callback()
 def _main(
     output_format: Annotated[
@@ -110,7 +122,19 @@ def _main(
     quiet: Annotated[
         bool, typer.Option("--quiet", help="Suppress stdout (exit code + stderr only)")
     ] = False,
+    _version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-V",
+            help="Print the tool + spec version and exit.",
+            is_eager=True,
+            callback=_version_callback,
+        ),
+    ] = False,
 ) -> None:
+    """openOM CLI. NOTE: global options (--format, --quiet, --version) go BEFORE the command,
+    e.g. `om --format compact read x.pdf`."""
     if output_format not in ("pretty", "compact"):
         typer.echo(f"error: --format must be pretty|compact, got {output_format!r}", err=True)
         raise typer.Exit(2)
@@ -160,13 +184,28 @@ def embed(
             "domain-origin badge verifies against ([M2])"
         ),
     ] = False,
+    validate: Annotated[
+        bool,
+        typer.Option(
+            help="Validate the payload against the 0.1 schema first and REFUSE (exit 1) on schema "
+            "errors, like embed-batch (recommended; off by default so drafts can be piped)."
+        ),
+    ] = False,
 ) -> None:
     src = _read_bytes(pdf)
     data = _load_json(payload)
+    if validate:
+        report = _validate(data)  # defaults to the bundled 0.1 schema
+        if report.errors:
+            for f in report.errors:
+                typer.echo(f"error {f.code} {f.path}: {f.message}", err=True)
+            raise typer.Exit(1)
     for w in _reembed_warnings(src, data, asserted_date=asserted_date):
         typer.echo(f"warning {w.code} {w.path}: {w.message}", err=True)
     embedded = _embed(src, data, asserted_date=asserted_date)
     _write_bytes(out, embedded)
+    if mirror and str(out) == "-":
+        typer.echo("warning: --mirror ignored with `--out -` (stdout); pass a file path", err=True)
     if mirror and str(out) != "-":
         mpath = out.with_suffix(".jsonld")
         # The mirror MUST be the canonical (JCS) preimage bytes so its hash == the embedded
@@ -318,7 +357,7 @@ def embed_batch(  # noqa: C901 - a linear orchestrator (resolve -> dispatch -> r
         counts[r["status"]] = counts.get(r["status"], 0) + 1
     summary = {"total": len(results), "counts": counts, "dryRun": dry_run, "results": results}
     if report is not None:
-        report.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        report.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     if not _output.quiet:
         ok = counts.get("embedded", 0) + counts.get("would-embed", 0)
         tally = " ".join(f"{k}={v}" for k, v in counts.items())
@@ -503,7 +542,7 @@ def buildout_pull(
         jobs=jobs,
     )
     if report is not None:
-        report.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        report.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     if not _output.quiet:
         tally = " ".join(f"{k}={v}" for k, v in summary["counts"].items())
         typer.echo(
@@ -534,8 +573,10 @@ def mirror(
     if raw[:5] == b"%PDF-" or (b"%PDF-" in raw[:1024]):
         payload = _read(raw).payload
         if payload is None:
-            typer.echo("mirror: no openOM payload found in that PDF", err=True)
-            raise typer.Exit(code=1)
+            # [Mi11] "no embedded payload" is a data/IO condition -> exit 3, matching `check`
+            # (was exit 1), so a script gets one consistent code for "not an openOM PDF".
+            typer.echo("mirror: OM-IO-ABSENT: no openOM payload found in that PDF", err=True)
+            raise typer.Exit(code=3)
     else:
         payload = json.loads(raw)
     bytes_out = canonicalize(payload)
@@ -752,11 +793,7 @@ def extract(
 @app.command()
 def version() -> None:
     """Print the tool + spec versions."""
-    try:
-        tool_version = _pkg_version("openom-cli")
-    except PackageNotFoundError:  # pragma: no cover - running from a source tree
-        tool_version = "0.0.0-dev"
-    _emit({"tool": "openom-cli", "toolVersion": tool_version, "specVersion": SPEC_VERSION})
+    _emit({"tool": "openom-cli", "toolVersion": _tool_version(), "specVersion": SPEC_VERSION})
 
 
 @app.command()
@@ -765,11 +802,30 @@ def conformance(
     spec_dir: Annotated[Path, typer.Option(help="Path to the spec/ directory")] = Path("spec"),
     role: Annotated[str | None, typer.Option(help="Filter vectors by role")] = None,
     level: Annotated[str | None, typer.Option(help="Filter vectors by level")] = None,
+    impl_dir: Annotated[
+        Path | None,
+        typer.Option(
+            help="Certify a THIRD-PARTY implementation: a dir with <name>.canonical (JCS bytes) "
+            "and/or <name>.pdf (embedded output) per vector, compared to the goldens. Without "
+            "it, the LOCAL implementation is checked."
+        ),
+    ] = None,
 ) -> None:
     """Run the conformance suite (§T [OM-REF-002]): reproduce the published vectors + sample
-    outcomes with the local implementation. Exit 0 if all checks pass, 1 otherwise."""
+    outcomes. Without --impl-dir it checks the local implementation; with --impl-dir it certifies an
+    external implementation's produced bytes/PDFs. Exit 0 if all checks pass, 1 otherwise."""
     checks: list[dict[str, Any]] = []
     vectors = spec_dir / "vectors"
+    # [Mi8] The conformance vectors are NOT shipped in the wheel (they're the repo's /spec tree), so
+    # a plain `pip install openom-cli && om conformance` can't find them. Fail with a clear hint
+    # instead of a raw FileNotFoundError.
+    if not (vectors / "manifest.json").is_file():
+        typer.echo(
+            f"error: conformance vectors not found under {spec_dir}/ "
+            "(this command runs from a repo checkout; pass --spec-dir <path-to>/spec)",
+            err=True,
+        )
+        raise typer.Exit(3)
     manifest = _load_json(vectors / "manifest.json")
     for vec in manifest["vectors"]:
         dims = vec.get("dimensions", {})
@@ -779,6 +835,27 @@ def conformance(
             continue
         payload = _load_json(vectors / vec["payload"])
         expected = _load_json(vectors / vec["expected"])
+        if impl_dir is not None:
+            # Certify the third party: hash THEIR canonical bytes; read THEIR PDF. A missing output
+            # is a FAILED check, not a skip - else an empty --impl-dir would falsely pass.
+            cbytes = impl_dir / f"{vec['name']}.canonical"
+            checks.append(
+                {
+                    "check": f"vector:{vec['name']}:jcs",
+                    "ok": cbytes.is_file()
+                    and hash_bytes(cbytes.read_bytes()) == expected["jcs_sha256"],
+                }
+            )
+            impl_pdf = impl_dir / f"{vec['name']}.pdf"
+            if impl_pdf.is_file():
+                res = _read(impl_pdf.read_bytes())
+                checks.append(
+                    {
+                        "check": f"vector:{vec['name']}:pdf",
+                        "ok": res.present and res.hash_valid is True,
+                    }
+                )
+            continue
         got = hash_bytes(canonicalize(payload))
         checks.append({"check": f"vector:{vec['name']}:jcs", "ok": got == expected["jcs_sha256"]})
         pdf_path = vectors / vec["pdf"]
