@@ -11,14 +11,26 @@ from __future__ import annotations
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from mcp.server import MCPServer
+from pydantic import Field
+from typing_extensions import TypedDict
 
 from . import tools
 from .blobstore import BlobStore, LocalBlobStore
 
 mcp = MCPServer("openom")
+
+
+class PdfRef(TypedDict, total=False):
+    """[Mi11] The PDF input: exactly ONE of these. Typed so the shape appears in the tool
+    inputSchema an LLM reads (not just prose). path = stdio only; url/blobId = hosted HTTP."""
+
+    path: Annotated[str, Field(description="Local file path (stdio transport only).")]
+    url: Annotated[str, Field(description="https URL the server fetches (hosted transport).")]
+    blobId: Annotated[str, Field(description="A prior om_request_upload blob id (hosted).")]
+
 
 # [Ma2] The model-facing tool `description` is SINGLE-SOURCED from the tools.py delegate docstrings
 # (the pure API and the LLM description can never drift). `_PDF_REF` is the one shared note on the
@@ -32,23 +44,23 @@ def _desc(fn: Any, *, pdf_ref: bool = False) -> str:
 
 
 @mcp.tool(description=_desc(tools.om_inspect, pdf_ref=True))
-def om_inspect(pdf: dict[str, Any], verifyOrigin: bool = False) -> dict[str, Any]:
+def om_inspect(pdf: PdfRef, verifyOrigin: bool = False) -> dict[str, Any]:
     """Wraps tools.om_inspect (description single-sourced from its docstring)."""
     return tools.om_inspect(pdf, verify_origin=verifyOrigin)
 
 
 @mcp.tool(description=_desc(tools.om_read, pdf_ref=True))
-def om_read(pdf: dict[str, Any], verifyOrigin: bool = True) -> dict[str, Any]:
+def om_read(pdf: PdfRef, verifyOrigin: bool = True) -> dict[str, Any]:
     """Wraps tools.om_read (description single-sourced from its docstring)."""
     return tools.om_read(pdf, verify_origin=verifyOrigin)
 
 
 @mcp.tool(description=_desc(tools.om_extract_text, pdf_ref=True))
 def om_extract_text(
-    pdf: dict[str, Any],
+    pdf: PdfRef,
     pageRange: str | None = None,
     cursor: str | None = None,
-    maxChars: int = 100_000,
+    maxChars: int = 20_000,
 ) -> dict[str, Any]:
     """Wraps tools.om_extract_text (description single-sourced from its docstring)."""
     return tools.om_extract_text(pdf, page_range=pageRange, cursor=cursor, max_chars=maxChars)
@@ -56,7 +68,7 @@ def om_extract_text(
 
 @mcp.tool(description=_desc(tools.om_extract_images, pdf_ref=True))
 def om_extract_images(
-    pdf: dict[str, Any],
+    pdf: PdfRef,
     outDir: str | None = None,
     pageRange: str | None = None,
     includeVector: bool = False,
@@ -77,16 +89,13 @@ def om_validate(
 
 @mcp.tool(description=_desc(tools.om_embed, pdf_ref=True))
 def om_embed(
-    pdf: dict[str, Any],
+    pdf: PdfRef,
     payload: dict[str, Any],
     outPath: str | None = None,
     badge: bool = False,
-    sourceDocHash: bool = False,
 ) -> dict[str, Any]:
     """Wraps tools.om_embed (description single-sourced from its docstring)."""
-    return tools.om_embed(
-        pdf, payload, out_path=outPath, badge=badge, source_doc_hash=sourceDocHash
-    )
+    return tools.om_embed(pdf, payload, out_path=outPath, badge=badge)
 
 
 @mcp.tool(description=_desc(tools.om_request_upload))

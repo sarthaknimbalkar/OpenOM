@@ -131,6 +131,38 @@ describe("worker dispatch + [M5] JSON-RPC batch", () => {
     for (const k of contract.om_validate.requiredKeys) expect(valKeys).toContain(k);
   });
 
+  test("[Po3] absent payload gets an accurate, non-assertions note", async () => {
+    const doc = await PDFDocument.create();
+    doc.addPage([200, 200]); // plain PDF, no openOM payload
+    const plain = new Uint8Array(await doc.save());
+    const res = await worker.fetch(
+      post({
+        jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: "om_read", arguments: { pdfBase64: toB64(plain) } },
+      }),
+    );
+    const j = await res.json();
+    expect(j.result.structuredContent.state).toBe("absent");
+    expect(j.result.structuredContent.note).toMatch(/no embedded openom/i);
+  });
+
+  test("[Mi4] content channel is a short summary, not the full payload (no double context cost)", async () => {
+    const doc = await PDFDocument.create();
+    doc.addPage([200, 200]);
+    const embedded = await embedPayload(new Uint8Array(await doc.save()), validPayload);
+    const res = await worker.fetch(
+      post({
+        jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: "om_read", arguments: { pdfBase64: toB64(embedded) } },
+      }),
+    );
+    const j = await res.json();
+    const text = j.result.content[0].text;
+    expect(text).toMatch(/^om_read: state=/); // a summary line
+    expect(text).not.toContain("assertedBy"); // NOT the full payload JSON
+    expect(j.result.structuredContent.payload).toBeTruthy(); // full data still in the machine channel
+  });
+
   test("a single request still works (initialize)", async () => {
     const res = await worker.fetch(post({ jsonrpc: "2.0", id: 9, method: "initialize" }));
     const j = (await res.json()) as { id: number; result?: { serverInfo?: unknown } };

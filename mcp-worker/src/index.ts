@@ -35,10 +35,14 @@ const TOOLS = [
       "batch array (up to 20 requests per call) instead of one HTTP round-trip each.",
     inputSchema: {
       type: "object",
+      // [Mi7] exactly one of pdfBase64 / url. oneOf makes the requirement machine-readable; the
+      // description states it too. (The self-hosted server takes a `pdf` OBJECT - {path|url|blobId};
+      // this public Worker takes flat pdfBase64/url. See the README input-shape note. [Mi9/Mi10])
       properties: {
         pdfBase64: { type: "string", description: "The PDF bytes, base64-encoded." },
         url: { type: "string", description: "https URL of a PDF to fetch and read instead." },
       },
+      oneOf: [{ required: ["pdfBase64"] }, { required: ["url"] }],
     },
   },
   {
@@ -138,6 +142,32 @@ export function safeUrl(raw: string): URL {
 
 const MAX_REDIRECTS = 3; // most real OM hosting is a presigned/CDN redirect; follow a bounded chain
 
+/** [Mi5] Read a response body, aborting the moment the accumulated size exceeds `max` - so a missing
+ * or lying content-length can't force us to buffer an unbounded body. */
+export async function readCapped(body: ReadableStream<Uint8Array>, max: number): Promise<Uint8Array> {
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      if (total > max) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
+      chunks.push(value);
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    out.set(c, off);
+    off += c.length;
+  }
+  return out;
+}
+
 /**
  * Fetch PDF bytes, following up to MAX_REDIRECTS hops and re-running the SSRF guard on EVERY hop's
  * Location (resolve-then-pin, parity with the Python core's mcp/fetch.py). Workers has no raw socket,
@@ -163,7 +193,11 @@ export async function fetchPdf(
     if (!res.ok) throw new ToolError("OM-IO-001", `fetch failed: ${res.status}`);
     const len = Number(res.headers.get("content-length") ?? "0");
     if (len > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
-    const buf = new Uint8Array(await res.arrayBuffer());
+    // [Mi5] Stream + abort as soon as we cross MAX_BYTES, so a missing/lying content-length can't make
+    // us buffer an unbounded body into memory. Falls back to arrayBuffer() if the body isn't a stream.
+    const buf = res.body
+      ? await readCapped(res.body, MAX_BYTES)
+      : new Uint8Array(await res.arrayBuffer());
     if (buf.length > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
     return buf;
   }
@@ -250,12 +284,18 @@ async function omRead(args: Record<string, unknown>): Promise<unknown> {
     ...(diverged ? { diverged } : {}),
     ...(warnings ? { warnings } : {}),
     payload: outPayload,
-    note:
-      r.state === "hash-mismatch"
-        ? "Payload present but altered (hash mismatch) - do not trust it."
-        : "openOM records who asserted the data, unaltered, as of when - not that it is true.",
+    note: NOTES[r.state] ?? NOTES.present,
   };
 }
+
+// [Po3/Po6] A state-aware note so the model gets accurate guidance on EVERY path, not the
+// assertions caveat pinned even when there is no payload (absent/encrypted).
+const NOTES: Record<string, string> = {
+  present: "openOM records who asserted the data, unaltered, as of when - not that it is true.",
+  "hash-mismatch": "Payload present but altered (hash mismatch) - do not trust it.",
+  absent: "No embedded openOM payload; any figures in the PDF are unverified, not openOM assertions.",
+  encrypted: "PDF is encrypted; read it via the CLI or a self-hosted server, not this endpoint.",
+};
 
 function omValidate(args: Record<string, unknown>): unknown {
   if (typeof args.payload !== "object" || args.payload === null) throw new Error("provide payload");
@@ -278,10 +318,24 @@ function omValidate(args: Record<string, unknown>): unknown {
   };
 }
 
+/** [Mi4] A SHORT human summary for the content channel - the full object is in structuredContent, so
+ * we don't ship the whole payload twice and double an agent's context cost. */
+function summaryLine(name: string, data: Record<string, unknown>): string {
+  if (name === "om_read") {
+    const v = (data.verification ?? {}) as { hashValid?: unknown };
+    return `om_read: state=${data.state} hashValid=${v.hashValid} payloadHash=${data.payloadHash ?? "-"}`;
+  }
+  const s = (data.summary ?? {}) as { errorCount?: number; warningCount?: number };
+  return `om_validate: ok=${data.ok} errors=${s.errorCount ?? "?"} warnings=${s.warningCount ?? "?"}`;
+}
+
 async function callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
   const data = name === "om_read" ? await omRead(args) : name === "om_validate" ? omValidate(args) : null;
   if (data === null && name !== "om_validate") throw new Error(`unknown tool: ${name}`);
-  return { content: [{ type: "text", text: JSON.stringify(data) }], structuredContent: data };
+  return {
+    content: [{ type: "text", text: summaryLine(name, data as Record<string, unknown>) }],
+    structuredContent: data,
+  };
 }
 
 interface RpcMsg {
