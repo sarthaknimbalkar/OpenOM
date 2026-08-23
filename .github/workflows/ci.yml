@@ -37,6 +37,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash  # POSIX everywhere: `(cd pkg && mypy)` subshells must run in bash on Windows too
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
