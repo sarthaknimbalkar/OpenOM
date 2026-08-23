@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { fetchPdf, safeUrl } from "../src/index.js";
+import { fetchPdf, safeUrl, readCapped } from "../src/index.js";
 
 // A fake fetch that plays back a scripted sequence of responses keyed by call order, recording URLs.
 function scriptedFetch(steps: Array<{ status: number; location?: string; body?: Uint8Array }>) {
@@ -120,5 +120,29 @@ describe("fetchPdf ([#36] follow bounded, re-pinned redirects)", () => {
     expect(await codeOf(fetchPdf("https://cdn.example.com/missing.pdf", bad.impl))).toBe("OM-IO-001");
     const loop = scriptedFetch([{ status: 302, location: "https://a.example.com/n" }]);
     expect(await codeOf(fetchPdf("https://cdn.example.com/x.pdf", loop.impl))).toBe("OM-IO-009");
+  });
+});
+
+
+describe("[Mi5] readCapped aborts an oversize/unknown-length body", () => {
+
+  function streamOf(chunks: Uint8Array[]): ReadableStream<Uint8Array> {
+    let i = 0;
+    return new ReadableStream({
+      pull(c) {
+        if (i < chunks.length) c.enqueue(chunks[i++]);
+        else c.close();
+      },
+    });
+  }
+
+  test("throws OM-IO-005 as soon as the cap is exceeded (never buffers the whole body)", async () => {
+    const chunks = Array.from({ length: 5 }, () => new Uint8Array(4)); // 20 bytes total
+    await expect(readCapped(streamOf(chunks), 10)).rejects.toThrow(/size limit/);
+  });
+
+  test("returns the assembled bytes when under the cap", async () => {
+    const out = await readCapped(streamOf([new Uint8Array([1, 2]), new Uint8Array([3])]), 100);
+    expect(Array.from(out)).toEqual([1, 2, 3]);
   });
 });

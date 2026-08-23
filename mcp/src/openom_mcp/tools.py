@@ -244,6 +244,12 @@ def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
     that its figures are true. Ground on it as "the broker asserted X, unaltered, as of when," and
     always surface assertedBy + assertedDate + deal.noiType (in-place vs pro-forma); never present
     figures as verified fact. A hash-mismatched payload is returned as null (never as trusted).
+
+    Returns `state` ∈ {present, absent, hash-mismatch, encrypted} - branch on it. In `verification`:
+    hashValid is true (unaltered) / false (altered - payload is null) / null (no reference hash);
+    originVerified and signatureValid are null in 0.1 (reserved, not yet checked). On a fetch/parse
+    failure the result is `{error: {code, message}}` with an OM-IO-* code (e.g. OM-IO-008 bad/absent
+    reference, OM-IO-002 SSRF-blocked, OM-IO-005 too large) so an agent can branch without prose.
     """
     result = _run_core(_read, _load_pdf(pdf))
     # A hash-mismatched payload MUST be surfaced as null, never as trusted (OM-MCP-011).
@@ -277,11 +283,22 @@ def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
     }
 
 
+# [Mi14/Mi15] Context-friendly default + a hard ceiling. The default keeps a single call from
+# dumping ~25k tokens; the cap bounds a bigger ask (pagination via nextCursor is lossless).
+_TEXT_DEFAULT_CHARS = 20_000
+_TEXT_MAX_CHARS = 200_000
+
+
 @_guard
 def om_extract_text(
-    pdf: Any, page_range: str | None = None, cursor: str | None = None, max_chars: int = 100_000
+    pdf: Any,
+    page_range: str | None = None,
+    cursor: str | None = None,
+    max_chars: int = _TEXT_DEFAULT_CHARS,
 ) -> dict[str, Any]:
-    """Read-only, paginated text + best-effort tables (§I OM-MCP-012)."""
+    """Read-only, paginated text + best-effort tables (§I OM-MCP-012). max_chars is clamped to a
+    server ceiling; page through the rest with nextCursor (never a silent truncation)."""
+    max_chars = max(1, min(max_chars, _TEXT_MAX_CHARS))
     data = _load_pdf(pdf)
     _enforce_page_limit(data)
     return dict(
@@ -356,12 +373,15 @@ def om_validate(payload: Any, tolerances: dict[str, Any] | None = None) -> dict[
             monetary_rel=tolerances.get("psfRel", tolerances.get("monetaryRel", 0.01)),
         )
     report = _validate(payload, schema=_load_schema(), tolerances=tol)
+    # A non-object payload can't be canonicalized/hashed; report it as a schema error (OMV-E001 via
+    # the report) with a null canonical hash rather than raising [Mi3/Mi6].
+    canonical_hash = payload_hash(payload) if isinstance(payload, dict) else None
     return {
         "ok": report.ok,
         "errors": [dataclasses.asdict(f) for f in report.errors],
         "warnings": [dataclasses.asdict(f) for f in report.warnings],
         "info": [dataclasses.asdict(f) for f in report.info],
-        "canonical": {"hash": payload_hash(payload)},
+        "canonical": {"hash": canonical_hash},
     }
 
 
@@ -371,9 +391,10 @@ def om_embed(
     payload: Any,
     out_path: str | None = None,
     badge: bool = False,
-    source_doc_hash: bool = False,
 ) -> dict[str, Any]:
-    """The only mutating tool: validate-then-embed, refuse on schema errors (§I OM-MCP-015)."""
+    """The only mutating tool: validate-then-embed, refuse on schema errors (§I OM-MCP-015). The
+    source-document provenance hash is recorded automatically; assertedDate/assertedBy/
+    supersedes are payload FIELDS, not arguments."""
     report = _validate(payload, schema=_load_schema())
     if not report.ok:
         raise ToolError(

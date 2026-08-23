@@ -103,3 +103,14 @@ describe("conformance sample matrix (shared with the Python core)", () => {
     });
   }
 });
+
+describe("[Mi3] non-object payload → OMV-E001 (parity with the Python core)", () => {
+  test.each([["str", "x"], ["num", 1], ["null", null], ["array", []]])(
+    "%s is a schema error, not a crash",
+    (_label, bad) => {
+      const r = validatePayload(bad as unknown);
+      expect(r.blocked).toBe(true);
+      expect(r.errors[0]?.code).toBe("OMV-E001");
+    },
+  );
+});
