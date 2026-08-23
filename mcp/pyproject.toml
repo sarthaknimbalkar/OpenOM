@@ -59,6 +59,9 @@ module = [
 ]
 ignore_missing_imports = true
 follow_imports = "skip"
+# boto3/botocore ship no py.typed, so when they ARE installed (CI) mypy emits import-untyped, which
+# ignore_missing_imports does NOT suppress. Disable it for these untyped third-party imports.
+disable_error_code = ["import-untyped"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
