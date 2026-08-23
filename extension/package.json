@@ -1,6 +1,6 @@
 {
   "name": "openom-extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "openOM MV3 consumer-mode extension - detect, verify, view, publish. Zero inference.",
