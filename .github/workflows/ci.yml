@@ -50,9 +50,9 @@ jobs:
         run: ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests spec/matrix.py spec/__init__.py spec/tests spec/scripts
       - name: mypy
         run: |
-          mypy core/src
-          mypy cli/src
-          mypy mcp/src
+          (cd core && mypy)   # each package's own [tool.mypy] (strict + overrides)
+          (cd cli && mypy)
+          (cd mcp && mypy)
           mypy spec/matrix.py
       - name: pytest (core, coverage gate)
         run: pytest core -q --cov=openom_core --cov-report=term-missing --cov-fail-under=90

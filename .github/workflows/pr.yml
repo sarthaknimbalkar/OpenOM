@@ -31,9 +31,9 @@ jobs:
         run: ruff check core/src core/tests core/scripts cli/src cli/tests mcp/src mcp/tests spec/matrix.py spec/__init__.py spec/tests spec/scripts
       - name: mypy
         run: |
-          mypy core/src
-          mypy cli/src
-          mypy mcp/src
+          (cd core && mypy)   # each package's own [tool.mypy] (strict + overrides)
+          (cd cli && mypy)
+          (cd mcp && mypy)
       - name: tests (env-gated integration/cross-impl auto-skip)
         run: pytest core cli mcp spec -q
 
