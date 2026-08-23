@@ -139,22 +139,28 @@ export class OpenOmBadgeElement extends HTMLElement {
   /** [polish] Notify the host after each evaluate/paint so it can log coverage or show its own fallback. */
   #emit(view: BadgeView, error = false): void {
     this.#lastView = view;
-    // Construct the event from THIS element's own document realm, not the ambient global. In a
-    // browser both are window.CustomEvent; under jsdom (tests) the global CustomEvent can be Node's
-    // built-in - a different realm - which jsdom's dispatchEvent rejects ("not of type 'Event'").
-    const Ctor = this.ownerDocument?.defaultView?.CustomEvent ?? CustomEvent;
-    this.dispatchEvent(
-      new Ctor("openom:state", {
-        bubbles: true,
-        detail: {
-          state: view.state,
-          present: view.state !== "absent",
-          stale: view.stale ?? null,
-          diverged: view.diverged ?? null,
-          error,
-        },
-      }),
-    );
+    // An async refresh() can resolve AFTER the element is removed (e.g. between tests); a notify hook
+    // must never fire post-disconnect nor ever throw. Skip when detached, and construct the event
+    // from THIS element's own document realm (window in a browser, jsdom's in tests) - the ambient
+    // global CustomEvent can be Node's built-in, which jsdom's dispatchEvent rejects.
+    const win = this.ownerDocument?.defaultView;
+    if (!this.isConnected || !win) return;
+    try {
+      this.dispatchEvent(
+        new win.CustomEvent("openom:state", {
+          bubbles: true,
+          detail: {
+            state: view.state,
+            present: view.state !== "absent",
+            stale: view.stale ?? null,
+            diverged: view.diverged ?? null,
+            error,
+          },
+        }),
+      );
+    } catch {
+      /* a notify hook must never break render or surface as an unhandled error */
+    }
   }
   async refresh(): Promise<void> {
     const details = this.getAttribute("details") ?? undefined;
