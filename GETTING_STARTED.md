@@ -67,14 +67,11 @@ same buttons**, so you can follow along there too.
 
 ## Installing the Chrome extension (optional - Option B)
 
-The extension is currently **in review for the Chrome Web Store.** Until it's listed
-there for one-click install, a broker can simply **use the web tool at
-<https://openom.app/embed/> instead** - no install at all.
+The extension is on the Chrome Web Store - **one-click install, and it auto-updates:**
+**<https://chromewebstore.google.com/detail/openom/koconccgjacmafhabbiakodicffnaplb>**
 
-If you'd rather install the extension now, the manual load is a developer step, so ask
-whoever set up openOM for you (or your IT person) to run it - or just use the web tool.
-For reference, the developer steps are in the project
-[README](README.md#browser-extension-consumer--author).
+Prefer not to install anything? A broker can always just **use the web tool at
+<https://openom.app/embed/> instead** - same review-and-embed flow, no install at all.
 
 Once installed, click the openOM icon in your Chrome toolbar. Author mode (the embedding
 flow) opens from the popup's **"Embed a payload…"** button, which opens a side panel.

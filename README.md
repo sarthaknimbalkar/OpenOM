@@ -21,7 +21,7 @@ Pick the door that matches your job. Each one is the shortest path to a working 
 
 | You are… | openOM gives you… | Start here | No install? |
 |----------|-------------------|------------|-------------|
-| **🏢 Broker** - I have an OM PDF and want to add verified deal data | A review form that embeds your deal into the PDF. **You never touch a terminal.** | **[openom.app/embed/](https://openom.app/embed/)** - embed in your browser | ✅ Nothing to install; bytes never leave your machine |
+| **🏢 Broker** - I have an OM PDF and want to add verified deal data | A review form that embeds your deal into the PDF. **You never touch a terminal.** | **[openom.app/embed/](https://openom.app/embed/)** (in your browser) or the **[Chrome extension](https://chromewebstore.google.com/detail/openom/koconccgjacmafhabbiakodicffnaplb)** | ✅ Nothing to install; bytes never leave your machine |
 | **🔌 Portal** - I run a listings site and want trust badges + payloads at scale | A drop-in `<openom-badge>` web component and a free read API | [Portal quickstart](https://openom.app/docs/quickstart-portal) → [`js/widget/`](js/widget/) + [`mcp.openom.app`](https://mcp.openom.app/mcp) | Badge is one `<script>` tag; read API needs no key |
 | **💻 Developer** - I want to call the API in my own code | Clean Python + TypeScript libraries (embed / read / validate) | [Developer quickstart](#developer-quickstart) → [`examples/`](examples/) | Clone + editable install (packages not yet published) |
 | **🤖 AI-builder** - I want to ground an agent on OM data | A free, deterministic, public MCP endpoint | [`mcp.openom.app/mcp`](https://mcp.openom.app/mcp) → [config](examples/mcp-config.json) | No key, no per-call cost |
@@ -36,9 +36,9 @@ Pick the door that matches your job. Each one is the shortest path to a working 
 line. Your PDF never leaves your computer. You'll get a review form where you enter (or confirm)
 the deal facts, then download an openOM version of your PDF.
 
-Prefer a browser extension you can reuse on any listing? Install the Chrome extension (see
-[Browser extension](#browser-extension) below) and use **author mode** - it remembers your name,
-brokerage, and license so you never retype them.
+Prefer a browser extension you can reuse on any listing? Install
+**[openOM from the Chrome Web Store](https://chromewebstore.google.com/detail/openom/koconccgjacmafhabbiakodicffnaplb)**
+and use **author mode** - it remembers your name, brokerage, and license so you never retype them.
 
 A few things that trip up first-time brokers:
 
@@ -188,10 +188,12 @@ broker embed data into an OM without the CLI (**author mode**). Chrome **116+**;
 loads in **Edge**, and **Firefox** is roadmapped (see
 [extension/README](extension/README.md#browser-support-145)).
 
-**Not a developer?** You don't need any of this - embed in your browser at
-[openom.app/embed/](https://openom.app/embed/) instead.
+**→ Install from the Chrome Web Store:**
+**[openOM](https://chromewebstore.google.com/detail/openom/koconccgjacmafhabbiakodicffnaplb)**
+(one click, auto-updates). **Not a developer and just want to embed one OM?** You don't even need the
+extension - do it in your browser at [openom.app/embed/](https://openom.app/embed/).
 
-**For developers**, until the Chrome Web Store listing is live, build and load it unpacked:
+**For developers**, to build and load it unpacked from a clone:
 
 ```bash
 npm --prefix js install && npm --prefix extension install
