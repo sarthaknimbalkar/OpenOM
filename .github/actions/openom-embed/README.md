@@ -6,7 +6,7 @@ deterministic `om` CLI.
 ## Validate a payload on every push (the gate)
 
 ```yaml
-- uses: sarthaknimbalkar/OpenOM/.github/actions/openom-embed@main
+- uses: Vervelio-Labs/OpenOM/.github/actions/openom-embed@main
   with:
     command: check
     payload: deals/123.json
@@ -20,7 +20,7 @@ always fail the job; consistency warnings fail only under `strict`.
 ## Embed a payload at publish time
 
 ```yaml
-- uses: sarthaknimbalkar/OpenOM/.github/actions/openom-embed@main
+- uses: Vervelio-Labs/OpenOM/.github/actions/openom-embed@main
   with:
     command: embed
     pdf: offering.pdf
