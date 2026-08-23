@@ -30,4 +30,4 @@ payload is an identified party's opinion as of a date - assertions, never facts.
 - [JSON-LD context](https://openom.app/ns/0.1): the openOM 0.1 vocabulary.
 - [JSON Schema](https://openom.app/spec/om-0.1.schema.json): the openOM 0.1 payload schema.
 - [Webhook envelope schema](https://openom.app/spec/webhook-envelope-0.1.schema.json).
-- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript, MIT.
+- [Source and toolchain](https://github.com/Vervelio-Labs/OpenOM): Python + TypeScript, MIT.
