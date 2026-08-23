@@ -76,7 +76,7 @@ def _set_subtype(spec: pikepdf.Object) -> None:
 
 
 def _is_signed(pdf: pikepdf.Pdf) -> bool:
-    """True if the PDF carries a digital signature (§10 layer 4 / #3 [OM-PDF-006]).
+    """True if the PDF carries a digital signature (§10 layer 4 / #3 [OM-EMB-020]).
 
     A full-rewrite save invalidates a byte-range signature; when this is True, embed uses an
     incremental-update save instead, appending the payload so the signed bytes stay untouched.
@@ -146,7 +146,7 @@ def embed(
 ) -> bytes:
     """Embed ``payload`` as om.json and return the new PDF bytes. Never mutates the input.
 
-    A *signed* input (#3 [OM-PDF-006]) is embedded via an incremental-update save - the payload is
+    A *signed* input (#3 [OM-EMB-020]) is embedded via an incremental-update save - the payload is
     appended after the signed byte range so the signature stays cryptographically intact - rather
     than the default full-rewrite (which would invalidate it). Both paths write the identical
     payload bytes and XMP marker, so the result reads the same regardless of the save method.
@@ -183,7 +183,7 @@ def embed(
 
 
 def _embed_incremental(pdf_bytes: bytes, fields: _EmbedFields, asserted_date: str) -> bytes:
-    """Append the payload to a *signed* PDF via a fitz incremental-update save (#3 [OM-PDF-006]).
+    """Append the payload to a *signed* PDF via a fitz incremental-update save (#3 [OM-EMB-020]).
 
     Builds the om.json embedded-file stream, an indirect /Filespec (/AFRelationship /Data,
     /Subtype application/ld+json), the /EmbeddedFiles name-tree entry, the catalog /AF reference,
