@@ -9,8 +9,12 @@ const H = integrityHashOfBytes(MIRROR_BODY);
 
 const readResult = (over: Partial<ReadResult>): ReadResult => ({
   state: "present",
-  payload: { "@type": "RealEstateListing", assertedDate: "2026-06-15" },
+  payload: {
+    "@type": "RealEstateListing",
+    assertedDate: "2026-06-15",
+  } as unknown as ReadResult["payload"],
   payloadHash: H,
+  sourceDocHash: null,
   verification: { hashValid: true, originVerified: null, signatureValid: null },
   ...over,
 });
