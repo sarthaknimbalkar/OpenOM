@@ -88,19 +88,29 @@ def extract_text(
         start = _decode_cursor(cursor, tag) if cursor else 0
 
         # Concatenate the selected pages' text with a form-feed page separator (deterministic).
-        full = "\f".join(doc.load_page(i).get_text("text") for i in pages)
+        texts = [doc.load_page(i).get_text("text") for i in pages]
+        full = "\f".join(texts)
         window = full[start : start + max_chars]
         end = start + len(window)
         truncated = end < len(full)
 
+        # [Ma6] Emit tables ONLY for the pages the current text window covers - not the whole
+        # selection on every paginated call (which re-sent the whole doc's tables each page:
+        # unbounded + duplicated). Map each page's char span in `full` (+1 per \f) vs [start, end).
         tables: list[dict[str, Any]] = []
-        for i in pages:
+        pos = 0
+        for idx, page_text in enumerate(texts):
+            page_i = pages[idx]
+            span_start, span_end = pos, pos + len(page_text)
+            pos = span_end + 1  # account for the "\f" separator
+            if span_end <= start or span_start >= end:
+                continue  # this page's text is entirely outside the emitted window
             try:
-                found = doc.load_page(i).find_tables()
+                found = doc.load_page(page_i).find_tables()
             except Exception:  # noqa: BLE001 - tables are best-effort, never fatal
                 continue
             for tbl in found.tables:
-                tables.append({"page": i + 1, "rows": tbl.extract()})
+                tables.append({"page": page_i + 1, "rows": tbl.extract()})
 
         return {
             "text": window,

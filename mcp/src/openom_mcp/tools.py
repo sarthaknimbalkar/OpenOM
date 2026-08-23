@@ -217,7 +217,8 @@ def _run_core(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 
 @_guard
 def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
-    """Read-only: classify + profile the document (§I OM-MCP-010)."""
+    """Read-only: classify + profile the document (§I OM-MCP-010). Any embedded payload it
+    reports is a broker ASSERTION (opinion as of a date), never verified market truth."""
     data = _load_pdf(pdf)
     _enforce_page_limit(data)
     profile = _run_core(_inspect, data)
@@ -240,14 +241,29 @@ def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
 
     The payload is an ADVERTISEMENT: the broker's opinion of value, asserted by `assertedBy` as of
     `assertedDate`. `verification.hashValid: true` means the payload is UNALTERED since embed - NOT
-    that its figures are true. Ground on it as "the broker asserted X, unaltered, as of when," never
-    as verified fact. A hash-mismatched payload is returned as null (never as trusted).
+    that its figures are true. Ground on it as "the broker asserted X, unaltered, as of when," and
+    always surface assertedBy + assertedDate + deal.noiType (in-place vs pro-forma); never present
+    figures as verified fact. A hash-mismatched payload is returned as null (never as trusted).
     """
     result = _run_core(_read, _load_pdf(pdf))
     # A hash-mismatched payload MUST be surfaced as null, never as trusted (OM-MCP-011).
     trusted = result.present and result.hash_valid is not False
     payload = result.payload if trusted else None
+    # [Ma4] `state` + `note` mirror the public Worker's om_read shape so a client written against
+    # either server works against the other (state: present | absent | hash-mismatch).
+    if not result.present:
+        state = "absent"
+    elif result.hash_valid is False:
+        state = "hash-mismatch"
+    else:
+        state = "present"
+    note = (
+        "Payload present but altered (hash mismatch) - do not trust it."
+        if state == "hash-mismatch"
+        else "openOM records who asserted the data, unaltered, as of when - not that it is true."
+    )
     return {
+        "state": state,
         "payload": payload,
         "payloadHash": payload_hash(payload) if payload is not None else None,
         "specVersion": (payload or {}).get("specVersion") if payload else None,
@@ -257,6 +273,7 @@ def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
             "originVerified": None,
             "signatureValid": None,
         },
+        "note": note,
     }
 
 
@@ -286,6 +303,13 @@ def om_extract_images(
     # include_vector (#16): also rasterize vector-only pages (no raster images) so the manifest
     # still carries a page's visual content. Off by default - rendering is heavier than extraction.
     result = _run_core(_extract_images, data, out_dir=dest, render_vector_pages=include_vector)
+    # [Ma3] Over the hosted HTTP transport there's no client filesystem, so a server-local `path` is
+    # useless to a remote agent. Mirror om_embed: store each image as a TTL blob and return
+    # {blobId, presignedGet} the caller can fetch. Stdio keeps the local `path`.
+    resolver = _resolver()
+    to_blob = resolver.transport == "http" and resolver.blobstore is not None
+    made_temp = out_dir is None  # we own the tempdir → clean it up after blobbing (no disk leak)
+    owner = _current_principal.get() or ""
     manifest = []
     for img in result["images"]:
         if img["error"] is not None:
@@ -300,12 +324,21 @@ def om_extract_images(
             "mime": img["mime"],
             "bytes": Path(path).stat().st_size if path else 0,
             "contentHash": img["contentHash"],
-            "path": path,
         }
+        if to_blob and path:
+            stored = resolver.blobstore.put_result(Path(path).read_bytes(), owner)  # type: ignore[union-attr]
+            entry["blobId"] = stored["blobId"]
+            entry["presignedGet"] = stored["presignedGet"]
+        else:
+            entry["path"] = path
         if img.get("source") == "rendered-page":  # tag synthetic page renders + their page number
             entry["source"] = "rendered-page"
             entry["page"] = img["page"]
         manifest.append(entry)
+    if to_blob and made_temp:  # bytes are safely in blobs now; don't leak the server tempdir
+        import shutil
+
+        shutil.rmtree(dest, ignore_errors=True)
     return {"manifest": manifest, "deduped": result["deduped"]}
 
 
