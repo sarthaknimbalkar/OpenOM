@@ -101,8 +101,8 @@
   <h3>Security: CSP + Subresource Integrity</h3>
   <p>Pin the exact widget code you execute (an <b>immutable, content-versioned</b> URL, so an upgrade
      never breaks your pinned page), and allowlist only what it needs:</p>
-  <pre><code>&lt;script src="https://openom.app/widget/openom-badge-1846cb5d41d0.js"
-        integrity="sha384-k9J35/k12QruTtB5LFhZ8EZDz3Hb2rgePvTKRwpWajz3xZudwCCGis8cMJnYbY7t" crossorigin="anonymous" defer&gt;&lt;/script&gt;
+  <pre><code>&lt;script src="https://openom.app/widget/openom-badge-fe5a3390efe5.js"
+        integrity="sha384-AWjEGyS1PFXlClLUEaifHwbYSNFbYWWO3uEfkmgpP4gD01EiM6py07nmXUCE6WB9" crossorigin="anonymous" defer&gt;&lt;/script&gt;
 # CSP: script-src https://openom.app ;  connect-src &lt;your-PDF-host&gt; &lt;your-mirror-host&gt;</code></pre>
   <p><small>The versioned URL + its sha384 <code>integrity</code> are stable per release: because the
      URL's bytes never change, the pin can't break; adopt a new release by bumping both together. The
