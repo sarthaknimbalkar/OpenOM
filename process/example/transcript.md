@@ -13,7 +13,7 @@ gate. This is the Claude half of the [OM-DoD-005] evidence; the produced payload
 
 ```
 → om_inspect({"path": "process/example/sample-om.pdf"})
-← { "class": "native", "pages": 1, "textCoverage": ~1.0, "payloadPresent": false }
+← { "class": "native", "pages": 1, "textCoverage": ~1.0, "payload": { "present": false } }
 ```
 Native text; no existing payload → a first embed (not a reprice). Proceed to text extraction.
 

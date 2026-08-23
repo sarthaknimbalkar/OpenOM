@@ -18,7 +18,7 @@
 
 ## Steps
 
-1. **Classify** - call `om_inspect(pdf)`. Read `class`, `pages`, `textCoverage`, `payloadPresent`.
+1. **Classify** - call `om_inspect(pdf)`. Read `class`, `pages`, `textCoverage`, `payload.present`.
    If a payload is already present, this is a re-embed (reprice): you will set `meta.supersedes`
    later. If `class` is `scanned`, read the pages with your own vision/OCR.
 2. **Gather text** - call `om_extract_text(pdf, pageRange, cursor)`. If the result has

@@ -35,3 +35,9 @@ def test_injection_fence_present_in_every_playbook_file() -> None:
     # Each agent-facing playbook file MUST mark OM content as untrusted data, not commands.
     for name in PLAYBOOK:
         assert "untrusted" in _text(name).lower(), f"{name}: no untrusted-content fence"
+
+
+def test_no_payloadPresent_misname() -> None:
+    # [Mi18] om_inspect returns payload.present, not a top-level payloadPresent.
+    offenders = [d for d in ALL_DOCS if "payloadPresent" in _text(d)]
+    assert not offenders, f"stale om_inspect field name 'payloadPresent' in: {offenders}"
