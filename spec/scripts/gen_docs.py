@@ -907,10 +907,11 @@ def _grounding_ai() -> str:
   <h2>The one thing to get right: it's an opinion, not a fact</h2>
   <p>An OM is an <b>advertisement</b> - the broker's <b>opinion of value</b>, agreed to by the seller
      before publication. So openOM tells your agent <i>who</i> asserted a figure, that it is
-     <i>unaltered</i>, and <i>as of when</i> - <b>never that it is true</b>. Ground the model on
-     <i>"the broker asserted NOI = $143,750, unaltered, as of 2026-05-31"</i>, never <i>"NOI is
-     $143,750."</i> <b>Verified means provenance, not truth.</b> Underwriting still happens at the
-     deal desk off the broker-of-record file.</p>
+     <i>unaltered</i>, and <i>as of when</i> - <b>never that it is true</b>. Always carry the
+     <code>noiType</code> qualifier too (<b>in-place</b> vs <b>pro-forma</b> — a very different
+     claim). Ground the model on <i>"the broker asserted in-place NOI = $143,750, unaltered, as of
+     2026-05-31"</i>, never <i>"NOI is $143,750."</i> <b>Verified means provenance, not truth.</b>
+     Underwriting still happens at the deal desk off the broker-of-record file.</p>
 
   <h2>Connect the deterministic MCP server</h2>
   <p>openOM ships a deterministic <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/mcp">MCP

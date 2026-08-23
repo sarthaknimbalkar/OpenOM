@@ -50,7 +50,7 @@ rent periods `source: "extracted"`. Omitted (not stated in the OM): `geo`, `lotA
 ## 4. Validate & iterate - `om_validate`
 
 ```
-→ om_validate(draft, schema)
+→ om_validate(draft)
 ← { ok: true, errors: [], warnings: [], info: ["OMI-I001"] }
 ```
 Schema-clean and consistency-clean on the first pass - the transcribed numbers agree
@@ -71,7 +71,8 @@ Result: `expected-payload.json`.
 
 ## 6. Embed (not run in this transcript)
 
-With approval, `om_embed({"path": ".../sample-om.pdf"}, payload, assertedDate="2026-08-17")` would
+With approval, set `payload.assertedDate = "2026-08-17"` (and `assertedBy`) as fields, then
+`om_embed({"path": ".../sample-om.pdf"}, payload)` would
 write the embedded PDF (first embed → `meta.supersedes: null`). Left unrun here so the demo OM
 stays payload-free for the gate's `test_sample_om_has_no_embedded_payload`.
 
@@ -84,14 +85,14 @@ mapping. A representative first-pass slip on this same OM, and its correction:
 # First pass (WRONG): transcribed "Cap Rate: 5.75%" verbatim.
 deal.capRate = 5.75
 
-→ om_validate(draft, schema)
+→ om_validate(draft)
 ← warnings: ["OMW-W013"]   # capRate outside the plausibility band [0.02, 0.20]
 
 # Re-read mapping-guide.md → "capRate is a decimal fraction: 6.25% → 0.0625". Re-examine the OM.
 # Correct: 5.75% → 0.0575.
 deal.capRate = 0.0575
 
-→ om_validate(draft, schema)
+→ om_validate(draft)
 ← warnings: []             # ties to NOI ÷ askingPrice = 143750 / 2500000 = 0.0575
 ```
 
@@ -110,9 +111,9 @@ prior payload, builds the new one, and links it:
 ← payload (askingPrice 2,500,000, …)         # prior payload; its hash is H_prev
 
 # Repriced: askingPrice 2,400,000 → capRate 143750/2400000 = 0.0599, pricePerSF 400.00.
-# Bump assertedDate; set meta.supersedes = H_prev.
-→ om_validate(repriced, schema)             ← warnings: []   # still ties
-→ om_embed({"path": ".../embedded.pdf"}, repriced, assertedDate="2026-09-01")
+# Set fields on the payload: repriced.assertedDate="2026-09-01"; repriced.meta.supersedes = H_prev.
+→ om_validate(repriced)                      ← warnings: []   # still ties (schema is built in)
+→ om_embed({"path": ".../embedded.pdf"}, repriced)   # assertedDate is a payload field, not an arg
 ← a NEW PDF with exactly ONE om.json (replaced in place, not stacked) and
   meta.supersedes = H_prev - the audit chain to the superseded assertion.
 ```
