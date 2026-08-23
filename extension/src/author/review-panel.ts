@@ -18,6 +18,22 @@ function humanizePath(pointer: string): string {
     .join(" › ");
 }
 
+/** Plain-English rendering of a schema error for a non-technical broker, keyed on the codes they
+ * actually hit (cap-rate decimal trap, missing noiType/noiAsOfDate, currency). Falls back to the
+ * humanized path + raw message. Keeps the code in a trailing parenthetical, never leading. */
+export function plainMessage(code: string, path: string, message: string): string {
+  if (code === "OMV-E001" && path === "/deal/capRate")
+    return "Cap rate must be a decimal - enter 6.25% as 0.0625 (not 6.25). (OMV-E001)";
+  if (code === "OMV-E002")
+    return (
+      "You entered an NOI, so also pick whether it's in-place or pro-forma and its as-of date. "
+      + "(OMV-E002)"
+    );
+  if (path.toLowerCase().includes("currency"))
+    return `${humanizePath(path)}: use a 3-letter currency code like USD. (${code})`;
+  return `${humanizePath(path)}: ${message} (${code})`;
+}
+
 export interface RepriceDiff {
   added: string[];
   changed: [string, unknown, unknown][];
@@ -78,20 +94,26 @@ export function renderDerived(container: HTMLElement, draft: Draft, view: Derive
   if (report.warnings.length) {
     const sec = el("section", "warnings");
     sec.appendChild(el("h2", undefined, "Residual warnings"));
+    sec.appendChild(
+      el(
+        "p",
+        "warnings-note",
+        "These are advisories about the deal's internal math (e.g. NOI vs cap rate). They don't "
+          + "block embedding - review them, then assert if they're expected.",
+      ),
+    );
     for (const w of report.warnings) {
       sec.appendChild(el("div", "residual-warning", `${w.code} - ${w.message}`));
     }
     container.appendChild(sec);
   }
 
-  // Schema errors block the assertion; show them so the human can fix values.
+  // Schema errors block the assertion; show them in plain English so the human can fix values.
   if (report.errors.length) {
     const sec = el("section", "errors");
-    sec.appendChild(el("h2", undefined, "Errors (must fix before asserting)"));
+    sec.appendChild(el("h2", undefined, "Fix these before asserting"));
     for (const e of report.errors)
-      sec.appendChild(
-        el("div", "schema-error", `${humanizePath(e.path)}: ${e.message} (${e.code})`),
-      );
+      sec.appendChild(el("div", "schema-error", plainMessage(e.code, e.path, e.message)));
     container.appendChild(sec);
   }
 

@@ -59,10 +59,72 @@ const validate = (p: Record<string, unknown>): ValidationReport =>
     validate: precompiledValidate,
   });
 
-/** Entry screen: capture the current tab's PDF, or pick a local file. */
-export function renderCaptureScreen(root: HTMLElement): void {
+const INTRO_SEEN_KEY = "openom.author.seenIntro";
+
+/** One-time, dismissible orientation card so a first-time broker knows what this is + the 3 steps.
+ * Never shows again after dismiss or after the first successful embed (see markIntroSeen). */
+async function maybeShowIntro(root: HTMLElement, anchor: HTMLElement): Promise<void> {
+  try {
+    const seen = (await chrome.storage.local.get(INTRO_SEEN_KEY))[INTRO_SEEN_KEY];
+    if (seen) return;
+  } catch {
+    return; // storage unavailable - just skip the card, never block capture
+  }
+  const card = el("section", "intro-card");
+  card.appendChild(
+    el("h2", "intro-title", "Turn an offering memorandum into a verified openOM PDF."),
+  );
+  card.appendChild(
+    el(
+      "p",
+      "intro-body",
+      "openOM embeds your listing's key data (price, cap rate, NOI, rent) inside the PDF itself, " +
+        "signed as your assertion - so buyers and their tools can read it without re-keying. You " +
+        "stay in control: you review and approve every field before anything is embedded.",
+    ),
+  );
+  const steps = el("ol", "intro-steps");
+  for (const s of [
+    "Load the OM PDF (below).",
+    "Review the data - fill or fix each field.",
+    "Assert & embed - downloads your openOM PDF.",
+  ])
+    steps.appendChild(el("li", undefined, s));
+  card.appendChild(steps);
+  card.appendChild(
+    el(
+      "p",
+      "intro-optional",
+      "Optional: Chrome's on-device AI can pre-fill a draft you then review. Not required - you " +
+        "can enter everything by hand.",
+    ),
+  );
+  const gotIt = el("button", "intro-dismiss", "Got it") as HTMLButtonElement;
+  gotIt.dataset.action = "dismiss-intro";
+  gotIt.addEventListener("click", () => {
+    card.remove();
+    void chrome.storage.local.set({ [INTRO_SEEN_KEY]: true }).catch(() => {});
+  });
+  card.appendChild(gotIt);
+  root.insertBefore(card, anchor);
+}
+
+/** Mark the intro as seen so a returning broker (post-first-embed) never sees it again. */
+async function markIntroSeen(): Promise<void> {
+  try {
+    await chrome.storage.local.set({ [INTRO_SEEN_KEY]: true });
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Entry screen: capture the current tab's PDF, or pick a local file.
+ * An optional `error` renders a banner ABOVE the still-present controls, so a failed capture never
+ * strands the broker on a dead-end screen - the retry paths (tab button / file picker) stay visible. */
+export function renderCaptureScreen(root: HTMLElement, opts?: { error?: string }): void {
   root.replaceChildren();
   root.appendChild(wordmark("embed a payload"));
+  if (opts?.error) root.appendChild(el("p", "err", opts.error));
   root.appendChild(
     el(
       "p",
@@ -79,7 +141,16 @@ export function renderCaptureScreen(root: HTMLElement): void {
   const file = el("input", "capture-file") as HTMLInputElement;
   file.type = "file";
   file.accept = "application/pdf,.pdf";
-  root.append(useTab, el("span", "sep", "or"), file);
+  file.setAttribute("aria-label", "Choose an OM PDF from your computer");
+  const tabHint = el(
+    "p",
+    "capture-sub",
+    "\"Use current tab's PDF\" grabs the OM open in the active tab; or choose a PDF from your "
+      + "computer (any size).",
+  );
+  root.append(useTab, el("span", "sep", "or"), file, tabHint);
+
+  if (!opts?.error) void maybeShowIntro(root, useTab);
 
   useTab.addEventListener("click", () => void captureFromTab(root));
   file.addEventListener("change", () => {
@@ -112,15 +183,13 @@ async function captureFromTab(root: HTMLElement): Promise<void> {
     await captureFromUrl(root, tab.url);
     return;
   }
-  // [P4] no active-tab URL (e.g. a chrome:// page or a restricted tab) - say so instead of doing
-  // nothing on the click.
-  root.replaceChildren(
-    el(
-      "p",
-      "err",
-      "Couldn't read the current tab's URL. Open the OM in a tab, or use the file picker below.",
-    ),
-  );
+  // [P4] no active-tab URL (e.g. a chrome:// page or a restricted tab) - say so, and KEEP the
+  // capture controls so the broker can retry via the file picker instead of being stranded.
+  renderCaptureScreen(root, {
+    error:
+      "Couldn't read the current tab's URL. Open the OM in a tab, or choose a PDF from your "
+      + "computer below.",
+  });
 }
 
 /** Fetch a URL's PDF bytes (SW-side, page-CSP-immune) and start review. Also the ?url= deep-link. */
@@ -135,15 +204,11 @@ async function captureFromUrl(root: HTMLElement, url: string): Promise<void> {
     // [M6] a too-big OM from the tab path gets a clear, actionable message (not a generic network
     // error) - and note the file picker has no such cap.
     const oversize = !("error" in resp) && resp.reason === "oversize";
-    root.replaceChildren(
-      el(
-        "p",
-        "err",
-        oversize
-          ? "This OM is larger than 25 MB, so it can't be re-fetched from the tab. Use the file picker below (no size limit), or the openOM CLI."
-          : "Could not fetch this page's PDF bytes. Use the file picker below to choose the OM instead.",
-      ),
-    );
+    renderCaptureScreen(root, {
+      error: oversize
+        ? "This OM is larger than 25 MB, so it can't be re-fetched from the tab. Choose it from your computer below (no size limit), or use the openOM CLI."
+        : "Could not fetch this page's PDF bytes. Choose the OM from your computer below instead.",
+    });
     return;
   }
   await startReview(root, fromB64(resp.b64));
@@ -155,25 +220,22 @@ async function startReview(
   bytes: Uint8Array,
 ): Promise<void> {
   if (!looksLikePdf(bytes)) {
-    root.replaceChildren(
-      el(
-        "p",
-        "err",
-        "That doesn't look like a PDF - capture an offering-memorandum PDF.",
-      ),
-    ); // #65
+    // #65 - keep the capture controls so a wrong file is recoverable, not a dead end.
+    renderCaptureScreen(root, {
+      error:
+        "That doesn't look like a PDF - choose an offering-memorandum PDF below and try again.",
+    });
     return;
   }
   const capture: Capture = await captureFromBytes(bytes);
-  // #107 - pd-lib can't load an encrypted PDF, so embedding would fail opaquely later. Say so now.
+  // #107 - pd-lib can't load an encrypted PDF, so embedding would fail opaquely later. Say so now,
+  // but keep the controls so the broker can load a different (unencrypted) PDF without being stranded.
   if (capture.encrypted) {
-    root.replaceChildren(
-      el(
-        "p",
-        "err",
-        "This OM is encrypted - the browser extension can't embed into it. Use the openOM CLI (which handles encrypted OMs), or ask for an unencrypted copy.",
-      ),
-    );
+    renderCaptureScreen(root, {
+      error:
+        "This OM is encrypted, so the extension can't embed into it. Use the openOM CLI (which "
+        + "handles encrypted OMs), ask the sender for an unencrypted copy, or load a different PDF below.",
+    });
     return;
   }
   const profile0 = (await getProfile()) ?? {
@@ -317,7 +379,13 @@ async function startReview(
     }
   } else {
     root.appendChild(
-      el("p", "no-ai", "On-device AI unavailable - enter fields manually."),
+      el(
+        "p",
+        "no-ai",
+        "On-device AI isn't available in this browser (it needs Chrome 128+ with the built-in AI "
+          + "model, and not all machines qualify). That's fine - entering the fields by hand is the "
+          + "normal path, not a fallback. Fill in the review form below.",
+      ),
     );
   }
 
@@ -448,7 +516,10 @@ async function startReview(
       );
       handBack(out, suggestedFilename(final)); // #99 - meaningful name from the property address
       void clearDraft(sourceDocHash); // #94 - the OM is embedded; drop the saved draft
-      status.textContent = "Embedded - downloaded the OM.";
+      void markIntroSeen(); // a broker who's shipped one OM no longer needs the first-run card
+      status.textContent =
+        "Embedded - downloaded your openOM PDF. Confirm it anytime by opening it with the openOM "
+        + "extension, or at openom.app/verify/.";
     } catch (e) {
       status.textContent = `Blocked: ${(e as Error).message}`;
     }

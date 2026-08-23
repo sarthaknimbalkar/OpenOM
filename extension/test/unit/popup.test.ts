@@ -106,3 +106,12 @@ describe("renderPopup", () => {
     expect(root.querySelector(".card")).not.toBeNull();
   });
 });
+
+describe("profile discoverability (Scott: 'settable profile')", () => {
+  test("the popup shows a Settings link to the broker profile", () => {
+    const root = render({ state: "integrity-ok", label: "openOM", caption: "unaltered", findings: [], payload: PAYLOAD } as never);
+    const s = root.querySelector(".open-settings");
+    expect(s).not.toBeNull();
+    expect(s?.textContent).toContain("broker profile");
+  });
+});
