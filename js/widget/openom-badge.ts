@@ -139,8 +139,12 @@ export class OpenOmBadgeElement extends HTMLElement {
   /** [polish] Notify the host after each evaluate/paint so it can log coverage or show its own fallback. */
   #emit(view: BadgeView, error = false): void {
     this.#lastView = view;
+    // Construct the event from THIS element's own document realm, not the ambient global. In a
+    // browser both are window.CustomEvent; under jsdom (tests) the global CustomEvent can be Node's
+    // built-in - a different realm - which jsdom's dispatchEvent rejects ("not of type 'Event'").
+    const Ctor = this.ownerDocument?.defaultView?.CustomEvent ?? CustomEvent;
     this.dispatchEvent(
-      new CustomEvent("openom:state", {
+      new Ctor("openom:state", {
         bubbles: true,
         detail: {
           state: view.state,
