@@ -114,6 +114,45 @@ def _omspec_description(props: dict[str, str]) -> str:
     )
 
 
+def _marker_props(
+    *,
+    spec_version: str,
+    payload_filename: str,
+    payload_hash: str,
+    asserted_date: str,
+    supersedes: str | None,
+    source_doc_hash: str | None,
+) -> dict[str, str]:
+    props = {
+        "specName": SPEC_NAME,
+        "specVersion": spec_version,
+        "payloadFilename": payload_filename,
+        "payloadHash": payload_hash,
+        "assertedDate": asserted_date,
+    }
+    if supersedes is not None:
+        props["supersedes"] = supersedes
+    if source_doc_hash is not None:
+        props["sourceDocHash"] = source_doc_hash  # #5: provenance of the underlying source PDF
+    return props
+
+
+def render_marker_xml(existing_xml: str | None, props: dict[str, str]) -> str:
+    """Produce the XMP packet bytes for ``props``, injecting our block into ``existing_xml`` (or a
+    fresh packet). Pure - the single source of marker bytes shared by the pikepdf full-rewrite path
+    (``write_marker``) and the fitz incremental-update path (#3 [OM-PDF-006]), so a signed OM's
+    appended marker is byte-identical to the rewritten one. Idempotent: drops our prior blocks."""
+    # The PDF/A extension schema precedes the marker so a validator sees the namespace described.
+    block = f"{_pdfa_extension_description()}\n{_omspec_description(props)}"
+    if existing_xml is not None:
+        xml = _OMSPEC_DESC_RE.sub("", existing_xml)  # drop our prior blocks (no stacking)
+        xml = _PDFA_DESC_RE.sub("", xml)
+        if "</rdf:RDF>" in xml:
+            return xml.replace("</rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
+    # no existing metadata, or malformed/absent RDF - fall back to a fresh packet
+    return _EMPTY_PACKET.replace(" </rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
+
+
 def write_marker(
     pdf: pikepdf.Pdf,
     *,
@@ -126,30 +165,20 @@ def write_marker(
 ) -> None:
     """Write the required omspec XMP properties ([OM-XMP-002]) as a conformant, namespaced
     ``omspec:`` block, preserving any existing XMP. Idempotent: replaces our prior block."""
-    props = {
-        "specName": SPEC_NAME,
-        "specVersion": spec_version,
-        "payloadFilename": payload_filename,
-        "payloadHash": payload_hash,
-        "assertedDate": asserted_date,
-    }
-    if supersedes is not None:
-        props["supersedes"] = supersedes
-    if source_doc_hash is not None:
-        props["sourceDocHash"] = source_doc_hash  # #5: provenance of the underlying source PDF
-    # The PDF/A extension schema precedes the marker so a validator sees the namespace described.
-    block = f"{_pdfa_extension_description()}\n{_omspec_description(props)}"
-
-    if "/Metadata" in pdf.Root:
-        xml = bytes(pdf.Root.Metadata.read_bytes()).decode("utf-8", "replace")
-        xml = _OMSPEC_DESC_RE.sub("", xml)  # drop our prior blocks (no stacking)
-        xml = _PDFA_DESC_RE.sub("", xml)
-        if "</rdf:RDF>" in xml:
-            xml = xml.replace("</rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
-        else:  # malformed/absent RDF - fall back to a fresh packet
-            xml = _EMPTY_PACKET.replace(" </rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
-    else:
-        xml = _EMPTY_PACKET.replace(" </rdf:RDF>", f"{block}\n </rdf:RDF>", 1)
+    props = _marker_props(
+        spec_version=spec_version,
+        payload_filename=payload_filename,
+        payload_hash=payload_hash,
+        asserted_date=asserted_date,
+        supersedes=supersedes,
+        source_doc_hash=source_doc_hash,
+    )
+    existing = (
+        bytes(pdf.Root.Metadata.read_bytes()).decode("utf-8", "replace")
+        if "/Metadata" in pdf.Root
+        else None
+    )
+    xml = render_marker_xml(existing, props)
 
     stream = pdf.make_stream(xml.encode("utf-8"))
     stream.Type = pikepdf.Name.Metadata

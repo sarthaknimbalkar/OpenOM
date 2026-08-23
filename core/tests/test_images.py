@@ -216,6 +216,30 @@ def _jpx_pdf(w: int = 40, h: int = 30) -> bytes:
     return out.getvalue()
 
 
+def _cmyk_pdf(w: int = 64, h: int = 64) -> bytes:
+    """A PDF whose only image is a raw /DeviceCMYK XObject (C/M/Y/K quadrants) - the colorspace
+    an InDesign/print-workflow OM embeds. This is the highest-divergence-risk decode path: our
+    PyMuPDF CMYK->sRGB conversion is exactly where a single-decoder colour bug would hide (#167)."""
+    quadrants = ((255, 0, 0, 0), (0, 255, 0, 0), (0, 0, 255, 0), (0, 0, 0, 255))  # C, M, Y, K
+    samples = bytearray()
+    for y in range(h):
+        for x in range(w):
+            samples += bytes(quadrants[(x >= w // 2) + 2 * (y >= h // 2)])
+
+    pdf = pikepdf.Pdf.new()
+    pdf.add_blank_page(page_size=(w, h))
+    img = pikepdf.Stream(pdf, bytes(samples))
+    img.Type, img.Subtype = pikepdf.Name.XObject, pikepdf.Name.Image
+    img.Width, img.Height, img.BitsPerComponent = w, h, 8
+    img.ColorSpace = pikepdf.Name.DeviceCMYK  # raw samples, no Filter
+    page = pdf.pages[0]
+    page.Resources = pikepdf.Dictionary(XObject=pikepdf.Dictionary(Im0=img))
+    page.Contents = pikepdf.Stream(pdf, f"q {w} 0 0 {h} 0 0 cm /Im0 Do Q".encode())
+    out = io.BytesIO()
+    pdf.save(out)
+    return out.getvalue()
+
+
 def _inline_image_pdf(w: int = 4, h: int = 4) -> bytes:
     """A page whose only image is an INLINE image (BI/ID/EI in the content stream, not XObject)."""
     px = bytes([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0] * (w * h // 4))
@@ -267,11 +291,12 @@ def _thumb_corr(a: Image.Image, b: Image.Image, n: int = 16) -> float:
     return float(np.corrcoef(ga, gb)[0, 1])
 
 
-@pytest.mark.parametrize("builder", [_ccitt_g4_pdf, _jpx_pdf])
+@pytest.mark.parametrize("builder", [_ccitt_g4_pdf, _jpx_pdf, _cmyk_pdf])
 def test_image_decode_agrees_with_independent_renderer(builder, tmp_path: Path) -> None:
-    """#167: a DIFFERENTIAL cross-check on the exotic codecs - our PyMuPDF-based extract_images and
-    an independent renderer (pdfium via pypdfium2, not poppler) must decode the same full-page image
-    to the same picture. Catches a single-decoder codec bug a self-consistent test would miss."""
+    """#167: a DIFFERENTIAL cross-check on the exotic codecs + the CMYK->sRGB conversion path - our
+    PyMuPDF-based extract_images and an independent renderer (pdfium via pypdfium2, not poppler)
+    must decode the same full-page image to the same picture. Catches a single-decoder
+    codec/colourspace bug a self-consistent test would miss."""
     pypdfium2 = pytest.importorskip("pypdfium2")
     pdf = builder()
 
