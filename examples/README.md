@@ -49,10 +49,19 @@ if (r.state === "present" && r.verification.hashValid) useIt(r.payload); // "una
 
 ```ts
 import { validatePayload } from "openom-js";
-import schema from "./om-0.1.schema.json" with { type: "json" };
-const { errors } = validatePayload(payload, schema);
+const { errors } = validatePayload(payload); // the 0.1 schema is bundled
 if (errors.length) process.exit(1); // schema errors block; warnings/info never do
 ```
+
+Also gate on **`om conformance`** — the post-install integrity check that your installed openOM
+reproduces the pinned spec vectors/samples (run from a repo checkout, or `--spec-dir <path>/spec`):
+
+```sh
+om --quiet conformance   # exit 0 = conformant, 1 = a check failed
+```
+
+A third-party implementation certifies its OWN output with `om conformance --impl-dir ./my-output`
+(see [`spec/vectors/README.md`](../spec/vectors/README.md)).
 
 ## Receive change-notification webhooks (§Y - a portal/CRM)
 

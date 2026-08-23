@@ -12,12 +12,12 @@ import json
 from pathlib import Path
 
 import pikepdf
-from openom_core.embed import embed, read
-from openom_core.validate import validate
+
+# The stable public surface is re-exported from the package root (no deep submodule imports needed).
+from openom_core import embed, read, validate
 
 spec = Path(__file__).resolve().parents[1] / "spec"
 payload = json.loads((spec / "samples" / "valid-stnl.json").read_text(encoding="utf-8"))
-schema = json.loads((spec / "om-0.1.schema.json").read_text(encoding="utf-8"))
 
 # A blank stand-in for your offering memorandum (embedding never changes the page content).
 doc = pikepdf.new()
@@ -29,7 +29,7 @@ embedded = embed(buf.getvalue(), payload, asserted_date=str(payload["assertedDat
 r = read(embedded)
 print(f"read     -> present={r.present}  hashValid={r.hash_valid}")
 
-report = validate(r.payload, schema=schema)
+report = validate(r.payload)  # defaults to the bundled 0.1 schema (openom_core.load_schema)
 errs = len(report.errors)
 warns = len(report.warnings)
 print(f"validate -> ok={report.ok}  errors={errs}  warnings={warns}")

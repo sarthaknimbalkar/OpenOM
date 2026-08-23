@@ -3,6 +3,7 @@
 // NOT bundled into the deterministic read path; callers that want it (Node tooling reading an
 // empty-password-encrypted OM) pass this explicitly. In the browser, encrypted OMs simply report the
 // `encrypted` state instead. Zero inference.
+import { loadPdfjs } from "./pdfjs.js";
 import { verifyIntegrity } from "./verify.js";
 import { parsePayload } from "./parse.js";
 import type { ReadResult, ReadVerification } from "./read.js";
@@ -28,7 +29,7 @@ function safeParse(bytes: Uint8Array): OMPayload | null {
 /** Read a payload via pdf.js - for PDFs pdf-lib can't load (empty-password encrypted). See file note. */
 export const pdfjsDecryptRead: DecryptRead = async (pdfBytes, encrypted = false) => {
   try {
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const pdfjs = await loadPdfjs();
     const pdf = await pdfjs.getDocument({ data: pdfBytes.slice(), verbosity: 0 }).promise;
     try {
       const meta = await pdf.getMetadata();

@@ -1,8 +1,10 @@
 # openom-mcp
 
 A thin, **deterministic** [FastMCP](https://github.com/jlowin/fastmcp) server over
-[`openom-core`](../core) - six tools, zero inference:
-`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`.
+[`openom-core`](../core) - six data verbs, zero inference:
+`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`, plus one
+hosted-transport helper `om_request_upload` (reserves a presigned upload target; HTTP transport only).
+So `tools/list` reports **seven** tools.
 Two transports: **stdio** (`om-mcp`) and **hosted Streamable HTTP** (`om-mcp-http`, SSRF-guarded,
 rate-limited, untrusted-parse-isolated).
 
@@ -27,12 +29,21 @@ Add to your client's MCP config (e.g. Claude Desktop `claude_desktop_config.json
 
 ## Hosted HTTP
 
-`om-mcp-http` serves Streamable HTTP. By default it binds **loopback** (`127.0.0.1:8080`) — safe out
-of the box, not a world-open server. The free **public grounding endpoint** at
-`https://mcp.openom.app/mcp` is a serverless Cloudflare Worker (`/mcp-worker`) exposing the read-side
-`om_read` + `om_validate` via the byte-parity `/js` core; run `om-mcp-http` yourself for the full
-six-tool surface (extract/embed/inspect). Two-tier validation: schema errors block, consistency
-warnings never do; market truth is out of scope.
+`om-mcp-http` serves Streamable HTTP at the **`/mcp`** path (e.g. `http://127.0.0.1:8080/mcp`). By
+default it binds **loopback** (`127.0.0.1:8080`) — safe out of the box, not a world-open server. The
+free **public grounding endpoint** at `https://mcp.openom.app/mcp` is a serverless Cloudflare Worker
+(`/mcp-worker`) exposing the read-side `om_read` + `om_validate` via the byte-parity `/js` core; run
+`om-mcp-http` yourself for the full six-tool surface (extract/embed/inspect). Two-tier validation:
+schema errors block, consistency warnings never do; market truth is out of scope.
+
+**Tool inputs.** The PDF-taking tools (`om_inspect`/`om_read`/`om_extract_*`/`om_embed`) accept a
+`pdf` object that is exactly one of: `{"path": "..."}` (stdio, a local file), `{"url": "https://..."}`
+(HTTP transport, fetched under the SSRF rules), or `{"blobId": "..."}` (HTTP, a prior
+`om_request_upload`). `om_validate` takes a `payload` object.
+
+**Stability.** The seven-tool surface + result shapes are versioned with the spec (`specVersion`
+`0.1`); the `om_read`/`om_validate` shapes match the public Worker ([Ma9]). Breaking tool-surface
+changes ship under a new spec minor. See the repo `spec/CHANGELOG.md`.
 
 ### Configuration (env)
 

@@ -102,10 +102,30 @@
      way; until then, install from a clone of the repo:</p>
   <pre><code>pip install -e core          # Python: embed/read/inspect/extract/validate
 npm  install ./js            # TypeScript: byte-parity with the Python core</code></pre>
+  <h2>First success: embed &rarr; read &rarr; validate</h2>
+  <p>TypeScript:</p>
+  <pre><code>import { embedPayload, readPayloadFromBytes, validatePayload } from "openom-js";
+
+const out = await embedPayload(pdfBytes, payload);   // non-destructive; page content untouched
+const r = await readPayloadFromBytes(out);           // r.payload is typed (OMPayload)
+const { errors } = validatePayload(payload);          // 0.1 schema is bundled - no schema file needed
+if (errors.length) throw new Error("schema errors block");</code></pre>
+  <p>Python:</p>
+  <pre><code>from openom_core import embed, read, validate
+
+out = embed(pdf_bytes, payload, asserted_date=payload["assertedDate"])
+r = read(out)                       # r.present, r.hash_valid, r.payload
+report = validate(r.payload)        # defaults to the bundled 0.1 schema
+assert report.ok                    # schema errors block; warnings never do</code></pre>
+  <p>More runnable snippets (webhook receiver, consumer read) live in
+     <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/examples">examples/</a>.</p>
   <h2>Validation model</h2>
   <p>Two tiers: <strong>schema errors block</strong>; <strong>consistency warnings never block</strong>;
      market truth is out of scope forever. See the
-     <a href="/docs/codes.html">code catalog</a> for every code and its requirement clause.</p>
+     <a href="/docs/codes.html">code catalog</a> for every code, its message and requirement, and the
+     <a href="/docs/requirements.html">requirement reference</a> for every <code>OM-*</code> clause.
+     Enable full <code>format</code> assertion (ajv-formats mode:full / jsonschema
+     <code>FormatChecker</code>) to reproduce conformance outcomes.</p>
 
   </main>
 </body>

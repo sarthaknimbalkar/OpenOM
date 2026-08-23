@@ -3,13 +3,27 @@
 The `om` command over [`openom-core`](../core) - no UI, no inference; also the server-side path.
 
 ```sh
-pip install openom-cli            # or, from a clone:  pip install -e "cli[dev]"
+# From a clone (not yet on PyPI): install core first, then cli.
+pip install -e core && pip install -e cli   # add [dev] to either only to contribute
+# Once published:  pip install openom-cli
 
 om inspect  offering.pdf
-om embed    offering.pdf --payload deal.json --out out.pdf --asserted-date 2026-08-16
+om embed    offering.pdf --payload deal.json --out out.pdf --asserted-date 2026-08-16 --validate
 om read     out.pdf
 om validate deal.json
 om check    out.pdf               # consistency only
+om --version
+```
+
+## Conformance (CI integrity gate)
+
+`om conformance` reproduces the pinned spec vectors + samples with your installed openOM — run it in
+CI so an environment/version change can't silently drift from the standard. It reads the repo's
+`spec/` tree (pass `--spec-dir <path>/spec` from outside a checkout):
+
+```sh
+om --quiet conformance                       # exit 0 = conformant, 1 = a check failed
+om conformance --impl-dir ./my-output        # certify a THIRD-PARTY implementation's output
 ```
 
 ## Bulk / back-catalog embed

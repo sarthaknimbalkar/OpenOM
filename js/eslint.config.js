@@ -9,6 +9,7 @@ export default tseslint.config(
       "coverage/**",
       "src/schema.ts",
       "src/payload-types.ts",
+      "src/codes.ts",
     ],
   },
   js.configs.recommended,

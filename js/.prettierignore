@@ -4,3 +4,4 @@ coverage
 test-results/
 src/schema.ts
 src/payload-types.ts
+src/codes.ts

@@ -8,8 +8,10 @@ The versioned contract every implementation conforms to - **CC-BY-4.0** (see [LI
 
 - `om-0.1.schema.json` - the payload JSON Schema (2020-12).
 - `context/openom-0.1.jsonld` - JSON-LD `@context` / vocabulary (datatype-coerced per [OM-LD-004]).
-- `codes.json` - canonical finding-code registry (code → requirement + severity); both cores drift-lock to it.
+- `codes.json` - canonical finding-code registry (code → message + requirement + severity); both cores drift-lock to it.
+- `requirements.json` - normative requirement registry (every `OM-*` ID → its clause); drift-locked by `tests/test_requirements.py`.
 - `webhook-envelope-0.1.schema.json` - the §Y change-notification envelope.
+- `webhook-subscription-0.1.schema.json` - the §Y subscription-registration schema.
 - `samples/` - valid + invalid conformance samples.
 - `vectors/` - the anti-fork oracle: JCS expected bytes/hashes, golden PDFs, negatives, and the
   differential-fuzz corpus. Both `core` and `js` reproduce these byte-for-byte.
@@ -34,6 +36,8 @@ byte-diffed against the sources by `tests/test_site.py`; regeneration must be a 
 | `…/openom/ns/0.1` | `context/openom-0.1.jsonld` (`application/ld+json`) |
 | `…/openom/spec/om-0.1.schema.json` | the payload schema (`application/schema+json`) |
 | `…/openom/spec/webhook-envelope-0.1.schema.json` | the webhook envelope schema |
+| `…/openom/spec/webhook-subscription-0.1.schema.json` | the webhook subscription schema |
+| `…/openom/spec/requirements.json` | the requirement registry (`application/json`) |
 | `…/openom/` | a human-readable vocabulary landing |
 | `…/openom/docs/` | per-persona docs: quick-starts + field reference + code catalog (#141) |
 
