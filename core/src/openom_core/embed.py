@@ -10,14 +10,13 @@ The exact JCS bytes are stored verbatim ([OM-EMB-010]); the integrity hash is ov
 from __future__ import annotations
 
 import io
-import json
 import zlib
 from dataclasses import dataclass
 from typing import Any
 
 import pikepdf
 
-from .canonical import canonicalize, hash_bytes, strip_signature
+from .canonical import canonicalize, hash_bytes, parse_hardened, strip_signature
 from .errors import Finding, PayloadTooLargeError
 from .xmp import read_marker, write_marker
 
@@ -234,7 +233,7 @@ def read(pdf_bytes: bytes) -> ReadResult:
         if stream is None:
             return ReadResult(present=False, payload=None, hash_valid=None)
         raw = _decoded_payload_bytes(stream)
-        payload = json.loads(raw)
+        payload = parse_hardened(raw)  # §J read-side hardening: dup-key + depth guard [Mi18]
         xmp_hash = marker.get("payloadHash") if marker else None
         hash_valid = (hash_bytes(raw) == xmp_hash) if xmp_hash else None
         return ReadResult(
