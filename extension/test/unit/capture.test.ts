@@ -6,12 +6,14 @@ const ABSENT: ReadResult = {
   state: "absent",
   payload: null,
   payloadHash: null,
+  sourceDocHash: null,
   verification: { hashValid: null, originVerified: null, signatureValid: null },
 };
 const PRESENT: ReadResult = {
   state: "present",
-  payload: { assertedBy: { broker: "A" } },
+  payload: { assertedBy: { broker: "A" } } as unknown as ReadResult["payload"],
   payloadHash: "sha256:abc",
+  sourceDocHash: null,
   verification: { hashValid: true, originVerified: null, signatureValid: null },
 };
 const MISMATCH: ReadResult = { ...PRESENT, state: "hash-mismatch" };
