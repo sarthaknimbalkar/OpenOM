@@ -9,7 +9,7 @@ const jsDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const specCodes = JSON.parse(readFileSync(join(jsDir, "..", "spec", "codes.json"), "utf8"))
   .codes as Record<string, unknown>;
 
-/** [Mi19] OM_CODES + the OmCode union are generated from spec/codes.json — drift-locked so the
+/** [Mi19] OM_CODES + the OmCode union are generated from spec/codes.json - drift-locked so the
  *  exported registry can never diverge from the canonical source both cores drift-lock to. */
 describe("[Mi19] OM_CODES registry", () => {
   test("OM_CODES deep-equals the committed spec/codes.json codes", () => {

@@ -48,7 +48,7 @@ extension/*.zip
 
 js/test-results/
 
-# marketing mock (Rule 2 — never commit)
+# marketing mock (Rule 2 - never commit)
 *.htm
 *_files/
 .playwright-mcp/

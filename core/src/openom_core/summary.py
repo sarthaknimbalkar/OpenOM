@@ -5,7 +5,7 @@ The typed, formatted flat view a consumer (CRM, underwriting tool, portal) needs
 re-walk the nested payload by hand or mis-render a raw ``0.0625`` cap rate. Pure + deterministic (no
 clock, no inference). Field names are camelCase to match the JS ``DealSummary`` so the two views are
 directly comparable. Both cores format deterministically (no locale-dependent Intl): USD as ``$``
-+ grouped, every other currency as ``"<CUR> <grouped>"`` — BYTE-IDENTICAL to js/src/summary.ts, so
++ grouped, every other currency as ``"<CUR> <grouped>"`` - BYTE-IDENTICAL to js/src/summary.ts, so
 summarize_deal(payload) == summarizeDeal(payload) (guarded by the cross-impl parity test).
 """
 

@@ -1,13 +1,13 @@
 # openOM governance
 
 openOM is an open standard, not just a tool. This document says how the standard evolves, what is
-guaranteed stable, and how to propose a change — so implementers can adopt it as *the* standard, not a
+guaranteed stable, and how to propose a change - so implementers can adopt it as *the* standard, not a
 single vendor's product.
 
 ## Steward
 
 openOM is stewarded by **[Vervelio Labs](https://verveliolabs.com)** as a neutral maintainer. The
-toolchain is MIT-licensed and the specification is CC-BY-4.0 — anyone may implement, fork, embed, or
+toolchain is MIT-licensed and the specification is CC-BY-4.0 - anyone may implement, fork, embed, or
 build on it without permission. Stewardship means maintaining the spec, the conformance suite, and the
 reference implementations in the open; it does not mean gatekeeping who may use the standard.
 
@@ -19,9 +19,9 @@ payloads, the conformance vectors, and the changelog.
 - **Published URLs are immutable.** Once a versioned namespace/schema URL is published
   (`https://openom.app/ns/0.1`, `.../spec/om-0.1.schema.json`), the bytes it serves never change in a
   breaking way. A JSON-LD processor or `$ref` resolver can pin it forever.
-- **Within a version, changes are additive only** — new optional fields, new vocabulary terms, relaxed
+- **Within a version, changes are additive only** - new optional fields, new vocabulary terms, relaxed
   constraints. Nothing that would invalidate a previously-valid payload.
-- **Breaking changes ship a new version** — a new namespace (`.../ns/0.2`) and schema `$id`. The old
+- **Breaking changes ship a new version** - a new namespace (`.../ns/0.2`) and schema `$id`. The old
   version keeps resolving.
 - **Codes are stable.** Validation codes (`OMV-E###`, `OMW-W###`, `OMI-I###`) keep their meaning.
 
@@ -39,13 +39,13 @@ also know what a **minor** release may change in what they RECEIVE:
   announced in `CHANGELOG.md` at least one minor before it changes; it never disappears within a `0.x`.
 - **Namespace permanence.** A published versioned namespace/schema URI (`.../ns/0.x`,
   `.../spec/om-0.x.schema.json`) is immutable and **keeps resolving indefinitely** after its successor
-  ships — it is never taken down (the norm for versioned web namespaces: W3C, schema.org, JSON-LD
+  ships - it is never taken down (the norm for versioned web namespaces: W3C, schema.org, JSON-LD
   contexts). A pinned integration therefore does not break; upgrading to a new version is opt-in.
 
 ## The one invariant that never changes
 
 **Deterministic core, inference at the edges.** The open engine, MCP server, and consumer tooling
-contain zero inference — no model calls, no keys, no per-call cost. Any change that would put inference
+contain zero inference - no model calls, no keys, no per-call cost. Any change that would put inference
 into `/core`, `/mcp`, `/mcp-worker`, or consumer `/js` is out of scope by definition.
 
 ## Proposing a change (RFC)
@@ -64,16 +64,16 @@ into `/core`, `/mcp`, `/mcp-worker`, or consumer `/js` is out of scope by defini
 
 The conformance suite in `/spec` defines what "openOM 0.1 conformant" means. An implementation is
 conformant for a role when it passes the vectors for that role. The names/marks may be used to describe
-conformance ("openOM 0.1 conformant") only by implementations that pass — not to imply endorsement of a
+conformance ("openOM 0.1 conformant") only by implementations that pass - not to imply endorsement of a
 non-conformant product, and not to name a fork. Forking the spec is permitted (CC-BY-4.0); using the
 marks for a fork is not.
 
 ## Scope: assertions, not facts
 
-openOM records **who** asserted data, that it is **unaltered**, and **as of when** — never that the
+openOM records **who** asserted data, that it is **unaltered**, and **as of when** - never that the
 figures are true. Tooling checks internal consistency (NOI ÷ price vs cap rate, schedule sums, date
 math); it never adjudicates market truth, and proposals to make it do so are out of scope.
 
 ## Security
 
-Report vulnerabilities per [SECURITY.md](SECURITY.md) — privately, not via a public issue.
+Report vulnerabilities per [SECURITY.md](SECURITY.md) - privately, not via a public issue.

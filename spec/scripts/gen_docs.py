@@ -690,7 +690,7 @@ def _verify_tool() -> str:
         pill.textContent = c[2] + " " + view.label;
         badge.appendChild(pill);
         badge.appendChild(document.createTextNode(" " + view.caption));
-        if (r.stale) badge.appendChild(document.createTextNode(" · superseded — a newer version exists"));
+        if (r.stale) badge.appendChild(document.createTextNode(" · superseded - a newer version exists"));
         if (r.diverged) badge.appendChild(document.createTextNode(" · the source domain shows different data"));
       }
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
@@ -909,7 +909,7 @@ def _grounding_ai() -> str:
   <p>An OM is an <b>advertisement</b> - the broker's <b>opinion of value</b>, agreed to by the seller
      before publication. So openOM tells your agent <i>who</i> asserted a figure, that it is
      <i>unaltered</i>, and <i>as of when</i> - <b>never that it is true</b>. Always carry the
-     <code>noiType</code> qualifier too (<b>in-place</b> vs <b>pro-forma</b> — a very different
+     <code>noiType</code> qualifier too (<b>in-place</b> vs <b>pro-forma</b> - a very different
      claim). Ground the model on <i>"the broker asserted in-place NOI = $115,625, unaltered, as of
      2026-06-30"</i>, never <i>"NOI is $115,625."</i> <b>Verified means provenance, not truth.</b>
      Underwriting still happens at the deal desk off the broker-of-record file.</p>

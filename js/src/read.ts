@@ -19,7 +19,7 @@ export interface ReadVerification {
 export interface ReadResult {
   readonly state: ReadState;
   /** The embedded payload as the typed contract ([Ma3]); null when absent/unreadable. It is parsed
-   *  from untrusted bytes, so the type is a convenience — trust it only when verification.hashValid. */
+   *  from untrusted bytes, so the type is a convenience - trust it only when verification.hashValid. */
   readonly payload: OMPayload | null;
   readonly payloadHash: string | null;
   /** The marker's `sourceDocHash` (provenance of the source PDF, stamped at embed), or null. #5 */

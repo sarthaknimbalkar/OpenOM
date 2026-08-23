@@ -269,7 +269,7 @@ export function mountAuthor(root: HTMLElement): void {
       stage.append(box);
     }
 
-    // Your assertion (required) — broker/brokerage/license.
+    // Your assertion (required) - broker/brokerage/license.
     const who = el("section", "author-who");
     who.append(el("h3", undefined, "Your assertion (required)"));
     for (const [path, label, ph] of [
@@ -450,16 +450,16 @@ export function mountAuthor(root: HTMLElement): void {
     const prop = (shape.property as Record<string, unknown> | undefined) ?? {};
     const addr = (prop.address as Record<string, unknown> | undefined) ?? {};
     const money = (v: unknown): string =>
-      typeof v === "number" ? "$" + v.toLocaleString("en-US") : "—";
-    const pct = (v: unknown): string => (typeof v === "number" ? (v * 100).toFixed(2) + "%" : "—");
+      typeof v === "number" ? "$" + v.toLocaleString("en-US") : "-";
+    const pct = (v: unknown): string => (typeof v === "number" ? (v * 100).toFixed(2) + "%" : "-");
     const lines: [string, string][] = [
-      ["Property", String(addr.streetAddress ?? "—")],
+      ["Property", String(addr.streetAddress ?? "-")],
       ["Asking price", money(deal.askingPrice)],
       ["Cap rate", pct(deal.capRate)],
       ["NOI", `${money(deal.noi)}${deal.noiType ? ` (${String(deal.noiType)})` : ""}`],
-      ["Tenant", String(lease.tenantEntity ?? "—")],
-      ["Asserted by", String(by.broker ?? "—") + (by.brokerage ? `, ${String(by.brokerage)}` : "")],
-      ["Asserted date", String(shape.assertedDate ?? "—")],
+      ["Tenant", String(lease.tenantEntity ?? "-")],
+      ["Asserted by", String(by.broker ?? "-") + (by.brokerage ? `, ${String(by.brokerage)}` : "")],
+      ["Asserted date", String(shape.assertedDate ?? "-")],
     ];
     box.append(el("strong", undefined, "You are asserting:"));
     const dl = el("dl", "recap-list");

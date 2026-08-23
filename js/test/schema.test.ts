@@ -15,7 +15,7 @@ const sample = (name: string): Record<string, unknown> =>
 
 /**
  * [Bl1] The npm package MUST ship the payload schema so the documented `validatePayload(payload)`
- * path runs from a fresh `npm i openom-js` with no repo clone and no caller-vendored schema — and
+ * path runs from a fresh `npm i openom-js` with no repo clone and no caller-vendored schema - and
  * the bundled copy MUST be byte-equal in VALUE to spec/om-0.1.schema.json (drift-locked), the same
  * guarantee core/schema.py gives the Python side.
  */

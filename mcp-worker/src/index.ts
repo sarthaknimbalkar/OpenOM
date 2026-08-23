@@ -84,7 +84,7 @@ function rpcError(id: unknown, code: number, message: string): Response {
 class ToolError extends Error {
   constructor(
     readonly code:
-      // [Ma9] Canonical numeric OM-IO-* codes — the SAME set the Python server (fetch.py) emits and
+      // [Ma9] Canonical numeric OM-IO-* codes - the SAME set the Python server (fetch.py) emits and
       // spec/requirements.json defines, so a client branching on `code` works against either server.
       | "OM-IO-001" // upstream fetch failed (non-2xx / DNS / connection)
       | "OM-IO-002" // SSRF: resolves to a blocked/internal address range

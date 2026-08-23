@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Typed view of the openOM 0.1 payload for Python authors ([Ma3], parity with /js OMPayload).
 
-These are a developer convenience for constructing/reading payloads with editor help — the
+These are a developer convenience for constructing/reading payloads with editor help - the
 deterministic core verbs accept ``Mapping[str, Any]`` (a payload may be a not-yet-validated draft;
 validation is the separate gate). The shapes are drift-locked to spec/om-0.1.schema.json by
 tests/test_types.py: each TypedDict's keys MUST equal the schema's properties at that path.

@@ -136,7 +136,7 @@
         pill.textContent = c[2] + " " + view.label;
         badge.appendChild(pill);
         badge.appendChild(document.createTextNode(" " + view.caption));
-        if (r.stale) badge.appendChild(document.createTextNode(" · superseded — a newer version exists"));
+        if (r.stale) badge.appendChild(document.createTextNode(" · superseded - a newer version exists"));
         if (r.diverged) badge.appendChild(document.createTextNode(" · the source domain shows different data"));
       }
       if (r.payload) { out.hidden = false; out.textContent = JSON.stringify(r.payload, null, 2); }
