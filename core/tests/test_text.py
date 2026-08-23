@@ -51,3 +51,38 @@ def test_cursor_is_scoped_to_input() -> None:
         extract_text(a, cursor="not-a-real-cursor")
     with pytest.raises(CursorError):
         extract_text(_other_pdf(), cursor=cur)  # cursor tagged for `a`, presented for another PDF
+
+
+def _two_page_with_table_on_p2() -> bytes:
+    """Page 1: lots of text (forces a first window to cover only page 1). Page 2: a ruled grid table
+    pymupdf.find_tables detects."""
+    doc = pymupdf.open()
+    p1 = doc.new_page()
+    p1.insert_text((72, 72), ("page one filler text " * 20 + "\n") * 8, fontsize=11)
+    p2 = doc.new_page()
+    # draw a 3x3 ruled grid + cell text so find_tables sees a table
+    x0, y0, step = 72, 72, 60
+    for k in range(4):
+        p2.draw_line((x0, y0 + k * step), (x0 + 3 * step, y0 + k * step))
+        p2.draw_line((x0 + k * step, y0), (x0 + k * step, y0 + 3 * step))
+    for r in range(3):
+        for c in range(3):
+            p2.insert_text((x0 + c * step + 6, y0 + r * step + 20), f"r{r}c{c}", fontsize=9)
+    try:
+        return doc.tobytes()
+    finally:
+        doc.close()
+
+
+def test_tables_scoped_to_the_paginated_window() -> None:
+    """[Ma6] Tables are emitted only for pages the current text window covers, not the whole doc on
+    every paginated call."""
+    pdf = _two_page_with_table_on_p2()
+    full = extract_text(pdf, max_chars=1_000_000)
+    all_table_pages = {t["page"] for t in full["tables"]}
+    if 2 not in all_table_pages:
+        pytest.skip("find_tables did not detect the drawn grid in this pymupdf build")
+    # A small first window covers only page 1 → it must NOT carry page-2 tables.
+    first = extract_text(pdf, max_chars=40)
+    assert first["truncated"] and all(t["page"] == 1 for t in first["tables"])
+    assert all(t["page"] != 2 for t in first["tables"])

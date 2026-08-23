@@ -1,0 +1,20 @@
+{
+  "$comment": "The cross-server MCP tool result contract. The self-hosted Python server (mcp) returns EXACTLY these keys; the public Worker (mcp-worker) returns a SUPERSET. Both are tested against this file so the two servers cannot drift (the Ma4/Ma9 divergence recurrence guard). Add a key here + to both servers together.",
+  "specVersion": "0.1",
+  "tools": {
+    "om_read": {
+      "requiredKeys": [
+        "state",
+        "payload",
+        "payloadHash",
+        "specVersion",
+        "sourceDocHash",
+        "verification",
+        "note"
+      ]
+    },
+    "om_validate": {
+      "requiredKeys": ["ok", "errors", "warnings", "info", "canonical"]
+    }
+  }
+}

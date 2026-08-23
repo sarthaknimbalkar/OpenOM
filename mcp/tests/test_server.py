@@ -51,6 +51,23 @@ def test_all_seven_tools_registered() -> None:
     assert sorted(t.name for t in tools) == EXPECTED
 
 
+def test_assertions_not_facts_reaches_the_llm_description() -> None:
+    """[Ma2] The safety contract MUST be in the tool `description` the model sees (built from the
+    server.py wrapper docstring), not only in tools.py delegates the LLM never receives."""
+    tools = {t.name: (t.description or "") for t in asyncio.run(server.mcp.list_tools())}
+    read = tools["om_read"].lower()
+    # the contract must be in the description the model receives, not just in tools.py internals
+    assert "assert" in read and "unaltered" in read, tools["om_read"]
+    assert ("not that its figures are true" in read) or ("verified fact" in read), tools["om_read"]
+    assert "market truth" in tools["om_validate"].lower()
+    # single-sourced (Ma2): the description is built FROM the tools.py delegate docstring, so it
+    # cannot drift from the pure API. The terse server wrapper docstring is NOT the description.
+    from openom_mcp import tools as _t
+
+    assert (_t.om_read.__doc__ or "").strip() in tools["om_read"]
+    assert tools["om_read"] != (server.om_read.__doc__ or "")
+
+
 def test_server_tools_delegate(tmp_path: Path) -> None:
     ref = {"path": str(_text(tmp_path / "t.pdf"))}
     assert server.om_inspect(ref)["class"] in {"native", "hybrid", "scanned"}

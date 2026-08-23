@@ -106,6 +106,31 @@ describe("worker dispatch + [M5] JSON-RPC batch", () => {
     expect(sc.sourceDocHash).toMatch(/^sha256:[0-9a-f]{64}$/); // read from the embedded marker
   });
 
+  test("[Ma4] om_read/om_validate keys are a superset of the cross-server contract", async () => {
+    const contract = JSON.parse(
+      readFileSync(join(__dirname, "..", "..", "spec", "mcp-tool-contract.json"), "utf8"),
+    ).tools;
+    const doc = await PDFDocument.create();
+    doc.addPage([200, 200]);
+    const embedded = await embedPayload(new Uint8Array(await doc.save()), validPayload);
+    const readRes = await worker.fetch(
+      post({
+        jsonrpc: "2.0", id: 1, method: "tools/call",
+        params: { name: "om_read", arguments: { pdfBase64: toB64(embedded) } },
+      }),
+    );
+    const readKeys = Object.keys((await readRes.json()).result.structuredContent);
+    for (const k of contract.om_read.requiredKeys) expect(readKeys).toContain(k);
+    const valRes = await worker.fetch(
+      post({
+        jsonrpc: "2.0", id: 2, method: "tools/call",
+        params: { name: "om_validate", arguments: { payload: validPayload } },
+      }),
+    );
+    const valKeys = Object.keys((await valRes.json()).result.structuredContent);
+    for (const k of contract.om_validate.requiredKeys) expect(valKeys).toContain(k);
+  });
+
   test("a single request still works (initialize)", async () => {
     const res = await worker.fetch(post({ jsonrpc: "2.0", id: 9, method: "initialize" }));
     const j = (await res.json()) as { id: number; result?: { serverInfo?: unknown } };

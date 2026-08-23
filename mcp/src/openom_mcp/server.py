@@ -20,60 +20,62 @@ from .blobstore import BlobStore, LocalBlobStore
 
 mcp = MCPServer("openom")
 
+# [Ma2] The model-facing tool `description` is SINGLE-SOURCED from the tools.py delegate docstrings
+# (the pure API and the LLM description can never drift). `_PDF_REF` is the one shared note on the
+# {path|url|blobId} input shape (Mi29), appended to every PDF-taking tool.
+_PDF_REF = '\n\npdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP).'
 
-@mcp.tool()
+
+def _desc(fn: Any, *, pdf_ref: bool = False) -> str:
+    doc = (fn.__doc__ or "").strip()
+    return doc + _PDF_REF if pdf_ref else doc
+
+
+@mcp.tool(description=_desc(tools.om_inspect, pdf_ref=True))
 def om_inspect(pdf: dict[str, Any], verifyOrigin: bool = False) -> dict[str, Any]:
-    """Classify a PDF (native/hybrid/scanned) and report the payload/image/text profile.
-
-    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
+    """Wraps tools.om_inspect (description single-sourced from its docstring)."""
     return tools.om_inspect(pdf, verify_origin=verifyOrigin)
 
 
-@mcp.tool()
+@mcp.tool(description=_desc(tools.om_read, pdf_ref=True))
 def om_read(pdf: dict[str, Any], verifyOrigin: bool = True) -> dict[str, Any]:
-    """Read + integrity-verify the embedded om.json payload (the cheap consumer path).
-
-    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
+    """Wraps tools.om_read (description single-sourced from its docstring)."""
     return tools.om_read(pdf, verify_origin=verifyOrigin)
 
 
-@mcp.tool()
+@mcp.tool(description=_desc(tools.om_extract_text, pdf_ref=True))
 def om_extract_text(
     pdf: dict[str, Any],
     pageRange: str | None = None,
     cursor: str | None = None,
     maxChars: int = 100_000,
 ) -> dict[str, Any]:
-    """Paginated text + best-effort tables for a page range.
-
-    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
+    """Wraps tools.om_extract_text (description single-sourced from its docstring)."""
     return tools.om_extract_text(pdf, page_range=pageRange, cursor=cursor, max_chars=maxChars)
 
 
-@mcp.tool()
+@mcp.tool(description=_desc(tools.om_extract_images, pdf_ref=True))
 def om_extract_images(
     pdf: dict[str, Any],
     outDir: str | None = None,
     pageRange: str | None = None,
     includeVector: bool = False,
 ) -> dict[str, Any]:
-    """Image manifest + local paths (SMask→RGBA, CMYK→sRGB, xref+content dedupe); never bytes.
-
-    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
+    """Wraps tools.om_extract_images (description single-sourced from its docstring)."""
     return tools.om_extract_images(
         pdf, out_dir=outDir, page_range=pageRange, include_vector=includeVector
     )
 
 
-@mcp.tool()
+@mcp.tool(description=_desc(tools.om_validate))
 def om_validate(
     payload: dict[str, Any], tolerances: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    """Two-tier validation report (schema errors block; consistency warnings never block)."""
+    """Wraps tools.om_validate (description single-sourced from its docstring)."""
     return tools.om_validate(payload, tolerances=tolerances)
 
 
-@mcp.tool()
+@mcp.tool(description=_desc(tools.om_embed, pdf_ref=True))
 def om_embed(
     pdf: dict[str, Any],
     payload: dict[str, Any],
@@ -81,17 +83,15 @@ def om_embed(
     badge: bool = False,
     sourceDocHash: bool = False,
 ) -> dict[str, Any]:
-    """Validate-then-embed om.json into a NEW PDF; refuse on schema errors, warnings pass.
-
-    pdf: exactly one of {"path":...} (stdio), {"url":...} or {"blobId":...} (HTTP)."""
+    """Wraps tools.om_embed (description single-sourced from its docstring)."""
     return tools.om_embed(
         pdf, payload, out_path=outPath, badge=badge, source_doc_hash=sourceDocHash
     )
 
 
-@mcp.tool()
+@mcp.tool(description=_desc(tools.om_request_upload))
 def om_request_upload() -> dict[str, Any]:
-    """Hosted-only: reserve a single-use presigned upload target; returns {blobId, presignedPut}."""
+    """Wraps tools.om_request_upload (description single-sourced from its docstring)."""
     return tools.om_request_upload()
 
 
