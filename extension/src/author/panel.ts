@@ -283,6 +283,9 @@ async function startReview(
   } catch {
     buildoutSource = null;
   }
+  // [a reviewer] the on-device-model download progress renders in a dedicated line RIGHT UNDER the extract
+  // button, not the bottom status line - so a broker watching the download sees it where they clicked.
+  let extractProgress: HTMLElement | null = null;
   const source = await pickDraftSource([
     ...(buildoutSource ? [buildoutSource] : []),
     extractorSource(onDeviceExtractor, "on-device AI"),
@@ -300,6 +303,9 @@ async function startReview(
     btn.dataset.action = "extract";
     btn.addEventListener("click", () => void runExtract());
     root.appendChild(btn);
+    extractProgress = el("p", "extract-progress"); // sits directly under the button
+    extractProgress.setAttribute("aria-live", "polite");
+    root.appendChild(extractProgress);
     if (needsDownload) {
       root.appendChild(
         el(
@@ -468,10 +474,13 @@ async function startReview(
       }
       const result = await source.draft({
         pages,
-        // [M5] surface on-device model download progress instead of a silent hang.
+        // [M5] surface on-device model download progress instead of a silent hang - directly under
+        // the extract button (extractProgress) so it's visible where the broker clicked.
         onDownloadProgress: (f) =>
-          (status.textContent = `Downloading on-device AI… ${Math.round(f * 100)}%`),
+          ((extractProgress ?? status).textContent =
+            `Downloading on-device AI… ${Math.round(f * 100)}%`),
       });
+      if (extractProgress) extractProgress.textContent = ""; // clear once the model is ready
       rebuild((d) => applyExtraction(d, result)); // reflect drafted fields in the form + derived
       // #66 - surface when only a prefix of a long OM was read; never a silent "complete".
       const truncated =
