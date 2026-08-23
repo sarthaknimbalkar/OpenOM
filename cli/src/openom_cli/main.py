@@ -12,6 +12,7 @@ affect the exit code.
 from __future__ import annotations
 
 import dataclasses
+import datetime
 import functools
 import json
 import sys
@@ -35,7 +36,11 @@ from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
 
+from openom_cli import profile as _profile
+from openom_cli import scaffold as _scaffold
 from openom_cli.buildout import listing_to_payload, payload_coverage
+from openom_cli.humanize import footer as _err_footer
+from openom_cli.humanize import humanize_finding as _humanize
 
 
 def _force_utf8(stream: object) -> None:
@@ -59,7 +64,19 @@ for _std in (sys.stdout, sys.stderr):
     _force_utf8(_std)
 
 app = typer.Typer(
-    help="openOM deterministic engine - embed/read/inspect/validate/check/extract."
+    help=(
+        "openOM - embed broker-asserted, hash-verified deal data into your OM PDF (and read it "
+        "back). Deterministic, zero AI, nothing leaves your machine.\n\n"
+        "NOT A DEVELOPER? You don't need this terminal. If you just have an OM PDF and want to "
+        "embed your deal, do it in your browser - no install, bytes never leave your device: "
+        "https://openom.app/embed/\n\n"
+        "Using the CLI? Start here:\n"
+        "  om init                 # writes a ready-to-edit deal.json (no more 'no deal.json')\n"
+        "  om profile set ...      # save your name/brokerage/license once - never retype it\n"
+        "  om validate deal.json   # plain-English check before you embed\n"
+        "  om embed listing.pdf --payload deal.json --out out.pdf --asserted-date <today>\n\n"
+        "Global options (--format, --quiet, --version) go BEFORE the command."
+    )
 )
 
 _F = TypeVar("_F", bound=Callable[..., Any])
@@ -170,13 +187,60 @@ def _emit(obj: Any) -> None:
         typer.echo(json.dumps(obj, indent=2, ensure_ascii=False))
 
 
+def _echo_human_errors(errors: list[Any]) -> None:
+    """Plain-English error coaching to stderr; stdout keeps the JSON contract (--quiet mutes)."""
+    if not errors or _output.quiet:
+        return
+    for f in errors:
+        typer.echo(_humanize(f.code, f.path, f.message), err=True)
+    typer.echo(_err_footer(), err=True)
+
+
+def _echo_embed_usage() -> None:
+    """The friendly stand-in for typer's bare 'Missing option' - what to do + the browser escape."""
+    typer.echo(
+        "error: `embed` needs the OM PDF, the deal data, an output path, and an assertion date.\n"
+        "  Don't have a deal file yet?  om init            # writes a ready-to-edit deal.json\n"
+        "  Then:  om embed listing.pdf --payload deal.json --out listing.openom.pdf "
+        "--asserted-date <today>\n"
+        "  Just have a PDF and you're not a developer? Skip the terminal - embed in your browser "
+        "(nothing leaves your machine): https://openom.app/embed/",
+        err=True,
+    )
+
+
+def _require_input_pdf(pdf: Path) -> None:
+    if str(pdf) == "-" or pdf.exists():
+        return
+    typer.echo(f"error: input PDF not found: {pdf}. Check the path and try again.", err=True)
+    raise typer.Exit(3)
+
+
+def _require_payload(payload: Path) -> None:
+    if str(payload) == "-" or payload.exists():
+        return
+    typer.echo(
+        f"error: payload file not found: {payload} - this is the deal data to embed, and it "
+        f"doesn't exist yet. Create it first:  om init {payload}  (writes a ready-to-edit "
+        f"template), edit the values, then re-run. Not a developer with just a PDF? Embed in your "
+        f"browser instead: https://openom.app/embed/",
+        err=True,
+    )
+    raise typer.Exit(3)
+
+
 @app.command()
 @_guard
 def embed(
-    pdf: Annotated[Path, typer.Argument(help="Input PDF")],
-    payload: Annotated[Path, typer.Option(help="Payload JSON to embed")],
-    out: Annotated[Path, typer.Option(help="Output PDF path")],
-    asserted_date: Annotated[str, typer.Option(help="ISO 8601 assertion date")],
+    pdf: Annotated[Path | None, typer.Argument(help="Input OM PDF (required)")] = None,
+    payload: Annotated[
+        Path | None,
+        typer.Option(help="Deal-data JSON to embed (required; create one with `om init`)"),
+    ] = None,
+    out: Annotated[Path | None, typer.Option(help="Output PDF path (required)")] = None,
+    asserted_date: Annotated[
+        str | None, typer.Option(help="ISO 8601 assertion date (required), e.g. 2026-08-24")
+    ] = None,
     mirror: Annotated[
         bool,
         typer.Option(
@@ -192,13 +256,23 @@ def embed(
         ),
     ] = False,
 ) -> None:
+    """Embed deal data into an OM PDF. Not a developer with just a PDF? Skip the terminal - embed in
+    your browser (nothing leaves your machine): https://openom.app/embed/"""
+    if pdf is None or payload is None or out is None or asserted_date is None:
+        _echo_embed_usage()
+        raise typer.Exit(2)
+    _require_input_pdf(pdf)
+    _require_payload(payload)
     src = _read_bytes(pdf)
     data = _load_json(payload)
+    if _profile.merge_into(data) and not _output.quiet:
+        typer.echo("note: filled assertedBy from your saved profile (`om profile show`)", err=True)
     if validate:
         report = _validate(data)  # defaults to the bundled 0.1 schema
         if report.errors:
             for f in report.errors:
-                typer.echo(f"error {f.code} {f.path}: {f.message}", err=True)
+                typer.echo(_humanize(f.code, f.path, f.message), err=True)
+            typer.echo(_err_footer(), err=True)
             raise typer.Exit(1)
     for w in _reembed_warnings(src, data, asserted_date=asserted_date):
         typer.echo(f"warning {w.code} {w.path}: {w.message}", err=True)
@@ -216,6 +290,97 @@ def embed(
     # Status to stderr so `--out -` keeps a clean binary PDF on stdout for piping.
     if not _output.quiet:
         typer.echo(f"embedded om.json -> {'<stdout>' if str(out) == '-' else out}", err=True)
+
+
+@app.command()
+@_guard
+def init(
+    out: Annotated[Path, typer.Argument(help="Where to write the starter payload")] = Path(
+        "deal.json"
+    ),
+    template: Annotated[
+        str, typer.Option(help="Which shape to start from: stnl | multifamily | proforma")
+    ] = "stnl",
+    force: Annotated[bool, typer.Option(help="Overwrite an existing file")] = False,
+) -> None:
+    """Write a ready-to-edit starter deal.json, so 'no deal.json' can never happen.
+
+    The file is schema-valid EXAMPLE data - swap in your deal's numbers, then `om embed`. Your saved
+    broker profile (`om profile set`) fills assertedBy automatically."""
+    if template not in _scaffold.TEMPLATES:
+        typer.echo(
+            f"error: unknown template {template!r} - choose one of: "
+            f"{', '.join(_scaffold.TEMPLATES)}",
+            err=True,
+        )
+        raise typer.Exit(2)
+    if out.exists() and not force:
+        typer.echo(
+            f"error: {out} already exists - pass --force to overwrite, or `om init my-deal.json`",
+            err=True,
+        )
+        raise typer.Exit(3)
+    saved = _profile.profile_asserted_by()
+    doc = _scaffold.build_skeleton(
+        template, today=datetime.date.today().isoformat(), profile_asserted_by=saved
+    )
+    out.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    if not _output.quiet:
+        for line in _scaffold.guidance_lines(template, str(out), has_profile=bool(saved)):
+            typer.echo(line, err=True)
+
+
+profile_app = typer.Typer(help="Save your broker identity once so you never retype it.")
+app.add_typer(profile_app, name="profile")
+
+
+@profile_app.command("set")
+def profile_set(
+    broker: Annotated[str | None, typer.Option(help='Your name, e.g. "Jane Broker"')] = None,
+    brokerage: Annotated[str | None, typer.Option(help="Your brokerage")] = None,
+    license: Annotated[
+        str | None, typer.Option(help='Your license id, e.g. "MI 6501-000000"')
+    ] = None,
+) -> None:
+    """Save your name / brokerage / license to this device; `om init` and `om embed` reuse them."""
+    if broker is None and brokerage is None and license is None:
+        typer.echo(
+            "nothing to set - pass --broker/--brokerage/--license, e.g.\n"
+            '  om profile set --broker "Jane Broker" --brokerage "Acme" --license "MI 6501-000000"',
+            err=True,
+        )
+        raise typer.Exit(2)
+    prof = _profile.save_profile(broker=broker, brokerage=brokerage, license=license)
+    ab = prof["assertedBy"]
+    typer.echo(
+        f"Saved your broker profile -> {_profile.profile_path()} "
+        "(on this device; you won't retype it)",
+        err=True,
+    )
+    for key in ("broker", "brokerage", "license"):
+        if ab.get(key):
+            typer.echo(f"  {key + ':':11}{ab[key]}", err=True)
+    typer.echo("`om init` and `om embed` will fill assertedBy from this automatically.", err=True)
+
+
+@profile_app.command("show")
+def profile_show() -> None:
+    """Print your saved broker profile (or how to set one)."""
+    prof = _profile.load_profile()
+    if not prof.get("assertedBy"):
+        typer.echo(
+            "No profile saved yet. Set one so you never retype it:\n"
+            '  om profile set --broker "Your Name" --brokerage "Your Co" --license "..."',
+            err=True,
+        )
+        return
+    _emit(prof)
+
+
+@profile_app.command("path")
+def profile_path_cmd() -> None:
+    """Print the file where your profile is stored (edit it directly if you like)."""
+    typer.echo(str(_profile.profile_path()))
 
 
 def _embed_one(task: dict[str, Any]) -> dict[str, Any]:
@@ -629,6 +794,7 @@ def validate(
             "ok": report.ok,
         }
     )
+    _echo_human_errors(report.errors)
     raise typer.Exit(code=0 if report.ok else 1)
 
 
@@ -677,6 +843,7 @@ def check(
             "ok": report.ok,
         }
     )
+    _echo_human_errors(report.errors)
     failed = not report.ok or (strict and bool(report.warnings))
     raise typer.Exit(code=1 if failed else 0)
 

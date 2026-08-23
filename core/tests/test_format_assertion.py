@@ -23,7 +23,7 @@ def test_bad_date_is_a_format_assertion_tripwire() -> None:
             SCHEMA, format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER
         ).iter_errors(BAD)
     )
-    assert not naive, "sample no longer discriminates — a non-asserting impl would still fail it"
+    assert not naive, "sample no longer discriminates - a non-asserting impl would still fail it"
     assert conformant, "a conformant (format-asserting) validator MUST reject the bad date"
 
 

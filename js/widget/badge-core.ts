@@ -127,7 +127,7 @@ async function bytesOf(url: string, f: typeof fetch): Promise<Uint8Array> {
 /**
  * Run the full read→verify pipeline and return the view. Deterministic; no inference. [B1] Result is
  * cached by src|mirror so repeated/duplicate badges for the same PDF fetch once. Pass a `fetchImpl`
- * (tests / a custom fetcher) to bypass the cache implicitly-not — the cache key ignores fetchImpl, so
+ * (tests / a custom fetcher) to bypass the cache implicitly-not - the cache key ignores fetchImpl, so
  * tests that need a fresh run should vary src or call `clearBadgeCache()`.
  */
 export function evaluateBadge(opts: BadgeOptions): Promise<BadgeView> {

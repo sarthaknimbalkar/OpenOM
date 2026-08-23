@@ -139,6 +139,11 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
     }
     root.appendChild(publish);
   }
+
+  // Settings footer - where the broker profile lives (set your name/brokerage/license once, and
+  // it's filled in on every OM). Discoverable from the popup, not buried. Wired in the bootstrap.
+  const settings = el("button", "open-settings", "Settings - save your broker profile");
+  root.appendChild(settings);
 }
 
 // ---- runtime bootstrap (guarded so jsdom tests can import renderPopup without chrome) ----
@@ -168,6 +173,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
       renderPopup(root, result, await getWebhook());
       wireButtons(root, result);
       wireOpenAuthor(root);
+      wireSettings(root);
       wireLinkBadge(root, result);
     } catch (e) {
       root.textContent = `openOM error: ${(e as Error).message}`;
@@ -239,6 +245,14 @@ function wireOpenAuthor(root: HTMLElement): void {
       else if (tab?.windowId !== undefined) await chrome.sidePanel.open({ windowId: tab.windowId });
       window.close();
     })();
+  });
+}
+
+/** Open the options page (where the broker profile is set) from the popup Settings link. */
+function wireSettings(root: HTMLElement): void {
+  root.querySelector(".open-settings")?.addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+    window.close();
   });
 }
 

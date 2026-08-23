@@ -1,4 +1,4 @@
-"""[Ma3] The Python payload TypedDicts MUST stay in lock-step with spec/om-0.1.schema.json — each
+"""[Ma3] The Python payload TypedDicts MUST stay in lock-step with spec/om-0.1.schema.json - each
 TypedDict's keys equal the schema's properties at that path, so the typed view can't drift from the
 contract (the same guarantee /js gets from its generated payload-types.ts)."""
 
@@ -21,7 +21,7 @@ def _props(path: list[str]) -> set[str]:
 
 
 def test_spec_version_matches_schema_const() -> None:
-    """[Po1] The exported SPEC_VERSION is the single source of truth — it must equal the schema's
+    """[Po1] The exported SPEC_VERSION is the single source of truth - it must equal the schema's
     specVersion const, so it can't drift from the contract."""
     from openom_core import SPEC_VERSION
 

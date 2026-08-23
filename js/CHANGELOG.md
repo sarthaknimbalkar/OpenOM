@@ -1,4 +1,4 @@
-# Changelog — openom-js
+# Changelog - openom-js
 
 All notable changes to the `openom-js` package. This project follows [SemVer](https://semver.org);
 while at `0.x`, the **consumer surface** (read/validate/summarize/verify/badge, `OM_SCHEMA`,
@@ -27,5 +27,5 @@ may change in a minor. The embedded payload contract is versioned separately by 
 ## [0.1.0]
 
 - Initial reference implementation: canonicalization (RFC 8785 JCS), embed/read, schema + consistency
-  validation, webhook envelope/subscription, origin verification, the `<openom-badge>` widget — at
+  validation, webhook envelope/subscription, origin verification, the `<openom-badge>` widget - at
   byte-parity with the Python core.

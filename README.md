@@ -13,18 +13,146 @@ Published by **[Vervelio Labs](https://verveliolabs.com)** (neutral steward). Du
 toolchain is MIT, the specification is CC-BY-4.0 (see [License](#license)).
 Docs, the verifier, and the namespace live at **[openom.app](https://openom.app)**.
 
-## Try it in 60 seconds
+---
 
-- **Embed a payload in your browser** - <https://openom.app/embed/> turns an OM into an openOM PDF
-  with no install; bytes never leave your machine.
-- **Verify a PDF in your browser** - <https://openom.app/verify/> (or grab the downloadable
-  [sample OM](https://openom.app/sample/openom-sample.pdf) first). Bytes never leave your machine.
-- **Ground an AI agent** - point any MCP client at the free public endpoint
-  `https://mcp.openom.app/mcp` ([config](examples/mcp-config.json)) and ask it to `om_read` an OM.
-- **Run it locally** - from a clone, `pip install -e core && python examples/quickstart.py` (embed →
-  read → validate, end to end). More in [`examples/`](examples/). _(A published `openom-core` PyPI
-  package is on the way; until then, install from the checkout.)_
-- **Read the docs** - <https://openom.app/docs/>.
+## Which of these are you?
+
+Pick the door that matches your job. Each one is the shortest path to a working result.
+
+| You are… | openOM gives you… | Start here | No install? |
+|----------|-------------------|------------|-------------|
+| **🏢 Broker** - I have an OM PDF and want to add verified deal data | A review form that embeds your deal into the PDF. **You never touch a terminal.** | **[openom.app/embed/](https://openom.app/embed/)** - embed in your browser | ✅ Nothing to install; bytes never leave your machine |
+| **🔌 Portal** - I run a listings site and want trust badges + payloads at scale | A drop-in `<openom-badge>` web component and a free read API | [Portal quickstart](https://openom.app/docs/quickstart-portal) → [`js/widget/`](js/widget/) + [`mcp.openom.app`](https://mcp.openom.app/mcp) | Badge is one `<script>` tag; read API needs no key |
+| **💻 Developer** - I want to call the API in my own code | Clean Python + TypeScript libraries (embed / read / validate) | [Developer quickstart](#developer-quickstart) → [`examples/`](examples/) | Clone + editable install (packages not yet published) |
+| **🤖 AI-builder** - I want to ground an agent on OM data | A free, deterministic, public MCP endpoint | [`mcp.openom.app/mcp`](https://mcp.openom.app/mcp) → [config](examples/mcp-config.json) | No key, no per-call cost |
+
+---
+
+## 🏢 Broker - you never need the terminal
+
+**You have an OM PDF. You want to embed your deal data so machines can read it. That's it.**
+
+**→ Go to [openom.app/embed/](https://openom.app/embed/).** No install, no account, no command
+line. Your PDF never leaves your computer. You'll get a review form where you enter (or confirm)
+the deal facts, then download an openOM version of your PDF.
+
+Prefer a browser extension you can reuse on any listing? Install the Chrome extension (see
+[Browser extension](#browser-extension) below) and use **author mode** - it remembers your name,
+brokerage, and license so you never retype them.
+
+A few things that trip up first-time brokers:
+
+- **Cap rate is a decimal.** A 6.25% cap rate is entered as `0.0625`, not `6.25`. The form tells
+  you this; if you see a "greater than the maximum of 1" error, that's the fix.
+- **On-device AI is optional.** The extension can pre-fill the form using Chrome's built-in AI, but
+  it's a convenience, not a requirement - **entering the fields by hand is the normal, fully
+  supported path.** If your Chrome doesn't have the model, just fill the form yourself.
+- **Verified means provenance, not truth.** openOM records *who* asserted the deal, that it is
+  *unaltered*, and *as of when* - it never claims your numbers are correct. See
+  [Assertions, not facts](#assertions-not-facts).
+
+You do **not** need the Python `om` CLI. It exists for developers and automated pipelines.
+
+---
+
+## 🔌 Portal - badges and payloads at scale
+
+**You run a listings site. You want a trust badge next to each listing and to read openOM payloads
+programmatically.** Full walkthrough: **[openom.app/docs/quickstart-portal](https://openom.app/docs/quickstart-portal)**.
+
+Three ways in:
+
+- **Drop-in badge (client-side).** The [`<openom-badge>`](js/widget/) web component renders the
+  trust state next to a listing with one script tag. See [`examples/badge.html`](examples/badge.html).
+- **Precompute the state (server-side, best for results grids).** Call `om_read` on the public MCP
+  endpoint, then set the badge state from the response. Map it explicitly - `om_read` returns
+  `state: "present"`, so derive the badge state:
+  `state = (r.state === "present" && r.verification.hashValid) ? "integrity-ok" : (r.state === "hash-mismatch" ? "hash-mismatch" : "absent")`.
+- **In your own code (Node).** Import the reader from `openom-js`
+  (`readPayloadFromBytes`, `summarizeDeal`). The npm package isn't published yet - install from a
+  clone: `npm install /abs/path/to/OpenOM/js` (it builds itself on install).
+
+Note: **origin-verified** (✓✓) requires the mirror JSON and the PDF to share the same registrable
+domain (§10.1). PDFs served from a separate CDN domain show **integrity-ok** (unaltered since
+embed) but not origin-verified - host the mirror on the listing's own domain to reach ✓✓.
+
+---
+
+## 💻 Developer quickstart
+
+**Packages are not yet published to PyPI/npm - install from a clone.** This is the honest,
+working path today.
+
+```bash
+git clone https://github.com/Vervelio-Labs/OpenOM && cd OpenOM
+
+pip install -e core -e cli          # Python library + `om` CLI (add [dev] only to contribute)
+python examples/quickstart.py       # embed → read → validate, end to end
+```
+
+Python API (`from openom_core import embed, read, validate`) and the `om` CLI:
+
+```bash
+om init deal.json                    # scaffold a ready-to-edit payload (so "no deal.json" can't happen)
+om profile set --broker "Jane Broker" --brokerage "Acme" --license "MI 6501-000000"  # once; auto-filled
+
+om inspect  path/to/offering.pdf
+om embed    path/to/offering.pdf --payload deal.json --out out.pdf --asserted-date 2026-08-16
+om read     out.pdf
+om validate deal.json                # schema 0.1 is bundled; --schema only to override it
+```
+
+The CLI coaches you as you go: `om` with no arguments routes non-developers to the browser, every
+error names the next action, and `om init`/`om profile` remove the two things brokers trip on.
+
+TypeScript (`openom-js`), until it's published to npm:
+
+```bash
+npm install /abs/path/to/OpenOM/js   # builds itself on install (needs its devDeps)
+```
+
+```ts
+import { embedPayload, readPayloadFromBytes, validatePayload } from "openom-js";
+```
+
+More runnable examples - including a browser badge and an MCP config - are in
+[`examples/`](examples/). _(Published `openom-core` / `openom-js` packages are on the way; until
+then, install from the checkout.)_
+
+---
+
+## 🤖 AI-builder - ground an agent
+
+**Point any MCP client at the free public endpoint and ask it to read an OM.**
+
+```
+https://mcp.openom.app/mcp
+```
+
+No API key, no per-call cost. It exposes two deterministic, read-only tools - `om_read` (from PDF
+bytes or an https URL) and `om_validate`. Try it on the
+[sample OM](https://openom.app/sample/openom-sample.pdf). Full grounding guide:
+**[openom.app/docs/grounding-ai](https://openom.app/docs/grounding-ai)**.
+
+Client config - see [`examples/mcp-config.json`](examples/mcp-config.json):
+
+```json
+{ "mcpServers": { "openom": { "url": "https://mcp.openom.app/mcp" } } }
+```
+
+Client only supports **stdio** (e.g. a Claude Desktop JSON config)? Use the mcp-remote bridge
+instead:
+
+```json
+{ "mcpServers": { "openom": { "command": "npx", "args": ["-y", "mcp-remote", "https://mcp.openom.app/mcp"] } } }
+```
+
+Want the **full six-tool surface** (`om_inspect · om_extract_text · om_extract_images · om_read ·
+om_validate · om_embed`)? Self-host it. A published `openom-mcp` package is on the way; until then,
+from a clone: `pip install -e ./core && pip install -e ./mcp`, then run `om-mcp` (stdio) or
+`om-mcp-http` (HTTP).
+
+---
 
 ## Why
 
@@ -53,6 +181,39 @@ provenance, not truth.** Tooling checks *internal consistency* (NOI ÷ price vs 
 rent-schedule math, date arithmetic) and **never** market truth. Schema errors block; consistency
 warnings never do.
 
+## Browser extension
+
+The MV3 Chrome extension detects/verifies openOM data on any PDF (**consumer mode**) and lets a
+broker embed data into an OM without the CLI (**author mode**). Chrome **116+**; the same build
+loads in **Edge**, and **Firefox** is roadmapped (see
+[extension/README](extension/README.md#browser-support-145)).
+
+**Not a developer?** You don't need any of this - embed in your browser at
+[openom.app/embed/](https://openom.app/embed/) instead.
+
+**For developers**, until the Chrome Web Store listing is live, build and load it unpacked:
+
+```bash
+npm --prefix js install && npm --prefix extension install
+npm --prefix extension run build      # → extension/dist (load this unpacked)
+npm --prefix extension run package    # → extension/openom-extension-<version>.zip (Web Store upload)
+```
+
+Then open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select
+`extension/dist`. Consumer mode is the toolbar popup; author mode opens from the popup's **"Embed a
+payload…"** button (a side panel).
+
+## No-browser distribution
+
+- **CI / server-side:** the [openom-embed GitHub Action](.github/actions/openom-embed/) embeds or
+  validates payloads in a broker's pipeline, and the `om` CLI does the same locally - no browser, no
+  inference.
+- **Verify without installing anything:** the hosted, fully client-side tool at
+  <https://openom.app/verify/> reads a PDF in your browser and shows its openOM state (bytes never
+  leave your machine).
+- **Portals:** the embeddable [`<openom-badge>`](js/widget/) shows the trust badge next to a listing
+  with one script tag.
+
 ## Repository layout
 
 | Path | What |
@@ -76,46 +237,6 @@ SHA-256 integrity hash. This is the anti-fork oracle: [`spec/vectors/`](spec/vec
 payloads with their expected canonical bytes/hash plus golden embedded PDFs, and CI runs each
 implementation against the other's output on every commit (`[OM-VEC-002]`).
 
-## Quick start (Python)
-
-```bash
-pip install -e core -e cli          # consumer install (add [dev] only to contribute)
-
-om inspect  path/to/offering.pdf
-om embed    path/to/offering.pdf --payload deal.json --out out.pdf --asserted-date 2026-08-16
-om read     out.pdf
-om validate deal.json --schema spec/om-0.1.schema.json
-```
-
-## Browser extension (consumer + author)
-
-The MV3 Chrome extension detects/verifies openOM data on any PDF and lets a broker embed data into an
-OM without the CLI. Chrome **116+**.
-
-```bash
-npm --prefix js install && npm --prefix extension install
-npm --prefix extension run build      # → extension/dist (load this unpacked)
-npm --prefix extension run package    # → extension/openom-extension-<version>.zip (Web Store upload)
-```
-
-**Install:** the extension is in review for the Chrome Web Store; until it lists, open
-`chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select `extension/dist`
-(or unzip the packaged `extension/openom-extension-<version>.zip`). No toolchain? Embed in the browser
-at <https://openom.app/embed/> instead. The same build loads in **Edge** (`edge://extensions`);
-**Firefox** is roadmapped (see [extension/README](extension/README.md#browser-support-145)). Consumer
-mode is the toolbar popup; author mode opens from the popup's **“Embed a payload…”** button (a side panel).
-
-## No-browser distribution
-
-- **CI / server-side:** the [openom-embed GitHub Action](.github/actions/openom-embed/) embeds or
-  validates payloads in a broker's pipeline, and the `om` CLI does the same locally - no browser, no
-  inference.
-- **Verify without installing anything:** the hosted, fully client-side tool at
-  <https://openom.app/verify/> reads a PDF in your browser and shows its openOM state (bytes never
-  leave your machine).
-- **Portals:** the embeddable [`<openom-badge>`](js/widget/) shows the trust badge next to a listing
-  with one script tag.
-
 ## Development
 
 ```bash
@@ -131,7 +252,8 @@ python core/scripts/gen_vectors.py       # regenerate vectors (must be a no-op =
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, [GOVERNANCE.md](GOVERNANCE.md) for how the
 standard evolves (RFCs, versioning, stability guarantees), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md),
-and [SECURITY.md](SECURITY.md) for the threat model.
+and [SECURITY.md](SECURITY.md) for the threat model. Full documentation lives at
+<https://openom.app/docs/>.
 
 ## Status
 

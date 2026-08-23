@@ -1,4 +1,4 @@
-"""[Mi22] summarize_deal (Python) MUST be byte-identical to summarizeDeal (/js) — the cross-impl
+"""[Mi22] summarize_deal (Python) MUST be byte-identical to summarizeDeal (/js) - the cross-impl
 parity vector. Runs the JS view via node against the SAME payloads and diffs the JSON. Skips when
 node or the built js/dist is unavailable (it runs in the cross-impl CI job, which builds js)."""
 
@@ -27,7 +27,7 @@ _CASES = [
 
 
 def _js_summary(payload: dict) -> dict:
-    src = JS_SUMMARY.as_uri()  # file:// URL — required by the Node ESM loader on Windows
+    src = JS_SUMMARY.as_uri()  # file:// URL - required by the Node ESM loader on Windows
     code = (
         f"import {{ summarizeDeal }} from '{src}';"
         "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>"

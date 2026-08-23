@@ -18,14 +18,14 @@ def _text(name: str) -> str:
 
 
 def test_no_om_embed_assertedDate_argument() -> None:
-    # om_embed(pdf, payload[, outPath, badge, sourceDocHash]) — assertedDate is a PAYLOAD field.
+    # om_embed(pdf, payload[, outPath, badge, sourceDocHash]) - assertedDate is a PAYLOAD field.
     bad = re.compile(r"om_embed\([^)]*assertedDate")
     offenders = [d for d in ALL_DOCS if bad.search(_text(d))]
     assert not offenders, f"om_embed called with an assertedDate argument in: {offenders}"
 
 
 def test_no_om_validate_schema_argument() -> None:
-    # om_validate(payload[, tolerances]) — there is no schema parameter (schema is built in).
+    # om_validate(payload[, tolerances]) - there is no schema parameter (schema is built in).
     bad = re.compile(r"om_validate\([^)]*schema")
     offenders = [d for d in ALL_DOCS if bad.search(_text(d))]
     assert not offenders, f"om_validate called with a schema argument in: {offenders}"

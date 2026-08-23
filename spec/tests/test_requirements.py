@@ -1,5 +1,5 @@
 """[Ma11] Every OM-* requirement ID cited anywhere in the committed sources MUST resolve to a
-normative clause in spec/requirements.json — so a third party implementing openOM can look up every
+normative clause in spec/requirements.json - so a third party implementing openOM can look up every
 ID the schema / codes.json / samples / reference implementation reference. Without this, those
 back-references dangle and the standard cannot be independently implemented.
 """
