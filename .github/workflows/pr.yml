@@ -35,7 +35,7 @@ jobs:
           (cd cli && mypy)
           (cd mcp && mypy)
       - name: tests (env-gated integration/cross-impl auto-skip)
-        run: pytest core cli mcp spec -q
+        run: python -m pytest core cli mcp spec -q  # -m adds cwd to sys.path (spec/ import in test_matrix)
 
   javascript:
     runs-on: ubuntu-latest
