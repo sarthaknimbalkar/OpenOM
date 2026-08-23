@@ -172,3 +172,42 @@ def _embed_sample() -> bytes:
     from openom_core.embed import embed
 
     return embed(_blank_pdf(), SAMPLE, asserted_date=str(SAMPLE["assertedDate"]))
+
+
+def _one_image_pdf() -> bytes:
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 40, 40))
+    pix.set_rect(pix.irect, (200, 100, 50))
+    page.insert_image(pymupdf.Rect(10, 10, 90, 90), pixmap=pix)
+    out = doc.tobytes()
+    doc.close()
+    return out
+
+
+def test_extract_images_returns_blob_urls_over_http(http, tmp_path: Path) -> None:
+    """[Ma3] Over the hosted transport a remote agent has no server FS, so image entries must
+    carry fetchable {blobId, presignedGet}, never a server-local `path`."""
+    store, _clock = http
+    slot = tools.om_request_upload()
+    (store.root / slot["blobId"]).write_bytes(_one_image_pdf())  # simulate the client PUT
+    res = tools.om_extract_images({"blobId": slot["blobId"]})
+    imgs = res["manifest"]
+    assert imgs, "expected at least one extracted image"
+    for e in imgs:
+        assert "path" not in e
+        assert e["blobId"] and e["presignedGet"]
+
+
+def test_extract_images_returns_local_path_over_stdio(tmp_path: Path) -> None:
+    tools.set_resolver(PdfResolver(transport="stdio"))
+    try:
+        p = tmp_path / "img.pdf"
+        p.write_bytes(_one_image_pdf())
+        res = tools.om_extract_images({"path": str(p)}, out_dir=str(tmp_path / "out"))
+        for e in res["manifest"]:
+            assert "path" in e and "blobId" not in e
+    finally:
+        tools.set_resolver(None)
