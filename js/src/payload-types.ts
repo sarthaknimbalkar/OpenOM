@@ -6,7 +6,7 @@
 export type Sha256OrNull = null | string;
 
 /**
- * An openOM payload is an ADVERTISEMENT - the broker's opinion of value, agreed to by the seller before publication; it records who asserted it, unaltered, and as of when, and never claims the opinion is true (verified = provenance, not truth). JSON Schema (2020-12) for the openOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]). The unprefixed top-level key space is RESERVED for the standard; non-standard/vendor fields belong under the `ext` object (#115) so they cannot collide with future core terms.
+ * An openOM payload is an ADVERTISEMENT - the broker's opinion of value, agreed to by the seller before publication; it records who asserted it, unaltered, and as of when, and never claims the opinion is true (verified = provenance, not truth). JSON Schema (2020-12) for the openOM 0.1 offering-memorandum payload. Human-readable mirror is spec Part II §E; on conflict the spec wins. Forward-compatible: unknown OPTIONAL members are permitted ([OM-VER-003]). The unprefixed top-level key space is RESERVED for the standard; non-standard/vendor fields belong under the `ext` object (#115) so they cannot collide with future core terms. CONFORMANCE NOTE: date/uri `format` keywords are ASSERTED, not annotation-only — an implementation MUST enable full format assertion (ajv-formats mode:full / Python jsonschema Draft202012Validator with a FormatChecker) to reproduce the published conformance outcomes ([OM-VAL-002]).
  */
 export interface OpenOMPayload01 {
   /**

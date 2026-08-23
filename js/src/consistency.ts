@@ -1,5 +1,6 @@
 import { payloadHash } from "./hash.js";
 import type { Finding } from "./validate.js";
+import type { OmCode } from "./codes.js";
 
 /** Consistency tolerances (§H.4 [OM-ERR-002]) - configurable; mirrors the Python Tolerances. */
 export interface Tolerances {
@@ -63,7 +64,7 @@ export const REQUIREMENT: Record<string, string> = {
 };
 
 function warn(
-  code: string,
+  code: OmCode,
   path: string,
   message: string,
   expected?: unknown,
@@ -80,7 +81,7 @@ function warn(
   };
 }
 
-function infoFinding(code: string, path: string, message: string): Finding {
+function infoFinding(code: OmCode, path: string, message: string): Finding {
   return { code, severity: "info", path, message, requirement: REQUIREMENT[code]! };
 }
 

@@ -3,6 +3,8 @@
 // is a clean /js module reused unchanged in Node (tests) and the browser panel (which owns worker
 // setup). No inference here; pdf.js is already a /js dependency.
 
+import { loadPdfjs } from "./pdfjs.js";
+
 export interface PageText {
   readonly page: number;
   readonly text: string;
@@ -14,7 +16,7 @@ export interface PageText {
  * `extractPageText` imports, so a browser page (which requires a real worker) can run extraction.
  */
 export async function setPdfWorkerSrc(src: string): Promise<void> {
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjs = await loadPdfjs();
   pdfjs.GlobalWorkerOptions.workerSrc = src;
 }
 
@@ -27,7 +29,7 @@ export interface PageTextResult {
 
 /** Extract text for pages 1..min(totalPages, maxPages), reporting the true page count for truncation. */
 export async function extractPageText(bytes: Uint8Array, maxPages = 40): Promise<PageTextResult> {
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjs = await loadPdfjs();
   const pdf = await pdfjs.getDocument({ data: bytes.slice(), verbosity: 0 }).promise;
   try {
     const totalPages = pdf.numPages;
