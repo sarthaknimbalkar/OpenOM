@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """A per-user broker profile so identity (name/brokerage/license) is set once, never retyped.
 
-a reviewer asked for a "settable profile" on the CLI; this is it. Stored device-locally at
+Brokers asked for a settable profile on the CLI; this is it. Stored device-locally at
 ``<app-dir>/profile.json`` (``%APPDATA%\\openom`` on Windows, ``~/.config/openom`` on Linux).
 ``om init`` and ``om embed`` fill a payload's ``assertedBy`` from it - payload values always win,
 the profile only fills blanks, and a missing/corrupt file never breaks a command (it reads as {}).

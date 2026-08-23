@@ -107,7 +107,7 @@ describe("renderPopup", () => {
   });
 });
 
-describe("profile discoverability (a reviewer: 'settable profile')", () => {
+describe("profile discoverability (settable broker profile)", () => {
   test("the popup shows a Settings link to the broker profile", () => {
     const root = render({ state: "integrity-ok", label: "openOM", caption: "unaltered", findings: [], payload: PAYLOAD } as never);
     const s = root.querySelector(".open-settings");
