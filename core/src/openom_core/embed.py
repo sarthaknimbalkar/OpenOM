@@ -10,6 +10,9 @@ The exact JCS bytes are stored verbatim ([OM-EMB-010]); the integrity hash is ov
 from __future__ import annotations
 
 import io
+import os
+import re
+import tempfile
 import zlib
 from dataclasses import dataclass
 from typing import Any
@@ -18,7 +21,7 @@ import pikepdf
 
 from .canonical import canonicalize, hash_bytes, parse_hardened, strip_signature
 from .errors import Finding, PayloadTooLargeError
-from .xmp import read_marker, write_marker
+from .xmp import _marker_props, read_marker, render_marker_xml, write_marker
 
 #: Decompressed-payload cap (§J [OM-SEC-002]).
 MAX_PAYLOAD_BYTES = 5_000_000
@@ -72,46 +75,94 @@ def _set_subtype(spec: pikepdf.Object) -> None:
             ef[key].Subtype = SUBTYPE
 
 
-def embed(
-    pdf_bytes: bytes, payload: dict[str, Any], *, asserted_date: str, badge: bool = False
-) -> bytes:
-    """Embed ``payload`` as om.json and return the new PDF bytes. Never mutates the input."""
+def _is_signed(pdf: pikepdf.Pdf) -> bool:
+    """True if the PDF carries a digital signature (§10 layer 4 / #3 [OM-PDF-006]).
+
+    A full-rewrite save invalidates a byte-range signature; when this is True, embed uses an
+    incremental-update save instead, appending the payload so the signed bytes stay untouched.
+    Detects the AcroForm ``SigFlags`` "signatures exist" bit, any ``/FT /Sig`` field carrying a
+    ``/V``, or a ``/Perms`` (DocMDP/UR) entry - covering approval and certification signatures.
+    """
+    root = pdf.Root
+    if "/Perms" in root:
+        return True
+    acro = root.get("/AcroForm")
+    if acro is None:
+        return False
+    sig_flags = acro.get("/SigFlags")
+    if sig_flags is not None and int(sig_flags) & 1:
+        return True
+    fields = acro.get("/Fields")
+    if fields is None:
+        return False
+    return any(f.get("/FT") == pikepdf.Name.Sig and "/V" in f for f in fields)
+
+
+@dataclass
+class _EmbedFields:
+    data: bytes
+    payload_hash: str
+    spec_version: str
+    supersedes: str | None
+    source_doc_hash: str
+
+
+def _plan_embed(pdf: pikepdf.Pdf, pdf_bytes: bytes, payload: dict[str, Any]) -> _EmbedFields:
+    """Compute the payload bytes + marker fields (supersedes/sourceDocHash) - shared by both the
+    full-rewrite and incremental save paths so a signed OM gets identical provenance semantics."""
     # signature excluded from the integrity preimage ([OM-CANON-003])
     data = canonicalize(strip_signature(payload))
     if len(data) > MAX_PAYLOAD_BYTES:
         raise PayloadTooLargeError(len(data), MAX_PAYLOAD_BYTES)
     payload_hash = hash_bytes(data)
-    spec_version = str(payload.get("specVersion", "0.1"))
+    # §D.4 re-embed semantics:
+    #  - a *different* prior payload is superseded (supersedes = prior hash);
+    #  - an *identical* re-embed carries the prior supersedes forward (no lineage wipe, no
+    #    self-supersede); a first embed has no predecessor (supersedes = None).
+    prior = read_marker(pdf)
+    prior_hash = prior.get("payloadHash") if prior else None
+    prior_supersedes = prior.get("supersedes") if prior else None
+    if prior_hash and prior_hash != payload_hash:
+        supersedes: str | None = prior_hash
+    elif prior_hash == payload_hash:
+        supersedes = prior_supersedes
+    else:
+        supersedes = None
+    # #5: sourceDocHash identifies the underlying source PDF, held STABLE across reprices - computed
+    # once (first embed) and carried forward from the prior marker on every re-embed.
+    prior_source = prior.get("sourceDocHash") if prior else None
+    source_doc_hash = prior_source or hash_bytes(pdf_bytes)
+    return _EmbedFields(
+        data=data,
+        payload_hash=payload_hash,
+        spec_version=str(payload.get("specVersion", "0.1")),
+        supersedes=supersedes,
+        source_doc_hash=source_doc_hash,
+    )
+
+
+def embed(
+    pdf_bytes: bytes, payload: dict[str, Any], *, asserted_date: str, badge: bool = False
+) -> bytes:
+    """Embed ``payload`` as om.json and return the new PDF bytes. Never mutates the input.
+
+    A *signed* input (#3 [OM-PDF-006]) is embedded via an incremental-update save - the payload is
+    appended after the signed byte range so the signature stays cryptographically intact - rather
+    than the default full-rewrite (which would invalidate it). Both paths write the identical
+    payload bytes and XMP marker, so the result reads the same regardless of the save method.
+    """
+    with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+        fields = _plan_embed(pdf, pdf_bytes, payload)
+        signed = _is_signed(pdf)
+
+    if signed:
+        return _embed_incremental(pdf_bytes, fields, asserted_date)
 
     with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
-        # §D.4 re-embed semantics:
-        #  - a *different* prior payload is superseded (supersedes = prior hash);
-        #  - an *identical* re-embed is a true no-op that PRESERVES the existing lineage
-        #    (carry the prior supersedes forward) rather than wiping it - re-running the tool
-        #    on an unchanged payload must not erase provenance;
-        #  - a first embed has no predecessor (supersedes = None). No self-supersede.
-        prior = read_marker(pdf)
-        prior_hash = prior.get("payloadHash") if prior else None
-        prior_supersedes = prior.get("supersedes") if prior else None
-        if prior_hash and prior_hash != payload_hash:
-            supersedes: str | None = prior_hash
-        elif prior_hash == payload_hash:
-            supersedes = prior_supersedes
-        else:
-            supersedes = None
-
-        # #5: sourceDocHash identifies the underlying source PDF, held STABLE across reprices. It is
-        # computed once - the hash of the document at first embed (before any om.json existed) - and
-        # carried forward from the prior marker on every re-embed, so a reprice never loses or
-        # mutates the source-document provenance. (Marker-only: the asserted payload is untouched,
-        # so payloadHash and cross-impl JCS parity are unaffected.)
-        prior_source = prior.get("sourceDocHash") if prior else None
-        source_doc_hash = prior_source or hash_bytes(pdf_bytes)
-
         _remove_existing(pdf)
         # pikepdf's stub marks description/filename/dates as required; runtime defaults them.
         # We intentionally omit dates for determinism (§D [OM-EMB-011]).
-        filespec = pikepdf.AttachedFileSpec(pdf, data, mime_type=MIME)  # type: ignore[call-arg]
+        filespec = pikepdf.AttachedFileSpec(pdf, fields.data, mime_type=MIME)  # type: ignore[call-arg]
         filespec.relationship = pikepdf.Name.Data  # /AFRelationship (kwarg missing from stub)
         pdf.attachments[PAYLOAD_NAME] = filespec
         spec_obj = pdf.attachments[PAYLOAD_NAME].obj
@@ -119,16 +170,121 @@ def embed(
         _set_subtype(spec_obj)
         write_marker(
             pdf,
-            spec_version=spec_version,
+            spec_version=fields.spec_version,
             payload_filename=PAYLOAD_NAME,
-            payload_hash=payload_hash,
+            payload_hash=fields.payload_hash,
             asserted_date=asserted_date,
-            supersedes=supersedes,
-            source_doc_hash=source_doc_hash,
+            supersedes=fields.supersedes,
+            source_doc_hash=fields.source_doc_hash,
         )
         out = io.BytesIO()
         pdf.save(out, deterministic_id=True)
         return out.getvalue()
+
+
+def _embed_incremental(pdf_bytes: bytes, fields: _EmbedFields, asserted_date: str) -> bytes:
+    """Append the payload to a *signed* PDF via a fitz incremental-update save (#3 [OM-PDF-006]).
+
+    Builds the om.json embedded-file stream, an indirect /Filespec (/AFRelationship /Data,
+    /Subtype application/ld+json), the /EmbeddedFiles name-tree entry, the catalog /AF reference,
+    and the XMP marker - then saves incrementally so the original signed bytes are preserved as a
+    byte-exact prefix. The marker bytes come from the same ``render_marker_xml`` the full-rewrite
+    path uses, so the two producers agree. fitz's incremental save requires a real file whose bytes
+    equal the source, so the work happens in a temp file.
+    """
+    # pymupdf is already a runtime dep (images/text); imported lazily to keep it off the hot path.
+    import pymupdf
+
+    props = _marker_props(
+        spec_version=fields.spec_version,
+        payload_filename=PAYLOAD_NAME,
+        payload_hash=fields.payload_hash,
+        asserted_date=asserted_date,
+        supersedes=fields.supersedes,
+        source_doc_hash=fields.source_doc_hash,
+    )
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    try:
+        tmp.write(pdf_bytes)
+        tmp.close()
+        doc = pymupdf.open(tmp.name)
+        try:
+            cat = doc.pdf_catalog()
+            # 1. embedded-file stream (verbatim JCS bytes; pikepdf read decodes the filter)
+            ef = doc.get_new_xref()
+            doc.update_object(ef, "<< /Type /EmbeddedFile /Subtype /application#2Fld+json >>")
+            doc.update_stream(ef, fields.data, compress=True)
+            # 2. indirect /Filespec ([OM-EMB-002]/[OM-EMB-004])
+            spec = doc.get_new_xref()
+            doc.update_object(
+                spec,
+                f"<< /Type /Filespec /F ({PAYLOAD_NAME}) /UF ({PAYLOAD_NAME}) "
+                f"/AFRelationship /Data /Desc (openOM payload) "
+                f"/EF << /F {ef} 0 R /UF {ef} 0 R >> >>",
+            )
+            # 3. /EmbeddedFiles name tree - drop any prior om.json, keep other attachments
+            entries = [
+                f"({nm}) {xr} 0 R"
+                for nm, xr in _name_tree_entries(doc, cat)
+                if nm != PAYLOAD_NAME
+            ]
+            entries.append(f"({PAYLOAD_NAME}) {spec} 0 R")
+            doc.xref_set_key(cat, "Names/EmbeddedFiles/Names", "[" + " ".join(entries) + "]")
+            # 4. catalog /AF - drop any prior om.json filespec ref (by resolving each ref's /F,
+            # since a re-embed's prior filespec has a different xref), append ours
+            af = [r for r in _af_refs(doc, cat) if not _is_om_filespec(doc, r)]
+            af.append(f"{spec} 0 R")
+            doc.xref_set_key(cat, "AF", "[" + " ".join(af) + "]")
+            # 5. XMP marker (identical bytes to the full-rewrite path)
+            existing = _existing_metadata_xml(doc, cat)
+            meta = doc.get_new_xref()
+            doc.update_object(meta, "<< /Type /Metadata /Subtype /XML >>")
+            marker_xml = render_marker_xml(existing, props).encode("utf-8")
+            doc.update_stream(meta, marker_xml, compress=False)
+            doc.xref_set_key(cat, "Metadata", f"{meta} 0 R")
+            doc.saveIncr()
+        finally:
+            doc.close()
+        with open(tmp.name, "rb") as fh:
+            return fh.read()
+    finally:
+        os.unlink(tmp.name)
+
+
+def _name_tree_entries(doc: Any, cat: int) -> list[tuple[str, str]]:
+    """(name, 'N 0 R') pairs already in /Names/EmbeddedFiles/Names, or [] if none."""
+    kind, val = doc.xref_get_key(cat, "Names/EmbeddedFiles/Names")
+    if kind != "array":
+        return []
+    return re.findall(r"\(([^)]*)\)\s*(\d+ 0 R)", val)
+
+
+def _af_refs(doc: Any, cat: int) -> list[str]:
+    """Existing catalog /AF indirect refs ('N 0 R'), or [] if none."""
+    kind, val = doc.xref_get_key(cat, "AF")
+    if kind != "array":
+        return []
+    return re.findall(r"\d+ 0 R", val)
+
+
+def _is_om_filespec(doc: Any, ref: str) -> bool:
+    """True if the /AF ref 'N 0 R' points to a filespec whose /F is our om.json (drop it on
+    re-embed so /AF never stacks duplicate payload references)."""
+    m = re.match(r"(\d+) 0 R", ref)
+    if not m:
+        return False
+    kind, val = doc.xref_get_key(int(m.group(1)), "F")
+    return bool(kind == "string" and val == PAYLOAD_NAME)
+
+
+def _existing_metadata_xml(doc: Any, cat: int) -> str | None:
+    """The current catalog /Metadata XML, or None - so our marker merges alongside existing XMP."""
+    kind, val = doc.xref_get_key(cat, "Metadata")
+    if kind != "xref":
+        return None
+    meta_xref = int(re.match(r"(\d+) 0 R", val).group(1))  # type: ignore[union-attr]
+    raw = doc.xref_stream(meta_xref)
+    return raw.decode("utf-8", "replace") if raw else None
 
 
 def reembed_warnings(
