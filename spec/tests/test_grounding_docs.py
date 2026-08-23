@@ -23,6 +23,11 @@ def test_grounding_example_matches_the_real_sample_om() -> None:
     page = (SITE / "docs" / "grounding-ai.html").read_text(encoding="utf-8")
     assert f"{noi:,}" in page, f"grounding example NOI is stale vs the sample OM ({noi})"
     assert as_of in page, f"grounding example noiAsOfDate is stale vs the sample OM ({as_of})"
+    # every NOI-looking figure on the page must be the sample's - no second, inconsistent number.
+    import re
+
+    figures = {m for m in re.findall(r"\$(\d{2,3},\d{3})", page)}
+    assert figures <= {f"{noi:,}"}, f"page shows an NOI figure that isn't the sample OM's: {figures}"
 
 
 def test_extraction_playbook_page_has_no_wrong_tool_calls() -> None:
