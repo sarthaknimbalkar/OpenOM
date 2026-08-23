@@ -6,8 +6,13 @@ build-backend = "hatchling.build"
 name = "openom-cli"
 version = "0.1.0"
 description = "openOM CLI - the `om` command over openom-core. Zero inference."
+readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
+keywords = [
+    "openom", "offering-memorandum", "commercial-real-estate", "cre", "real-estate",
+    "proptech", "pdf", "cli", "json-ld", "json-schema", "open-standard", "data-standard",
+]
 # openom-core pinned to the same 0.x spec line (a 0.2 core may change the payload contract).
 dependencies = ["openom-core>=0.1,<0.2", "typer>=0.12"]
 
