@@ -84,7 +84,7 @@ describe("worker dispatch + [M5] JSON-RPC batch", () => {
       canonical: { hash: string };
       errors: unknown[];
     };
-    expect(sc.ok).toBe(true); // not just `blocked` — the Python-canonical `ok`
+    expect(sc.ok).toBe(true); // not just `blocked` - the Python-canonical `ok`
     expect(sc.canonical.hash).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 

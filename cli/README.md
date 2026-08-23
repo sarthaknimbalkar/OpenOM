@@ -17,7 +17,7 @@ om --version
 
 ## Conformance (CI integrity gate)
 
-`om conformance` reproduces the pinned spec vectors + samples with your installed openOM — run it in
+`om conformance` reproduces the pinned spec vectors + samples with your installed openOM - run it in
 CI so an environment/version change can't silently drift from the standard. It reads the repo's
 `spec/` tree (pass `--spec-dir <path>/spec` from outside a checkout):
 

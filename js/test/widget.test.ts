@@ -115,7 +115,7 @@ describe("evaluateBadge (read pipeline)", () => {
     expect(v.mirrorAssertedDate).toBe("2026-06-01");
   });
 
-  test("[#2] the cache is bounded — oldest entries are evicted past the cap", async () => {
+  test("[#2] the cache is bounded - oldest entries are evicted past the cap", async () => {
     const { setBadgeCacheMax, badgeCacheSize } = await import("../widget/badge-core.js");
     setBadgeCacheMax(2);
     clearBadgeCache();
@@ -169,7 +169,7 @@ describe("evaluateBadge (read pipeline)", () => {
     expect(v.stale).toBeUndefined();
   });
 
-  test("[B1] caches by src|mirror — N badges for the same PDF fetch once", async () => {
+  test("[B1] caches by src|mirror - N badges for the same PDF fetch once", async () => {
     const embedded = await embedPayload(await blankPdfBytes(), payload);
     let fetches = 0;
     const counting: typeof fetch = (async () => {
@@ -192,7 +192,7 @@ describe("evaluateBadge (read pipeline)", () => {
 describe("readByUrl ([#1] single source for /verify + /v/; [#5] direct + worker fallback)", () => {
   const payload = { "@type": "RealEstateListing", specVersion: "0.1", assertedBy: { broker: "A" } };
 
-  test("direct fetch success (same-origin/CORS host) — never calls the worker", async () => {
+  test("direct fetch success (same-origin/CORS host) - never calls the worker", async () => {
     const embedded = await embedPayload(await blankPdfBytes(), payload);
     let workerCalls = 0;
     const f: typeof fetch = (async (u: string) => {

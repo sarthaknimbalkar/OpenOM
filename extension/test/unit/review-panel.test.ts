@@ -2,7 +2,7 @@
 import { describe, expect, test } from "vitest";
 import type { ValidationReport } from "openom-js";
 import { newDraft } from "../../src/author/draft.js";
-import { renderDerived, repriceDiff } from "../../src/author/review-panel.js";
+import { plainMessage, renderDerived, repriceDiff } from "../../src/author/review-panel.js";
 
 const clean: ValidationReport = {
   specVersion: "0.1",
@@ -65,7 +65,7 @@ describe("renderDerived - assert gate + finalized preview", () => {
       finalized: {},
     });
     const err = c.querySelector(".schema-error")?.textContent ?? "";
-    expect(err).toContain("Deal › Cap Rate"); // humanized, not "/deal/capRate"
+    expect(err).toContain("0.0625"); // plain-English cap-rate instruction, not a raw pointer
     expect(err).not.toContain("/deal/capRate");
     const changed = c.querySelector(".diff-changed")?.textContent ?? "";
     expect(changed).toContain("Deal › Asking Price");
@@ -85,5 +85,30 @@ describe("repriceDiff", () => {
     const diff = repriceDiff({ deal: { noi: 100 } }, { deal: { askingPrice: 9 } }, "sha256:p");
     expect(diff.removed).toContain("/deal/noi");
     expect(diff.added).toContain("/deal/askingPrice");
+  });
+});
+
+describe("plain-English coaching (a reviewer: 'all validation errors, haha')", () => {
+  test("cap-rate error renders as a decimal-fraction instruction, not the raw schema string", () => {
+    const c = document.createElement("div");
+    renderDerived(c, newDraft({}), { report: withError, diff: null, finalized: {} });
+    const err = c.querySelector(".schema-error")?.textContent ?? "";
+    expect(err).toContain("0.0625");
+    expect(err).not.toContain("must be number");
+  });
+
+  test("warnings section explains that warnings never block", () => {
+    const c = document.createElement("div");
+    renderDerived(c, newDraft({}), { report: withWarning, diff: null, finalized: {} });
+    expect(c.querySelector(".warnings-note")?.textContent).toContain("don't block");
+  });
+});
+
+describe("plainMessage", () => {
+  test("known broker codes are plain; unknown falls back to path + code", () => {
+    expect(plainMessage("OMV-E002", "/deal/noiType", "x")).toContain("in-place or pro-forma");
+    expect(plainMessage("OMV-E001", "/currency", "x")).toContain("USD");
+    const f = plainMessage("OMV-E001", "/property/buildingSF", "must be a number");
+    expect(f).toContain("(OMV-E001)");
   });
 });

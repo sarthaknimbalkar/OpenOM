@@ -18,8 +18,8 @@ byte-parity across the Python (`openom-core`) and TypeScript (`openom-js`) cores
 
 ## Embed at the source (Node - a producer/authoring tool)
 
-_(`openom-js` is not yet on npm; until then, from a clone `npm install ../js` — it builds itself on
-install — then `import` works exactly as shown.)_
+_(`openom-js` is not yet on npm; until then, from a clone `npm install ../js` - it builds itself on
+install - then `import` works exactly as shown.)_
 
 ```ts
 import { readFileSync, writeFileSync } from "node:fs";
@@ -53,7 +53,7 @@ const { errors } = validatePayload(payload); // the 0.1 schema is bundled
 if (errors.length) process.exit(1); // schema errors block; warnings/info never do
 ```
 
-Also gate on **`om conformance`** — the post-install integrity check that your installed openOM
+Also gate on **`om conformance`** - the post-install integrity check that your installed openOM
 reproduces the pinned spec vectors/samples (run from a repo checkout, or `--spec-dir <path>/spec`):
 
 ```sh
@@ -92,11 +92,11 @@ createServer((req, res) => {
 ```
 
 **Responding to deliveries (the retry contract):** return **2xx** = accepted (the sender stops);
-**4xx** = permanent, do NOT retry (a bad signature / malformed envelope — don't 4xx a transient outage
+**4xx** = permanent, do NOT retry (a bad signature / malformed envelope - don't 4xx a transient outage
 or you lose the update); **5xx / timeout** = the sender retries with backoff (the reference publisher:
 3 attempts). Delivery is **at-least-once**: retries re-send the same `OpenOM-Event-Id`, so record
 processed ids and pass a `seen(eventId)` to `receiveWebhook` to drop duplicates. Treat the envelope's
-`verification.*` as the **sender's self-report** — recompute your own; never surface it as your trust.
+`verification.*` as the **sender's self-report** - recompute your own; never surface it as your trust.
 
 See [`/js`](../js) for the full SDK surface and [`/spec`](../spec) for the schema, vectors, the
 webhook-envelope + [subscription](../spec/webhook-subscription-0.1.schema.json) contracts.

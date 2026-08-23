@@ -34,16 +34,16 @@ Sibling manifests: `pathologies/`, `negatives/`, `fuzz/` (differential-fuzz corp
 
 For each vector in `manifest.json`:
 
-1. **Producer** — canonicalize `payloads/<name>.json` with RFC 8785 JCS (dropping `meta.signature`
+1. **Producer** - canonicalize `payloads/<name>.json` with RFC 8785 JCS (dropping `meta.signature`
    from the preimage, [OM-CANON-003]). Assert your bytes == `expected/<name>.json.canonical` and your
    `sha256:` digest == `.payloadHash`.
-2. **Consumer** — read `pdfs/<name>.pdf`, extract the `om.json` stream, and assert its byte-hash
+2. **Consumer** - read `pdfs/<name>.pdf`, extract the `om.json` stream, and assert its byte-hash
    equals the marker `payloadHash` without re-canonicalizing ([OM-CANON-008]).
-3. **Validator** — run `samples/*` through your validator; the resulting error codes must match
+3. **Validator** - run `samples/*` through your validator; the resulting error codes must match
    `samples/manifest.json` (enable full `format` assertion, [OM-VAL-002]).
 
 Every `OM-*` requirement referenced here is defined in
 [`/spec/requirements.json`](../requirements.json) (rendered at https://openom.app/docs/requirements).
 
-The reference cores regenerate these with `python core/scripts/gen_vectors.py` (must be a no-op —
+The reference cores regenerate these with `python core/scripts/gen_vectors.py` (must be a no-op -
 that is a maintainer regen, not the third-party conformance run above).

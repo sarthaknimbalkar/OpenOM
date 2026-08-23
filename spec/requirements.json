@@ -204,7 +204,7 @@
       "title": "Payload conforms to openOM 0.1 JSON Schema",
       "section": "Part II §E / §H.1",
       "keyword": "MUST",
-      "clause": "An openOM payload MUST validate against the openOM 0.1 JSON Schema (2020-12) — including the required top-level members @context, @type (const RealEstateListing), specVersion (const 0.1), assertedBy, assertedDate, and meta — and any JSON Schema violation not specialized to another code is reported as the blocking schema error OMV-E001."
+      "clause": "An openOM payload MUST validate against the openOM 0.1 JSON Schema (2020-12) - including the required top-level members @context, @type (const RealEstateListing), specVersion (const 0.1), assertedBy, assertedDate, and meta - and any JSON Schema violation not specialized to another code is reported as the blocking schema error OMV-E001."
     },
     "OM-DD-002": {
       "title": "Currency defaults to USD when absent",
@@ -300,7 +300,7 @@
       "title": "Deterministic finding order",
       "section": "§H.1",
       "keyword": "MUST",
-      "clause": "Findings MUST be emitted in a deterministic order — by severity, then by code ascending, then by path as a byte string — identical across runs and across implementations."
+      "clause": "Findings MUST be emitted in a deterministic order - by severity, then by code ascending, then by path as a byte string - identical across runs and across implementations."
     },
     "OM-ERR-010": {
       "title": "om_validate report envelope",
@@ -352,79 +352,79 @@
     },
     "OM-IO-001": {
       "title": "Upstream fetch / DNS failure",
-      "section": "MCP hosted transport — url fetch",
+      "section": "MCP hosted transport - url fetch",
       "keyword": "MUST",
       "clause": "When the hosted transport fetches a PDF from an https URL, a DNS resolution that yields no addresses, or a connection/read failure from the upstream host, MUST be reported as a retryable OM-IO-001 error rather than any partial or fabricated result."
     },
     "OM-IO-002": {
       "title": "SSRF blocked address range",
-      "section": "MCP hosted transport — SSRF hardening",
+      "section": "MCP hosted transport - SSRF hardening",
       "keyword": "MUST",
       "clause": "The hosted url fetch MUST resolve the host first and refuse the request with OM-IO-002 when any resolved IP falls in a blocked (internal/loopback/private) address range, and this check MUST be re-applied on every redirect hop so a redirect cannot reach a blocked host."
     },
     "OM-IO-003": {
       "title": "Operation / fetch timeout",
-      "section": "MCP hosted transport — bounded execution",
+      "section": "MCP hosted transport - bounded execution",
       "keyword": "MUST",
       "clause": "A fetch that exceeds the connect/read timeout, or a guarded parse operation that exceeds its wall-clock timeout, MUST be aborted and reported as a retryable OM-IO-003 timeout error rather than being allowed to hang."
     },
     "OM-IO-005": {
       "title": "Size / page ceiling never silently truncated",
-      "section": "MCP hosted transport — resource caps",
+      "section": "MCP hosted transport - resource caps",
       "keyword": "MUST",
-      "clause": "An input that exceeds a resource cap — a fetched body larger than max_bytes, content lacking the %PDF- header, or a document whose page count exceeds the per-call page ceiling — MUST be rejected with OM-IO-005 and MUST NOT be silently truncated."
+      "clause": "An input that exceeds a resource cap - a fetched body larger than max_bytes, content lacking the %PDF- header, or a document whose page count exceeds the per-call page ceiling - MUST be rejected with OM-IO-005 and MUST NOT be silently truncated."
     },
     "OM-IO-006": {
       "title": "Blob missing or expired",
-      "section": "MCP hosted transport — blob store",
+      "section": "MCP hosted transport - blob store",
       "keyword": "MUST",
       "clause": "A request referencing a blobId that does not exist, has expired past its TTL, or has been deleted MUST fail with OM-IO-006 (not found or expired)."
     },
     "OM-IO-007": {
       "title": "Blob authorization (anti-IDOR)",
-      "section": "MCP hosted transport — blob store authz",
+      "section": "MCP hosted transport - blob store authz",
       "keyword": "MUST",
       "clause": "A blobId that exists but is bound to a different principal MUST be rejected with OM-IO-007 (not authorized), so a principal can never read another principal's blob, and this ownership binding cannot be forged or omitted through the data PUT."
     },
     "OM-IO-008": {
       "title": "Unsupported PDF reference for transport",
-      "section": "MCP transport — PdfRef resolution (§6d)",
+      "section": "MCP transport - PdfRef resolution (§6d)",
       "keyword": "MUST",
       "clause": "A PDF reference that the active transport cannot serve MUST be rejected with OM-IO-008: the PdfRef must carry exactly one of path/url/blobId, on stdio url/blobId and request-upload are unavailable, on the hosted transport a local path is refused, and only https URLs are fetched."
     },
     "OM-IO-009": {
       "title": "Redirect limit exceeded",
-      "section": "MCP hosted transport — url fetch",
+      "section": "MCP hosted transport - url fetch",
       "keyword": "MUST",
       "clause": "The hosted url fetch MUST follow at most max_redirects redirect hops and, once that limit is exceeded, MUST stop and fail with OM-IO-009 rather than following further redirects."
     },
     "OM-IO-010": {
       "title": "Malformed PDF / parser crash",
-      "section": "MCP — untrusted-PDF parse isolation",
+      "section": "MCP - untrusted-PDF parse isolation",
       "keyword": "MUST",
-      "clause": "A PDF that cannot be read or parsed — a malformed document, an unreadable path, or a guarded-subprocess crash or in-child exception (including a rejected memory limit) — MUST surface as OM-IO-010 and MUST NOT take down the server."
+      "clause": "A PDF that cannot be read or parsed - a malformed document, an unreadable path, or a guarded-subprocess crash or in-child exception (including a rejected memory limit) - MUST surface as OM-IO-010 and MUST NOT take down the server."
     },
     "OM-IO-012": {
       "title": "Malformed / out-of-bounds page range",
-      "section": "core text extraction — page range",
+      "section": "core text extraction - page range",
       "keyword": "MUST",
       "clause": "A page-range argument that is malformed or refers to pages outside the document MUST be rejected with OM-IO-012 rather than silently clamped or ignored."
     },
     "OM-IO-013": {
       "title": "Malformed / mismatched pagination cursor",
-      "section": "core text extraction — pagination cursor",
+      "section": "core text extraction - pagination cursor",
       "keyword": "MUST",
       "clause": "A pagination cursor that is malformed, or presented against a different input than the one that produced it, MUST be rejected with OM-IO-013."
     },
     "OM-IO-014": {
       "title": "Rate limit / quota exceeded",
-      "section": "MCP hosted transport — rate limiting",
+      "section": "MCP hosted transport - rate limiting",
       "keyword": "MUST",
       "clause": "A principal exceeding its fixed-window call limit (in-memory, distributed, or per-API-key quota) MUST be denied with a retryable OM-IO-014 error carrying a retry_after hint, and a multi-instance deploy MUST enforce one global limit per principal via a shared counter store."
     },
     "OM-IO-402": {
       "title": "Inference extraction is a separate paid service",
-      "section": "MCP boundary — deterministic-only server",
+      "section": "MCP boundary - deterministic-only server",
       "keyword": "MUST-NOT",
       "clause": "The open deterministic server MUST NOT perform hosted inference extraction; the InferenceExtractor seam is implemented only by the separate commercial service, and a hosted deployment representing an unentitled inference-extraction request MUST return the non-retryable OM-IO-402 payment-required seam, which the deterministic tools never raise."
     },
@@ -444,7 +444,7 @@
       "title": "No network, no inference in MCP",
       "section": "§I/§V",
       "keyword": "MUST-NOT",
-      "clause": "The openOM MCP tool layer MUST NOT perform any network access or any LLM/inference call — the deterministic cardinal boundary applies to every tool body."
+      "clause": "The openOM MCP tool layer MUST NOT perform any network access or any LLM/inference call - the deterministic cardinal boundary applies to every tool body."
     },
     "OM-MCP-008": {
       "title": "Per-call page ceiling",
@@ -498,7 +498,7 @@
       "title": "Conformance suite reproduces published vectors",
       "section": "§T",
       "keyword": "MUST",
-      "clause": "A conforming implementation MUST provide a conformance suite that reproduces the published reference vectors and sample outcomes locally — for each vector, recomputing the JCS-canonicalized payload hash and matching it to the vector's expected `jcs_sha256`, and (where a vector PDF exists) confirming the embedded payload reads back present with a valid hash; and for each sample, validating it against the schema so that valid samples produce no errors and invalid samples both fail validation and produce (at least) all of their declared `errorCodes` — passing (exit 0) only if every check passes."
+      "clause": "A conforming implementation MUST provide a conformance suite that reproduces the published reference vectors and sample outcomes locally - for each vector, recomputing the JCS-canonicalized payload hash and matching it to the vector's expected `jcs_sha256`, and (where a vector PDF exists) confirming the embedded payload reads back present with a valid hash; and for each sample, validating it against the schema so that valid samples produce no errors and invalid samples both fail validation and produce (at least) all of their declared `errorCodes` - passing (exit 0) only if every check passes."
     },
     "OM-SEC-001": {
       "title": "SSRF-hardened URL fetch",
@@ -576,7 +576,7 @@
       "title": "Cross-implementation schema-validation parity",
       "section": "VAL-01 / §H",
       "keyword": "MUST",
-      "clause": "Schema validation MUST be performed with full-mode format assertion enabled (Python jsonschema Draft202012Validator with FORMAT_CHECKER; ajv with ajv-formats mode:\"full\"), so that format-constrained fields such as date-typed assertedDate are asserted (not annotation-only) and every implementation — the Python core, the /js library, and the eval-free MV3 standalone validator — produces bit-for-bit identical validation results."
+      "clause": "Schema validation MUST be performed with full-mode format assertion enabled (Python jsonschema Draft202012Validator with FORMAT_CHECKER; ajv with ajv-formats mode:\"full\"), so that format-constrained fields such as date-typed assertedDate are asserted (not annotation-only) and every implementation - the Python core, the /js library, and the eval-free MV3 standalone validator - produces bit-for-bit identical validation results."
     },
     "OM-VAL-006": {
       "title": "Consumer hash-mismatch handling",
@@ -606,7 +606,7 @@
       "title": "Payload detection order",
       "section": "§D",
       "keyword": "MUST",
-      "clause": "The reader MUST locate the embedded om.json stream in a fixed detection order — authoritative path catalog /AF → Filespec whose /UF or /F equals om.json → /EF (preferring /UF over /F) — and MUST fall back to the /EmbeddedFiles name tree for producers that populate only that."
+      "clause": "The reader MUST locate the embedded om.json stream in a fixed detection order - authoritative path catalog /AF → Filespec whose /UF or /F equals om.json → /EF (preferring /UF over /F) - and MUST fall back to the /EmbeddedFiles name tree for producers that populate only that."
     },
     "OM-XMP-004": {
       "title": "Idempotent re-embed (replace not stack)",
@@ -630,7 +630,7 @@
       "title": "Degraded producer: no reference hash",
       "section": "§D.2.2",
       "keyword": "MUST-NOT",
-      "clause": "When the om.json payload is present but the PDF carries no omspec:payloadHash reference hash (a degraded producer), the reader MUST NOT report hashValid as true — integrity stays unverified (hashValid null / payloadHash null)."
+      "clause": "When the om.json payload is present but the PDF carries no omspec:payloadHash reference hash (a degraded producer), the reader MUST NOT report hashValid as true - integrity stays unverified (hashValid null / payloadHash null)."
     },
     "OM-XMP-011": {
       "title": "Omit supersedes when null",

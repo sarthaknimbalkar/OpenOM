@@ -77,7 +77,7 @@ export function paintBadge(host: HTMLElement, view: BadgeView, details?: string)
     const stale = document.createElement("span");
     stale.textContent = view.mirrorAssertedDate
       ? `· superseded (newer dated ${view.mirrorAssertedDate})`
-      : "· superseded — newer version available";
+      : "· superseded - newer version available";
     stale.style.cssText = "font-weight:400;opacity:.85;";
     wrap.append(stale);
   }
