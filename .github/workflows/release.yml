@@ -1,8 +1,10 @@
 name: release
 
-# Tag-triggered publish (#137): push a v* tag to publish the Python packages to PyPI (Trusted
-# Publishing - no stored token) and openom-js to npm (with provenance). Deterministic, inference-free
-# packages. Bump versions in the pyproject.toml / package.json BEFORE tagging.
+# Tag-triggered publish (#137): push a v* tag to publish the Python packages to PyPI and openom-js
+# to npm. Uses API-TOKEN auth (no PyPI Trusted-Publisher config required) - set two repo secrets
+# first: PYPI_API_TOKEN (an account- or project-scoped PyPI token) and NPM_TOKEN (an npm automation
+# token). Deterministic, inference-free packages. Bump versions in the pyproject.toml / package.json
+# BEFORE tagging, and make the tag match (v0.1.0 -> version 0.1.0).
 on:
   push:
     tags: ["v*"]
@@ -14,8 +16,6 @@ jobs:
     strategy:
       matrix:
         pkg: [core, cli, mcp]
-    permissions:
-      id-token: write # PyPI Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,26 +25,24 @@ jobs:
         run: |
           python -m pip install --upgrade pip build
           python -m build ${{ matrix.pkg }} --outdir dist
-      - name: Publish to PyPI
+      - name: Publish to PyPI (API token)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
   npm:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write # npm provenance
-      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
-      - name: Build + publish openom-js (provenance)
+      - name: Build + publish openom-js
         working-directory: js
         run: |
           npm ci
-          npm publish --provenance --access public
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
