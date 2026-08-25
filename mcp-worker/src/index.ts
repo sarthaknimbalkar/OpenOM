@@ -158,6 +158,28 @@ export function safeUrl(raw: string): URL {
 
 const MAX_REDIRECTS = 3; // most real OM hosting is a presigned/CDN redirect; follow a bounded chain
 
+// Aggregate outbound-byte ceiling for one HTTP request. MAX_BATCH bounds the NUMBER of upstream
+// fetches, but a full batch of 25 MB reads (each possibly fetching a mirror too) could still pull
+// hundreds of MB per call - bandwidth amplification. This caps the sum across the whole request.
+const BATCH_MAX_BYTES = 128 * 1024 * 1024;
+
+/** A shared, mutable outbound-byte budget for one HTTP request. Every upstream fetch draws from it,
+ * so no single request can amplify one client call into unbounded egress. */
+export class ByteBudget {
+  constructor(public remaining: number) {}
+  /** The most a single fetch may read now: the smaller of its own cap and what's left. */
+  cap(perFetchMax: number): number {
+    return Math.max(0, Math.min(perFetchMax, this.remaining));
+  }
+  /** Charge bytes actually read; over-budget is refused with the same size-limit code. */
+  take(n: number): void {
+    this.remaining -= n;
+    if (this.remaining < 0) {
+      throw new ToolError("OM-IO-005", "request outbound size limit exceeded");
+    }
+  }
+}
+
 /** [Mi5] Read a response body, aborting the moment the accumulated size exceeds `max` - so a missing
  * or lying content-length can't force us to buffer an unbounded body. */
 export async function readCapped(body: ReadableStream<Uint8Array>, max: number): Promise<Uint8Array> {
@@ -194,6 +216,7 @@ export async function readCapped(body: ReadableStream<Uint8Array>, max: number):
 export async function fetchPdf(
   rawUrl: string,
   fetchImpl: typeof fetch = fetch,
+  budget?: ByteBudget,
 ): Promise<Uint8Array> {
   let url = safeUrl(rawUrl).toString();
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
@@ -207,24 +230,27 @@ export async function fetchPdf(
       continue;
     }
     if (!res.ok) throw new ToolError("OM-IO-001", `fetch failed: ${res.status}`);
+    // A per-fetch cap that also honors the request-wide budget, so the sum across a batch is bounded.
+    const cap = budget ? budget.cap(MAX_BYTES) : MAX_BYTES;
     const len = Number(res.headers.get("content-length") ?? "0");
-    if (len > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
-    // [Mi5] Stream + abort as soon as we cross MAX_BYTES, so a missing/lying content-length can't make
+    if (len > cap) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
+    // [Mi5] Stream + abort as soon as we cross the cap, so a missing/lying content-length can't make
     // us buffer an unbounded body into memory. Falls back to arrayBuffer() if the body isn't a stream.
     const buf = res.body
-      ? await readCapped(res.body, MAX_BYTES)
+      ? await readCapped(res.body, cap)
       : new Uint8Array(await res.arrayBuffer());
-    if (buf.length > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
+    if (buf.length > cap) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
+    budget?.take(buf.length);
     return buf;
   }
   throw new ToolError("OM-IO-009", `redirect limit (${MAX_REDIRECTS}) exceeded`);
 }
 
-async function omRead(args: Record<string, unknown>): Promise<unknown> {
+async function omRead(args: Record<string, unknown>, budget?: ByteBudget): Promise<unknown> {
   let bytes: Uint8Array;
   const sourceUrl = typeof args.url === "string" ? args.url : null;
   if (typeof args.pdfBase64 === "string") bytes = base64ToBytes(args.pdfBase64);
-  else if (sourceUrl) bytes = await fetchPdf(sourceUrl);
+  else if (sourceUrl) bytes = await fetchPdf(sourceUrl, fetch, budget);
   else throw new ToolError("OM-IO-008", "provide pdfBase64 or url");
   if (bytes.length > MAX_BYTES) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
   const r = await readPayloadFromBytes(bytes);
@@ -246,7 +272,7 @@ async function omRead(args: Record<string, unknown>): Promise<unknown> {
         mirrorUrl: canonicalUrl,
         embeddedHash: r.payloadHash,
         fetchMirror: async (u) => {
-          mirrorBytes = await fetchPdf(u); // safe fetch (SSRF-guarded, bounded redirects)
+          mirrorBytes = await fetchPdf(u, fetch, budget); // safe fetch (SSRF-guarded, bounded, budgeted)
           return { https: safeUrl(u).protocol === "https:", body: mirrorBytes };
         },
       });
@@ -345,8 +371,13 @@ function summaryLine(name: string, data: Record<string, unknown>): string {
   return `om_validate: ok=${data.ok} errors=${s.errorCount ?? "?"} warnings=${s.warningCount ?? "?"}`;
 }
 
-async function callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-  const data = name === "om_read" ? await omRead(args) : name === "om_validate" ? omValidate(args) : null;
+async function callTool(
+  name: string,
+  args: Record<string, unknown>,
+  budget?: ByteBudget,
+): Promise<unknown> {
+  const data =
+    name === "om_read" ? await omRead(args, budget) : name === "om_validate" ? omValidate(args) : null;
   if (data === null && name !== "om_validate") throw new Error(`unknown tool: ${name}`);
   return {
     content: [{ type: "text", text: summaryLine(name, data as Record<string, unknown>) }],
@@ -362,7 +393,10 @@ interface RpcMsg {
 
 /** Handle one JSON-RPC message → a response object, or null for a notification (no reply). Shared by
  * the single-request and [M5] batch-array paths. */
-async function handleRpc(msg: RpcMsg): Promise<Record<string, unknown> | null> {
+async function handleRpc(
+  msg: RpcMsg,
+  budget?: ByteBudget,
+): Promise<Record<string, unknown> | null> {
   const { id, method, params } = msg;
   switch (method) {
     case "initialize": {
@@ -390,7 +424,7 @@ async function handleRpc(msg: RpcMsg): Promise<Record<string, unknown> | null> {
       const name = String(params?.name ?? "");
       const args = (params?.arguments as Record<string, unknown>) ?? {};
       try {
-        return { jsonrpc: "2.0", id, result: await callTool(name, args) };
+        return { jsonrpc: "2.0", id, result: await callTool(name, args, budget) };
       } catch (e) {
         // tool errors are returned in-band (isError) per MCP. [M4] carry a stable machine code.
         const code = e instanceof ToolError ? e.code : "OM-IO-010";
@@ -450,10 +484,13 @@ export default {
         if (parsed.length > MAX_BATCH) {
           return rpcError(null, -32600, `batch too large (max ${MAX_BATCH} requests per call)`);
         }
-        const out = await Promise.all(parsed.map((m) => handleRpc(m as RpcMsg)));
+        // One shared byte budget for the whole batch: all upstream fetches draw from it, so the
+        // request's total egress is bounded no matter how the MAX_BATCH reads are composed.
+        const budget = new ByteBudget(BATCH_MAX_BYTES);
+        const out = await Promise.all(parsed.map((m) => handleRpc(m as RpcMsg, budget)));
         return json(out.filter((r) => r !== null));
       }
-      const one = await handleRpc(parsed as RpcMsg);
+      const one = await handleRpc(parsed as RpcMsg, new ByteBudget(BATCH_MAX_BYTES));
       return one === null ? new Response(null, { status: 202, headers: CORS }) : json(one);
     } catch (e) {
       return rpcError(null, -32603, (e as Error).message);

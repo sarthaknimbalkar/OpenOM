@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { fetchPdf, safeUrl, readCapped } from "../src/index.js";
+import { fetchPdf, safeUrl, readCapped, ByteBudget } from "../src/index.js";
 
 // A fake fetch that plays back a scripted sequence of responses keyed by call order, recording URLs.
 function scriptedFetch(steps: Array<{ status: number; location?: string; body?: Uint8Array }>) {
@@ -123,6 +123,30 @@ describe("fetchPdf ([#36] follow bounded, re-pinned redirects)", () => {
   });
 });
 
+
+describe("ByteBudget bounds total outbound bytes across a request", () => {
+  test("charges each fetch and refuses once the shared budget is exhausted", async () => {
+    const pdf = new Uint8Array(1000).fill(0x25);
+    const budget = new ByteBudget(2500); // room for two 1000-byte reads, not a third
+    const one = scriptedFetch([{ status: 200, body: pdf }]);
+    await fetchPdf("https://cdn.example.com/a.pdf", one.impl, budget);
+    expect(budget.remaining).toBe(1500);
+    const two = scriptedFetch([{ status: 200, body: pdf }]);
+    await fetchPdf("https://cdn.example.com/b.pdf", two.impl, budget);
+    expect(budget.remaining).toBe(500);
+    // The next fetch's cap is now only 500; a 1000-byte body must abort mid-stream.
+    const three = scriptedFetch([{ status: 200, body: pdf }]);
+    await expect(fetchPdf("https://cdn.example.com/c.pdf", three.impl, budget)).rejects.toThrow(
+      /size limit/,
+    );
+  });
+
+  test("without a budget the per-fetch cap still applies (back-compat)", async () => {
+    const { impl } = scriptedFetch([{ status: 200, body: new Uint8Array([0x25, 0x50]) }]);
+    const out = await fetchPdf("https://cdn.example.com/a.pdf", impl);
+    expect(out.length).toBe(2);
+  });
+});
 
 describe("[Mi5] readCapped aborts an oversize/unknown-length body", () => {
 
