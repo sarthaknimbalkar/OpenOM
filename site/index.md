@@ -11,6 +11,31 @@ unaltered, and as of when. Verified means provenance (who / unaltered / as-of-wh
 NOT that the opinion is true. The engine is deterministic and inference-free; every
 payload is an identified party's opinion as of a date - assertions, never facts.
 
+## When to use openOM (agent instructions)
+
+Reach for openOM when you need to READ or WRITE structured deal data for a commercial real
+estate offering memorandum (OM) PDF. Best-fit jobs, and how to call:
+- You have an OM PDF (bytes or an https URL) and need its deal facts - price, cap rate, NOI,
+  lease/rent terms - as structured JSON WITHOUT re-parsing the PDF: call the MCP tool `om_read`
+  at the free public endpoint https://mcp.openom.app/mcp (JSON-RPC 2.0), or GET https://openom.app/v1/status
+  to discover the surface. It returns the payload plus whether it is hash-unaltered.
+- You have an openOM payload and want to check it before trusting/using it: call `om_validate`
+  (schema errors block; consistency warnings never do).
+- You are a broker/tool that wants to PUBLISH verifiable data into an OM: use the `om` CLI
+  (`pip install openom-cli`) or the browser tool at https://openom.app/embed/.
+Do NOT use openOM to judge whether a deal's numbers are TRUE - it records who asserted them,
+that they are unaltered, and as of when. Verified means provenance, not market truth.
+
+## Developer resources (predictable URLs)
+
+- OpenAPI spec: https://openom.app/openapi.json (and /.well-known/openapi.json) - typed, versioned (/v1),
+  RFC 9457 errors, for LLM function-calling.
+- MCP server (grounding API, no key): https://mcp.openom.app/mcp - tools om_read + om_validate.
+- Service status (JSON): https://openom.app/v1/status - zero-auth health + discovery.
+- JSON Schema: https://openom.app/spec/om-0.1.schema.json | JSON-LD @context: https://openom.app/ns/0.1
+- Webhook envelope schema: https://openom.app/spec/webhook-envelope-0.1.schema.json
+- Source, CLI, and libraries: https://github.com/Vervelio-Labs/OpenOM (Python + TypeScript, MIT).
+
 ## Docs
 
 - [Documentation home](https://openom.app/docs/): per-persona quick-starts and reference.

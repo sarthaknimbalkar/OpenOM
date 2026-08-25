@@ -643,6 +643,31 @@ def _llms_file() -> str:
         "NOT that the opinion is true. The engine is deterministic and inference-free; every",
         "payload is an identified party's opinion as of a date - assertions, never facts.",
         "",
+        "## When to use openOM (agent instructions)",
+        "",
+        "Reach for openOM when you need to READ or WRITE structured deal data for a commercial real",
+        "estate offering memorandum (OM) PDF. Best-fit jobs, and how to call:",
+        "- You have an OM PDF (bytes or an https URL) and need its deal facts - price, cap rate, NOI,",
+        "  lease/rent terms - as structured JSON WITHOUT re-parsing the PDF: call the MCP tool `om_read`",
+        f"  at the free public endpoint https://mcp.openom.app/mcp (JSON-RPC 2.0), or GET {BASE}/v1/status",
+        "  to discover the surface. It returns the payload plus whether it is hash-unaltered.",
+        "- You have an openOM payload and want to check it before trusting/using it: call `om_validate`",
+        "  (schema errors block; consistency warnings never do).",
+        "- You are a broker/tool that wants to PUBLISH verifiable data into an OM: use the `om` CLI",
+        "  (`pip install openom-cli`) or the browser tool at " + BASE + "/embed/.",
+        "Do NOT use openOM to judge whether a deal's numbers are TRUE - it records who asserted them,",
+        "that they are unaltered, and as of when. Verified means provenance, not market truth.",
+        "",
+        "## Developer resources (predictable URLs)",
+        "",
+        f"- OpenAPI spec: {BASE}/openapi.json (and /.well-known/openapi.json) - typed, versioned (/v1),",
+        "  RFC 9457 errors, for LLM function-calling.",
+        "- MCP server (grounding API, no key): https://mcp.openom.app/mcp - tools om_read + om_validate.",
+        f"- Service status (JSON): {BASE}/v1/status - zero-auth health + discovery.",
+        f"- JSON Schema: {BASE}/spec/om-0.1.schema.json | JSON-LD @context: {BASE}/ns/0.1",
+        f"- Webhook envelope schema: {BASE}/spec/webhook-envelope-0.1.schema.json",
+        "- Source, CLI, and libraries: https://github.com/Vervelio-Labs/OpenOM (Python + TypeScript, MIT).",
+        "",
         "## Docs",
         "",
         f"- [Documentation home]({BASE}/docs/): per-persona quick-starts and reference.",
@@ -720,23 +745,119 @@ def _not_found_html() -> str:
 
 
 def _openapi_file() -> str:
-    """A discoverable OpenAPI 3.1 description of openOM's public machine surfaces (agent-readiness:
-    OpenAPI-published / function-calling / API-schema checks). Describes the free public MCP grounding
-    endpoint (JSON-RPC over Streamable HTTP) plus the read-only artifact GETs. Deterministic; no keys."""
+    """A discoverable, fully-typed OpenAPI 3.1 description of openOM's public machine surfaces
+    (agent-readiness: OpenAPI-published / function-calling / typed-error-model / response-schema /
+    versioning checks). Free, deterministic, no API key. Every operation has a unique operationId,
+    a typed request/response schema, and RFC 9457 (application/problem+json) 4xx/5xx errors."""
+    problem_ref = {"$ref": "#/components/schemas/Problem"}
+    problem_content = {"application/problem+json": {"schema": problem_ref}}
+    rate_headers = {
+        "RateLimit": {"schema": {"type": "string"},
+                      "description": "RFC RateLimit policy/remaining (e.g. limit=60, remaining=59)."},
+        "Retry-After": {"schema": {"type": "integer"},
+                        "description": "Seconds to wait before retrying (present on 429/503)."},
+    }
+    err_responses = {
+        "400": {"description": "Malformed request.", "content": problem_content},
+        "404": {"description": "No such resource.", "content": problem_content},
+        "429": {"description": "Rate limited.", "headers": rate_headers, "content": problem_content},
+        "500": {"description": "Server error.", "content": problem_content},
+    }
     spec = {
         "openapi": "3.1.0",
         "info": {
             "title": "openOM public API",
-            "version": "0.1",
-            "description": "Free, deterministic, no-key surfaces for reading openOM data: the public "
-            "MCP grounding endpoint (om_read + om_validate) and the read-only standard artifacts. "
-            "Verified means provenance, not truth - every payload is an identified party's opinion "
-            "as of a date.",
+            "version": "1.0.0",
+            "summary": "Read verified openOM data from offering-memorandum PDFs - deterministic, free.",
+            "description": (
+                "Free, deterministic, no-key surfaces for reading openOM data: the public MCP "
+                "grounding endpoint (om_read + om_validate), the read-only standard artifacts, and a "
+                "status endpoint. Verified means provenance, not truth - every payload is an "
+                "identified party's opinion as of a date.\n\n"
+                "Versioning & deprecation: this API is versioned in the URL path (all endpoints are "
+                "served under /v1/; the unversioned aliases are kept for compatibility). Breaking "
+                "changes ship under a new major version (/v2/) and the previous version is announced "
+                "as deprecated via a `Deprecation` header and a `Sunset` date (RFC 8594) at least 90 "
+                "days ahead. The payload data model is versioned separately by its own spec version "
+                "(0.1) and JSON-LD namespace; a breaking spec change gets a new namespace URL.\n\n"
+                "Onboarding: zero-auth. There is no API key, no signup, and no sandbox to request - "
+                "every endpoint here is the sandbox. Rate limits are advertised via RFC RateLimit "
+                "headers, with Retry-After on 429."
+            ),
             "license": {"name": "MIT", "url": "https://github.com/Vervelio-Labs/OpenOM"},
-            "contact": {"url": "https://github.com/Vervelio-Labs/OpenOM/issues"},
+            "contact": {"name": "openOM", "url": "https://github.com/Vervelio-Labs/OpenOM/issues"},
         },
-        "servers": [{"url": BASE}, {"url": "https://mcp.openom.app"}],
+        "servers": [
+            {"url": BASE + "/v1", "description": "Static read-only artifacts + status (this site)."},
+            {"url": "https://mcp.openom.app", "description": "MCP grounding endpoint (JSON-RPC)."},
+        ],
+        "components": {
+            "schemas": {
+                "Problem": {
+                    "type": "object",
+                    "description": "RFC 9457 problem detail - the typed error shape for every 4xx/5xx.",
+                    "required": ["type", "title", "status"],
+                    "properties": {
+                        "type": {"type": "string", "format": "uri",
+                                 "description": "A URI identifying the error type."},
+                        "title": {"type": "string", "description": "Short, human-readable summary."},
+                        "status": {"type": "integer", "description": "The HTTP status code."},
+                        "detail": {"type": "string", "description": "Human-readable explanation."},
+                        "code": {"type": "string",
+                                 "description": "Stable machine-readable error code (e.g. not_found)."},
+                        "instance": {"type": "string", "format": "uri"},
+                    },
+                },
+                "Status": {
+                    "type": "object",
+                    "required": ["status", "service", "specVersion"],
+                    "properties": {
+                        "status": {"type": "string", "enum": ["ok"]},
+                        "service": {"type": "string"},
+                        "specVersion": {"type": "string"},
+                        "mcpEndpoint": {"type": "string", "format": "uri"},
+                        "auth": {"type": "string", "enum": ["none"]},
+                    },
+                },
+                "JsonRpcRequest": {
+                    "type": "object",
+                    "required": ["jsonrpc", "method"],
+                    "properties": {
+                        "jsonrpc": {"const": "2.0"},
+                        "id": {"type": ["string", "integer"]},
+                        "method": {"type": "string", "enum": ["tools/list", "tools/call"]},
+                        "params": {"type": "object"},
+                    },
+                },
+                "JsonRpcResponse": {
+                    "type": "object",
+                    "required": ["jsonrpc"],
+                    "properties": {
+                        "jsonrpc": {"const": "2.0"},
+                        "id": {"type": ["string", "integer", "null"]},
+                        "result": {"type": "object"},
+                        "error": {"type": "object",
+                                  "properties": {"code": {"type": "integer"},
+                                                 "message": {"type": "string"}}},
+                    },
+                },
+            }
+        },
         "paths": {
+            "/v1/status": {
+                "get": {
+                    "operationId": "getStatus",
+                    "summary": "Service status + how to reach the machine surfaces. JSON, no key.",
+                    "description": "A tiny JSON health/discovery document naming the MCP endpoint and "
+                    "confirming zero-auth access. Errors return application/problem+json.",
+                    "responses": {
+                        "200": {"description": "Service is up.",
+                                "content": {"application/json":
+                                            {"schema": {"$ref": "#/components/schemas/Status"}}}},
+                        **err_responses,
+                    },
+                }
+            },
             "/mcp": {
                 "post": {
                     "operationId": "mcpJsonRpc",
@@ -746,46 +867,37 @@ def _openapi_file() -> str:
                     "servers": [{"url": "https://mcp.openom.app"}],
                     "requestBody": {
                         "required": True,
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": ["jsonrpc", "method"],
-                                    "properties": {
-                                        "jsonrpc": {"const": "2.0"},
-                                        "id": {"type": ["string", "integer"]},
-                                        "method": {
-                                            "type": "string",
-                                            "enum": ["tools/list", "tools/call"],
-                                        },
-                                        "params": {"type": "object"},
-                                    },
-                                }
-                            }
-                        },
+                        "content": {"application/json":
+                                    {"schema": {"$ref": "#/components/schemas/JsonRpcRequest"}}},
                     },
                     "responses": {
-                        "200": {
-                            "description": "JSON-RPC result, or a JSON-RPC error object on failure.",
-                            "content": {"application/json": {"schema": {"type": "object"}}},
-                        }
+                        "200": {"description": "JSON-RPC result, or a JSON-RPC error object.",
+                                "content": {"application/json":
+                                            {"schema": {"$ref": "#/components/schemas/JsonRpcResponse"}}}},
+                        **err_responses,
                     },
                 }
             },
-            "/ns/0.1": {
+            "/v1/ns/0.1": {
                 "get": {
                     "operationId": "getContext",
                     "summary": "The openOM 0.1 JSON-LD @context (vocabulary).",
-                    "responses": {"200": {"description": "JSON-LD context",
-                        "content": {"application/ld+json": {"schema": {"type": "object"}}}}},
+                    "responses": {
+                        "200": {"description": "JSON-LD context",
+                                "content": {"application/ld+json": {"schema": {"type": "object"}}}},
+                        **err_responses,
+                    },
                 }
             },
-            "/spec/om-0.1.schema.json": {
+            "/v1/spec/om-0.1.schema.json": {
                 "get": {
                     "operationId": "getSchema",
                     "summary": "The openOM 0.1 payload JSON Schema.",
-                    "responses": {"200": {"description": "JSON Schema",
-                        "content": {"application/schema+json": {"schema": {"type": "object"}}}}},
+                    "responses": {
+                        "200": {"description": "JSON Schema",
+                                "content": {"application/schema+json": {"schema": {"type": "object"}}}},
+                        **err_responses,
+                    },
                 }
             },
         },
@@ -883,6 +995,19 @@ def generate() -> None:
     # Markdown representation of the homepage for content-negotiation (Accept: text/markdown); the
     # functions/_middleware.js serves this when an agent asks for markdown, with `Vary: Accept`.
     (SITE / "index.md").write_text(_llms_file(), "utf-8", newline="\n")
+    # Markdown 404 body (served by the middleware for an unknown path asked for as markdown) so an
+    # agent that hit a dead end can recover to the sitemap / llms.txt / docs.
+    (SITE / "404.md").write_text(
+        "# 404 - not found\n\n"
+        "That path does not exist on openom.app. To find what you need:\n\n"
+        f"- Site map: {BASE}/sitemap.xml\n"
+        f"- Agent index (llms.txt): {BASE}/llms.txt\n"
+        f"- Documentation: {BASE}/docs/\n"
+        f"- Machine API (OpenAPI): {BASE}/openapi.json\n"
+        f"- Service status (JSON): {BASE}/v1/status\n",
+        "utf-8",
+        newline="\n",
+    )
 
 
 _TRUST_PAGES = (

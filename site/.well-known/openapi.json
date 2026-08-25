@@ -2,25 +2,234 @@
   "openapi": "3.1.0",
   "info": {
     "title": "openOM public API",
-    "version": "0.1",
-    "description": "Free, deterministic, no-key surfaces for reading openOM data: the public MCP grounding endpoint (om_read + om_validate) and the read-only standard artifacts. Verified means provenance, not truth - every payload is an identified party's opinion as of a date.",
+    "version": "1.0.0",
+    "summary": "Read verified openOM data from offering-memorandum PDFs - deterministic, free.",
+    "description": "Free, deterministic, no-key surfaces for reading openOM data: the public MCP grounding endpoint (om_read + om_validate), the read-only standard artifacts, and a status endpoint. Verified means provenance, not truth - every payload is an identified party's opinion as of a date.\n\nVersioning & deprecation: this API is versioned in the URL path (all endpoints are served under /v1/; the unversioned aliases are kept for compatibility). Breaking changes ship under a new major version (/v2/) and the previous version is announced as deprecated via a `Deprecation` header and a `Sunset` date (RFC 8594) at least 90 days ahead. The payload data model is versioned separately by its own spec version (0.1) and JSON-LD namespace; a breaking spec change gets a new namespace URL.\n\nOnboarding: zero-auth. There is no API key, no signup, and no sandbox to request - every endpoint here is the sandbox. Rate limits are advertised via RFC RateLimit headers, with Retry-After on 429.",
     "license": {
       "name": "MIT",
       "url": "https://github.com/Vervelio-Labs/OpenOM"
     },
     "contact": {
+      "name": "openOM",
       "url": "https://github.com/Vervelio-Labs/OpenOM/issues"
     }
   },
   "servers": [
     {
-      "url": "https://openom.app"
+      "url": "https://openom.app/v1",
+      "description": "Static read-only artifacts + status (this site)."
     },
     {
-      "url": "https://mcp.openom.app"
+      "url": "https://mcp.openom.app",
+      "description": "MCP grounding endpoint (JSON-RPC)."
     }
   ],
+  "components": {
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "description": "RFC 9457 problem detail - the typed error shape for every 4xx/5xx.",
+        "required": [
+          "type",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "description": "A URI identifying the error type."
+          },
+          "title": {
+            "type": "string",
+            "description": "Short, human-readable summary."
+          },
+          "status": {
+            "type": "integer",
+            "description": "The HTTP status code."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Human-readable explanation."
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable error code (e.g. not_found)."
+          },
+          "instance": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "Status": {
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "specVersion"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "service": {
+            "type": "string"
+          },
+          "specVersion": {
+            "type": "string"
+          },
+          "mcpEndpoint": {
+            "type": "string",
+            "format": "uri"
+          },
+          "auth": {
+            "type": "string",
+            "enum": [
+              "none"
+            ]
+          }
+        }
+      },
+      "JsonRpcRequest": {
+        "type": "object",
+        "required": [
+          "jsonrpc",
+          "method"
+        ],
+        "properties": {
+          "jsonrpc": {
+            "const": "2.0"
+          },
+          "id": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "tools/list",
+              "tools/call"
+            ]
+          },
+          "params": {
+            "type": "object"
+          }
+        }
+      },
+      "JsonRpcResponse": {
+        "type": "object",
+        "required": [
+          "jsonrpc"
+        ],
+        "properties": {
+          "jsonrpc": {
+            "const": "2.0"
+          },
+          "id": {
+            "type": [
+              "string",
+              "integer",
+              "null"
+            ]
+          },
+          "result": {
+            "type": "object"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "paths": {
+    "/v1/status": {
+      "get": {
+        "operationId": "getStatus",
+        "summary": "Service status + how to reach the machine surfaces. JSON, no key.",
+        "description": "A tiny JSON health/discovery document naming the MCP endpoint and confirming zero-auth access. Errors return application/problem+json.",
+        "responses": {
+          "200": {
+            "description": "Service is up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "headers": {
+              "RateLimit": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "RFC RateLimit policy/remaining (e.g. limit=60, remaining=59)."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying (present on 429/503)."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/mcp": {
       "post": {
         "operationId": "mcpJsonRpc",
@@ -35,43 +244,72 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "jsonrpc",
-                  "method"
-                ],
-                "properties": {
-                  "jsonrpc": {
-                    "const": "2.0"
-                  },
-                  "id": {
-                    "type": [
-                      "string",
-                      "integer"
-                    ]
-                  },
-                  "method": {
-                    "type": "string",
-                    "enum": [
-                      "tools/list",
-                      "tools/call"
-                    ]
-                  },
-                  "params": {
-                    "type": "object"
-                  }
-                }
+                "$ref": "#/components/schemas/JsonRpcRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "JSON-RPC result, or a JSON-RPC error object on failure.",
+            "description": "JSON-RPC result, or a JSON-RPC error object.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/JsonRpcResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "headers": {
+              "RateLimit": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "RFC RateLimit policy/remaining (e.g. limit=60, remaining=59)."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying (present on 429/503)."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -79,7 +317,7 @@
         }
       }
     },
-    "/ns/0.1": {
+    "/v1/ns/0.1": {
       "get": {
         "operationId": "getContext",
         "summary": "The openOM 0.1 JSON-LD @context (vocabulary).",
@@ -93,11 +331,65 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Malformed request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "headers": {
+              "RateLimit": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "RFC RateLimit policy/remaining (e.g. limit=60, remaining=59)."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying (present on 429/503)."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/spec/om-0.1.schema.json": {
+    "/v1/spec/om-0.1.schema.json": {
       "get": {
         "operationId": "getSchema",
         "summary": "The openOM 0.1 payload JSON Schema.",
@@ -108,6 +400,60 @@
               "application/schema+json": {
                 "schema": {
                   "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such resource.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited.",
+            "headers": {
+              "RateLimit": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "RFC RateLimit policy/remaining (e.g. limit=60, remaining=59)."
+              },
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                },
+                "description": "Seconds to wait before retrying (present on 429/503)."
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
