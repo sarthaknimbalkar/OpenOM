@@ -1,9 +1,11 @@
 name: pr
 
-# Lightweight, auto-running gate for pull requests + pushes to main: lint, types, and the fast unit
-# suites on a single runner. The HEAVY gate (full OS x Python matrix, cross-impl anti-fork oracle,
-# headed-browser live gates, the Action e2e) stays in ci.yml, run manually / on demand. This keeps
-# contributor PRs checked and the README badge meaningful without the matrix cost on every push.
+# Auto-running gate for PRs + pushes to main. The split is drawn on COST, not importance: the cheap,
+# load-bearing invariants run here on every push - lint, types, coverage floors, the no-inference
+# boundary, the cross-impl anti-fork oracle, and the public mcp-worker's tests. Only the expensive
+# gates (full OS x Python matrix, headed-browser live gates, mutation runs, the Action e2e) stay in
+# ci.yml, run manually / on demand. A contributor PR can no longer fork JCS, drop coverage, or
+# regress the worker's SSRF guard and pass green.
 
 on:
   push:
@@ -34,8 +36,53 @@ jobs:
           (cd core && mypy)   # each package's own [tool.mypy] (strict + overrides)
           (cd cli && mypy)
           (cd mcp && mypy)
-      - name: tests (env-gated integration/cross-impl auto-skip)
-        run: python -m pytest core cli mcp spec -q  # -m adds cwd to sys.path (spec/ import in test_matrix)
+      - name: tests + coverage floors (the load-bearing gates run on every push, not just ci.yml)
+        run: |
+          python -m pytest core -q --cov=openom_core --cov-fail-under=90
+          python -m pytest cli  -q --cov=openom_cli  --cov-fail-under=90
+          python -m pytest mcp  -q --cov=openom_mcp  --cov-fail-under=85
+          python -m pytest spec -q  # -m adds cwd to sys.path (spec/ import in test_matrix)
+
+  boundary:
+    # Cardinal rule on every push: no inference/network client may enter the core/cli tree. A fresh
+    # runtime-only install (no dev extras) so a leaked dependency is actually visible.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: core + cli - no inference AND no network client
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.lock -e core -e cli
+          bad='openai|anthropic|cohere|langchain|llama-index|transformers|torch|tensorflow|onnxruntime|sentence-transformers|requests|httpx|aiohttp|urllib3'
+          if pip freeze | grep -iE "^($bad)==" ; then
+            echo "::error::inference/network client leaked into the network-free core/cli tree"; exit 1
+          fi
+          echo "core/cli: deterministic + network-free"
+
+  cross-impl:
+    # The anti-fork oracle on every push: JS emits golden PDFs/vectors, Python reads them byte-for-byte.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install both toolchains
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c constraints.lock -e "core[dev]"
+          cd js && npm ci && npm run build
+      - name: JS emits, Python verifies byte-identity
+        run: |
+          node js/scripts/crossimpl.mjs "$RUNNER_TEMP/ximpl"
+          OPENOM_XIMPL_DIR="$RUNNER_TEMP/ximpl" python -m pytest core -q -m cross_impl
 
   javascript:
     runs-on: ubuntu-latest
@@ -63,3 +110,8 @@ jobs:
           npm run test:unit
           npm run build
           npm run assert-no-inference
+      - name: mcp-worker - the public attacker-fed endpoint's tests (SSRF/redirect/parity)
+        working-directory: mcp-worker
+        run: |
+          npm ci
+          npm test

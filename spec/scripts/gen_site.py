@@ -236,17 +236,19 @@ _LANDING_BODY = """<body>
       <div class="doc-m">
         <div class="m-eyebrow">Embedded payload &middot; om.json</div>
 <pre>{
-  <span class="k">"specVersion"</span><span class="p">:</span> <span class="s">"0.1"</span><span class="p">,</span>
-  <span class="k">"assertedBy"</span><span class="p">:</span> <span class="s">"Example Net Lease Advisors"</span><span class="p">,</span>
+  <span class="k">"@type"</span><span class="p">:</span> <span class="s">"RealEstateListing"</span><span class="p">,</span>
+  <span class="k">"assertedBy"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"broker"</span><span class="p">:</span> <span class="s">"Jane Example"</span><span class="p">,</span> <span class="k">"brokerage"</span><span class="p">:</span> <span class="s">"Example Net Lease Advisors"</span> <span class="p">},</span>
   <span class="k">"assertedDate"</span><span class="p">:</span> <span class="s">"2026-08-15"</span><span class="p">,</span>
-  <span class="k">"askingPrice"</span><span class="p">:</span> <span class="hl" data-k="price"><span class="n">1850000</span></span><span class="p">,</span>
-  <span class="k">"capRate"</span><span class="p">:</span> <span class="hl" data-k="cap"><span class="n">0.0625</span></span><span class="p">,</span>
-  <span class="k">"noi"</span><span class="p">:</span> <span class="hl" data-k="noi"><span class="n">115625</span></span><span class="p">,</span>
-  <span class="k">"noiType"</span><span class="p">:</span> <span class="s">"in-place"</span><span class="p">,</span>
-  <span class="k">"leaseTypeAsserted"</span><span class="p">:</span> <span class="hl" data-k="lease"><span class="s">"NNN"</span></span><span class="p">,</span>
-  <span class="k">"expiration"</span><span class="p">:</span> <span class="hl" data-k="exp"><span class="s">"2034-04-30"</span></span><span class="p">,</span>
-  <span class="k">"options"</span><span class="p">:</span> <span class="hl" data-k="opt"><span class="s">"4 x 5yr"</span></span><span class="p">,</span>
-  <span class="k">"rentSchedule"</span><span class="p">:</span> <span class="s">[ &hellip; ]</span>
+  <span class="k">"deal"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"askingPrice"</span><span class="p">:</span> <span class="hl" data-k="price"><span class="n">1850000</span></span><span class="p">,</span>
+    <span class="k">"capRate"</span><span class="p">:</span> <span class="hl" data-k="cap"><span class="n">0.0625</span></span><span class="p">,</span>
+    <span class="k">"noi"</span><span class="p">:</span> <span class="hl" data-k="noi"><span class="n">115625</span></span><span class="p">,</span> <span class="k">"noiType"</span><span class="p">:</span> <span class="s">"in-place"</span>
+  <span class="p">},</span>
+  <span class="k">"lease"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"leaseTypeAsserted"</span><span class="p">:</span> <span class="hl" data-k="lease"><span class="s">"NNN"</span></span><span class="p">,</span>
+    <span class="k">"expiration"</span><span class="p">:</span> <span class="hl" data-k="exp"><span class="s">"2034-04-30"</span></span><span class="p">,</span>
+    <span class="k">"rentSchedule"</span><span class="p">:</span> <span class="s">[ &hellip; ]</span><span class="p">,</span> <span class="k">"options"</span><span class="p">:</span> <span class="hl" data-k="opt"><span class="s">[ &hellip; ]</span></span>
+  <span class="p">}</span>
 }</pre>
         <div class="ok-line"><span class="ok-dot"></span> hash verified &middot; math checks pass &middot; read in one call</div>
       </div>
@@ -392,6 +394,13 @@ def _landing_html() -> str:
         "name": "Vervelio Labs",
         "url": "https://verveliolabs.com",
         "brand": {"@type": "Brand", "name": "openOM"},
+        # contactPoint + address let an AI agent verify the steward's legitimacy (agent-readiness).
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "technical support",
+            "url": "https://github.com/Vervelio-Labs/OpenOM/issues",
+        },
+        "address": {"@type": "PostalAddress", "addressCountry": "US"},
     }
     website = {
         "@context": "https://schema.org",
@@ -659,6 +668,9 @@ def _llms_file() -> str:
         " verified OM payload (base64 or an https URL) and validate one. For the full six-tool surface"
         " (om_inspect / om_extract_text / om_extract_images / om_embed too), self-host via"
         " `pip install openom-mcp` then `om-mcp` (stdio) or `om-mcp-http`.",
+        "- Command-line tool (`om`), free and inference-free: `pip install openom-cli`, then"
+        " `om init` / `om embed` / `om read` / `om validate` / `om inspect` / `om extract`. The"
+        " TypeScript library is `npm install openom-js` (embed/read/validate at byte-parity).",
         f"- [JSON-LD context]({BASE}/ns/0.1): the openOM 0.1 vocabulary.",
         f"- [JSON Schema]({BASE}/spec/om-0.1.schema.json): the openOM 0.1 payload schema.",
         f"- [Webhook envelope schema]({BASE}/spec/webhook-envelope-0.1.schema.json).",
@@ -689,12 +701,14 @@ def _not_found_html() -> str:
 </head>
 <body>
   <h1>404</h1>
-  <p>That page isn't here. Try:</p>
+  <p>That page isn't here. Try these, or the site map / agent index below:</p>
   <ul>
     <li><a href="/">openOM home</a></li>
     <li><a href="/docs/">Documentation</a></li>
     <li><a href="/docs/what-is-an-offering-memorandum">What is an offering memorandum?</a></li>
     <li><a href="/verify/">Verify a PDF</a></li>
+    <li><a href="/sitemap.xml">Sitemap (all pages)</a></li>
+    <li><a href="/llms.txt">llms.txt (index for AI agents)</a></li>
   </ul>
 </body>
 </html>

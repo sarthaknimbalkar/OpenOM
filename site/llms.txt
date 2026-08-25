@@ -27,6 +27,7 @@ payload is an identified party's opinion as of a date - assertions, never facts.
 ## Machine artifacts
 
 - Deterministic MCP (free, no API key, zero inference). Public serverless grounding endpoint at https://mcp.openom.app/mcp (Streamable HTTP) exposes om_read + om_validate - read a verified OM payload (base64 or an https URL) and validate one. For the full six-tool surface (om_inspect / om_extract_text / om_extract_images / om_embed too), self-host via `pip install openom-mcp` then `om-mcp` (stdio) or `om-mcp-http`.
+- Command-line tool (`om`), free and inference-free: `pip install openom-cli`, then `om init` / `om embed` / `om read` / `om validate` / `om inspect` / `om extract`. The TypeScript library is `npm install openom-js` (embed/read/validate at byte-parity).
 - [JSON-LD context](https://openom.app/ns/0.1): the openOM 0.1 vocabulary.
 - [JSON Schema](https://openom.app/spec/om-0.1.schema.json): the openOM 0.1 payload schema.
 - [Webhook envelope schema](https://openom.app/spec/webhook-envelope-0.1.schema.json).
