@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "openOM",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Detect, verify, and embed openOM data in commercial-real-estate offering-memorandum PDFs.",
   "minimum_chrome_version": "116",
   "icons": {

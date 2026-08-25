@@ -11,8 +11,10 @@
   --ok: #2f8f57; /* accent / border */
   --ok-text: #0a5f2e; /* green TEXT - AA (≥4.5:1) on both --paper and --ok-bg */
   --ok-bg: #e6f4ea;
-  --danger: #b3261e;
+  --danger: #b3261e; /* reserved for errors that BLOCK Assert */
   --danger-bg: #fce8e6;
+  --warn: #8a5b00; /* amber TEXT - AA on --paper; for advisories that never block */
+  --warn-bg: #fdf3d6;
   --hl: #ffde59;
   --hl-ink: #20180a;
   --rule: #d6d7cf;
@@ -169,6 +171,88 @@ h3 {
 .omission {
   padding: 1px 0;
 }
+/* Warnings are advisories, not errors: an amber note so they don't read as blockers. */
+.warnings-note {
+  color: var(--warn);
+  font-size: 12px;
+  margin: 2px 0 6px;
+}
+
+/* In-flow coaching (first-run card, capture hints, signed-OM warning, review recap) */
+.intro-card {
+  background: var(--page);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin: 0 0 12px;
+}
+.intro-title {
+  font-size: 15px;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+  border-bottom: 0;
+  margin: 0 0 6px;
+  padding: 0;
+}
+.intro-body {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+.intro-steps {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 12.5px;
+}
+.intro-steps li {
+  margin: 2px 0;
+}
+.intro-optional {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+.intro-dismiss {
+  font-size: 12px;
+  padding: 4px 12px;
+}
+.capture-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 6px 0 0;
+}
+.extract-progress {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 4px 0 0;
+}
+.signed-warning {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.signed-warning label {
+  color: var(--ink);
+}
+.recap-list {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 4px 0;
+}
+.success-actions {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+.success-actions .embed-another {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--ink);
+}
 
 /* Forms & inputs */
 label {
@@ -208,7 +292,7 @@ textarea.draft-json {
   width: 56px;
 }
 .field-flag {
-  color: var(--danger);
+  color: var(--warn); /* an advisory (no evidence / omitted), not a blocking error - amber, not red */
   font-size: 11px;
 }
 .rent-row {

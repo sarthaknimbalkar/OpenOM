@@ -109,6 +109,24 @@ async function maybeShowIntro(root: HTMLElement, anchor: HTMLElement): Promise<v
   root.insertBefore(card, anchor);
 }
 
+/** After a successful embed, offer the next steps so the flow doesn't dead-end at a download:
+ * verify the file, or embed another. (The distribution lever on the supply side.) */
+function renderSuccessActions(anchor: HTMLElement, root: HTMLElement): void {
+  const actions = el("section", "success-actions");
+  const verify = el("button", "verify-embed", "Verify it") as HTMLButtonElement;
+  verify.addEventListener("click", () => {
+    try {
+      void chrome.tabs?.create({ url: "https://openom.app/verify/" });
+    } catch {
+      /* no tabs API in a test harness - the link text still tells the user where to go */
+    }
+  });
+  const again = el("button", "embed-another", "Embed another") as HTMLButtonElement;
+  again.addEventListener("click", () => renderCaptureScreen(root));
+  actions.append(verify, again);
+  anchor.insertAdjacentElement("afterend", actions);
+}
+
 /** Mark the intro as seen so a returning broker (post-first-embed) never sees it again. */
 async function markIntroSeen(): Promise<void> {
   try {
@@ -517,9 +535,8 @@ async function startReview(
       handBack(out, suggestedFilename(final)); // #99 - meaningful name from the property address
       void clearDraft(sourceDocHash); // #94 - the OM is embedded; drop the saved draft
       void markIntroSeen(); // a broker who's shipped one OM no longer needs the first-run card
-      status.textContent =
-        "Embedded - downloaded your openOM PDF. Confirm it anytime by opening it with the openOM "
-        + "extension, or at openom.app/verify/.";
+      status.textContent = "Embedded - your openOM PDF downloaded. What next:";
+      renderSuccessActions(status, root);
     } catch (e) {
       status.textContent = `Blocked: ${(e as Error).message}`;
     }
