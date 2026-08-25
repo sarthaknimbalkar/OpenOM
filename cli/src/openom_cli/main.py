@@ -11,9 +11,11 @@ affect the exit code.
 
 from __future__ import annotations
 
+import csv
 import dataclasses
 import datetime
 import functools
+import io
 import json
 import sys
 import time
@@ -40,6 +42,7 @@ from openom_core.validate import validate as _validate
 from openom_cli import profile as _profile
 from openom_cli import scaffold as _scaffold
 from openom_cli.buildout import listing_to_payload, payload_coverage
+from openom_cli.csv_map import CANONICAL_COLUMNS, override_identity, row_to_payload, template_csv
 from openom_cli.humanize import footer as _err_footer
 from openom_cli.humanize import humanize_finding as _humanize
 
@@ -627,6 +630,127 @@ def buildout_manifest(
         note = f", {len(sparse)} sparse (<{min_fields} fields)" if sparse else ""
         typer.echo(
             f"buildout-manifest: {len(manifest)} mapped, {len(skipped)} skipped{note} -> {out_dir}",
+            err=True,
+        )
+    _emit({
+        "mapped": len(manifest), "skipped": skipped, "sparse": sparse,
+        "manifest": str(out_dir / "manifest.json"), "coverage": str(out_dir / "coverage.json"),
+    })
+
+
+@app.command(name="csv-manifest")
+@_guard
+def csv_manifest(  # noqa: C901 - a linear map-each-row-then-report, read top-down
+    csv_file: Annotated[
+        Path | None, typer.Option("--csv", help="Spreadsheet of listings (canonical columns)")
+    ] = None,
+    pdf_dir: Annotated[
+        Path | None, typer.Option(help="Dir of the OM PDFs (named per each row's id/pdf column)")
+    ] = None,
+    out_dir: Annotated[
+        Path | None, typer.Option(help="Where payload sidecars + manifest.json are written")
+    ] = None,
+    broker: Annotated[str | None, typer.Option(help="assertedBy.broker (who is asserting)")] = None,
+    brokerage: Annotated[str | None, typer.Option(help="assertedBy.brokerage")] = None,
+    license: Annotated[str | None, typer.Option(help="assertedBy.license")] = None,  # noqa: A002
+    asserted_date: Annotated[
+        str | None, typer.Option(help="ISO 8601 assertion date")
+    ] = None,
+    noi_type: Annotated[
+        str | None, typer.Option(help="in-place | pro-forma (a required assertion)")
+    ] = None,
+    noi_as_of: Annotated[
+        str | None, typer.Option(help="deal.noiAsOfDate (default: --asserted-date)")
+    ] = None,
+    min_fields: Annotated[
+        int, typer.Option(help="Flag any mapped payload with fewer than this many tracked fields")
+    ] = 3,
+    template: Annotated[
+        Path | None,
+        typer.Option(help="Write a blank template CSV (headers + one example) here, then exit"),
+    ] = None,
+) -> None:
+    """Bridge: turn a broker's spreadsheet into an ``om embed-batch`` manifest (catalog seed).
+
+    The low-touch on-ramp: a broker exports their back catalog to a CSV (the canonical columns; run
+    ``--template`` to get a blank one) and drops the OM PDFs in a folder. Each row maps
+    deterministically (zero inference) to a schema-valid openOM payload written as ``<id>.om.json``,
+    paired with its ``<id>.pdf`` in a manifest, with a ``coverage.json`` triage report. Assertion
+    identity comes from the flags (or per-row ``broker``/``brokerage``/``license``/``noiType``
+    columns for a multi-broker catalog), stamped verbatim - never inferred. Review the payloads (the
+    assertion gate), then run ``om embed-batch --manifest <out-dir>/manifest.json``.
+    """
+    if template is not None:
+        template.write_text(template_csv(), encoding="utf-8")
+        if not _output.quiet:
+            typer.echo(f"csv-manifest: wrote a template with {len(CANONICAL_COLUMNS)} columns "
+                       f"-> {template}", err=True)
+        _emit({"template": str(template), "columns": list(CANONICAL_COLUMNS)})
+        return
+
+    missing = [
+        n for n, v in (
+            ("--csv", csv_file), ("--pdf-dir", pdf_dir), ("--out-dir", out_dir),
+            ("--broker", broker), ("--brokerage", brokerage), ("--license", license),
+            ("--asserted-date", asserted_date), ("--noi-type", noi_type),
+        ) if not v
+    ]
+    if missing:
+        typer.echo(f"error: missing required option(s): {', '.join(missing)}", err=True)
+        raise typer.Exit(2)
+    # Narrow every required option to non-None for the type checker (the guard above proved it).
+    assert csv_file and pdf_dir and out_dir and asserted_date
+    assert broker and brokerage and license and noi_type
+
+    default_by = {"broker": broker, "brokerage": brokerage, "license": license}
+    rows = list(csv.DictReader(io.StringIO(_read_bytes(csv_file).decode("utf-8-sig"))))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest: list[dict[str, str]] = []
+    skipped: list[dict[str, str]] = []
+    coverage: list[dict[str, Any]] = []
+    sparse: list[str] = []
+    seen: set[str] = set()
+    for i, row in enumerate(rows):
+        pdf_name = (row.get("pdf") or "").strip() or (
+            f"{(row.get('id') or '').strip()}.pdf" if (row.get("id") or "").strip() else ""
+        )
+        stem = Path(pdf_name).stem if pdf_name else f"row{i + 1}"
+        if not pdf_name:
+            skipped.append({"id": stem, "reason": "row names no pdf (needs an 'id' or 'pdf')"})
+            continue
+        if stem in seen:
+            skipped.append({"id": stem, "reason": "duplicate id/pdf in the CSV"})
+            continue
+        seen.add(stem)
+        pdf = pdf_dir / pdf_name
+        if not pdf.exists():
+            skipped.append({"id": stem, "reason": f"no OM PDF at {pdf_name}"})
+            continue
+        ov = override_identity(row)
+        asserted_by = {k: ov.get(k, default_by[k]) for k in ("broker", "brokerage", "license")}
+        payload = row_to_payload(
+            row, asserted_by=asserted_by, asserted_date=asserted_date,
+            noi_type=ov.get("noiType", noi_type), noi_as_of=ov.get("noiAsOfDate", noi_as_of),
+        )
+        sidecar = out_dir / f"{stem}.om.json"
+        sidecar.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        manifest.append(
+            {"pdf": str(pdf.resolve()), "payload": str(sidecar.resolve()),
+             "assertedDate": asserted_date}
+        )
+        cov = payload_coverage(payload)
+        coverage.append({"id": stem, **cov})
+        if cov["filled"] < min_fields:
+            sparse.append(stem)
+    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (out_dir / "coverage.json").write_text(
+        json.dumps({"listings": coverage, "sparse": sparse, "minFields": min_fields}, indent=2),
+        encoding="utf-8",
+    )
+    if not _output.quiet:
+        note = f", {len(sparse)} sparse (<{min_fields} fields)" if sparse else ""
+        typer.echo(
+            f"csv-manifest: {len(manifest)} mapped, {len(skipped)} skipped{note} -> {out_dir}",
             err=True,
         )
     _emit({

@@ -13,7 +13,19 @@ byte-parity across the Python (`openom-core`) and TypeScript (`openom-js`) cores
   [mcp-config.json](mcp-config.json) (`https://mcp.openom.app/mcp`), then ask it to `om_read` an OM.
 - **A trust badge on a page** - [badge.html](badge.html) is a drop-in `<script>` + file input that
   reads and labels a PDF entirely client-side.
-- **Seed a whole back-catalog** - `om embed-batch --dir ./catalog ...` (see [`/cli`](../cli)).
+- **Seed a whole back-catalog from a spreadsheet** - export your listings to a CSV (run
+  `om csv-manifest --template catalog.csv` for a blank one with the right columns), drop the OM PDFs
+  in a folder, then:
+  ```bash
+  om csv-manifest --csv catalog.csv --pdf-dir ./pdfs --out-dir ./mapped \
+    --broker "Jane Doe" --brokerage "Acme CRE" --license "TX 12345" \
+    --asserted-date 2026-08-15 --noi-type in-place
+  # review ./mapped/*.om.json (the assertion gate), then embed them all:
+  om embed-batch --manifest ./mapped/manifest.json --out-dir ./embedded
+  ```
+  Deterministic and non-destructive - every field comes from your sheet, nothing is inferred. If your
+  data already lives in Buildout, `om buildout-manifest` is the same motion from a Buildout export. A
+  folder of PDFs each with a sibling `<name>.om.json` also works directly with `om embed-batch --dir`.
 
 ## Embed at the source (Node - a producer/authoring tool)
 
