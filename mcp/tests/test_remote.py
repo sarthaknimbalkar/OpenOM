@@ -108,6 +108,15 @@ def test_url_ref_fetched(http) -> None:
     assert "error" not in res and res["class"] in {"native", "hybrid", "scanned"}
 
 
+def test_extract_images_ignores_out_dir_on_http(http, tmp_path: Path) -> None:
+    """On the hosted transport a caller-supplied out_dir is an arbitrary server write - it must be
+    ignored (images go to a server tempdir / blobs), never the caller's path."""
+    evil = tmp_path / "attacker-chosen-dir"
+    res = tools.om_extract_images({"url": "https://example.com/x.pdf"}, out_dir=str(evil))
+    assert "error" not in res
+    assert not evil.exists(), "hosted extract wrote to the caller-supplied out_dir (SSRF-adjacent)"
+
+
 def test_upload_then_read_round_trip(http) -> None:
     store, _ = http
     # simulate the client PUT: request an upload slot, then place bytes at that blobId

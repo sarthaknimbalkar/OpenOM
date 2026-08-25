@@ -266,6 +266,12 @@
       "keyword": "SHOULD",
       "clause": "An implementation SHOULD perform an incremental, byte-preserving PDF save on embed (appending an update rather than a full load→save re-serialization) so the original bytes are preserved; this matters chiefly for signed OMs, whose byte-range signature a full re-serialization would invalidate. The reference implementation detects a signed input and appends the payload via an incremental-update save, preserving the signed bytes as a byte-exact prefix; unsigned inputs use the deterministic full-rewrite path."
     },
+    "OM-EMB-021": {
+      "title": "Signed-embed safety refusal",
+      "section": "§D",
+      "keyword": "MUST",
+      "clause": "When the signature-preserving incremental embed cannot be performed safely - e.g. the signed PDF's cross-reference table had to be rebuilt to open it, the incremental save fails, or the resulting bytes do not preserve the original signed byte prefix - the implementation MUST refuse with a typed OM-EMB-021 error rather than emit a PDF whose existing signature has been silently invalidated."
+    },
     "OM-ERR-001": {
       "title": "Finding is the validation result unit",
       "section": "§H",

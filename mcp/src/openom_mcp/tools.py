@@ -314,7 +314,12 @@ def om_extract_images(
     include_vector: bool = False,
 ) -> dict[str, Any]:
     """Read-only: manifest + local paths, never inline bytes (§I OM-MCP-013)."""
-    dest = Path(out_dir) if out_dir else Path(tempfile.mkdtemp(prefix="openom_img_"))
+    resolver = _resolver()
+    hosted = resolver.transport == "http"
+    # On the hosted transport there is NO caller filesystem, so a supplied out_dir would be
+    # an arbitrary server-side write. Ignore it there and always use a server-owned tempdir (mirrors
+    # om_embed, which ignores out_path on http). Stdio still honors out_dir for the local caller.
+    dest = Path(tempfile.mkdtemp("_img", "openom_")) if (hosted or not out_dir) else Path(out_dir)
     data = _load_pdf(pdf)
     _enforce_page_limit(data)
     # include_vector (#16): also rasterize vector-only pages (no raster images) so the manifest
@@ -323,9 +328,8 @@ def om_extract_images(
     # [Ma3] Over the hosted HTTP transport there's no client filesystem, so a server-local `path` is
     # useless to a remote agent. Mirror om_embed: store each image as a TTL blob and return
     # {blobId, presignedGet} the caller can fetch. Stdio keeps the local `path`.
-    resolver = _resolver()
-    to_blob = resolver.transport == "http" and resolver.blobstore is not None
-    made_temp = out_dir is None  # we own the tempdir → clean it up after blobbing (no disk leak)
+    to_blob = hosted and resolver.blobstore is not None
+    made_temp = hosted or out_dir is None  # we own the tempdir → clean it up after blobbing
     owner = _current_principal.get() or ""
     manifest = []
     for img in result["images"]:

@@ -79,6 +79,37 @@ def test_is_blocked_matrix() -> None:
     assert not is_blocked("8.8.8.8") and not is_blocked("1.1.1.1")
 
 
+@pytest.mark.parametrize(
+    "ip",
+    [
+        "::ffff:169.254.169.254",  # IPv4-mapped IPv6 -> cloud-metadata endpoint (the bypass)
+        "::ffff:127.0.0.1",  # IPv4-mapped loopback
+        "::ffff:10.0.0.1",  # IPv4-mapped private
+        "fe80::1",  # IPv6 link-local
+        "0.0.0.0",  # unspecified (routes to localhost on some stacks)
+        "::",  # IPv6 unspecified
+        "64:ff9b::a9fe:a9fe",  # NAT64-embedded 169.254.169.254
+        "2002:a9fe:a9fe::1",  # 6to4-embedded 169.254.x
+        "224.0.0.1",  # multicast
+        "not-an-ip",  # unparseable -> fail closed
+    ],
+)
+def test_normalized_bypasses_are_blocked(ip: str) -> None:
+    assert is_blocked(ip), f"{ip} must be blocked (SSRF bypass class)"
+
+
+def test_mapped_metadata_via_resolver_is_refused() -> None:
+    """An attacker whose DNS returns an IPv4-mapped metadata AAAA must be refused, not connected."""
+    f, _ = _fetch(
+        "https://evil/x",
+        resolver=_resolver({"evil": ["::ffff:169.254.169.254"]}),
+        responses=[],
+    )
+    with pytest.raises(ToolError) as e:
+        f.get("https://evil/x")
+    assert e.value.code == "OM-IO-002"
+
+
 def test_public_ip_pdf_returns_bytes() -> None:
     f, _ = _fetch(
         "https://ok/x", resolver=_resolver({"ok": ["93.184.216.34"]}),

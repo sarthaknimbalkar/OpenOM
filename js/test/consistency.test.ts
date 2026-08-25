@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { consistencyFindings } from "../src/consistency.js";
+import { consistencyFindings, round } from "../src/consistency.js";
 
 /**
  * Consistency (warning) + info tier - behavioral parity with the Python core's test_validate.
@@ -179,5 +179,21 @@ describe("consistency tier", () => {
     delete deal(p).noiType;
     delete deal(p).noiAsOfDate;
     expect(consistencyFindings(p).info.map((i) => i.code)).toContain("OMI-I003");
+  });
+});
+
+describe("round — banker's rounding parity with Python's round()", () => {
+  test("ties round to even (not half-up), matching the Python core", () => {
+    // Python: round(0.5)=0, round(1.5)=2, round(2.5)=2, round(3.5)=4, round(-2.5)=-2
+    expect(round(0.5, 0)).toBe(0);
+    expect(round(1.5, 0)).toBe(2);
+    expect(round(2.5, 0)).toBe(2);
+    expect(round(3.5, 0)).toBe(4);
+    expect(round(-2.5, 0)).toBe(-2);
+    // Python: round(0.125,2)=0.12, round(0.375,2)=0.38
+    expect(round(0.125, 2)).toBe(0.12);
+    expect(round(0.375, 2)).toBe(0.38);
+    // non-tie values are unaffected
+    expect(round(0.06251, 4)).toBe(0.0625);
   });
 });

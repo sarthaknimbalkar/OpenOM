@@ -20,7 +20,7 @@ from typing import Any
 import pikepdf
 
 from .canonical import canonicalize, hash_bytes, parse_hardened, strip_signature
-from .errors import Finding, PayloadTooLargeError
+from .errors import Finding, PayloadTooLargeError, SignedEmbedError
 from .xmp import _marker_props, read_marker, render_marker_xml, write_marker
 
 #: Decompressed-payload cap (§J [OM-SEC-002]).
@@ -73,6 +73,18 @@ def _set_subtype(spec: pikepdf.Object) -> None:
     for key in ("/F", "/UF"):
         if key in ef:
             ef[key].Subtype = SUBTYPE
+
+
+def input_encrypted(pdf_bytes: bytes) -> bool:
+    """True if the input PDF is encrypted (permission encryption with an empty user password, which
+    pikepdf opens transparently and embed() then writes out UNENCRYPTED - a silent security-posture
+    change worth signaling to the author). A password-protected PDF raises on open and never reaches
+    here, so this is specifically the restrictions-only case (#4)."""
+    try:
+        with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+            return bool(pdf.is_encrypted)
+    except pikepdf.PasswordError:
+        return False
 
 
 def _is_signed(pdf: pikepdf.Pdf) -> bool:
@@ -192,8 +204,14 @@ def _embed_incremental(pdf_bytes: bytes, fields: _EmbedFields, asserted_date: st
     path uses, so the two producers agree. fitz's incremental save requires a real file whose bytes
     equal the source, so the work happens in a temp file.
     """
-    # pymupdf is already a runtime dep (images/text); imported lazily to keep it off the hot path.
-    import pymupdf
+    # PyMuPDF is the optional [render] extra; the signed-OM incremental path is the one embed case
+    # that needs it. Imported lazily with a clear hint so the pikepdf-only core stays MIT-clean.
+    try:
+        import pymupdf
+    except ImportError as exc:
+        raise SignedEmbedError(
+            "embedding a signed PDF needs PyMuPDF: pip install 'openom-core[render]'"
+        ) from exc
 
     props = _marker_props(
         spec_version=fields.spec_version,
@@ -203,12 +221,23 @@ def _embed_incremental(pdf_bytes: bytes, fields: _EmbedFields, asserted_date: st
         supersedes=fields.supersedes,
         source_doc_hash=fields.source_doc_hash,
     )
-    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-    try:
-        tmp.write(pdf_bytes)
-        tmp.close()
-        doc = pymupdf.open(tmp.name)
+    # A TemporaryDirectory (vs NamedTemporaryFile + os.unlink) so cleanup can't mask the real error
+    # with a Windows "file in use" (WinError 32) in the finally block.
+    with tempfile.TemporaryDirectory(prefix="openom_signed_") as tmpdir:
+        path = os.path.join(tmpdir, "in.pdf")
+        with open(path, "wb") as fh:
+            fh.write(pdf_bytes)
+        doc = pymupdf.open(path)
         try:
+            # If pymupdf had to REBUILD the xref to open this file, an incremental append is not a
+            # byte-exact extension of the original - the signed prefix would change and the
+            # signature break. Refuse cleanly (OM-EMB-021) rather than ship an invalid signature.
+            if getattr(doc, "is_repaired", False):
+                raise SignedEmbedError(
+                    "this signed PDF needed its cross-reference table rebuilt to open, so an "
+                    "incremental (signature-preserving) embed is not safe; embed an unsigned copy "
+                    "or re-issue the signature after embedding"
+                )
             cat = doc.pdf_catalog()
             # 1. embedded-file stream (verbatim JCS bytes; pikepdf read decodes the filter)
             ef = doc.get_new_xref()
@@ -242,13 +271,21 @@ def _embed_incremental(pdf_bytes: bytes, fields: _EmbedFields, asserted_date: st
             marker_xml = render_marker_xml(existing, props).encode("utf-8")
             doc.update_stream(meta, marker_xml, compress=False)
             doc.xref_set_key(cat, "Metadata", f"{meta} 0 R")
-            doc.saveIncr()
+            try:
+                doc.saveIncr()
+            except Exception as exc:  # noqa: BLE001 - any fitz save failure -> typed refusal
+                raise SignedEmbedError(
+                    f"incremental save failed on this signed PDF: {exc}"
+                ) from exc
         finally:
             doc.close()
-        with open(tmp.name, "rb") as fh:
-            return fh.read()
-    finally:
-        os.unlink(tmp.name)
+        with open(path, "rb") as fh:
+            out = fh.read()
+    # Postcondition the whole feature promises: the original signed bytes stay a byte-exact prefix,
+    # so every byte the /ByteRange signs is unchanged. Never return a doc that broke it.
+    if not out.startswith(pdf_bytes):
+        raise SignedEmbedError("incremental embed did not preserve the signed byte prefix")
+    return out
 
 
 def _name_tree_entries(doc: Any, cat: int) -> list[tuple[str, str]]:

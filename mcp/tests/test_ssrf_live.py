@@ -102,7 +102,7 @@ def https_server(tmp_path_factory: pytest.TempPathFactory) -> Iterator[tuple[int
 @pytest.fixture(autouse=True)
 def _allow_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
     # Range logic is proven in test_ssrf.py; here we target the socket path, so permit loopback.
-    monkeypatch.setattr(fetch, "_BLOCKED", [])
+    monkeypatch.setattr(fetch, "is_blocked", lambda ip: False)
 
 
 def test_default_resolver_resolves_localhost() -> None:
