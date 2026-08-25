@@ -20,6 +20,7 @@ import pikepdf
 import pytest
 
 from openom_core.embed import _is_signed, embed, read
+from openom_core.errors import SignedEmbedError
 
 SIGNED_OM = Path(__file__).resolve().parent / "fixtures" / "signed-approval.pdf"
 
@@ -84,6 +85,23 @@ def test_embed_preserves_signature_and_payload() -> None:
     with pikepdf.open(io.BytesIO(out)) as pdf:
         assert "/AF" in pdf.Root
         assert str(pdf.Root.AF[0].EF.F.Subtype) == "/application/ld+json"
+
+
+def test_repaired_signed_pdf_is_refused_cleanly(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A signed OM whose xref pymupdf rebuilds on open cannot be appended safely - refuse with
+    a typed OM-EMB-021 instead of an unmapped fitz crash or a silently-broken signature."""
+    import pymupdf
+
+    class _Repaired:
+        is_repaired = True
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(pymupdf, "open", lambda *a, **k: _Repaired())
+    with pytest.raises(SignedEmbedError) as e:
+        embed(_signed_bytes(), _PAYLOAD, asserted_date="2026-08-24")
+    assert e.value.code == "OM-EMB-021"
 
 
 def test_unsigned_input_uses_full_rewrite() -> None:

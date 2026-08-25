@@ -10,7 +10,12 @@ import hashlib
 import json
 from typing import Any, TypedDict
 
-import pymupdf
+try:
+    import pymupdf
+except ImportError:  # PyMuPDF (AGPL) is an optional [render] extra
+    pymupdf = None
+
+_RENDER_HINT = "text extraction requires PyMuPDF: pip install 'openom-core[render]'"
 
 
 class TextResult(TypedDict):
@@ -81,6 +86,8 @@ def extract_text(
     cursor: str | None = None,
 ) -> TextResult:
     """Extract paginated text + best-effort tables for the selected pages (§I OM-MCP-012)."""
+    if pymupdf is None:
+        raise ImportError(_RENDER_HINT)
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     try:
         pages = _parse_page_range(page_range, doc.page_count)

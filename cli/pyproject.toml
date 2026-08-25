@@ -14,7 +14,7 @@ keywords = [
     "proptech", "pdf", "cli", "json-ld", "json-schema", "open-standard", "data-standard",
 ]
 # openom-core pinned to the same 0.x spec line (a 0.2 core may change the payload contract).
-dependencies = ["openom-core>=0.1,<0.2", "typer>=0.12"]
+dependencies = ["openom-core[render]>=0.1,<0.2", "typer>=0.12"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov>=5", "mypy>=1.10", "ruff>=0.5"]

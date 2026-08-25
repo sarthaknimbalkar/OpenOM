@@ -34,7 +34,8 @@ Pick the door that matches your job. Each one is the shortest path to a working 
 
 **→ Go to [openom.app/embed/](https://openom.app/embed/).** No install, no account, no command
 line. Your PDF never leaves your computer. You'll get a review form where you enter (or confirm)
-the deal facts, then download an openOM version of your PDF.
+the deal facts, then download an openOM version of your PDF. New to this? The
+**[step-by-step broker guide](GETTING_STARTED.md)** walks the whole thing in plain language.
 
 Prefer a browser extension you can reuse on any listing? Install
 **[openOM from the Chrome Web Store](https://chromewebstore.google.com/detail/openom/koconccgjacmafhabbiakodicffnaplb)**

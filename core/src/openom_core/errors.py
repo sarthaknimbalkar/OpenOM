@@ -32,6 +32,17 @@ class PayloadTooLargeError(Exception):
         self.code = IO_BOMB
 
 
+class SignedEmbedError(Exception):
+    """The signature-preserving incremental embed cannot be performed safely on this signed PDF
+    ([OM-EMB-021]) - e.g. its xref had to be rebuilt on open, or the append did not preserve the
+    signed byte prefix. A clean typed refusal (embed via a full rewrite, or use a different tool)
+    is correct where silently shipping an invalidated signature would be catastrophic."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(f"OM-EMB-021: {message}")
+        self.code = "OM-EMB-021"
+
+
 @dataclass(frozen=True)
 class Finding:
     """A single validation result (spec §H [OM-ERR-001])."""

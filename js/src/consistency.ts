@@ -553,7 +553,17 @@ function rentScheduleChecks(
   }
 }
 
-function round(value: number, digits: number): number {
+export function round(value: number, digits: number): number {
+  // Round-half-to-even (banker's rounding) to match Python's built-in round(), so the expected/actual
+  // numbers in consistency findings are byte-identical across the two implementations. Math.round is
+  // half-UP and forks the payload at exact .5 boundaries (e.g. round(2.5) -> 3 in JS vs 2 in Python).
   const f = 10 ** digits;
-  return Math.round(value * f) / f;
+  const x = value * f;
+  const floor = Math.floor(x);
+  const diff = x - floor;
+  let n: number;
+  if (diff > 0.5) n = floor + 1;
+  else if (diff < 0.5) n = floor;
+  else n = floor % 2 === 0 ? floor : floor + 1; // exactly halfway -> nearest even
+  return n / f;
 }

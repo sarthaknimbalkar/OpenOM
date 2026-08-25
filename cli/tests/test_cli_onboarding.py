@@ -221,3 +221,21 @@ def test_load_profile_survives_corrupt_file(
     monkeypatch.setattr(_profile, "config_dir", lambda: tmp_path)
     _profile.profile_path().write_text("{ not json", encoding="utf-8")
     assert _profile.load_profile() == {}  # never raises
+
+
+def test_embed_warns_on_permission_encrypted_input(tmp_path: Path) -> None:
+    """Embedding a permission-encrypted OM strips its restrictions - the broker must be told."""
+    import pikepdf
+
+    pdf = tmp_path / "enc.pdf"
+    enc = pikepdf.Encryption(owner="o", user="", allow=pikepdf.Permissions(extract=False))
+    with pikepdf.new() as p:
+        p.add_blank_page()
+        p.save(str(pdf), encryption=enc)
+    payload = tmp_path / "deal.json"
+    runner.invoke(app, ["init", str(payload)])
+    out = tmp_path / "out.pdf"
+    r = runner.invoke(app, ["embed", str(pdf), "--payload", str(payload), "--out", str(out),
+                            "--asserted-date", "2026-08-24"])
+    assert r.exit_code == 0, r.output
+    assert "UNENCRYPTED" in r.output

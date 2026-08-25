@@ -29,9 +29,10 @@ import typer
 from openom_core import SPEC_VERSION
 from openom_core.canonical import canonicalize, hash_bytes
 from openom_core.embed import embed as _embed
+from openom_core.embed import input_encrypted as _input_encrypted
 from openom_core.embed import read as _read
 from openom_core.embed import reembed_warnings as _reembed_warnings
-from openom_core.errors import CanonicalizationError, PayloadTooLargeError
+from openom_core.errors import CanonicalizationError, PayloadTooLargeError, SignedEmbedError
 from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
 from openom_core.validate import validate as _validate
@@ -83,6 +84,7 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 _DATA_ERRORS = (
     CanonicalizationError,
     PayloadTooLargeError,
+    SignedEmbedError,
     json.JSONDecodeError,
     pikepdf.PdfError,
     FileNotFoundError,
@@ -265,6 +267,12 @@ def embed(
     _require_payload(payload)
     src = _read_bytes(pdf)
     data = _load_json(payload)
+    if _input_encrypted(src) and not _output.quiet:
+        typer.echo(
+            "warning: this OM is permission-encrypted; the embedded copy will be UNENCRYPTED "
+            "(open/print/copy restrictions removed). Keep the original if you need those.",
+            err=True,
+        )
     if _profile.merge_into(data) and not _output.quiet:
         typer.echo("note: filled assertedBy from your saved profile (`om profile show`)", err=True)
     if validate:

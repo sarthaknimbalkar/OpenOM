@@ -17,22 +17,41 @@ from urllib.parse import urljoin, urlparse
 
 from .tools import ToolError
 
-# Blocked address ranges ([OM-SEC-001]) - private, loopback, link-local (incl. cloud metadata
-# 169.254.169.254), CGNAT, and IPv6 ULA/loopback. Verbatim from the spec.
-_BLOCKED = [
-    ipaddress.ip_network(n)
-    for n in (
-        "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8",
-        "169.254.0.0/16", "100.64.0.0/10", "::1/128", "fc00::/7",
-    )
-]
 _REDIRECT_STATUS = {301, 302, 303, 307, 308}
+_NAT64 = ipaddress.ip_network("64:ff9b::/96")  # RFC 6052 well-known prefix -> embedded IPv4
+
+
+def _normalize(addr: ipaddress.IPv4Address | ipaddress.IPv6Address) -> (
+    ipaddress.IPv4Address | ipaddress.IPv6Address
+):
+    """Unwrap an IPv6 address that embeds an IPv4 one (IPv4-mapped ``::ffff:a.b.c.d``, 6to4
+    ``2002::/16``, NAT64 ``64:ff9b::/96``) to that IPv4, so a mapped cloud-metadata / private
+    address can't slip past a v6-vs-v4 range check. Plain v4 / global v6 pass through unchanged.
+    """
+    if isinstance(addr, ipaddress.IPv6Address):
+        if addr.ipv4_mapped is not None:
+            return addr.ipv4_mapped
+        if addr.sixtofour is not None:
+            return addr.sixtofour
+        if addr in _NAT64:
+            return ipaddress.IPv4Address(int(addr) & 0xFFFFFFFF)
+    return addr
 
 
 def is_blocked(ip: str) -> bool:
-    """True if ``ip`` falls in any blocked range ([OM-SEC-001])."""
-    addr = ipaddress.ip_address(ip)
-    return any(addr in net for net in _BLOCKED)
+    """True if ``ip`` must NOT be fetched ([OM-SEC-001]) - the SSRF backstop.
+
+    Fail-closed: block anything that is not a globally-routable public unicast address. This covers
+    private (10/8, 172.16/12, 192.168/16, fc00::/7), loopback (127/8, ::1), link-local (169.254/16
+    incl. the 169.254.169.254 cloud-metadata endpoint, fe80::/10), CGNAT (100.64/10), unspecified
+    (0.0.0.0, ::), reserved, and multicast - AND the IPv6 forms that embed any of those
+    (``::ffff:169.254.169.254`` etc.), which a hand-written CIDR list silently missed.
+    """
+    try:
+        addr = _normalize(ipaddress.ip_address(ip))
+    except ValueError:
+        return True  # unparseable -> block
+    return (not addr.is_global) or addr.is_multicast
 
 
 class FetchResponse(Protocol):

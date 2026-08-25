@@ -22,15 +22,22 @@ classifiers = [
   "Topic :: Text Processing :: Markup",
   "Typing :: Typed",
 ]
+# The embed/read/validate/canonical core is pikepdf-only, so `openom-core` stays MIT-clean. PyMuPDF
+# (AGPL-3.0-or-commercial) powers only extract/inspect/render + the signed-OM incremental save, so it
+# is an OPTIONAL `[render]` extra - a portal / commercial integrator bundling the core does not inherit
+# AGPL unless they opt into rendering.
 dependencies = [
   "pikepdf>=9",
-  "PyMuPDF>=1.24",
   "rfc8785>=0.1.4",
   "jsonschema>=4.20",
 ]
 
 [project.optional-dependencies]
+render = [
+  "PyMuPDF>=1.24",  # AGPL-3.0-or-commercial - powers extract/inspect/render + signed-incremental embed
+]
 dev = [
+  "openom-core[render]",  # tests exercise extract/inspect/render, so dev pulls the render extra
   "pytest>=8",
   "pytest-cov>=5",
   "mypy>=1.10",

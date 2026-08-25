@@ -9,9 +9,14 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
-import pymupdf
-
 from .embed import read
+
+try:
+    import pymupdf
+except ImportError:  # PyMuPDF (AGPL) is an optional [render] extra
+    pymupdf = None
+
+_RENDER_HINT = "inspect requires PyMuPDF: pip install 'openom-core[render]'"
 
 DocClass = Literal["native", "hybrid", "scanned"]
 
@@ -145,6 +150,8 @@ def _sample_indices(pages: int, cap: int) -> list[int]:
 
 
 def inspect(pdf_bytes: bytes) -> Profile:
+    if pymupdf is None:
+        raise ImportError(_RENDER_HINT)
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     try:
         pages = doc.page_count

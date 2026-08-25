@@ -14,7 +14,7 @@ keywords = [
   "cre", "proptech", "json-ld", "open-standard", "ai-agents",
 ]
 # openom-core pinned to the same 0.x spec line (SemVer: a 0.2 core may change the payload contract).
-dependencies = ["openom-core>=0.1,<0.2", "mcp>=2.0,<3", "httpx>=0.27", "uvicorn>=0.30"]
+dependencies = ["openom-core[render]>=0.1,<0.2", "mcp>=2.0,<3", "httpx>=0.27", "uvicorn>=0.30"]
 
 [project.optional-dependencies]
 dev = [

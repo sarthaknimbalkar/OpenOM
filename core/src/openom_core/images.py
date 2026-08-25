@@ -10,7 +10,12 @@ import hashlib
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
-import pymupdf
+try:
+    import pymupdf
+except ImportError:  # PyMuPDF (AGPL) is an optional [render] extra; extract/inspect/render need it
+    pymupdf = None
+
+_RENDER_HINT = "image extraction requires PyMuPDF: pip install 'openom-core[render]'"
 
 #: Reject a single image larger than this many pixels *before* materializing it - a small
 #: compressed image stream can declare enormous dimensions (a decompression bomb). ~100 MP.
@@ -95,6 +100,8 @@ def _render_page(
 def extract_images(
     pdf_bytes: bytes, *, out_dir: Path | None = None, render_vector_pages: bool = False
 ) -> ImageManifest:
+    if pymupdf is None:
+        raise ImportError(_RENDER_HINT)
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
