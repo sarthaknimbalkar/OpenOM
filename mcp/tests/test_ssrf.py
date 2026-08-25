@@ -5,7 +5,9 @@ resolve-then-pin, timeouts, size caps, and the %PDF- sniff are tested without an
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator, Mapping
+from pathlib import Path
 
 import pytest
 
@@ -13,6 +15,13 @@ from openom_mcp.fetch import SafeFetcher, is_blocked
 from openom_mcp.tools import ToolError
 
 PDF = b"%PDF-1.7\n%%EOF\n"
+
+# The shared, cross-implementation SSRF deny-vectors (spec/vectors/ssrf-deny.json). Both the Python
+# IP guard and the Worker hostname guard test against this one list, so a newly found bypass added
+# there is forced onto every implementation.
+_SSRF_DENY = json.loads(
+    (Path(__file__).resolve().parents[2] / "spec" / "vectors" / "ssrf-deny.json").read_text("utf-8")
+)
 
 
 class FakeResponse:
@@ -77,6 +86,12 @@ def test_each_blocked_range_rejected(ip: str) -> None:
 def test_is_blocked_matrix() -> None:
     assert is_blocked("10.1.2.3") and is_blocked("169.254.169.254") and is_blocked("::1")
     assert not is_blocked("8.8.8.8") and not is_blocked("1.1.1.1")
+
+
+@pytest.mark.parametrize("vec", _SSRF_DENY["blocked_ips"], ids=lambda v: v["ip"])
+def test_shared_deny_vectors_are_blocked(vec: dict[str, str]) -> None:
+    """Every IP literal in the shared cross-impl deny-list must be refused by the Python guard."""
+    assert is_blocked(vec["ip"]), f"{vec['ip']} ({vec['why']}) must be blocked (SSRF deny-vector)"
 
 
 @pytest.mark.parametrize(

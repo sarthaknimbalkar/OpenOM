@@ -144,11 +144,16 @@ export function safeUrl(raw: string): URL {
     /^169\.254\./.test(h) ||
     /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
     /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h) ||
+    /^(22[4-9]|23\d)\./.test(h) || // multicast 224.0.0.0/4
     // IPv6: unspecified, loopback, ULA (fc00::/7), link-local (fe80::/10)
     h === "::" ||
     h === "::1" ||
     /^f[cd][0-9a-f]{0,2}:/.test(h) ||
     /^fe[89ab][0-9a-f]:/.test(h) ||
+    // IPv6 transition ranges that can embed an internal IPv4 target: 6to4 (2002::/16, deprecated -
+    // no legitimate public literal) and the NAT64 well-known prefix (64:ff9b::/96).
+    /^2002:/.test(h) ||
+    /^64:ff9b:/.test(h) ||
     // IPv4-mapped IPv6 (the URL parser normalizes ::ffff:169.254.169.254 -> ::ffff:a9fe:a9fe, so
     // block the whole mapped form - a legitimate public target never uses a mapped literal).
     /^::ffff:/.test(h);

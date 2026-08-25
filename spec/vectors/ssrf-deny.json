@@ -1,0 +1,32 @@
+{
+  "specVersion": "0.1",
+  "suite": "openom-ssrf-deny",
+  "description": "Canonical fetch deny-vectors every openOM implementation's SSRF guard MUST reject. A URL-fetching tool (om_read/om_validate over https) must refuse each of these before opening a connection. blocked_ips are IP literals both an IP-based guard (resolve-then-pin, e.g. the Python core) and a hostname/literal guard (e.g. the Cloudflare Worker) must reject; blocked_hosts are non-literal hostnames only a hostname guard sees. Add a newly found bypass here once and every implementation's test is forced to cover it.",
+  "blocked_ips": [
+    { "ip": "127.0.0.1", "why": "IPv4 loopback" },
+    { "ip": "10.0.0.1", "why": "IPv4 private (10/8)" },
+    { "ip": "172.16.0.1", "why": "IPv4 private (172.16/12)" },
+    { "ip": "172.31.255.1", "why": "IPv4 private (172.16/12 upper edge)" },
+    { "ip": "192.168.1.1", "why": "IPv4 private (192.168/16)" },
+    { "ip": "169.254.169.254", "why": "IPv4 link-local cloud-metadata endpoint" },
+    { "ip": "100.64.0.1", "why": "IPv4 CGNAT (100.64/10)" },
+    { "ip": "0.0.0.0", "why": "IPv4 unspecified (routes to localhost on some stacks)" },
+    { "ip": "::1", "why": "IPv6 loopback" },
+    { "ip": "::", "why": "IPv6 unspecified" },
+    { "ip": "fc00::1", "why": "IPv6 unique-local (fc00::/7)" },
+    { "ip": "fd00::1", "why": "IPv6 unique-local (fd00::/8)" },
+    { "ip": "fe80::1", "why": "IPv6 link-local (fe80::/10)" },
+    { "ip": "::ffff:169.254.169.254", "why": "IPv4-mapped IPv6 to cloud metadata (the classic mapped bypass)" },
+    { "ip": "::ffff:127.0.0.1", "why": "IPv4-mapped IPv6 loopback" },
+    { "ip": "::ffff:10.0.0.1", "why": "IPv4-mapped IPv6 private" },
+    { "ip": "64:ff9b::a9fe:a9fe", "why": "NAT64 well-known prefix embedding 169.254.169.254" },
+    { "ip": "2002:a9fe:a9fe::1", "why": "6to4 embedding a 169.254 link-local address" },
+    { "ip": "224.0.0.1", "why": "IPv4 multicast" }
+  ],
+  "blocked_hosts": [
+    { "host": "localhost", "why": "loopback name" },
+    { "host": "app.localhost", "why": "loopback subdomain" },
+    { "host": "foo.internal", "why": "RFC-style internal TLD" },
+    { "host": "metadata.google.internal", "why": "GCP metadata name" }
+  ]
+}

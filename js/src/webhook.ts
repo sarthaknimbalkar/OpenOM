@@ -134,7 +134,14 @@ export function assertSafeUrl(url: string, label = "fetch target"): void {
   const u = new URL(url);
   if (u.protocol !== "https:") throw new Error(`${label} must be https, got ${u.protocol}`);
   const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (_PRIVATE_HOSTS.has(host) || host.endsWith(".local")) {
+  // Reserved/internal name spaces: bare `localhost`, and the .localhost/.internal/.local suffixes
+  // (parity with the Worker's hostname guard), so `app.localhost` / `foo.internal` are refused too.
+  if (
+    _PRIVATE_HOSTS.has(host) ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".internal") ||
+    host.endsWith(".local")
+  ) {
     throw new Error(`${label} host not allowed: ${host}`);
   }
   if (_isBlockedIp(host)) {
@@ -158,6 +165,7 @@ function _isBlockedV4Int(n: number): boolean {
   if (a === 172 && b >= 16 && b <= 31) return true; // 172.16/12
   if (a === 169 && b === 254) return true; // 169.254/16 (incl. cloud metadata)
   if (a === 100 && b >= 64 && b <= 127) return true; // 100.64/10 (CGNAT)
+  if (a >= 224 && a <= 239) return true; // 224.0.0.0/4 multicast
   return false;
 }
 
@@ -204,6 +212,11 @@ function _isBlockedIpv6(host: string): boolean {
   if (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff) {
     return _isBlockedV4Int((((g[6] ?? 0) << 16) | (g[7] ?? 0)) >>> 0); // ::ffff:v4 mapped
   }
+  // NAT64 well-known prefix 64:ff9b::/96 embeds the target IPv4 in the last two groups.
+  if (g[0] === 0x0064 && g[1] === 0xff9b && g.slice(2, 6).every((x) => x === 0)) {
+    return _isBlockedV4Int((((g[6] ?? 0) << 16) | (g[7] ?? 0)) >>> 0);
+  }
+  if (g[0] === 0x2002) return true; // 6to4 (2002::/16, deprecated) - no legitimate public literal
   if (g.every((x) => x === 0)) return true; // :: unspecified
   if (g.slice(0, 7).every((x) => x === 0) && g[7] === 1) return true; // ::1 loopback (any form)
   const first = g[0] ?? 0;

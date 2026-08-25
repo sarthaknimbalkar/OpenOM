@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 import { hmacSha256Hex } from "../src/crypto.js";
 import {
@@ -100,10 +102,8 @@ describe("assertSafeWebhookTarget (SSRF host/IP-literal bound)", () => {
     "https://[0:0:0:0:0:0:0:1]/x", // #125: UNCOMPRESSED IPv6 loopback (bypassed the old ::1 match)
     "https://[0000:0000:0000:0000:0000:0000:0000:0001]/x", // #125: fully-padded loopback
     "https://[fe80:0:0:0:0:0:0:1]/x", // #125: uncompressed link-local
-    "https://[64:ff9b::7f00:1]/x", // (not blocked range but valid parse - sanity that expand works)
+    "https://[64:ff9b::7f00:1]/x", // NAT64 well-known prefix embedding 127.0.0.1
   ])("rejects encoded/mapped literal %s (#79/#125)", (url) => {
-    // note: the 64:ff9b case is NOT a blocked range, excluded below
-    if (url.includes("64:ff9b")) return;
     expect(() => assertSafeWebhookTarget(url)).toThrow();
   });
 });
@@ -122,6 +122,25 @@ describe("assertSafeUrl (shared SSRF guard, #122)", () => {
   });
   test("allows a normal public https host", () => {
     expect(() => assertSafeUrl("https://broker.example.com/deal.pdf")).not.toThrow();
+  });
+
+  test("refuses every shared cross-impl SSRF deny-vector", () => {
+    const deny = JSON.parse(
+      readFileSync(
+        fileURLToPath(new URL("../../spec/vectors/ssrf-deny.json", import.meta.url)),
+        "utf-8",
+      ),
+    ) as {
+      blocked_ips: { ip: string; why: string }[];
+      blocked_hosts: { host: string; why: string }[];
+    };
+    for (const { ip, why } of deny.blocked_ips) {
+      const host = ip.includes(":") ? `[${ip}]` : ip;
+      expect(() => assertSafeUrl(`https://${host}/x`), `${ip} (${why})`).toThrow();
+    }
+    for (const { host, why } of deny.blocked_hosts) {
+      expect(() => assertSafeUrl(`https://${host}/x`), `${host} (${why})`).toThrow();
+    }
   });
 });
 

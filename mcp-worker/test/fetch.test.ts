@@ -1,5 +1,13 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test, vi } from "vitest";
 import { fetchPdf, safeUrl, readCapped, ByteBudget } from "../src/index.js";
+
+// The shared cross-implementation SSRF deny-vectors (spec/vectors/ssrf-deny.json), the same list the
+// Python guard tests against - so a bypass added there is forced onto the Worker guard too.
+const ssrfDeny = JSON.parse(
+  readFileSync(fileURLToPath(new URL("../../spec/vectors/ssrf-deny.json", import.meta.url)), "utf-8"),
+) as { blocked_ips: { ip: string; why: string }[]; blocked_hosts: { host: string; why: string }[] };
 
 // A fake fetch that plays back a scripted sequence of responses keyed by call order, recording URLs.
 function scriptedFetch(steps: Array<{ status: number; location?: string; body?: Uint8Array }>) {
@@ -48,6 +56,16 @@ describe("safeUrl (SSRF guard)", () => {
     }
     // Public hosts (incl. a public IPv6) still pass.
     expect(safeUrl("https://[2606:4700::1111]/x").hostname).toContain("2606");
+  });
+
+  test("refuses every shared cross-impl SSRF deny-vector", () => {
+    for (const { ip, why } of ssrfDeny.blocked_ips) {
+      const host = ip.includes(":") ? `[${ip}]` : ip; // bracket IPv6 literals
+      expect(() => safeUrl(`https://${host}/x`), `${ip} (${why})`).toThrow();
+    }
+    for (const { host, why } of ssrfDeny.blocked_hosts) {
+      expect(() => safeUrl(`https://${host}/x`), `${host} (${why})`).toThrow();
+    }
   });
 });
 
