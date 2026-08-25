@@ -190,7 +190,15 @@ def build_http_app(
         allowed_hosts=allowed_hosts or [],
         allowed_origins=allowed_origins or [],
     )
-    return principal_asgi(mcp.streamable_http_app(transport_security=security), extract_principal)
+    # Behind a proxy/CDN, set OPENOM_TRUSTED_PROXY_HEADER (e.g. CF-Connecting-IP) so the rate limit
+    # keys off the real client IP, not the shared proxy address. Unset by default (socket IP) - see
+    # extract_principal for the spoofing caveat.
+    trusted_header = os.environ.get("OPENOM_TRUSTED_PROXY_HEADER") or None
+
+    def _extract(headers: Any, client_ip: str) -> str:
+        return extract_principal(headers, client_ip, trusted_ip_header=trusted_header)
+
+    return principal_asgi(mcp.streamable_http_app(transport_security=security), _extract)
 
 
 def principal_asgi(app: Any, extract: Any) -> Any:

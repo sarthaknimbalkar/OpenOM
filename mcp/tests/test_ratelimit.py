@@ -32,6 +32,25 @@ def test_header_case_insensitive() -> None:
     assert extract_principal({"authorization": "Bearer x"}, "1.2.3.4").startswith("key:")
 
 
+def test_trusted_proxy_header_used_for_ip() -> None:
+    # Behind a proxy the socket IP is the proxy; the configured header carries the real client.
+    headers = {"CF-Connecting-IP": "9.9.9.9", "x-forwarded-for": "9.9.9.9, 10.0.0.1"}
+    got = extract_principal(headers, "10.0.0.1", trusted_ip_header="cf-connecting-ip")
+    assert got == "ip:9.9.9.9"
+    got2 = extract_principal(headers, "10.0.0.1", trusted_ip_header="x-forwarded-for")
+    assert got2 == "ip:9.9.9.9"
+
+
+def test_trusted_header_off_by_default_uses_socket_ip() -> None:
+    # A client-forged header is ignored unless the deployment opted in.
+    headers = {"x-forwarded-for": "1.2.3.4"}
+    assert extract_principal(headers, "10.0.0.1") == "ip:10.0.0.1"
+
+
+def test_trusted_header_absent_falls_back_to_socket_ip() -> None:
+    assert extract_principal({}, "10.0.0.1", trusted_ip_header="cf-connecting-ip") == "ip:10.0.0.1"
+
+
 def test_limiter_allows_under_limit() -> None:
     rl = InMemoryRateLimiter(limit=3, window_seconds=60, now=Clock())
     for _ in range(3):
