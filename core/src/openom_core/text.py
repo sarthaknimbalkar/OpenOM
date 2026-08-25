@@ -110,8 +110,12 @@ def extract_text(
             page_i = pages[idx]
             span_start, span_end = pos, pos + len(page_text)
             pos = span_end + 1  # account for the "\f" separator
-            if span_end <= start or span_start >= end:
-                continue  # this page's text is entirely outside the emitted window
+            # Emit a page's tables in exactly ONE window - the one its text STARTS in. Paginated
+            # windows tile contiguously from the cursor ([0,e1),[e1,e2),...), so every page's start
+            # falls in exactly one window. Testing intersection instead double-emits a page that
+            # straddles the boundary (it overlaps both the ending window and the beginning one).
+            if not (start <= span_start < end):
+                continue
             try:
                 found = doc.load_page(page_i).find_tables()
             except Exception:  # noqa: BLE001 - tables are best-effort, never fatal

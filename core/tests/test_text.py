@@ -86,3 +86,27 @@ def test_tables_scoped_to_the_paginated_window() -> None:
     first = extract_text(pdf, max_chars=40)
     assert first["truncated"] and all(t["page"] == 1 for t in first["tables"])
     assert all(t["page"] != 2 for t in first["tables"])
+
+
+def test_tables_not_duplicated_across_a_window_boundary() -> None:
+    """A page whose text straddles a paginated window boundary must have its tables emitted in
+    exactly one window. Walking the whole pagination must yield the same tables as a single call."""
+    pdf = _two_page_with_table_on_p2()
+    full = extract_text(pdf, max_chars=1_000_000)
+    if not any(t["page"] == 2 for t in full["tables"]):
+        pytest.skip("find_tables did not detect the drawn grid in this pymupdf build")
+
+    def key(t: dict[str, object]) -> tuple[object, str]:
+        return (t["page"], repr(t["rows"]))
+
+    expected = sorted(key(t) for t in full["tables"])
+    # Small windows so a boundary lands inside the table page; accumulate tables across every call.
+    got: list[tuple[object, str]] = []
+    cursor: str | None = None
+    for _ in range(50):  # generous cap; the doc paginates in far fewer
+        page = extract_text(pdf, max_chars=30, cursor=cursor)
+        got.extend(key(t) for t in page["tables"])
+        cursor = page["nextCursor"]
+        if cursor is None:
+            break
+    assert sorted(got) == expected  # every table once - no boundary duplication, no loss
