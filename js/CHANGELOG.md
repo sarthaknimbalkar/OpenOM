@@ -7,6 +7,8 @@ may change in a minor. The embedded payload contract is versioned separately by 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-25
+
 ### Added
 
 - Bundled JSON Schema: `OM_SCHEMA`, `SPEC_VERSION`, `loadSchema()`; `validatePayload(payload)` now

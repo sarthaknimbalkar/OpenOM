@@ -7,6 +7,8 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-25
+
 ### Added
 - Thin, common-denominator investment-property fields so a multifamily / mixed-use OM's headline is
   representable without deep underwriting schema (decision memo §2): `property.units` (integer unit
