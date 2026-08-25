@@ -1,0 +1,5 @@
+Contact: https://github.com/Vervelio-Labs/OpenOM/securityopenom.app
+Contact: https://github.com/Vervelio-Labs/OpenOM/issues
+Policy: https://github.com/Vervelio-Labs/OpenOM/blob/main/SECURITY.md
+Preferred-Languages: en
+Canonical: https://openom.app/.well-known/security.txt

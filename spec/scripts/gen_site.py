@@ -668,6 +668,10 @@ def _llms_file() -> str:
         " verified OM payload (base64 or an https URL) and validate one. For the full six-tool surface"
         " (om_inspect / om_extract_text / om_extract_images / om_embed too), self-host via"
         " `pip install openom-mcp` then `om-mcp` (stdio) or `om-mcp-http`.",
+        f"- [OpenAPI description]({BASE}/openapi.json) (also /.well-known/openapi.json): the public"
+        " MCP grounding endpoint + read-only artifacts, with typed schemas for function-calling.",
+        f"- [About]({BASE}/about/) and [Contact]({BASE}/contact/): what openOM is and how to reach the"
+        " maintainers (github.com/Vervelio-Labs/OpenOM/issues). No account or API key is ever required.",
         "- Command-line tool (`om`), free and inference-free: `pip install openom-cli`, then"
         " `om init` / `om embed` / `om read` / `om validate` / `om inspect` / `om extract`. The"
         " TypeScript library is `npm install openom-js` (embed/read/validate at byte-parity).",
@@ -715,6 +719,114 @@ def _not_found_html() -> str:
 """
 
 
+def _openapi_file() -> str:
+    """A discoverable OpenAPI 3.1 description of openOM's public machine surfaces (agent-readiness:
+    OpenAPI-published / function-calling / API-schema checks). Describes the free public MCP grounding
+    endpoint (JSON-RPC over Streamable HTTP) plus the read-only artifact GETs. Deterministic; no keys."""
+    spec = {
+        "openapi": "3.1.0",
+        "info": {
+            "title": "openOM public API",
+            "version": "0.1",
+            "description": "Free, deterministic, no-key surfaces for reading openOM data: the public "
+            "MCP grounding endpoint (om_read + om_validate) and the read-only standard artifacts. "
+            "Verified means provenance, not truth - every payload is an identified party's opinion "
+            "as of a date.",
+            "license": {"name": "MIT", "url": "https://github.com/Vervelio-Labs/OpenOM"},
+            "contact": {"url": "https://github.com/Vervelio-Labs/OpenOM/issues"},
+        },
+        "servers": [{"url": BASE}, {"url": "https://mcp.openom.app"}],
+        "paths": {
+            "/mcp": {
+                "post": {
+                    "operationId": "mcpJsonRpc",
+                    "summary": "openOM MCP grounding endpoint (JSON-RPC 2.0): tools/list, and "
+                    "tools/call for om_read (read the embedded payload + integrity) and om_validate. "
+                    "Send a base64 PDF or an https URL. Read-only, deterministic, no API key.",
+                    "servers": [{"url": "https://mcp.openom.app"}],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["jsonrpc", "method"],
+                                    "properties": {
+                                        "jsonrpc": {"const": "2.0"},
+                                        "id": {"type": ["string", "integer"]},
+                                        "method": {
+                                            "type": "string",
+                                            "enum": ["tools/list", "tools/call"],
+                                        },
+                                        "params": {"type": "object"},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "JSON-RPC result, or a JSON-RPC error object on failure.",
+                            "content": {"application/json": {"schema": {"type": "object"}}},
+                        }
+                    },
+                }
+            },
+            "/ns/0.1": {
+                "get": {
+                    "operationId": "getContext",
+                    "summary": "The openOM 0.1 JSON-LD @context (vocabulary).",
+                    "responses": {"200": {"description": "JSON-LD context",
+                        "content": {"application/ld+json": {"schema": {"type": "object"}}}}},
+                }
+            },
+            "/spec/om-0.1.schema.json": {
+                "get": {
+                    "operationId": "getSchema",
+                    "summary": "The openOM 0.1 payload JSON Schema.",
+                    "responses": {"200": {"description": "JSON Schema",
+                        "content": {"application/schema+json": {"schema": {"type": "object"}}}}},
+                }
+            },
+        },
+    }
+    return json.dumps(spec, indent=2, ensure_ascii=False)
+
+
+def _security_txt() -> str:
+    """RFC 9116 security.txt - a trust anchor an agent (and a researcher) checks for legitimacy."""
+    return (
+        f"Contact: {BASE.replace('https://', 'https://github.com/Vervelio-Labs/OpenOM/security')}\n"
+        "Contact: https://github.com/Vervelio-Labs/OpenOM/issues\n"
+        f"Policy: https://github.com/Vervelio-Labs/OpenOM/blob/main/SECURITY.md\n"
+        "Preferred-Languages: en\n"
+        f"Canonical: {BASE}/.well-known/security.txt\n"
+    )
+
+
+def _trust_page(title: str, lede: str, paras: list[str]) -> str:
+    """A minimal, no-JS trust-anchor page (About / Contact) - the pages an agent checks to verify the
+    project is legitimate before recommending it. Content, not chrome, is what agent-readiness scores."""
+    body = "\n".join(f"    <p>{p}</p>" for p in paras)
+    return (
+        "<!doctype html>\n<html lang=\"en\">\n<head>\n"
+        "  <meta charset=\"utf-8\" />\n"
+        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n"
+        f"  <title>{title} - openOM</title>\n"
+        f"  <meta name=\"description\" content=\"{lede}\" />\n"
+        f"  <link rel=\"canonical\" href=\"{BASE}/{title.lower()}/\" />\n"
+        "  <style>body{font:16px/1.7 system-ui,sans-serif;max-width:44rem;margin:3rem auto;"
+        "padding:0 1rem;color:#111}a{color:#065f46}h1{font-size:2rem}</style>\n"
+        "</head>\n<body>\n"
+        f"  <h1>{title}</h1>\n"
+        f"  <p><strong>{lede}</strong></p>\n"
+        f"{body}\n"
+        "  <p><a href=\"/\">openOM home</a> &middot; <a href=\"/docs/\">Docs</a> &middot; "
+        "<a href=\"/llms.txt\">llms.txt</a></p>\n"
+        "</body>\n</html>\n"
+    )
+
+
 def generate() -> None:
     if SITE.exists():
         shutil.rmtree(SITE)
@@ -757,6 +869,70 @@ def generate() -> None:
     (SITE / "robots.txt").write_text(_robots_file(), "utf-8", newline="\n")  # AEO/GEO/AIO crawlers
     (SITE / "sitemap.xml").write_text(_sitemap_file(), "utf-8", newline="\n")
     (SITE / "llms.txt").write_text(_llms_file(), "utf-8", newline="\n")  # llmstxt.org AIO on-ramp
+
+    # --- agent-readiness (Vercel is-agentic / Ora): discoverable API + trust anchors + markdown ---
+    (SITE / "openapi.json").write_text(_openapi_file(), "utf-8", newline="\n")
+    wk = SITE / ".well-known"
+    wk.mkdir(parents=True, exist_ok=True)
+    (wk / "openapi.json").write_text(_openapi_file(), "utf-8", newline="\n")
+    (wk / "security.txt").write_text(_security_txt(), "utf-8", newline="\n")
+    for slug, title, lede, paras in _TRUST_PAGES:
+        d = SITE / slug
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "index.html").write_text(_trust_page(title, lede, paras), "utf-8", newline="\n")
+    # Markdown representation of the homepage for content-negotiation (Accept: text/markdown); the
+    # functions/_middleware.js serves this when an agent asks for markdown, with `Vary: Accept`.
+    (SITE / "index.md").write_text(_llms_file(), "utf-8", newline="\n")
+
+
+_TRUST_PAGES = (
+    (
+        "about",
+        "About",
+        "openOM is an open standard and toolchain for machine-readable offering memoranda, "
+        "published by Vervelio Labs.",
+        [
+            "openOM embeds a broker-asserted, hash-verified data payload inside a commercial real "
+            "estate offering-memorandum (OM) PDF, and mirrors the same payload as JSON-LD on the web. "
+            "The idea is simple: extract once at the source, then let every downstream consumer - a "
+            "CRM, an underwriting model, a listings portal, an AI agent - read the deal in "
+            "milliseconds with zero inference, instead of re-parsing the same PDF badly and "
+            "repeatedly.",
+            "The project is published by Vervelio Labs as a neutral steward. The specification is "
+            "licensed CC-BY-4.0 and the toolchain is MIT, so anyone can implement, embed, and build "
+            "on it without permission or fees. The engine, the MCP server, and the consumer tooling "
+            "contain zero LLM or inference calls - any AI-assisted mapping runs client-side or "
+            "on-device in the authoring layer only.",
+            "openOM records who asserted the data, that it is unaltered, and as of when. Verified "
+            "means provenance - not that the opinion is true. An offering memorandum is an "
+            "advertisement: a broker's opinion of value, agreed to by the seller before publication. "
+            "openOM never claims the numbers are correct; it makes them attributable, tamper-evident, "
+            "and cheap to consume. Source and issues: github.com/Vervelio-Labs/OpenOM.",
+        ],
+    ),
+    (
+        "contact",
+        "Contact",
+        "How to reach the openOM project and Vervelio Labs.",
+        [
+            "openOM is developed in the open. The fastest way to reach the maintainers is the public "
+            "issue tracker at github.com/Vervelio-Labs/OpenOM/issues - open an issue for a bug, a "
+            "question, a spec proposal, or an integration request, and it will be triaged there in "
+            "public. Security reports have a dedicated policy in SECURITY.md and a security.txt at "
+            "/.well-known/security.txt.",
+            "For anything about the standard itself - the JSON Schema, the vocabulary, the governance "
+            "process for evolving it - start with the documentation at /docs/ and the governance "
+            "guide in the repository. Vervelio Labs is the neutral steward that publishes the "
+            "standard; its site is verveliolabs.com. There is no account, API key, or sales process "
+            "required to use the public grounding endpoint, the CLI, or the libraries - everything "
+            "deterministic and self-hostable is free.",
+            "Building an agent or a portal on openOM? The public MCP endpoint at mcp.openom.app/mcp "
+            "is free and keyless; the OpenAPI description lives at /openapi.json; and the llms.txt at "
+            "/llms.txt is the curated on-ramp for AI agents. If something is unclear, an issue is "
+            "always welcome.",
+        ],
+    ),
+)
 
 
 if __name__ == "__main__":
