@@ -31,6 +31,26 @@ def test_valid_sample_clean() -> None:
     assert report.ok is True
 
 
+def test_error_out_of_safe_range_integer_agrees_with_embed() -> None:
+    # A number the schema accepts but canonicalization (OM-CANON-013) rejects: validate must now
+    # flag it too, so a broker doesn't get a green validate then a failed embed. 2^53 is the first
+    # unsafe integer.
+    from openom_core.canonical import CanonicalizationError, canonicalize
+
+    p = copy.deepcopy(_sample())
+    p["ext"] = {"acme": {"bigId": 2**53}}
+    report = validate(p, schema=_schema())
+    assert "OMV-E011" in _codes(report.errors)
+    assert any(f.path == "/ext/acme/bigId" for f in report.errors if f.code == "OMV-E011")
+    assert report.ok is False  # embed would refuse it, so validate refuses it too
+    # And the two stages genuinely agree: embed's canonicalization raises on the same payload.
+    try:
+        canonicalize(p)
+        raise AssertionError("expected canonicalize to reject the out-of-range integer")
+    except CanonicalizationError:
+        pass
+
+
 def test_error_missing_noitype() -> None:
     report = validate(_load_invalid("invalid-missing-noitype"), schema=_schema())
     assert "OMV-E002" in _codes(report.errors)

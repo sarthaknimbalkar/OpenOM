@@ -13,13 +13,13 @@ from __future__ import annotations
 
 import datetime as dt
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
 import jsonschema
 
-from .canonical import payload_hash
+from .canonical import MAX_SAFE_INT, payload_hash
 from .errors import Finding, Severity
 from .schema import load_schema
 
@@ -29,6 +29,7 @@ _REQUIREMENT = {
     "OMV-E002": "OM-DD-003",
     "OMV-E003": "OM-ERR-090",
     "OMV-E010": "OM-ERR-013",
+    "OMV-E011": "OM-CANON-013",  # integer out of the ECMAScript safe range - embed would reject it
     "OMW-W010": "OM-CONS-010",
     "OMW-W011": "OM-CONS-011",
     "OMW-W012": "OM-CONS-012",
@@ -146,6 +147,7 @@ def validate(
     processing_date = _date(as_of) if as_of else None
     as_of_date = processing_date if processing_date else _date(payload.get("assertedDate"))
     _error_tier(payload, schema, report)
+    _number_range_tier(payload, report)
     _warning_tier(payload, report, tol, as_of_date, processing_date)
     _info_tier(payload, report)
     # Deterministic ordering (§H.1): stable across runs and implementations.
@@ -187,6 +189,36 @@ def _error_tier(payload: Any, schema: Mapping[str, Any], report: Report) -> None
     validator = _validator_for(schema)
     for err in sorted(validator.iter_errors(payload), key=str):
         report.errors.append(_map_schema_error(err))
+
+
+def _number_range_tier(payload: Mapping[str, Any], report: Report) -> None:
+    """Reject numbers outside the ECMAScript safe-integer range at validate time, so validate and
+    embed AGREE. The schema permits any integer, but canonicalization (OM-CANON-013) refuses an
+    integer-valued number with |v| > 2^53-1 - it would be silently rounded under the JS number
+    model. Without this a broker gets a green validate and then a failed embed; here it is caught at
+    the review gate. Same MAX_SAFE_INT threshold as canonical, so the two stages can never drift."""
+    for path, value in _iter_numbers(payload, ""):
+        if isinstance(value, bool):
+            continue
+        unsafe_int = isinstance(value, int) and abs(value) > MAX_SAFE_INT
+        unsafe_float = isinstance(value, float) and value.is_integer() and abs(value) > MAX_SAFE_INT
+        if unsafe_int or unsafe_float:
+            report.errors.append(
+                _mk("OMV-E011", path, f"integer exceeds the safe range (2^53-1): {value}")
+            )
+
+
+def _iter_numbers(node: Any, path: str) -> Iterator[tuple[str, int | float]]:
+    """Yield (json-pointer, number) for every numeric leaf, depth-first (booleans included; the
+    caller filters them). Path style matches _map_schema_error (unescaped '/'-joined tokens)."""
+    if isinstance(node, Mapping):
+        for key, value in node.items():
+            yield from _iter_numbers(value, f"{path}/{key}")
+    elif isinstance(node, (list, tuple)):
+        for idx, value in enumerate(node):
+            yield from _iter_numbers(value, f"{path}/{idx}")
+    elif isinstance(node, (int, float)):
+        yield path, node
 
 
 def _map_schema_error(err: jsonschema.ValidationError) -> Finding:

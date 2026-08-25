@@ -37,6 +37,11 @@
       "requirement": "OM-ERR-013",
       "severity": "error"
     },
+    "OMV-E011": {
+      "message": "integer value exceeds the ECMAScript safe range (2^53-1); embed would reject it",
+      "requirement": "OM-CANON-013",
+      "severity": "error"
+    },
     "OMW-W010": {
       "message": "capRate disagrees with noi / askingPrice beyond tolerance",
       "requirement": "OM-CONS-010",

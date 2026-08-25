@@ -38,6 +38,14 @@ describe("validatePayload - schema tier", () => {
     expect(r.errors.some((e) => e.code === "OMV-E001" && e.path === "/deal/capRate")).toBe(true);
   });
 
+  test("out-of-safe-range integer → OMV-E011 (validate agrees with embed's OM-CANON-013)", () => {
+    const p = sample("valid-stnl");
+    p.ext = { acme: { bigId: 2 ** 53 } }; // first unsafe integer; schema accepts it, canon rejects it
+    const r = validatePayload(p, schema);
+    expect(r.errors.some((e) => e.code === "OMV-E011" && e.path === "/ext/acme/bigId")).toBe(true);
+    expect(r.blocked).toBe(true);
+  });
+
   test("noi present but noiType/noiAsOfDate missing → OMV-E002", () => {
     const r = validatePayload(sample("invalid-missing-noitype"), schema);
     expect(r.errors.map((e) => e.code)).toContain("OMV-E002");

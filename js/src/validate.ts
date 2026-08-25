@@ -83,6 +83,21 @@ export function validatePayload(
     }
   }
 
+  // Out-of-safe-range numbers: the schema accepts any integer, but canonicalization (OM-CANON-013)
+  // rejects an integer-valued number with |v| > 2^53-1, so embed would throw after a green validate.
+  // Flag it here too, with the SAME test canonicalize uses, so validate and embed agree.
+  for (const [path, value] of iterNumbers(payload, "")) {
+    if (Number.isInteger(value) && !Number.isSafeInteger(value)) {
+      errors.push({
+        code: "OMV-E011",
+        severity: "error",
+        path,
+        message: `integer value exceeds the safe range (2^53-1); embed would reject it: ${value}`,
+        requirement: "OM-CANON-013",
+      });
+    }
+  }
+
   errors.sort(compareFindings);
 
   const isObject = payload !== null && typeof payload === "object" && !Array.isArray(payload);
@@ -170,6 +185,18 @@ function mapError(err: ErrorObject): Finding {
     message: `schema violation (${err.keyword}): ${err.message ?? "invalid"}`,
     requirement: "OM-DD-001",
   };
+}
+
+/** Yield [json-pointer, number] for every numeric leaf, depth-first. Booleans are not numbers in JS,
+ * so they're naturally excluded; the path style matches jsonPointerFor (unescaped '/'-joined). */
+function* iterNumbers(node: unknown, path: string): Generator<[string, number]> {
+  if (typeof node === "number") {
+    yield [path, node];
+  } else if (Array.isArray(node)) {
+    for (let i = 0; i < node.length; i++) yield* iterNumbers(node[i], `${path}/${i}`);
+  } else if (node !== null && typeof node === "object") {
+    for (const [key, value] of Object.entries(node)) yield* iterNumbers(value, `${path}/${key}`);
+  }
 }
 
 function isNoiRequirement(err: ErrorObject): boolean {

@@ -47,6 +47,11 @@ export const OM_CODES: Readonly<Record<string, CodeEntry>> = Object.freeze({
     "requirement": "OM-ERR-013",
     "severity": "error"
   },
+  "OMV-E011": {
+    "message": "integer value exceeds the ECMAScript safe range (2^53-1); embed would reject it",
+    "requirement": "OM-CANON-013",
+    "severity": "error"
+  },
   "OMW-W010": {
     "message": "capRate disagrees with noi / askingPrice beyond tolerance",
     "requirement": "OM-CONS-010",
@@ -178,6 +183,7 @@ export type OmCode =
   | "OMV-E002"
   | "OMV-E003"
   | "OMV-E010"
+  | "OMV-E011"
   | "OMW-W010"
   | "OMW-W011"
   | "OMW-W012"
