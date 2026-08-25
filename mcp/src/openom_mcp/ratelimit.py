@@ -35,12 +35,18 @@ class CounterStore(Protocol):
 class InMemoryCounterStore:
     """A single-process CounterStore mirroring Redis INCR/EXPIRE semantics (tests/self-host)."""
 
+    # Above this many live keys, sweep expired ones before inserting. Keeps a flood of distinct
+    # keys from growing the map without bound; the common (few-principal) case is untouched.
+    _SWEEP_THRESHOLD = 4096
+
     def __init__(self, *, now: Callable[[], float] = time.time) -> None:
         self.now = now
         self._v: dict[str, tuple[int, float]] = {}  # key -> (count, expires_at)
 
     def incr(self, key: str, ttl_seconds: int) -> int:
         t = self.now()
+        if len(self._v) >= self._SWEEP_THRESHOLD:
+            self._v = {k: v for k, v in self._v.items() if t < v[1]}  # drop expired windows
         count, expires = self._v.get(key, (0, 0.0))
         if t >= expires:  # absent or expired → fresh window, (re)arm the TTL
             count, expires = 0, t + ttl_seconds
@@ -91,6 +97,10 @@ class DistributedRateLimiter(RateLimiter):
 class InMemoryRateLimiter(RateLimiter):
     """Fixed-window: at most ``limit`` calls per ``window_seconds`` per principal."""
 
+    # Above this many tracked principals, evict any whose window has already elapsed before adding a
+    # new one - so a burst of distinct IPs/tokens can't grow the map without bound (memory DoS).
+    _SWEEP_THRESHOLD = 4096
+
     def __init__(
         self, *, limit: int, window_seconds: int, now: Callable[[], float] = time.time
     ) -> None:
@@ -101,6 +111,10 @@ class InMemoryRateLimiter(RateLimiter):
 
     def check(self, principal: str) -> None:
         idx = int(self.now() // self.window)
+        if principal not in self._windows and len(self._windows) >= self._SWEEP_THRESHOLD:
+            # Only entries whose window is strictly in the past are dead; live windows are kept so
+            # their limit stays enforced.
+            self._windows = {p: w for p, w in self._windows.items() if w[0] >= idx}
         cur_idx, count = self._windows.get(principal, (idx, 0))
         if cur_idx != idx:  # a new window started
             cur_idx, count = idx, 0

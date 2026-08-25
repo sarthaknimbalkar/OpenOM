@@ -7,7 +7,7 @@ from __future__ import annotations
 import pytest
 
 from openom_mcp.principal import extract_principal
-from openom_mcp.ratelimit import InMemoryRateLimiter
+from openom_mcp.ratelimit import InMemoryCounterStore, InMemoryRateLimiter
 from openom_mcp.tools import ToolError
 
 
@@ -81,3 +81,39 @@ def test_window_resets_with_injected_now() -> None:
     rl.check("ip:a")
     clock.t += 61  # next window
     rl.check("ip:a")  # allowed again
+
+
+def test_limiter_evicts_stale_principals() -> None:
+    # A flood of distinct principals must not grow the map without bound: once their windows are in
+    # the past, the entries are dead weight and should be swept.
+    clock = Clock(0.0)
+    rl = InMemoryRateLimiter(limit=1, window_seconds=60, now=clock)
+    n = InMemoryRateLimiter._SWEEP_THRESHOLD + 100
+    for i in range(n):
+        rl.check(f"ip:{i}")
+    clock.t += 61  # every one of those windows is now in the past
+    rl.check("ip:new")  # a fresh call triggers the sweep
+    assert len(rl._windows) < n  # the dead entries were reclaimed
+
+
+def test_eviction_never_drops_live_windows() -> None:
+    # Sweeping must only remove entries whose window has already elapsed - a principal still inside
+    # its current window keeps its count (so its limit is still enforced).
+    clock = Clock(0.0)
+    rl = InMemoryRateLimiter(limit=1, window_seconds=60, now=clock)
+    rl.check("ip:live")  # uses its one allowed call this window
+    for i in range(InMemoryRateLimiter._SWEEP_THRESHOLD + 100):
+        rl.check(f"ip:flood{i}")  # same (still-live) window - a sweep fires but must drop nothing
+    with pytest.raises(ToolError):
+        rl.check("ip:live")  # still blocked; its live entry was not evicted
+
+
+def test_counterstore_evicts_expired_entries() -> None:
+    clock = Clock(0.0)
+    store = InMemoryCounterStore(now=clock)
+    n = InMemoryCounterStore._SWEEP_THRESHOLD + 100
+    for i in range(n):
+        store.incr(f"k:{i}", 60)
+    clock.t += 61  # all expired
+    store.incr("k:new", 60)
+    assert len(store._v) < n
