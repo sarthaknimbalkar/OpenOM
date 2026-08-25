@@ -11,7 +11,18 @@ export interface FieldDescriptor {
   kind: FieldKind;
   enum?: string[];
   label: string;
+  /** Optional plain-language guidance rendered under the control - for the fields people get wrong
+   *  (a cap rate typed as a percent, money typed with symbols). Deterministic; not part of the payload. */
+  hint?: string;
 }
+
+/** Guidance for the fields a broker most often mis-enters, keyed by JSON pointer. */
+const FIELD_HINTS: Record<string, string> = {
+  "/deal/capRate": "Enter as a decimal - 6.25% is 0.0625 (not 6.25).",
+  "/deal/askingPrice": "In dollars, digits only - e.g. 1850000.",
+  "/deal/noi": "Net operating income in dollars, digits only.",
+  "/deal/pricePerSF": "In dollars per square foot.",
+};
 
 interface SchemaNode {
   type?: string;
@@ -40,6 +51,7 @@ function walk(node: SchemaNode | undefined, prefix: string, out: FieldDescriptor
   }
   const desc: FieldDescriptor = { path: prefix, kind: kindOf(node), label: humanizeField(prefix) };
   if (node.enum) desc.enum = node.enum;
+  if (FIELD_HINTS[prefix]) desc.hint = FIELD_HINTS[prefix];
   out.push(desc);
 }
 

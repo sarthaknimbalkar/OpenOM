@@ -295,6 +295,12 @@ textarea.draft-json {
   color: var(--warn); /* an advisory (no evidence / omitted), not a blocking error - amber, not red */
   font-size: 11px;
 }
+.field-hint {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 11px;
+  margin: 1px 0 2px;
+}
 .rent-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr) auto auto;

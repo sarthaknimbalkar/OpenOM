@@ -90,6 +90,16 @@ function fieldRow(desc: FieldDescriptor, draft: Draft, flagged: Set<string>, cb:
   label.append(`${desc.label} `, control);
   row.appendChild(label);
 
+  // Plain-language guidance for the fields people get wrong (a cap rate typed as a percent, etc.),
+  // associated with the control so assistive tech reads it too.
+  if (desc.hint) {
+    const hint = el("span", "field-hint", desc.hint);
+    const hintId = `hint-${desc.path.replace(/\W+/g, "-")}`;
+    hint.id = hintId;
+    control.setAttribute("aria-describedby", hintId);
+    row.appendChild(hint);
+  }
+
   // evidence - placeholder alone is not an accessible name, so label each input explicitly.
   const ev = el("span", "field-evidence");
   const priorEv = draft.evidence[desc.path];
