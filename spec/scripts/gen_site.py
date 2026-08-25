@@ -22,7 +22,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from gen_docs import docs_pages, widget_badge_versioned  # noqa: E402  (local sibling module)
+from gen_docs import (  # type: ignore[import-not-found]  # noqa: E402  (local sibling module)
+    docs_pages,
+    widget_badge_versioned,
+)
 
 SPEC = Path(__file__).resolve().parent.parent
 ROOT = SPEC.parent
@@ -735,7 +738,7 @@ def generate() -> None:
     (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
     (SITE / "404.html").write_text(_not_found_html(), "utf-8", newline="\n")  # Pages custom 404
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
-    (SITE / "_redirects").write_text(_redirects_file(), "utf-8", newline="\n")  # www -> apex 301
+    (SITE / "_redirects").write_text(_redirects_file(), "utf-8", newline="\n")  # www -> apex (Netlify)
     (SITE / ".htaccess").write_text(_htaccess_file(), "utf-8", newline="\n")  # Apache/GoDaddy
     (SITE / "robots.txt").write_text(_robots_file(), "utf-8", newline="\n")  # AEO/GEO/AIO crawlers
     (SITE / "sitemap.xml").write_text(_sitemap_file(), "utf-8", newline="\n")
