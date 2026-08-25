@@ -44,6 +44,15 @@ const TOOLS = [
       },
       oneOf: [{ required: ["pdfBase64"] }, { required: ["url"] }],
     },
+    // Machine-readable safety hints so an agent host can auto-approve this read: it never mutates,
+    // is idempotent, and (open-world) may fetch a caller-supplied https URL.
+    annotations: {
+      title: "Read the embedded openOM payload",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
   },
   {
     name: "om_validate",
@@ -54,6 +63,13 @@ const TOOLS = [
       type: "object",
       properties: { payload: { type: "object", description: "An openOM payload object." } },
       required: ["payload"],
+    },
+    annotations: {
+      title: "Validate an openOM payload",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
     },
   },
 ];

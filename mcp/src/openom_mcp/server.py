@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.server import MCPServer
+from mcp.types import ToolAnnotations
 from pydantic import Field
 from typing_extensions import TypedDict
 
@@ -43,19 +44,38 @@ def _desc(fn: Any, *, pdf_ref: bool = False) -> str:
     return doc + _PDF_REF if pdf_ref else doc
 
 
-@mcp.tool(description=_desc(tools.om_inspect, pdf_ref=True))
+def _read_ann(title: str, *, open_world: bool) -> ToolAnnotations:
+    """A read-only tool: safe to call unattended, never mutates, so an agent host can auto-approve
+    it. open_world is True for the tools that fetch a caller-supplied https URL on the hosted
+    transport (inspect/read/extract*), False for the pure om_validate."""
+    return ToolAnnotations(
+        title=title, read_only_hint=True, destructive_hint=False,
+        idempotent_hint=True, open_world_hint=open_world,
+    )
+
+
+@mcp.tool(
+    description=_desc(tools.om_inspect, pdf_ref=True),
+    annotations=_read_ann("Inspect an OM PDF", open_world=True),
+)
 def om_inspect(pdf: PdfRef, verifyOrigin: bool = False) -> dict[str, Any]:
     """Wraps tools.om_inspect (description single-sourced from its docstring)."""
     return tools.om_inspect(pdf, verify_origin=verifyOrigin)
 
 
-@mcp.tool(description=_desc(tools.om_read, pdf_ref=True))
+@mcp.tool(
+    description=_desc(tools.om_read, pdf_ref=True),
+    annotations=_read_ann("Read the embedded openOM payload", open_world=True),
+)
 def om_read(pdf: PdfRef, verifyOrigin: bool = True) -> dict[str, Any]:
     """Wraps tools.om_read (description single-sourced from its docstring)."""
     return tools.om_read(pdf, verify_origin=verifyOrigin)
 
 
-@mcp.tool(description=_desc(tools.om_extract_text, pdf_ref=True))
+@mcp.tool(
+    description=_desc(tools.om_extract_text, pdf_ref=True),
+    annotations=_read_ann("Extract text from an OM PDF", open_world=True),
+)
 def om_extract_text(
     pdf: PdfRef,
     pageRange: str | None = None,
@@ -66,7 +86,10 @@ def om_extract_text(
     return tools.om_extract_text(pdf, page_range=pageRange, cursor=cursor, max_chars=maxChars)
 
 
-@mcp.tool(description=_desc(tools.om_extract_images, pdf_ref=True))
+@mcp.tool(
+    description=_desc(tools.om_extract_images, pdf_ref=True),
+    annotations=_read_ann("Extract images from an OM PDF", open_world=True),
+)
 def om_extract_images(
     pdf: PdfRef,
     outDir: str | None = None,
@@ -79,7 +102,10 @@ def om_extract_images(
     )
 
 
-@mcp.tool(description=_desc(tools.om_validate))
+@mcp.tool(
+    description=_desc(tools.om_validate),
+    annotations=_read_ann("Validate an openOM payload", open_world=False),
+)
 def om_validate(
     payload: dict[str, Any], tolerances: dict[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -87,7 +113,16 @@ def om_validate(
     return tools.om_validate(payload, tolerances=tolerances)
 
 
-@mcp.tool(description=_desc(tools.om_embed, pdf_ref=True))
+@mcp.tool(
+    description=_desc(tools.om_embed, pdf_ref=True),
+    # The only mutating tool: produces a NEW embedded PDF (non-destructive to the input), idempotent
+    # on re-embed, and fetches a caller URL on the hosted transport - so a host should gate it, not
+    # auto-approve it like the reads.
+    annotations=ToolAnnotations(
+        title="Embed a payload into an OM PDF", read_only_hint=False,
+        destructive_hint=False, idempotent_hint=True, open_world_hint=True,
+    ),
+)
 def om_embed(
     pdf: PdfRef,
     payload: dict[str, Any],
@@ -98,7 +133,13 @@ def om_embed(
     return tools.om_embed(pdf, payload, out_path=outPath, badge=badge)
 
 
-@mcp.tool(description=_desc(tools.om_request_upload))
+@mcp.tool(
+    description=_desc(tools.om_request_upload),
+    annotations=ToolAnnotations(
+        title="Request a blob upload slot", read_only_hint=False,
+        destructive_hint=False, idempotent_hint=False, open_world_hint=False,
+    ),
+)
 def om_request_upload() -> dict[str, Any]:
     """Wraps tools.om_request_upload (description single-sourced from its docstring)."""
     return tools.om_request_upload()

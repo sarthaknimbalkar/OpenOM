@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com", "brand": {"@type": "Brand", "name": "openOM"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com", "brand": {"@type": "Brand", "name": "openOM"}, "contactPoint": {"@type": "ContactPoint", "contactType": "technical support", "url": "https://github.com/Vervelio-Labs/OpenOM/issues"}, "address": {"@type": "PostalAddress", "addressCountry": "US"}}</script>
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "openOM", "url": "https://openom.app/", "description": "openOM is an open standard that embeds machine-readable, broker-asserted, hash-verified data inside commercial real estate offering memorandum PDFs, mirrored as JSON-LD on the web. Extract once at the source; consume cheaply everywhere.", "publisher": {"@type": "Organization", "name": "Vervelio Labs"}}</script>
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "openOM", "applicationCategory": "DeveloperApplication", "operatingSystem": "Cross-platform", "url": "https://openom.app/", "description": "openOM is an open standard that embeds machine-readable, broker-asserted, hash-verified data inside commercial real estate offering memorandum PDFs, mirrored as JSON-LD on the web. Extract once at the source; consume cheaply everywhere.", "license": "https://opensource.org/licenses/MIT", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "publisher": {"@type": "Organization", "name": "Vervelio Labs"}}</script>
   <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is openOM?", "acceptedAnswer": {"@type": "Answer", "text": "openOM is an open (MIT) standard and toolchain that embeds machine-readable, broker-asserted, hash-verified data inside commercial real estate offering memorandum PDFs, and mirrors the same payload as JSON-LD on the web. Data is extracted once at the source and consumed cheaply everywhere."}}, {"@type": "Question", "name": "Is openOM data verified to be true?", "acceptedAnswer": {"@type": "Answer", "text": "No. An offering memorandum is an advertisement - a broker's opinion of value. openOM records who asserted the data, that it is unaltered, and as of when. Verified means provenance, not truth; openOM never claims the opinion is correct."}}, {"@type": "Question", "name": "Is openOM free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The standard, schema, and reference toolchain are free and open source under the MIT license (the spec under CC-BY-4.0). Everything deterministic is self-hostable at no cost."}}, {"@type": "Question", "name": "How do I read openOM data with an AI agent?", "acceptedAnswer": {"@type": "Answer", "text": "Point your MCP client at an openOM server and read the broker-asserted, hash-verified payload via om_read - a deterministic ground truth instead of hallucination-prone PDF extraction."}}, {"@type": "Question", "name": "Does openOM use AI or inference?", "acceptedAnswer": {"@type": "Answer", "text": "The engine, server, and consumer tooling contain zero inference - they are fully deterministic and testable. Optional AI assists only the authoring step, on-device or client-side, and a human reviews every assertion before it is embedded."}}]}</script>
@@ -206,17 +206,19 @@
       <div class="doc-m">
         <div class="m-eyebrow">Embedded payload &middot; om.json</div>
 <pre>{
-  <span class="k">"specVersion"</span><span class="p">:</span> <span class="s">"0.1"</span><span class="p">,</span>
-  <span class="k">"assertedBy"</span><span class="p">:</span> <span class="s">"Example Net Lease Advisors"</span><span class="p">,</span>
+  <span class="k">"@type"</span><span class="p">:</span> <span class="s">"RealEstateListing"</span><span class="p">,</span>
+  <span class="k">"assertedBy"</span><span class="p">:</span> <span class="p">{</span> <span class="k">"broker"</span><span class="p">:</span> <span class="s">"Jane Example"</span><span class="p">,</span> <span class="k">"brokerage"</span><span class="p">:</span> <span class="s">"Example Net Lease Advisors"</span> <span class="p">},</span>
   <span class="k">"assertedDate"</span><span class="p">:</span> <span class="s">"2026-08-15"</span><span class="p">,</span>
-  <span class="k">"askingPrice"</span><span class="p">:</span> <span class="hl" data-k="price"><span class="n">1850000</span></span><span class="p">,</span>
-  <span class="k">"capRate"</span><span class="p">:</span> <span class="hl" data-k="cap"><span class="n">0.0625</span></span><span class="p">,</span>
-  <span class="k">"noi"</span><span class="p">:</span> <span class="hl" data-k="noi"><span class="n">115625</span></span><span class="p">,</span>
-  <span class="k">"noiType"</span><span class="p">:</span> <span class="s">"in-place"</span><span class="p">,</span>
-  <span class="k">"leaseTypeAsserted"</span><span class="p">:</span> <span class="hl" data-k="lease"><span class="s">"NNN"</span></span><span class="p">,</span>
-  <span class="k">"expiration"</span><span class="p">:</span> <span class="hl" data-k="exp"><span class="s">"2034-04-30"</span></span><span class="p">,</span>
-  <span class="k">"options"</span><span class="p">:</span> <span class="hl" data-k="opt"><span class="s">"4 x 5yr"</span></span><span class="p">,</span>
-  <span class="k">"rentSchedule"</span><span class="p">:</span> <span class="s">[ &hellip; ]</span>
+  <span class="k">"deal"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"askingPrice"</span><span class="p">:</span> <span class="hl" data-k="price"><span class="n">1850000</span></span><span class="p">,</span>
+    <span class="k">"capRate"</span><span class="p">:</span> <span class="hl" data-k="cap"><span class="n">0.0625</span></span><span class="p">,</span>
+    <span class="k">"noi"</span><span class="p">:</span> <span class="hl" data-k="noi"><span class="n">115625</span></span><span class="p">,</span> <span class="k">"noiType"</span><span class="p">:</span> <span class="s">"in-place"</span>
+  <span class="p">},</span>
+  <span class="k">"lease"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="k">"leaseTypeAsserted"</span><span class="p">:</span> <span class="hl" data-k="lease"><span class="s">"NNN"</span></span><span class="p">,</span>
+    <span class="k">"expiration"</span><span class="p">:</span> <span class="hl" data-k="exp"><span class="s">"2034-04-30"</span></span><span class="p">,</span>
+    <span class="k">"rentSchedule"</span><span class="p">:</span> <span class="s">[ &hellip; ]</span><span class="p">,</span> <span class="k">"options"</span><span class="p">:</span> <span class="hl" data-k="opt"><span class="s">[ &hellip; ]</span></span>
+  <span class="p">}</span>
 }</pre>
         <div class="ok-line"><span class="ok-dot"></span> hash verified &middot; math checks pass &middot; read in one call</div>
       </div>
