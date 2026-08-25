@@ -19,3 +19,10 @@ enabled = true
 name = "RATE_LIMITER"
 namespace_id = "1001"
 simple = { limit = 120, period = 60 }
+
+# Privacy-preserving aggregate usage (the adoption flywheel). Records per tool call: tool name,
+# result state, and a salted 16-bit host bucket - never the client IP, URL, full domain, or payload.
+# See src/usage.ts. Absent locally/self-host, where the recorder is a no-op.
+[[analytics_engine_datasets]]
+binding = "USAGE"
+dataset = "openom_usage"

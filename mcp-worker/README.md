@@ -45,3 +45,14 @@ The heavier / author tools (`om_inspect` doc-classification, `om_extract_text`, 
 ## Deploy
 `npm install && npm run deploy` (wrangler). The build step regenerates the eval-free validator from
 `spec/om-0.1.schema.json`. `mcp.openom.app` is attached as a Workers custom domain.
+
+## Aggregate usage (privacy-preserving)
+The public endpoint records anonymous aggregate metrics via Cloudflare Analytics Engine
+(`src/usage.ts`): per tool call, the **tool name**, the **result state** (e.g. `present` /
+`hash-mismatch` / `error`), and a **salted, 16-bit host bucket**. That bucket is a truncated hash -
+not the domain, not reversible, and collision-heavy - so `count(DISTINCT)` estimates how many
+distinct OM-hosting domains are read (supply breadth) **without storing any domain**. It records **no
+client IP, no URL, no full domain, no payload, and nothing per-user** - it counts events, not
+identities. Emission is best-effort (`waitUntil`); a metrics failure never affects a response, and the
+whole path is a no-op when the `USAGE` binding is absent (self-host / local). This instruments only
+the server API; the browser extension sends nothing and its "no tracking" policy is unaffected.

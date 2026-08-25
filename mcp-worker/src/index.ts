@@ -16,6 +16,7 @@ import {
 } from "openom-js";
 import schema from "../../spec/om-0.1.schema.json";
 import { precompiledValidate } from "./validator.js";
+import { type AnalyticsEngineDataset, hostBucket, hostOf, usagePoint } from "./usage.js";
 
 const MAX_BYTES = 25 * 1024 * 1024; // 25 MB - an OM PDF ceiling
 const MAX_BATCH = 20; // [M5] max JSON-RPC requests per batch call (keeps fan-out bounded)
@@ -401,6 +402,7 @@ interface RpcMsg {
 async function handleRpc(
   msg: RpcMsg,
   budget?: ByteBudget,
+  record?: (tool: string, state: string, url?: string) => void,
 ): Promise<Record<string, unknown> | null> {
   const { id, method, params } = msg;
   switch (method) {
@@ -428,11 +430,15 @@ async function handleRpc(
     case "tools/call": {
       const name = String(params?.name ?? "");
       const args = (params?.arguments as Record<string, unknown>) ?? {};
+      const url = typeof args.url === "string" ? args.url : undefined;
       try {
-        return { jsonrpc: "2.0", id, result: await callTool(name, args, budget) };
+        const result = await callTool(name, args, budget);
+        record?.(name, resultState(name, (result as { structuredContent?: unknown }).structuredContent), url);
+        return { jsonrpc: "2.0", id, result };
       } catch (e) {
         // tool errors are returned in-band (isError) per MCP. [M4] carry a stable machine code.
         const code = e instanceof ToolError ? e.code : "OM-IO-010";
+        record?.(name, "error", url);
         return {
           jsonrpc: "2.0",
           id,
@@ -449,13 +455,54 @@ async function handleRpc(
   }
 }
 
-/** CF native Rate Limiting binding (wrangler.toml [[ratelimit]]); absent in local tests. */
+/** CF bindings (wrangler.toml); all optional so local tests run without them. */
 interface Env {
   RATE_LIMITER?: { limit(o: { key: string }): Promise<{ success: boolean }> };
+  USAGE?: AnalyticsEngineDataset; // Analytics Engine dataset for privacy-preserving aggregate metrics
+  USAGE_SALT?: string; // secret salt for the host bucket; a build fallback is used when unset
+}
+
+interface ExecutionContext {
+  waitUntil(promise: Promise<unknown>): void;
+}
+
+const _USAGE_SALT_FALLBACK = "openom-usage-v1"; // used when USAGE_SALT is not configured
+
+/** Build a best-effort usage recorder bound to this request's env + ctx. Returns a no-op when the
+ *  Analytics Engine binding is absent (local/self-host), so callers never branch on it. The write
+ *  runs in waitUntil and swallows errors - metrics never affect the response. */
+function makeRecorder(
+  env: Env | undefined,
+  ctx: ExecutionContext | undefined,
+): (tool: string, state: string, url?: string) => void {
+  const dataset = env?.USAGE;
+  if (!dataset || !ctx) return () => {};
+  const salt = env?.USAGE_SALT || _USAGE_SALT_FALLBACK;
+  return (tool, state, url) => {
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const host = hostOf(url);
+          const bucket = host ? await hostBucket(host, salt) : null;
+          dataset.writeDataPoint(usagePoint(tool, state, bucket));
+        } catch {
+          /* metrics are best-effort */
+        }
+      })(),
+    );
+  };
+}
+
+/** The result state recorded for a tool call: om_read's payload state, or om_validate's block flag. */
+function resultState(name: string, structuredContent: unknown): string {
+  const sc = (structuredContent ?? {}) as { state?: unknown; blocked?: unknown };
+  if (name === "om_read") return typeof sc.state === "string" ? sc.state : "unknown";
+  if (name === "om_validate") return sc.blocked ? "blocked" : "ok";
+  return "unknown";
 }
 
 export default {
-  async fetch(req: Request, env?: Env): Promise<Response> {
+  async fetch(req: Request, env?: Env, ctx?: ExecutionContext): Promise<Response> {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
     if (req.method === "GET") {
       return json({ server: SERVER_INFO, transport: "streamable-http", tools: TOOLS.map((t) => t.name) });
@@ -480,6 +527,7 @@ export default {
     } catch {
       return rpcError(null, -32700, "parse error");
     }
+    const record = makeRecorder(env, ctx);
     try {
       // [M5] JSON-RPC batch: an array of requests → an array of responses (notifications omitted), so a
       // portal onboarding a back-catalog reads many OMs in one HTTP round-trip instead of one call each.
@@ -492,10 +540,10 @@ export default {
         // One shared byte budget for the whole batch: all upstream fetches draw from it, so the
         // request's total egress is bounded no matter how the MAX_BATCH reads are composed.
         const budget = new ByteBudget(BATCH_MAX_BYTES);
-        const out = await Promise.all(parsed.map((m) => handleRpc(m as RpcMsg, budget)));
+        const out = await Promise.all(parsed.map((m) => handleRpc(m as RpcMsg, budget, record)));
         return json(out.filter((r) => r !== null));
       }
-      const one = await handleRpc(parsed as RpcMsg, new ByteBudget(BATCH_MAX_BYTES));
+      const one = await handleRpc(parsed as RpcMsg, new ByteBudget(BATCH_MAX_BYTES), record);
       return one === null ? new Response(null, { status: 202, headers: CORS }) : json(one);
     } catch (e) {
       return rpcError(null, -32603, (e as Error).message);
