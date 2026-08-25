@@ -1,0 +1,2 @@
+# Canonical domain: 301 the www subdomain to the apex.
+https://www.openom.app/* https://openom.app/:splat 301
