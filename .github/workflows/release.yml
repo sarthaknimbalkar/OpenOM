@@ -1,10 +1,10 @@
 name: release
 
 # Tag-triggered publish (#137): push a v* tag to publish the Python packages to PyPI and openom-js
-# to npm. Uses API-TOKEN auth (no PyPI Trusted-Publisher config required) - set two repo secrets
-# first: PYPI_API_TOKEN (an account- or project-scoped PyPI token) and NPM_TOKEN (an npm automation
-# token). Deterministic, inference-free packages. Bump versions in the pyproject.toml / package.json
-# BEFORE tagging, and make the tag match (v0.1.0 -> version 0.1.0).
+# to npm. Uses API-TOKEN auth - set two repo secrets: PYPI_API_TOKEN and NPM_TOKEN. The publish
+# steps skip cleanly when a secret is absent (so a tag pushed before secrets are set, or for a
+# release already published out of band, no-ops instead of failing), and skip a version that already
+# exists. Bump the pyproject.toml / package.json versions BEFORE tagging; make the tag match.
 on:
   push:
     tags: ["v*"]
@@ -16,6 +16,8 @@ jobs:
     strategy:
       matrix:
         pkg: [core, cli, mcp]
+    env:
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,13 +28,17 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build ${{ matrix.pkg }} --outdir dist
       - name: Publish to PyPI (API token)
+        if: ${{ env.PYPI_API_TOKEN != '' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
           password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
 
   npm:
     runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,9 +46,10 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
       - name: Build + publish openom-js
+        if: ${{ env.NPM_TOKEN != '' }}
         working-directory: js
         run: |
           npm ci
-          npm publish --access public
+          npm publish --access public || echo "openom-js@$(node -p "require('./package.json').version") already published; skipping"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -8,9 +8,7 @@ in-repo copy for people reading the source.
 > terminal - use the browser tool at **<https://openom.app/embed/>** (bytes never leave your
 > machine). See [`docs/QUICKSTART-BROKER.md`](QUICKSTART-BROKER.md) if present, or the extension.
 
-**Packaging note (read once):** `openom-core`, `openom-mcp`, and `openom-js` are **not yet published**
-to PyPI/npm. Until they are, install from a clone as shown. Every command below is written to work
-from a checkout today.
+**Install:** `openom-core`, `openom-cli`, `openom-mcp` are on PyPI and `openom-js` is on npm.
 
 ---
 
@@ -18,19 +16,17 @@ from a checkout today.
 
 Use this if you install the packages and call the API directly in Python or Node/TypeScript.
 
-### Install (from a clone)
+### Install
 
 ```bash
 git clone https://github.com/Vervelio-Labs/OpenOM
 cd OpenOM
 
 # Python
-pip install -e core          # the library; add -e cli for the `om` command
-# once published: pip install openom-core
+pip install openom-core      # the library; add openom-cli for the `om` command
 
 # Node / TypeScript
-npm install ./js             # builds itself on install (runs its `prepare` build; needs its devDeps)
-# once published: npm install openom-js
+npm install openom-js
 ```
 
 ### Run the end-to-end sample (Python)
@@ -97,7 +93,7 @@ if (errors.length) process.exit(1);
 
 ### The CLI (`om`) - no code needed
 
-`pip install -e core -e cli` gives you the `om` command. Verified subcommands:
+`pip install openom-cli` gives you the `om` command. Verified subcommands:
 
 ```bash
 om init     deal.json                          # scaffold a ready-to-edit, schema-valid payload
@@ -262,12 +258,10 @@ Claude.ai/ChatGPT → add a custom connector with the URL.
 ### Self-host the full six-tool surface
 
 The public endpoint is `om_read` + `om_validate` only. To get the complete deterministic surface -
-**`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`** - self-host
-from a clone:
+**`om_inspect · om_extract_text · om_extract_images · om_read · om_validate · om_embed`** - self-host it:
 
 ```bash
-pip install -e ./core && pip install -e ./mcp     # not yet on PyPI; from a checkout
-# once published: pip install openom-mcp
+pip install openom-mcp
 
 om-mcp          # stdio transport
 om-mcp-http     # hosted Streamable HTTP transport

@@ -282,11 +282,10 @@ colleague run the command-line tool, which handles encrypted OMs.
 ## If you prefer the command line (rare, for technical brokers)
 
 Most brokers should stop here - the browser is the intended path. But if you're
-comfortable in a terminal and have Python, from a checkout of the project you can do the
-same thing with the `om` command:
+comfortable in a terminal and have Python, you can do the same thing with the `om` command:
 
 ```bash
-pip install -e core -e cli
+pip install openom-cli
 
 # Start from a ready-made sample payload instead of writing one from scratch,
 # then edit the values to match your deal:

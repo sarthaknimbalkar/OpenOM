@@ -23,7 +23,7 @@ Pick the door that matches your job. Each one is the shortest path to a working 
 |----------|-------------------|------------|-------------|
 | **🏢 Broker** - I have an OM PDF and want to add verified deal data | A review form that embeds your deal into the PDF. **You never touch a terminal.** | **[openom.app/embed/](https://openom.app/embed/)** (in your browser) or the **[Chrome extension](https://chromewebstore.google.com/detail/openom/koconccgjacmafhabbiakodicffnaplb)** | ✅ Nothing to install; bytes never leave your machine |
 | **🔌 Portal** - I run a listings site and want trust badges + payloads at scale | A drop-in `<openom-badge>` web component and a free read API | [Portal quickstart](https://openom.app/docs/quickstart-portal) → [`js/widget/`](js/widget/) + [`mcp.openom.app`](https://mcp.openom.app/mcp) | Badge is one `<script>` tag; read API needs no key |
-| **💻 Developer** - I want to call the API in my own code | Clean Python + TypeScript libraries (embed / read / validate) | [Developer quickstart](#developer-quickstart) → [`examples/`](examples/) | Clone + editable install (packages not yet published) |
+| **💻 Developer** - I want to call the API in my own code | Clean Python + TypeScript libraries (embed / read / validate) | [Developer quickstart](#developer-quickstart) → [`examples/`](examples/) | `pip install openom-core` · `npm install openom-js` |
 | **🤖 AI-builder** - I want to ground an agent on OM data | A free, deterministic, public MCP endpoint | [`mcp.openom.app/mcp`](https://mcp.openom.app/mcp) → [config](examples/mcp-config.json) | No key, no per-call cost |
 
 ---
@@ -69,9 +69,8 @@ Three ways in:
   endpoint, then set the badge state from the response. Map it explicitly - `om_read` returns
   `state: "present"`, so derive the badge state:
   `state = (r.state === "present" && r.verification.hashValid) ? "integrity-ok" : (r.state === "hash-mismatch" ? "hash-mismatch" : "absent")`.
-- **In your own code (Node).** Import the reader from `openom-js`
-  (`readPayloadFromBytes`, `summarizeDeal`). The npm package isn't published yet - install from a
-  clone: `npm install /abs/path/to/OpenOM/js` (it builds itself on install).
+- **In your own code (Node).** `npm install openom-js` and import the reader
+  (`readPayloadFromBytes`, `summarizeDeal`).
 
 Note: **origin-verified** (✓✓) requires the mirror JSON and the PDF to share the same registrable
 domain (§10.1). PDFs served from a separate CDN domain show **integrity-ok** (unaltered since
@@ -81,14 +80,13 @@ embed) but not origin-verified - host the mirror on the listing's own domain to 
 
 ## 💻 Developer quickstart
 
-**Packages are not yet published to PyPI/npm - install from a clone.** This is the honest,
-working path today.
+```bash
+pip install openom-core openom-cli   # the Python library + the `om` CLI
+```
 
 ```bash
-git clone https://github.com/Vervelio-Labs/OpenOM && cd OpenOM
-
-pip install -e core -e cli          # Python library + `om` CLI (add [dev] only to contribute)
-python examples/quickstart.py       # embed → read → validate, end to end
+git clone https://github.com/Vervelio-Labs/OpenOM
+python OpenOM/examples/quickstart.py  # embed → read → validate, end to end
 ```
 
 Python API (`from openom_core import embed, read, validate`) and the `om` CLI:
@@ -106,10 +104,10 @@ om validate deal.json                # schema 0.1 is bundled; --schema only to o
 The CLI coaches you as you go: `om` with no arguments routes non-developers to the browser, every
 error names the next action, and `om init`/`om profile` remove the two things brokers trip on.
 
-TypeScript (`openom-js`), until it's published to npm:
+TypeScript:
 
 ```bash
-npm install /abs/path/to/OpenOM/js   # builds itself on install (needs its devDeps)
+npm install openom-js
 ```
 
 ```ts
@@ -117,8 +115,7 @@ import { embedPayload, readPayloadFromBytes, validatePayload } from "openom-js";
 ```
 
 More runnable examples - including a browser badge and an MCP config - are in
-[`examples/`](examples/). _(Published `openom-core` / `openom-js` packages are on the way; until
-then, install from the checkout.)_
+[`examples/`](examples/).
 
 ---
 
@@ -149,8 +146,7 @@ instead:
 ```
 
 Want the **full six-tool surface** (`om_inspect · om_extract_text · om_extract_images · om_read ·
-om_validate · om_embed`)? Self-host it. A published `openom-mcp` package is on the way; until then,
-from a clone: `pip install -e ./core && pip install -e ./mcp`, then run `om-mcp` (stdio) or
+om_validate · om_embed`)? Self-host it: `pip install openom-mcp`, then run `om-mcp` (stdio) or
 `om-mcp-http` (HTTP).
 
 ---
