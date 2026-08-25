@@ -528,6 +528,18 @@ def _headers_file() -> str:
     return "\n".join(blocks)
 
 
+def _redirects_file() -> str:
+    """Cloudflare Pages ``_redirects``: canonicalize the domain by 301-ing the ``www`` subdomain to
+    the apex, so ``www.openom.app/x`` -> ``openom.app/x`` (fixes the missing-301 SEO finding).
+
+    Requires ``www.openom.app`` to be attached to the Pages project as a custom domain (DNS: a
+    proxied CNAME ``www`` -> the Pages hostname); otherwise the www request never reaches Pages to
+    be redirected. The apex stays canonical (matches BASE + every pinned URL / sitemap / @context).
+    """
+    host = BASE.split("://", 1)[1]  # openom.app
+    return f"# Canonical domain: 301 the www subdomain to the apex.\nhttps://www.{host}/* {BASE}/:splat 301\n"
+
+
 def _htaccess_file() -> str:
     """Apache/cPanel ``.htaccess`` - the same content-type + CORS rules for hosts that use Apache
     (e.g. GoDaddy Linux hosting) instead of a ``_headers``-style static host (Cloudflare/Netlify).
@@ -536,10 +548,18 @@ def _htaccess_file() -> str:
     context file is named ``0.1`` and the schemas end ``.schema.json``, so basename matching covers
     the tree from one root file. ``ForceType`` sets the type; ``mod_headers`` adds CORS.
     """
+    host = BASE.split("://", 1)[1]
+    apex_esc = host.replace(".", "\\.")
     return (
         "# openOM namespace headers for Apache / cPanel hosts (e.g. GoDaddy Linux hosting).\n"
-        "# Cloudflare Pages / Netlify use _headers instead; both are generated so the site is\n"
-        "# host-portable. Keep in sync with _headers via gen_site.py.\n"
+        "# Cloudflare Pages / Netlify use _headers + _redirects instead; all are generated so the\n"
+        "# site is host-portable. Keep in sync via gen_site.py.\n"
+        "# Canonical domain: 301 the www subdomain to the apex (matches _redirects on Pages).\n"
+        "<IfModule mod_rewrite.c>\n"
+        "  RewriteEngine On\n"
+        f"  RewriteCond %{{HTTP_HOST}} ^www\\.{apex_esc}$ [NC]\n"
+        f"  RewriteRule ^(.*)$ {BASE}/$1 [R=301,L]\n"
+        "</IfModule>\n"
         "<IfModule mod_headers.c>\n"
         '  Header set Access-Control-Allow-Origin "*"\n'
         '  Header set Cache-Control "public, max-age=3600"\n'
@@ -715,6 +735,7 @@ def generate() -> None:
     (SITE / "index.html").write_text(_landing_html(), "utf-8", newline="\n")  # landing = site root
     (SITE / "404.html").write_text(_not_found_html(), "utf-8", newline="\n")  # Pages custom 404
     (SITE / "_headers").write_text(_headers_file(), "utf-8", newline="\n")
+    (SITE / "_redirects").write_text(_redirects_file(), "utf-8", newline="\n")  # www -> apex 301
     (SITE / ".htaccess").write_text(_htaccess_file(), "utf-8", newline="\n")  # Apache/GoDaddy
     (SITE / "robots.txt").write_text(_robots_file(), "utf-8", newline="\n")  # AEO/GEO/AIO crawlers
     (SITE / "sitemap.xml").write_text(_sitemap_file(), "utf-8", newline="\n")
