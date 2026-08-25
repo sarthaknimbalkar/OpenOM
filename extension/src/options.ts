@@ -43,9 +43,25 @@ export interface OptionsView {
 export function renderOptions(root: HTMLElement, v: OptionsView): void {
   root.replaceChildren();
   root.appendChild(wordmark("settings"));
+  root.appendChild(
+    el(
+      "p",
+      "hint",
+      "Everything here is stored only on this device - never synced or uploaded. Set it once and "
+        + "the extension reuses it.",
+    ),
+  );
 
   const prof = el("section", "profile");
   prof.appendChild(el("h2", undefined, "Reviewing broker"));
+  prof.appendChild(
+    el(
+      "p",
+      "hint",
+      "Your name, brokerage, and license are filled in automatically on every OM you author, so you "
+        + "never retype them. All three are required to assert.",
+    ),
+  );
   prof.append(
     field("Broker", textInput("o-broker", v.profile.broker)),
     field("Brokerage", textInput("o-brokerage", v.profile.brokerage ?? "")),
@@ -55,6 +71,14 @@ export function renderOptions(root: HTMLElement, v: OptionsView): void {
 
   const hook = el("section", "webhook");
   hook.appendChild(el("h2", undefined, "Publish webhook"));
+  hook.appendChild(
+    el(
+      "p",
+      "hint",
+      "Optional, for advanced users: POST a signed record to a system of yours when you publish. "
+        + "Leave blank if you don't use it.",
+    ),
+  );
   hook.append(
     field("Receiver URL", textInput("o-wh-url", v.webhook.url)),
     field("Signing secret", textInput("o-wh-secret", v.webhook.secret, true)),
