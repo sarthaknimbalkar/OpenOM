@@ -46,6 +46,16 @@ describe("validatePayload - schema tier", () => {
     expect(r.blocked).toBe(true);
   });
 
+  test("non-finite number → OMV-E011 (validate agrees with embed on NaN/Infinity)", () => {
+    for (const bad of [Infinity, -Infinity, NaN]) {
+      const p = sample("valid-stnl");
+      (p.deal as Record<string, unknown>).noi = bad;
+      const r = validatePayload(p, schema);
+      expect(r.errors.some((e) => e.code === "OMV-E011" && e.path === "/deal/noi")).toBe(true);
+      expect(r.blocked).toBe(true);
+    }
+  });
+
   test("noi present but noiType/noiAsOfDate missing → OMV-E002", () => {
     const r = validatePayload(sample("invalid-missing-noitype"), schema);
     expect(r.errors.map((e) => e.code)).toContain("OMV-E002");

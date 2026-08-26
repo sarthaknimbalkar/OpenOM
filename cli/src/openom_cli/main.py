@@ -186,10 +186,14 @@ def _load_json(path: Path) -> dict[str, Any]:
 def _emit(obj: Any) -> None:
     if _output.quiet:
         return
+    # allow_nan=False: never emit bare Infinity/NaN tokens (invalid per RFC 8259; an /js
+    # JSON.parse rejects them). A non-finite leaf is a data error, not silently serialized as JSON.
     if _output.fmt == "compact":
-        typer.echo(json.dumps(obj, separators=(",", ":"), ensure_ascii=False))
+        typer.echo(
+            json.dumps(obj, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+        )
     else:
-        typer.echo(json.dumps(obj, indent=2, ensure_ascii=False))
+        typer.echo(json.dumps(obj, indent=2, ensure_ascii=False, allow_nan=False))
 
 
 def _echo_human_errors(errors: list[Any]) -> None:

@@ -12,6 +12,7 @@ deterministic (code, path) order.
 from __future__ import annotations
 
 import datetime as dt
+import math
 from collections import OrderedDict
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
@@ -103,7 +104,13 @@ def _mk(
 
 def _num(value: object) -> float | None:
     # `object` not `Any` (#153): callers must narrow, and the isinstance gate is the only entry.
-    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+    # A non-finite (NaN/Infinity) value is treated as absent so the consistency tier never computes
+    # or reports a non-finite expected/actual - it's already an error (OMV-E011) and can't be cross-
+    # checked meaningfully; it also keeps every emitted finding JSON-serializable (allow_nan=False).
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        f = float(value)
+        return f if math.isfinite(f) else None
+    return None
 
 
 def _rel_off(actual: float, expected: float) -> float:
@@ -196,9 +203,14 @@ def _number_range_tier(payload: Mapping[str, Any], report: Report) -> None:
     embed AGREE. The schema permits any integer, but canonicalization (OM-CANON-013) refuses an
     integer-valued number with |v| > 2^53-1 - it would be silently rounded under the JS number
     model. Without this a broker gets a green validate and then a failed embed; here it is caught at
-    the review gate. Same MAX_SAFE_INT threshold as canonical, so the two stages can never drift."""
+    the review gate. Same thresholds as canonical (2^53-1 magnitude AND finiteness), so the two
+    stages can never drift - a non-finite (NaN/Infinity) leaf is rejected here exactly as embed's
+    canonicalization rejects it."""
     for path, value in _iter_numbers(payload, ""):
         if isinstance(value, bool):
+            continue
+        if isinstance(value, float) and not math.isfinite(value):
+            report.errors.append(_mk("OMV-E011", path, f"non-finite number: {value}"))
             continue
         unsafe_int = isinstance(value, int) and abs(value) > MAX_SAFE_INT
         unsafe_float = isinstance(value, float) and value.is_integer() and abs(value) > MAX_SAFE_INT

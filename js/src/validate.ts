@@ -87,7 +87,17 @@ export function validatePayload(
   // rejects an integer-valued number with |v| > 2^53-1, so embed would throw after a green validate.
   // Flag it here too, with the SAME test canonicalize uses, so validate and embed agree.
   for (const [path, value] of iterNumbers(payload, "")) {
-    if (Number.isInteger(value) && !Number.isSafeInteger(value)) {
+    if (!Number.isFinite(value)) {
+      // NaN / Infinity: canonicalization rejects these, so validate must too (else green-validate
+      // then failed-embed). Parity with the Python core's finiteness guard.
+      errors.push({
+        code: "OMV-E011",
+        severity: "error",
+        path,
+        message: `non-finite number; embed would reject it: ${value}`,
+        requirement: "OM-CANON-013",
+      });
+    } else if (Number.isInteger(value) && !Number.isSafeInteger(value)) {
       errors.push({
         code: "OMV-E011",
         severity: "error",

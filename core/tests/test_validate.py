@@ -51,6 +51,24 @@ def test_error_out_of_safe_range_integer_agrees_with_embed() -> None:
         pass
 
 
+def test_error_non_finite_number_agrees_with_embed() -> None:
+    # NaN/Infinity: schema accepts a number, but canonicalization refuses non-finite, so validate
+    # must refuse it too, or a broker gets a green validate then a failed embed.
+    from openom_core.canonical import CanonicalizationError, canonicalize
+
+    for bad in (float("inf"), float("-inf"), float("nan")):
+        p = copy.deepcopy(_sample())
+        p["deal"]["noi"] = bad
+        report = validate(p, schema=_schema())
+        assert "OMV-E011" in _codes(report.errors), f"{bad} not flagged"
+        assert report.ok is False
+        try:
+            canonicalize(p)
+            raise AssertionError(f"expected canonicalize to reject {bad}")
+        except CanonicalizationError:
+            pass
+
+
 def test_error_missing_noitype() -> None:
     report = validate(_load_invalid("invalid-missing-noitype"), schema=_schema())
     assert "OMV-E002" in _codes(report.errors)

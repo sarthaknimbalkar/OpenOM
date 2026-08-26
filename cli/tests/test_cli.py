@@ -396,6 +396,23 @@ def test_validate_invalid_exits_nonzero(tmp_path: Path) -> None:
     assert "OMV-E002" in r.output
 
 
+def test_validate_non_finite_flags_and_emits_valid_json(tmp_path: Path) -> None:
+    # A non-finite number: validate must flag it (OMV-E011, matching embed) AND the output must
+    # be RFC-8259-valid JSON - never a bare Infinity/NaN token an /js JSON.parse would reject.
+    sample = json.loads((SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8"))
+    sample["deal"]["noi"] = float("inf")
+    p = tmp_path / "inf.json"
+    p.write_text(json.dumps(sample), encoding="utf-8")  # Python emits bare `Infinity` (lenient)
+    r = runner.invoke(app, ["validate", str(p), "--schema", str(SPEC / "om-0.1.schema.json")])
+    assert r.exit_code == 1
+    assert "OMV-E011" in r.output
+    assert "Infinity" not in r.output and "NaN" not in r.output  # no bare non-finite tokens
+    # The JSON object on stdout parses (coaching goes to stderr, merged after the JSON).
+    body = r.output[r.output.index("{") :]
+    obj, _ = json.JSONDecoder().raw_decode(body)
+    assert any(e["code"] == "OMV-E011" for e in obj["errors"])
+
+
 def test_check_payload_json(tmp_path: Path) -> None:
     # Consistency tier only (no schema): the valid sample is internally consistent -> exit 0.
     r = runner.invoke(app, ["check", str(SPEC / "samples" / "valid-stnl.json")])
