@@ -1,6 +1,6 @@
 # openOM
 
-[![checks](https://github.com/Vervelio-Labs/OpenOM/actions/workflows/pr.yml/badge.svg)](https://github.com/Vervelio-Labs/OpenOM/actions/workflows/pr.yml)
+[![checks](https://github.com/sarthaknimbalkar/OpenOM/actions/workflows/pr.yml/badge.svg)](https://github.com/sarthaknimbalkar/OpenOM/actions/workflows/pr.yml)
 [![toolchain: MIT](https://img.shields.io/badge/toolchain-MIT-green.svg)](LICENSE)
 [![spec: CC-BY-4.0](https://img.shields.io/badge/spec-CC--BY--4.0-blue.svg)](spec/LICENSE)
 [![spec version: 0.1](https://img.shields.io/badge/spec-0.1-informational.svg)](spec/)
@@ -85,7 +85,7 @@ pip install openom-core openom-cli   # the Python library + the `om` CLI
 ```
 
 ```bash
-git clone https://github.com/Vervelio-Labs/OpenOM
+git clone https://github.com/sarthaknimbalkar/OpenOM
 python OpenOM/examples/quickstart.py  # embed → read → validate, end to end
 ```
 

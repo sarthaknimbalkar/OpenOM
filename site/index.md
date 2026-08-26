@@ -34,7 +34,7 @@ that they are unaltered, and as of when. Verified means provenance, not market t
 - Service status (JSON): https://openom.app/v1/status - zero-auth health + discovery.
 - JSON Schema: https://openom.app/spec/om-0.1.schema.json | JSON-LD @context: https://openom.app/ns/0.1
 - Webhook envelope schema: https://openom.app/spec/webhook-envelope-0.1.schema.json
-- Source, CLI, and libraries: https://github.com/Vervelio-Labs/OpenOM (Python + TypeScript, MIT).
+- Source, CLI, and libraries: https://github.com/sarthaknimbalkar/OpenOM (Python + TypeScript, MIT).
 
 ## Docs
 
@@ -53,9 +53,9 @@ that they are unaltered, and as of when. Verified means provenance, not market t
 
 - Deterministic MCP (free, no API key, zero inference). Public serverless grounding endpoint at https://mcp.openom.app/mcp (Streamable HTTP) exposes om_read + om_validate - read a verified OM payload (base64 or an https URL) and validate one. For the full six-tool surface (om_inspect / om_extract_text / om_extract_images / om_embed too), self-host via `pip install openom-mcp` then `om-mcp` (stdio) or `om-mcp-http`.
 - [OpenAPI description](https://openom.app/openapi.json) (also /.well-known/openapi.json): the public MCP grounding endpoint + read-only artifacts, with typed schemas for function-calling.
-- [About](https://openom.app/about/) and [Contact](https://openom.app/contact/): what openOM is and how to reach the maintainers (github.com/Vervelio-Labs/OpenOM/issues). No account or API key is ever required.
+- [About](https://openom.app/about/) and [Contact](https://openom.app/contact/): what openOM is and how to reach the maintainers (github.com/sarthaknimbalkar/OpenOM/issues). No account or API key is ever required.
 - Command-line tool (`om`), free and inference-free: `pip install openom-cli`, then `om init` / `om embed` / `om read` / `om validate` / `om inspect` / `om extract`. The TypeScript library is `npm install openom-js` (embed/read/validate at byte-parity).
 - [JSON-LD context](https://openom.app/ns/0.1): the openOM 0.1 vocabulary.
 - [JSON Schema](https://openom.app/spec/om-0.1.schema.json): the openOM 0.1 payload schema.
 - [Webhook envelope schema](https://openom.app/spec/webhook-envelope-0.1.schema.json).
-- [Source and toolchain](https://github.com/Vervelio-Labs/OpenOM): Python + TypeScript, MIT.
+- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript, MIT.

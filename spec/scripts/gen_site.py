@@ -370,7 +370,7 @@ __FAQ__
     <div class="colophon">
       <span>An open standard published by <a href="https://verveliolabs.com">Vervelio Labs</a> &middot; MIT licensed</span>
       <span>Inspired by Factur-X - the embedded-invoice standard that became European law</span>
-      <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="https://github.com/Vervelio-Labs/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
+      <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
     </div>
   </div></section>
 """
@@ -398,7 +398,7 @@ def _landing_html() -> str:
         "contactPoint": {
             "@type": "ContactPoint",
             "contactType": "technical support",
-            "url": "https://github.com/Vervelio-Labs/OpenOM/issues",
+            "url": "https://github.com/sarthaknimbalkar/OpenOM/issues",
         },
         "address": {"@type": "PostalAddress", "addressCountry": "US"},
     }
@@ -666,7 +666,7 @@ def _llms_file() -> str:
         f"- Service status (JSON): {BASE}/v1/status - zero-auth health + discovery.",
         f"- JSON Schema: {BASE}/spec/om-0.1.schema.json | JSON-LD @context: {BASE}/ns/0.1",
         f"- Webhook envelope schema: {BASE}/spec/webhook-envelope-0.1.schema.json",
-        "- Source, CLI, and libraries: https://github.com/Vervelio-Labs/OpenOM (Python + TypeScript, MIT).",
+        "- Source, CLI, and libraries: https://github.com/sarthaknimbalkar/OpenOM (Python + TypeScript, MIT).",
         "",
         "## Docs",
         "",
@@ -696,14 +696,14 @@ def _llms_file() -> str:
         f"- [OpenAPI description]({BASE}/openapi.json) (also /.well-known/openapi.json): the public"
         " MCP grounding endpoint + read-only artifacts, with typed schemas for function-calling.",
         f"- [About]({BASE}/about/) and [Contact]({BASE}/contact/): what openOM is and how to reach the"
-        " maintainers (github.com/Vervelio-Labs/OpenOM/issues). No account or API key is ever required.",
+        " maintainers (github.com/sarthaknimbalkar/OpenOM/issues). No account or API key is ever required.",
         "- Command-line tool (`om`), free and inference-free: `pip install openom-cli`, then"
         " `om init` / `om embed` / `om read` / `om validate` / `om inspect` / `om extract`. The"
         " TypeScript library is `npm install openom-js` (embed/read/validate at byte-parity).",
         f"- [JSON-LD context]({BASE}/ns/0.1): the openOM 0.1 vocabulary.",
         f"- [JSON Schema]({BASE}/spec/om-0.1.schema.json): the openOM 0.1 payload schema.",
         f"- [Webhook envelope schema]({BASE}/spec/webhook-envelope-0.1.schema.json).",
-        "- [Source and toolchain](https://github.com/Vervelio-Labs/OpenOM): Python + TypeScript,"
+        "- [Source and toolchain](https://github.com/sarthaknimbalkar/OpenOM): Python + TypeScript,"
         " MIT.",
         "",
     ]
@@ -784,8 +784,8 @@ def _openapi_file() -> str:
                 "every endpoint here is the sandbox. Rate limits are advertised via RFC RateLimit "
                 "headers, with Retry-After on 429."
             ),
-            "license": {"name": "MIT", "url": "https://github.com/Vervelio-Labs/OpenOM"},
-            "contact": {"name": "openOM", "url": "https://github.com/Vervelio-Labs/OpenOM/issues"},
+            "license": {"name": "MIT", "url": "https://github.com/sarthaknimbalkar/OpenOM"},
+            "contact": {"name": "openOM", "url": "https://github.com/sarthaknimbalkar/OpenOM/issues"},
         },
         "servers": [
             {"url": BASE + "/v1", "description": "Static read-only artifacts + status (this site)."},
@@ -908,9 +908,9 @@ def _openapi_file() -> str:
 def _security_txt() -> str:
     """RFC 9116 security.txt - a trust anchor an agent (and a researcher) checks for legitimacy."""
     return (
-        f"Contact: {BASE.replace('https://', 'https://github.com/Vervelio-Labs/OpenOM/security')}\n"
-        "Contact: https://github.com/Vervelio-Labs/OpenOM/issues\n"
-        f"Policy: https://github.com/Vervelio-Labs/OpenOM/blob/main/SECURITY.md\n"
+        f"Contact: {BASE.replace('https://', 'https://github.com/sarthaknimbalkar/OpenOM/security')}\n"
+        "Contact: https://github.com/sarthaknimbalkar/OpenOM/issues\n"
+        f"Policy: https://github.com/sarthaknimbalkar/OpenOM/blob/main/SECURITY.md\n"
         "Preferred-Languages: en\n"
         f"Canonical: {BASE}/.well-known/security.txt\n"
     )
@@ -1032,7 +1032,7 @@ _TRUST_PAGES = (
             "means provenance - not that the opinion is true. An offering memorandum is an "
             "advertisement: a broker's opinion of value, agreed to by the seller before publication. "
             "openOM never claims the numbers are correct; it makes them attributable, tamper-evident, "
-            "and cheap to consume. Source and issues: github.com/Vervelio-Labs/OpenOM.",
+            "and cheap to consume. Source and issues: github.com/sarthaknimbalkar/OpenOM.",
         ],
     ),
     (
@@ -1041,7 +1041,7 @@ _TRUST_PAGES = (
         "How to reach the openOM project and Vervelio Labs.",
         [
             "openOM is developed in the open. The fastest way to reach the maintainers is the public "
-            "issue tracker at github.com/Vervelio-Labs/OpenOM/issues - open an issue for a bug, a "
+            "issue tracker at github.com/sarthaknimbalkar/OpenOM/issues - open an issue for a bug, a "
             "question, a spec proposal, or an integration request, and it will be triaged there in "
             "public. Security reports have a dedicated policy in SECURITY.md and a security.txt at "
             "/.well-known/security.txt.",

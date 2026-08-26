@@ -7,11 +7,11 @@
     "description": "Free, deterministic, no-key surfaces for reading openOM data: the public MCP grounding endpoint (om_read + om_validate), the read-only standard artifacts, and a status endpoint. Verified means provenance, not truth - every payload is an identified party's opinion as of a date.\n\nVersioning & deprecation: this API is versioned in the URL path (all endpoints are served under /v1/; the unversioned aliases are kept for compatibility). Breaking changes ship under a new major version (/v2/) and the previous version is announced as deprecated via a `Deprecation` header and a `Sunset` date (RFC 8594) at least 90 days ahead. The payload data model is versioned separately by its own spec version (0.1) and JSON-LD namespace; a breaking spec change gets a new namespace URL.\n\nOnboarding: zero-auth. There is no API key, no signup, and no sandbox to request - every endpoint here is the sandbox. Rate limits are advertised via RFC RateLimit headers, with Retry-After on 429.",
     "license": {
       "name": "MIT",
-      "url": "https://github.com/Vervelio-Labs/OpenOM"
+      "url": "https://github.com/sarthaknimbalkar/OpenOM"
     },
     "contact": {
       "name": "openOM",
-      "url": "https://github.com/Vervelio-Labs/OpenOM/issues"
+      "url": "https://github.com/sarthaknimbalkar/OpenOM/issues"
     }
   },
   "servers": [

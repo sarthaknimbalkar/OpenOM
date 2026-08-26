@@ -79,7 +79,7 @@
 <body>
   <header class="bar"><div class="bar-in">
     <a class="wordmark" href="/">open<span class="om">OM</span></a>
-    <nav><a href="/docs/">docs</a><a href="/verify/">verify</a><a href="https://github.com/Vervelio-Labs/OpenOM">github</a></nav>
+    <nav><a href="/docs/">docs</a><a href="/verify/">verify</a><a href="https://github.com/sarthaknimbalkar/OpenOM">github</a></nav>
   </div></header>
   <main>
   <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
@@ -118,8 +118,8 @@ curl -s https://mcp.openom.app/mcp -H 'content-type: application/json' -d '{"jso
 # store the returned state (present/absent/hash-mismatch), then on your page:
 &lt;openom-badge state="integrity-ok"&gt;&lt;/openom-badge&gt;   &lt;!-- renders from known state, zero fetch --&gt;</code></pre>
   <h2>In your own code (Node)</h2>
-  <p><em>Packages are on the way; until published, install from a clone:</em> <code>npm install ./js</code>.
-     No install at all? Call the public <code>om_read</code> endpoint above (server-side, deterministic).</p>
+  <p>Install <code>openom-js</code> from npm. No install at all? Call the public <code>om_read</code>
+     endpoint above (server-side, deterministic).</p>
   <pre><code>import { readPayloadFromBytes, summarizeDeal } from "openom-js";
 const r = await readPayloadFromBytes(pdfBytes);
 if (r.state === "present" &amp;&amp; r.verification.hashValid) {
@@ -137,7 +137,7 @@ if (r.state === "present" &amp;&amp; r.verification.hashValid) {
      provisioning is out-of-band (the publisher configures it however they onboard you); the schema
      standardizes the shape.</p>
   <p><b>Receive:</b> verify each delivery with the
-     <a href="https://github.com/Vervelio-Labs/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
+     <a href="https://github.com/sarthaknimbalkar/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
      - signature → envelope shape → <code>payloadHash</code> binding, in that order. Guard
      <code>sourceUrl</code> before fetching it (it's attacker-controlled even on a valid signature), and
      dedupe by <code>OpenOM-Event-Id</code> (retries re-deliver the same id): ingest is at-least-once,

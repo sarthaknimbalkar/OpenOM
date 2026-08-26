@@ -188,7 +188,7 @@ def _page(
 <body>
   <header class="bar"><div class="bar-in">
     <a class="wordmark" href="/">open<span class="om">OM</span></a>
-    <nav><a href="/docs/">docs</a><a href="/verify/">verify</a><a href="https://github.com/Vervelio-Labs/OpenOM">github</a></nav>
+    <nav><a href="/docs/">docs</a><a href="/verify/">verify</a><a href="https://github.com/sarthaknimbalkar/OpenOM">github</a></nav>
   </div></header>
   <main>
   <nav class="crumbs"><a href="/">openOM</a> · <a href="/docs/">docs</a></nav>
@@ -311,10 +311,10 @@ def _quickstart_broker() -> str:
      then <strong>assert</strong> and embed. Optional on-device extraction pre-fills a draft - and never
      leaves your machine. Same assertion gate as the web companion.</p>
   <h2>Option C - the CLI (scriptable / server-side / whole back-catalog)</h2>
-  <p>From a clone of the repo (a published PyPI package is on the way). Grab a
+  <p>Install from PyPI, then grab a
      <a href="/sample/deal.json" download><code>deal.json</code> starter payload</a>, edit the values,
      then:</p>
-  <pre><code>pip install -e core -e cli    # from a checkout; PyPI package coming soon
+  <pre><code>pip install openom-core openom-cli    # published on PyPI
 curl -O https://openom.app/sample/deal.json   # a valid starter payload to edit
 
 om embed offering.pdf --payload deal.json --out offering.openom.pdf --asserted-date 2026-08-18
@@ -373,8 +373,8 @@ curl -s https://mcp.openom.app/mcp -H 'content-type: application/json' -d '{"jso
 # store the returned state (present/absent/hash-mismatch), then on your page:
 &lt;openom-badge state="integrity-ok"&gt;&lt;/openom-badge&gt;   &lt;!-- renders from known state, zero fetch --&gt;</code></pre>
   <h2>In your own code (Node)</h2>
-  <p><em>Packages are on the way; until published, install from a clone:</em> <code>npm install ./js</code>.
-     No install at all? Call the public <code>om_read</code> endpoint above (server-side, deterministic).</p>
+  <p>Install <code>openom-js</code> from npm. No install at all? Call the public <code>om_read</code>
+     endpoint above (server-side, deterministic).</p>
   <pre><code>import { readPayloadFromBytes, summarizeDeal } from "openom-js";
 const r = await readPayloadFromBytes(pdfBytes);
 if (r.state === "present" &amp;&amp; r.verification.hashValid) {
@@ -392,7 +392,7 @@ if (r.state === "present" &amp;&amp; r.verification.hashValid) {
      provisioning is out-of-band (the publisher configures it however they onboard you); the schema
      standardizes the shape.</p>
   <p><b>Receive:</b> verify each delivery with the
-     <a href="https://github.com/Vervelio-Labs/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
+     <a href="https://github.com/sarthaknimbalkar/OpenOM/blob/main/js/examples/webhook-receiver.ts">reference receiver</a>
      - signature → envelope shape → <code>payloadHash</code> binding, in that order. Guard
      <code>sourceUrl</code> before fetching it (it's attacker-controlled even on a valid signature), and
      dedupe by <code>OpenOM-Event-Id</code> (retries re-deliver the same id): ingest is at-least-once,
@@ -415,15 +415,14 @@ def _quickstart_developer() -> str:
     <li>Canonicalization is <strong>RFC 8785 (JCS)</strong>; the integrity hash is SHA-256 over the
         canonical bytes. This is the anti-fork keystone - two conformant implementations MUST produce
         byte-identical canonical JSON and the same hash.</li>
-    <li>The <a href="https://github.com/Vervelio-Labs/OpenOM/tree/main/spec/vectors">conformance
+    <li>The <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/spec/vectors">conformance
         vectors</a> are the oracle: canonical bytes, hashes, golden embedded PDFs, negatives, and a
         differential-fuzz corpus. Reproduce them exactly.</li>
   </ul>
   <h2>Reference implementations</h2>
-  <p>Published packages (<code>openom-core</code> on PyPI, <code>openom-js</code> on npm) are on the
-     way; until then, install from a clone of the repo:</p>
-  <pre><code>pip install -e core          # Python: embed/read/inspect/extract/validate
-npm  install ./js            # TypeScript: byte-parity with the Python core</code></pre>
+  <p>Published packages: <code>openom-core</code> on PyPI, <code>openom-js</code> on npm.</p>
+  <pre><code>pip install openom-core      # Python: embed/read/inspect/extract/validate
+npm  install openom-js       # TypeScript: byte-parity with the Python core</code></pre>
   <h2>First success: embed &rarr; read &rarr; validate</h2>
   <p>TypeScript:</p>
   <pre><code>import { embedPayload, readPayloadFromBytes, validatePayload } from "openom-js";
@@ -440,7 +439,7 @@ r = read(out)                       # r.present, r.hash_valid, r.payload
 report = validate(r.payload)        # defaults to the bundled 0.1 schema
 assert report.ok                    # schema errors block; warnings never do</code></pre>
   <p>More runnable snippets (webhook receiver, consumer read) live in
-     <a href="https://github.com/Vervelio-Labs/OpenOM/tree/main/examples">examples/</a>.</p>
+     <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/examples">examples/</a>.</p>
   <h2>Validation model</h2>
   <p>Two tiers: <strong>schema errors block</strong>; <strong>consistency warnings never block</strong>;
      market truth is out of scope forever. See the
@@ -915,7 +914,7 @@ def _grounding_ai() -> str:
      Underwriting still happens at the deal desk off the broker-of-record file.</p>
 
   <h2>Connect the deterministic MCP server</h2>
-  <p>openOM ships a deterministic <a href="https://github.com/Vervelio-Labs/OpenOM/tree/main/mcp">MCP
+  <p>openOM ships a deterministic <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/mcp">MCP
      server</a>, <b>zero inference, no API key, no per-call cost</b>. The free <b>public grounding
      endpoint</b> (serverless Cloudflare Worker) exposes the two read-side tools - <code>om_read</code>
      (read a verified payload from PDF bytes or an https URL) and <code>om_validate</code>. For the
@@ -1050,7 +1049,7 @@ def _extraction_playbook() -> str:
   </ol>
 
   <p>The normative, client-agnostic version is
-     <a href="https://github.com/Vervelio-Labs/OpenOM/tree/main/process"><code>/process</code></a>
+     <a href="https://github.com/sarthaknimbalkar/OpenOM/tree/main/process"><code>/process</code></a>
      (<code>agent-instructions.md</code> for any MCP client, <code>SKILL.md</code> for Claude,
      <code>mapping-guide.md</code> for the field detail).</p>
 """
@@ -1227,7 +1226,7 @@ def _privacy() -> str:
 
   <h2>Contact</h2>
   <p>Questions: <a href="mailto:hello@vervelio.com">hello@vervelio.com</a> ·
-     Source: <a href="https://github.com/Vervelio-Labs/OpenOM">GitHub</a></p>
+     Source: <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a></p>
 """
     _d = "Privacy policy for the openOM browser extension: local-first, deterministic, no tracking, no telemetry, no data sent to the publisher."
     return _page("Privacy Policy", body, description=_d, canonical="/privacy/",
