@@ -56,3 +56,16 @@ client IP, no URL, no full domain, no payload, and nothing per-user** - it count
 identities. Emission is best-effort (`waitUntil`); a metrics failure never affects a response, and the
 whole path is a no-op when the `USAGE` binding is absent (self-host / local). This instruments only
 the server API; the browser extension sends nothing and its "no tracking" policy is unaffected.
+
+## SSRF guard: hostname-based, not resolve-then-pin (an environmental note)
+The Python core's `fetch.py` resolves a URL's host to an IP, validates that IP, and pins the
+connection to it (resolve-then-pin), which closes DNS-rebinding at the socket. **The Worker cannot do
+this** - the Workers runtime exposes no DNS-resolution API and no way to pin a socket to a resolved
+IP, so `safeUrl` (`src/index.ts`) guards by **hostname / IP-literal** only (refusing localhost, the
+`.internal`/`.localhost`/`.local` suffixes, and every private / loopback / link-local / CGNAT /
+multicast / NAT64 / 6to4 / IPv4-mapped literal, re-checked on each redirect hop). A hostname that
+*resolves* to a private IP is therefore not caught in-guard. This residual is **doubly mitigated by the
+platform**: Cloudflare's egress cannot route to RFC-1918 / loopback destinations, so even a rebind to
+an internal address fails to connect. Self-hosters who need socket-level resolve-then-pin should run
+the Python `om-mcp-http` server (which does it) rather than the Worker. The shared deny-vectors both
+guards must reject live in [`spec/vectors/ssrf-deny.json`](../spec/vectors/ssrf-deny.json).
