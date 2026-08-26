@@ -410,6 +410,12 @@
       "keyword": "MUST",
       "clause": "A PDF that cannot be read or parsed - a malformed document, an unreadable path, or a guarded-subprocess crash or in-child exception (including a rejected memory limit) - MUST surface as OM-IO-010 and MUST NOT take down the server."
     },
+    "OM-IO-011": {
+      "title": "Password-protected PDF",
+      "section": "MCP / core - encrypted input",
+      "keyword": "MUST",
+      "clause": "A password-protected PDF (a real user password, distinct from empty-user-password permission encryption) that cannot be opened MUST be refused cleanly - om_read reports the 'encrypted' state and the other verbs surface OM-IO-011 - and MUST NOT raise a traceback out of a tool or the CLI."
+    },
     "OM-IO-012": {
       "title": "Malformed / out-of-bounds page range",
       "section": "core text extraction - page range",
