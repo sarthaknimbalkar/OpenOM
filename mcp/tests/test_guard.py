@@ -39,6 +39,17 @@ def test_memory_cap_enforced_not_swallowed() -> None:
     assert e.value.code == "OM-IO-010"
 
 
+def test_large_result_does_not_false_timeout() -> None:
+    # Regression: a result larger than the OS pipe buffer (~64 KB) blocks the child in its Queue
+    # feeder until the parent drains. Joining before draining deadlocked it into a false OM-IO-003;
+    # om_embed returns whole-PDF bytes and om_extract_text returns text+tables, so every real-size
+    # result hit this on the hosted transport. 512 KB must come back promptly, not time out.
+    start = time.monotonic()
+    result = bounded_call(bytes, (512 * 1024,), timeout=5.0)  # 512 KB of zero bytes
+    assert len(result) == 512 * 1024
+    assert time.monotonic() - start < 5.0  # returned on completion, not at the deadline
+
+
 def test_timeout_maps_to_003_and_is_killed() -> None:
     start = time.monotonic()
     with pytest.raises(ToolError) as e:

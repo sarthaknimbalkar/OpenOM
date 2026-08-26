@@ -82,15 +82,26 @@ def bounded_call(
     q: Any = ctx.Queue()
     proc = ctx.Process(target=_worker, args=(func, tuple(args), dict(kwargs or {}), mem, q))
     proc.start()
-    proc.join(timeout)
-    if proc.is_alive():
+    # DRAIN BEFORE JOIN. A multiprocessing.Queue larger than the OS pipe buffer (~64 KB) blocks the
+    # child in its feeder thread until the PARENT reads - so joining first would deadlock any large
+    # result (om_embed returns whole PDF bytes; om_extract_text returns text+tables) into a false
+    # OM-IO-003 timeout. q.get(timeout) is the deadline AND the drain; join() only after we have it.
+    try:
+        status, payload = q.get(timeout=timeout)
+    except _queue.Empty:
+        # No result within the deadline: a genuine hang (still alive → 003) or a silent crash that
+        # queued nothing (already dead → 010). Distinguish by liveness.
+        alive = proc.is_alive()
         proc.terminate()
         proc.join()
-        raise ToolError("OM-IO-003", f"operation exceeded {timeout}s", retryable=True)
-    try:
-        status, payload = q.get(timeout=1.0)
-    except (_queue.Empty, EOFError, OSError) as exc:  # hard crash: no result on the queue
+        if alive:
+            raise ToolError("OM-IO-003", f"operation exceeded {timeout}s", retryable=True) from None
+        raise ToolError("OM-IO-010", f"parser crashed (exit {proc.exitcode})") from None
+    except (EOFError, OSError) as exc:  # pipe closed under us: the child died mid-transfer
+        proc.terminate()
+        proc.join()
         raise ToolError("OM-IO-010", f"parser crashed (exit {proc.exitcode})") from exc
+    proc.join()  # result received; let the child finish exiting
     if status == "err":
         raise ToolError("OM-IO-010", f"parser failed: {payload}")
     return payload
