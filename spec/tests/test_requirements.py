@@ -17,14 +17,18 @@ REQ = json.loads((ROOT / "spec" / "requirements.json").read_text(encoding="utf-8
 # The committed sources that cite requirement IDs (NOT tests/planning/generated type files).
 _SOURCE_GLOBS = [
     "spec/*.json",
+    "spec/*.md",  # CHANGELOG etc.
     "spec/context/*",
     "spec/samples/*.json",
+    "spec/vectors/**/*.md",  # the conformance-vector READMEs cite requirement IDs
     "core/src/**/*.py",
     "cli/src/**/*.py",
     "mcp/src/**/*.py",
     "js/src/**/*.ts",
     "js/widget/**/*.ts",
     "mcp-worker/src/**/*.ts",
+    "process/**/*.md",  # the extraction playbook cites requirement IDs
+    "extension/src/**/*.ts",  # the consumer/author surfaces cite trust/spec IDs
 ]
 _ID_RE = re.compile(r"OM-[A-Z]+-\d+")
 # Generated type files carry copied schema prose; the schema JSON is the authoritative citation.

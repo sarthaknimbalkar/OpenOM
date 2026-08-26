@@ -649,6 +649,48 @@
       "section": "§D.2.1",
       "keyword": "MUST",
       "clause": "The omspec:supersedes XMP property MUST be omitted entirely from the marker when there is no prior payload (null), rather than written as an empty value."
+    },
+    "OM-EXTP-002": {
+      "title": "Disclose the extraction path",
+      "section": "Process - extraction",
+      "keyword": "MUST",
+      "clause": "An extraction agent MUST disclose which extraction path is used and whether the document leaves the device, BEFORE it does, so the human knows what happens to the source."
+    },
+    "OM-EXTP-003": {
+      "title": "Review gate is the assertion moment",
+      "section": "Process - extraction",
+      "keyword": "MUST",
+      "clause": "Extraction output is a DRAFT until a human reviews it against the source and approves it at the review gate (§7a); only that approval turns transcribed data into an assertion."
+    },
+    "OM-LD-004": {
+      "title": "JSON-LD @context datatype coercion",
+      "section": "Spec - JSON-LD",
+      "keyword": "MUST",
+      "clause": "The published @context MUST datatype-coerce the payload's terms (e.g. integers, decimals, dates) so an openOM payload is valid, correctly-typed JSON-LD on the web."
+    },
+    "OM-PRIV-001": {
+      "title": "On-device extraction egress-zero",
+      "section": "Extension - privacy",
+      "keyword": "MUST-NOT",
+      "clause": "On-device extraction MUST NOT make any off-device network request (no fetch/XHR/WebSocket) - the source document and its extracted data never leave the device during extraction."
+    },
+    "OM-SCOPE-007": {
+      "title": "Extraction is never 'verified'",
+      "section": "Process - scope",
+      "keyword": "MUST-NOT",
+      "clause": "Extraction MUST NOT record a rentPeriod source as 'verified'; unreviewed extraction is at most 'extracted', which the human review gate may promote to 'asserted' - never 'verified'."
+    },
+    "OM-SEC-003": {
+      "title": "Broker identity is device-local only",
+      "section": "Extension - security",
+      "keyword": "MUST",
+      "clause": "The broker profile (name/brokerage/license) and the webhook signing secret MUST be stored in device-local storage only (chrome.storage.local), never synced off the device (never chrome.storage.sync)."
+    },
+    "OM-VEC-002": {
+      "title": "Cross-implementation round-trip",
+      "section": "Conformance - anti-fork",
+      "keyword": "MUST",
+      "clause": "An openOM PDF produced by one conformant implementation MUST be readable and byte-identically hash-verifiable by any other (the Python and TypeScript reference cores prove this both directions), so the standard cannot silently fork."
     }
   }
 }
