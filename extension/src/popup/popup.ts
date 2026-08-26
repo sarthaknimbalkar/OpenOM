@@ -86,18 +86,25 @@ export function renderPopup(root: HTMLElement, result: DetectResult, webhook: We
   root.appendChild(lb);
 
   if (result.stale) {
-    root.appendChild(el("p", "stale", "Stale: a newer payload exists at the origin (OMW-W051). This copy is unaltered but superseded."));
+    const s = el(
+      "p",
+      "stale",
+      "A newer version of this deal has been posted by the source. This copy is genuine but out of date.",
+    );
+    s.title = "OMW-W051 (superseded)"; // raw code available on hover, not in the sentence
+    root.appendChild(s);
   }
   if (result.findings.length) {
     const warn = el("ul", "findings");
-    // [M3] show the human message ("Cap rate vs NOI/price off (OMW-W020)"), falling back to the bare
-    // code only when a notice message isn't available.
+    // Show the plain-English message; keep the raw code on hover (title), not in the sentence itself.
     const notices = result.notices ?? [];
     for (const code of result.findings) {
       const n = notices.find((x) => x.code === code);
-      warn.appendChild(el("li", undefined, n ? `${n.message} (${n.code})` : code));
+      const li = el("li", undefined, n ? n.message : code);
+      li.title = code;
+      warn.appendChild(li);
     }
-    root.appendChild(el("h3", undefined, "Notices"));
+    root.appendChild(el("h3", undefined, "Things to double-check"));
     root.appendChild(warn);
   }
 
@@ -167,7 +174,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
         | DetectResult
         | { error: string };
       if ("error" in result) {
-        root.textContent = `openOM error: ${result.error}`;
+        root.textContent = `Couldn't read this PDF: ${result.error}`;
         return;
       }
       renderPopup(root, result, await getWebhook());
@@ -176,7 +183,7 @@ if (typeof chrome !== "undefined" && chrome.runtime?.sendMessage) {
       wireSettings(root);
       wireLinkBadge(root, result);
     } catch (e) {
-      root.textContent = `openOM error: ${(e as Error).message}`;
+      root.textContent = `Couldn't read this PDF: ${(e as Error).message}`;
     }
   })();
 }
@@ -222,7 +229,7 @@ function wireButtons(root: HTMLElement, result: DetectResult): void {
   });
   root.querySelector('[data-action="copy"]')?.addEventListener("click", () => {
     void navigator.clipboard?.writeText(envelopeText({ ...args(), event: "om.payload.published" }));
-    status.textContent = "Copied envelope";
+    status.textContent = "Copied the signed record";
   });
   root.querySelector('[data-action="download"]')?.addEventListener("click", () => {
     const blob = new Blob([envelopeText({ ...args(), event: "om.payload.published" })], {
@@ -232,7 +239,7 @@ function wireButtons(root: HTMLElement, result: DetectResult): void {
     a.href = URL.createObjectURL(blob);
     a.download = "openom-envelope.json";
     a.click();
-    status.textContent = "Downloaded envelope";
+    status.textContent = "Downloaded the signed record";
   });
 }
 

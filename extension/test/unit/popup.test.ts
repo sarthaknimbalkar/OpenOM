@@ -66,7 +66,8 @@ describe("renderPopup", () => {
     expect(text).toMatch(/in-place/); // noiType surfaced
     expect(text).toContain("as of 2026-03-31"); // noiAsOfDate surfaced
     expect(text).toContain("2026-05-31"); // assertedDate surfaced
-    expect(text).toContain("cap rate vs NOI/price is off (OMW-W020)"); // message, not bare code
+    expect(text).toContain("cap rate vs NOI/price is off"); // plain message, not the bare code
+  expect(text).not.toContain("(OMW-W020)"); // the raw code lives in the li title, not the sentence
   });
 
   test("origin-verified: shows the domain-vouch caption + card", () => {
