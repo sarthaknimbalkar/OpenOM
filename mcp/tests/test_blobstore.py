@@ -75,3 +75,19 @@ def test_ttl_backstop_uses_injected_now(tmp_path: Path) -> None:
     with pytest.raises(ToolError) as e:
         s.get(res["blobId"], "ip:owner")
     assert e.value.code == "OM-IO-006"
+
+
+def test_produced_blobs_are_reaped_after_ttl_sweep_on_put(tmp_path: Path) -> None:
+    # Round-3: produced result blobs / upload reservations are never routed to delete() by the tool
+    # layer, and no local:// route triggers get()'s TTL backstop - so without sweep-on-put they leak
+    # forever. A new put after the TTL must reap the stale ones (files + meta).
+    clock = Clock(0.0)
+    store = _store(tmp_path, clock, ttl=100)
+    old = store.put_result(b"%PDF-old", "p")["blobId"]
+    store.create_upload("p")  # a reservation also counts toward growth
+    assert len(store._meta) == 2
+    assert (tmp_path / old).exists()
+    clock.t += 101  # everything is now past TTL
+    store.put_result(b"%PDF-new", "p")  # triggers the sweep
+    assert len(store._meta) == 1  # only the fresh blob remains
+    assert not (tmp_path / old).exists()  # the stale file was reaped

@@ -516,6 +516,17 @@ def test_password_pdf_refuses_cleanly_not_a_traceback(tmp_path: Path) -> None:
         assert "OM-IO-011" in rr.output and "Traceback" not in rr.output
 
 
+def test_corrupt_pdf_error_is_clean_no_bytesio_leak(tmp_path: Path) -> None:
+    # Round-3 friction: a corrupt/truncated PDF must give a stable OM-IO-010 with no leaked BytesIO
+    # repr or memory address, and no traceback.
+    bad = tmp_path / "bad.pdf"
+    bad.write_bytes(b"%PDF-1.7\ngarbage not a real pdf body")
+    r = runner.invoke(app, ["read", str(bad)])
+    assert r.exit_code == 3
+    assert "OM-IO-010" in r.output
+    assert "BytesIO" not in r.output and "0x" not in r.output and "Traceback" not in r.output
+
+
 def test_check_payload_json(tmp_path: Path) -> None:
     # Consistency tier only (no schema): the valid sample is internally consistent -> exit 0.
     r = runner.invoke(app, ["check", str(SPEC / "samples" / "valid-stnl.json")])

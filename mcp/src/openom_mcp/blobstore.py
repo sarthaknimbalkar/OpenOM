@@ -61,7 +61,17 @@ class LocalBlobStore(BlobStore):
         self.now = now
         self._meta: dict[str, dict[str, float | str]] = {}
 
+    def _sweep(self) -> None:
+        """Reap entries past their TTL (file + meta). Produced result blobs (put_result) and upload
+        reservations (create_upload) are never routed to delete() by the tool layer - only consumed
+        INPUT blobs are - and no server route serves local://, so get()'s TTL backstop never
+        fires for them. Without this sweep the default self-host store grows on disk unbounded."""
+        now = self.now()
+        for bid in [b for b, m in self._meta.items() if now - float(m["created"]) > self.ttl]:
+            self.delete(bid)
+
     def _record(self, blob_id: str, principal: str) -> str:
+        self._sweep()  # sweep-on-put: bound the store to live (within-TTL) entries
         created = self.now()
         self._meta[blob_id] = {"owner": principal, "created": created}
         return _iso(created + self.ttl)

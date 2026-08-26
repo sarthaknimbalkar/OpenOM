@@ -113,6 +113,14 @@ def _guard(fn: _F) -> _F:
             return fn(*args, **kwargs)
         except typer.Exit:
             raise
+        except (pikepdf.PdfError, pikepdf.PasswordError) as exc:
+            # pikepdf's message leaks the input BytesIO repr + memory address and carries no code;
+            # emit a stable OM-IO-010 (a password error is already mapped to OM-IO-011 above it).
+            pw = isinstance(exc, pikepdf.PasswordError)
+            pcode = "OM-IO-011" if pw else "OM-IO-010"
+            msg = "password-protected PDF" if pw else "malformed or unreadable PDF"
+            typer.echo(f"error: {pcode}: {msg}", err=True)
+            raise typer.Exit(3) from exc
         except _DATA_ERRORS as exc:
             code = getattr(exc, "code", None)
             typer.echo(f"error: {f'{code}: ' if code else ''}{exc}", err=True)

@@ -12,6 +12,7 @@ principal; ``InMemoryCounterStore`` fakes that store for tests/self-host.
 from __future__ import annotations
 
 import math
+import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Callable
@@ -108,20 +109,25 @@ class InMemoryRateLimiter(RateLimiter):
         self.window = window_seconds
         self.now = now
         self._windows: dict[str, tuple[int, int]] = {}  # principal -> (window_index, count)
+        # Sync tool bodies run under anyio.to_thread.run_sync, so concurrent HTTP requests call
+        # check() in parallel threads; without a lock the get/compare/increment interleaves and
+        # over-admits past the limit. A single-process Lock makes the read-modify-write atomic.
+        self._lock = threading.Lock()
 
     def check(self, principal: str) -> None:
-        idx = int(self.now() // self.window)
-        if principal not in self._windows and len(self._windows) >= self._SWEEP_THRESHOLD:
-            # Only entries whose window is strictly in the past are dead; live windows are kept so
-            # their limit stays enforced.
-            self._windows = {p: w for p, w in self._windows.items() if w[0] >= idx}
-        cur_idx, count = self._windows.get(principal, (idx, 0))
-        if cur_idx != idx:  # a new window started
-            cur_idx, count = idx, 0
-        if count >= self.limit:
-            elapsed = self.now() - cur_idx * self.window
-            retry_after = max(1, math.ceil(self.window - elapsed))
-            raise ToolError(
-                "OM-IO-014", "rate limit exceeded", retryable=True, retry_after=retry_after
-            )
-        self._windows[principal] = (cur_idx, count + 1)
+        with self._lock:
+            idx = int(self.now() // self.window)
+            if principal not in self._windows and len(self._windows) >= self._SWEEP_THRESHOLD:
+                # Only past-window entries are dead; live windows are kept so their limit
+                # stays enforced.
+                self._windows = {p: w for p, w in self._windows.items() if w[0] >= idx}
+            cur_idx, count = self._windows.get(principal, (idx, 0))
+            if cur_idx != idx:  # a new window started
+                cur_idx, count = idx, 0
+            if count >= self.limit:
+                elapsed = self.now() - cur_idx * self.window
+                retry_after = max(1, math.ceil(self.window - elapsed))
+                raise ToolError(
+                    "OM-IO-014", "rate limit exceeded", retryable=True, retry_after=retry_after
+                )
+            self._windows[principal] = (cur_idx, count + 1)

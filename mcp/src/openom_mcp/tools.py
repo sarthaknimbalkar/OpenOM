@@ -99,8 +99,10 @@ def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
             return _envelope(
                 ToolError("OM-IO-011", "password-protected PDF (a password is required)")
             )
-        except pikepdf.PdfError as exc:
-            return _envelope(ToolError("OM-IO-010", f"malformed PDF: {exc}"))
+        except pikepdf.PdfError:
+            # Don't interpolate the pikepdf message: it leaks the input BytesIO's repr + memory
+            # address. The code identifies it; a stable generic message is enough.
+            return _envelope(ToolError("OM-IO-010", "malformed or unreadable PDF"))
         finally:
             _delete_consumed_blobs()
             _consumed_blobs.reset(token)

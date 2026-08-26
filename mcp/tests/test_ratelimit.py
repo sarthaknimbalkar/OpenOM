@@ -117,3 +117,38 @@ def test_counterstore_evicts_expired_entries() -> None:
     clock.t += 61  # all expired
     store.incr("k:new", 60)
     assert len(store._v) < n
+
+
+def test_limiter_check_is_atomic_under_threads() -> None:
+    # Round-3: sync tool bodies run under anyio.to_thread, so check() runs in parallel threads.
+    # Without a lock the get/compare/increment interleaves and over-admits. With it, the number
+    # ALLOWED never exceeds the limit even under heavy contention.
+    import sys
+    import threading
+
+    lim = InMemoryRateLimiter(limit=50, window_seconds=3600, now=lambda: 0.0)
+    allowed = 0
+    lock = threading.Lock()
+    barrier = threading.Barrier(200)
+
+    def worker() -> None:
+        nonlocal allowed
+        barrier.wait()
+        try:
+            lim.check("p")
+        except ToolError:
+            return
+        with lock:
+            allowed += 1
+
+    old = sys.getswitchinterval()
+    sys.setswitchinterval(1e-9)  # force aggressive thread switching to expose a race
+    try:
+        threads = [threading.Thread(target=worker) for _ in range(200)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+    finally:
+        sys.setswitchinterval(old)
+    assert allowed == 50  # exactly the limit, never over-admitted
