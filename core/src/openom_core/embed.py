@@ -41,6 +41,7 @@ class ReadResult:
     origin_verified: None = None  # read-time origin check is a Consumer concern; null in core
     signature_valid: None = None  # reserved (§10 layer 4)
     source_doc_hash: str | None = None  # #5: marker sourceDocHash (provenance of the source PDF)
+    payload_hash: str | None = None  # hash of the stored payload bytes (the dedupe/audit key)
 
 
 def _remove_existing(pdf: pikepdf.Pdf) -> None:
@@ -427,11 +428,13 @@ def read(pdf_bytes: bytes) -> ReadResult:
             return ReadResult(present=False, payload=None, hash_valid=None)
         raw = _decoded_payload_bytes(stream)
         payload = parse_hardened(raw)  # §J read-side hardening: dup-key + depth guard [Mi18]
+        stored_hash = hash_bytes(raw)
         xmp_hash = marker.get("payloadHash") if marker else None
-        hash_valid = (hash_bytes(raw) == xmp_hash) if xmp_hash else None
+        hash_valid = (stored_hash == xmp_hash) if xmp_hash else None
         return ReadResult(
             present=True,
             payload=payload,
             hash_valid=hash_valid,
             source_doc_hash=marker.get("sourceDocHash") if marker else None,
+            payload_hash=stored_hash,  # the actual content hash - dedupe key + audit anchor
         )

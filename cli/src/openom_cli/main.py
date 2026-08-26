@@ -38,6 +38,7 @@ from openom_core.embed import reembed_warnings as _reembed_warnings
 from openom_core.errors import CanonicalizationError, PayloadTooLargeError, SignedEmbedError
 from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
+from openom_core.text import extract_text as _extract_text
 from openom_core.validate import validate as _validate
 
 from openom_cli import profile as _profile
@@ -179,6 +180,19 @@ def _write_bytes(path: Path, data: bytes) -> None:
         path.write_bytes(data)
 
 
+def _gitignored(path: Path) -> bool:
+    """True if `path` is already ignored (a cheap check so `om init` doesn't nag redundantly)."""
+    try:
+        import subprocess
+
+        r = subprocess.run(
+            ["git", "check-ignore", "-q", str(path)], capture_output=True, timeout=3
+        )
+        return r.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     # parse_hardened enforces the same §J read invariants the embed/MCP paths do - reject duplicate
     # keys and over-deep nesting - degrading a pathological payload to a structured OM-IO error
@@ -252,7 +266,11 @@ def embed(
     ] = None,
     out: Annotated[Path | None, typer.Option(help="Output PDF path (required)")] = None,
     asserted_date: Annotated[
-        str | None, typer.Option(help="ISO 8601 assertion date (required), e.g. 2026-08-24")
+        str | None,
+        typer.Option(
+            "--asserted-date", "--date",  # --date is the flag a broker reaches for first
+            help="ISO 8601 assertion date (required), e.g. 2026-08-24",
+        ),
     ] = None,
     mirror: Annotated[
         bool,
@@ -350,6 +368,13 @@ def init(
     if not _output.quiet:
         for line in _scaffold.guidance_lines(template, str(out), has_profile=bool(saved)):
             typer.echo(line, err=True)
+        # If this is a git repo, nudge the broker not to commit their draft deal data by accident.
+        if Path(".git").is_dir() and not _gitignored(out):
+            typer.echo(
+                f"tip: {out} holds your draft deal data - add it to .gitignore so it isn't "
+                "committed by accident.",
+                err=True,
+            )
 
 
 profile_app = typer.Typer(help="Save your broker identity once so you never retype it.")
@@ -901,11 +926,16 @@ def mirror(
 @_guard
 def read(pdf: Annotated[Path, typer.Argument(help="PDF to read")]) -> None:
     result = _read(_read_bytes(pdf))
+    payload = result.payload or {}
     _emit(
         {
             "present": result.present,
             "payload": result.payload,
+            "payloadHash": result.payload_hash,  # content hash - matches hosted om_read
             "sourceDocHash": result.source_doc_hash,  # #5: provenance of the underlying source PDF
+            # The Rule 6 audit chain, first-class (no pikepdf / payload-digging needed):
+            "assertedDate": payload.get("assertedDate"),
+            "supersedes": (payload.get("meta") or {}).get("supersedes"),
             "verification": {
                 "hashValid": result.hash_valid,
                 "originVerified": result.origin_verified,
@@ -938,6 +968,19 @@ def validate(
         }
     )
     _echo_human_errors(report.errors)
+    # Plain-English confirmation on success (to stderr; stdout keeps the JSON contract) - else a
+    # non-technical broker sees only a wall of JSON exactly when everything passed.
+    if report.ok and not _output.quiet:
+        if report.warnings:
+            typer.echo(
+                f"Looks good - ready to embed. ({len(report.warnings)} advisory "
+                f"{'warning' if len(report.warnings) == 1 else 'warnings'} to review):",
+                err=True,
+            )
+            for w in report.warnings:
+                typer.echo(f"  - {_humanize(w.code, w.path, w.message)}", err=True)
+        else:
+            typer.echo("Looks good - ready to embed.", err=True)
     raise typer.Exit(code=0 if report.ok else 1)
 
 
@@ -1098,6 +1141,30 @@ def extract(
     # component can escape out_dir - path traversal is not reachable from payload/PDF content.
     data = _read_bytes(pdf)
     _emit(_extract_images(data, out_dir=out_dir, render_vector_pages=render_vector_pages))
+
+
+@app.command(name="extract-text")
+@_guard
+def extract_text_cmd(
+    pdf: Annotated[Path, typer.Argument(help="PDF to extract text + best-effort tables from")],
+    page_range: Annotated[
+        str | None,
+        typer.Option("--pages", help="1-indexed pages: '3' | '1-5' | '2,4,7' (default all)"),
+    ] = None,
+    max_chars: Annotated[
+        int, typer.Option(help="Max characters per page of output; paginate with --cursor")
+    ] = 100_000,
+    cursor: Annotated[
+        str | None, typer.Option(help="Opaque cursor from a prior call's nextCursor, to continue")
+    ] = None,
+) -> None:
+    """Extract paginated plain text + best-effort tables (the same deterministic pass the MCP
+    om_extract_text tool uses). Zero inference; useful for feeding an OM's text to your own mapping
+    step. Emits {text, tables, pageRange, truncated, nextCursor}."""
+    result = _extract_text(
+        _read_bytes(pdf), page_range=page_range, max_chars=max_chars, cursor=cursor
+    )
+    _emit(result)
 
 
 @app.command()

@@ -62,6 +62,45 @@ def test_embed_refuses_schema_invalid_by_default(tmp_path: Path) -> None:
     assert out.exists()
 
 
+def test_read_surfaces_audit_chain(tmp_path: Path) -> None:
+    # read exposes payloadHash (parity with hosted om_read) + the Rule 6 audit chain (assertedDate,
+    # supersedes) at top level, so lineage isn't reachable only via pikepdf.
+    base = _base_pdf(tmp_path / "base.pdf")
+    out = tmp_path / "o.pdf"
+    runner.invoke(app, ["embed", str(base),
+                        "--payload", str(SPEC / "samples" / "valid-stnl.json"),
+                        "--out", str(out), "--asserted-date", "2026-08-15"])
+    j = json.loads(runner.invoke(app, ["read", str(out)]).output)
+    assert j["payloadHash"] and j["payloadHash"].startswith("sha256:")
+    assert j["assertedDate"] == "2026-08-15"
+    assert "supersedes" in j  # present (None on a first embed)
+
+
+def test_extract_text_verb(tmp_path: Path) -> None:
+    base = _base_pdf(tmp_path / "base.pdf")
+    r = runner.invoke(app, ["extract-text", str(base)])
+    assert r.exit_code == 0, r.output
+    j = json.loads(r.output)
+    assert "text" in j and "tables" in j and "nextCursor" in j
+
+
+def test_embed_date_alias(tmp_path: Path) -> None:
+    base = _base_pdf(tmp_path / "base.pdf")
+    out = tmp_path / "o.pdf"
+    r = runner.invoke(app, ["embed", str(base),
+                            "--payload", str(SPEC / "samples" / "valid-stnl.json"),
+                            "--out", str(out), "--date", "2026-08-15"])  # --date alias
+    assert r.exit_code == 0, r.output
+    assert out.exists()
+
+
+def test_validate_success_prints_plain_english(tmp_path: Path) -> None:
+    r = runner.invoke(app, ["validate", str(SPEC / "samples" / "valid-stnl.json"),
+                            "--schema", str(SPEC / "om-0.1.schema.json")])
+    assert r.exit_code == 0
+    assert "Looks good" in r.output  # human confirmation, not just a JSON wall
+
+
 def test_embed_batch_embeds_many_and_reports(tmp_path: Path) -> None:
     # Two valid OMs + one item with a missing PDF - the batch embeds the good ones, records the
     # failure, and exits non-zero. Proves the back-catalog seeding path end to end.
@@ -404,7 +443,9 @@ def test_validate_valid_exits_zero(tmp_path: Path) -> None:
          "--schema", str(SPEC / "om-0.1.schema.json")],
     )
     assert r.exit_code == 0
-    assert json.loads(r.output)["ok"] is True
+    # stdout is the JSON; the plain-English "Looks good" confirmation goes to stderr (merged after).
+    obj, _ = json.JSONDecoder().raw_decode(r.output[r.output.index("{") :])
+    assert obj["ok"] is True
 
 
 def test_validate_invalid_exits_nonzero(tmp_path: Path) -> None:
