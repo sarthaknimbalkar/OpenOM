@@ -151,9 +151,11 @@ def test_embed_merges_profile_into_payload(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     out = tmp_path / "out.pdf"
+    # --no-validate: this partial draft isolates the profile-merge behavior; embed now validates by
+    # default (a full payload would be refused for the missing specVersion/fields).
     r = runner.invoke(
         app, ["embed", str(pdf), "--payload", str(payload), "--out", str(out),
-              "--asserted-date", "2026-08-24"],
+              "--asserted-date", "2026-08-24", "--no-validate"],
     )
     assert r.exit_code == 0, r.output
     assert "saved profile" in r.output

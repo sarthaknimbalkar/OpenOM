@@ -260,13 +260,16 @@ def embed(
     validate: Annotated[
         bool,
         typer.Option(
+            "--validate/--no-validate",
             help="Validate the payload against the 0.1 schema first and REFUSE (exit 1) on schema "
-            "errors, like embed-batch (recommended; off by default so drafts can be piped)."
+            "errors (ON by default, matching the browser author gate and Rule 6). Pass "
+            "--no-validate only to embed a deliberate draft.",
         ),
-    ] = False,
+    ] = True,
 ) -> None:
-    """Embed deal data into an OM PDF. Not a developer with just a PDF? Skip the terminal - embed in
-    your browser (nothing leaves your machine): https://openom.app/embed/"""
+    """Embed deal data into an OM PDF. Validates first by default and refuses a schema-invalid
+    payload (use --no-validate to override). Not a developer with just a PDF? Skip the terminal -
+    embed in your browser (nothing leaves your machine): https://openom.app/embed/"""
     if pdf is None or payload is None or out is None or asserted_date is None:
         _echo_embed_usage()
         raise typer.Exit(2)

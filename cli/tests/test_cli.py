@@ -41,6 +41,27 @@ def test_embed_then_read(tmp_path: Path) -> None:
     assert parsed["verification"]["hashValid"] is True
 
 
+def test_embed_refuses_schema_invalid_by_default(tmp_path: Path) -> None:
+    # Rule 6: a schema-invalid single-file embed must be refused by default (not silently stamped),
+    # matching the browser author gate. capRate as a percentage (6.25) is the classic mistake.
+    base = _base_pdf(tmp_path / "base.pdf")
+    bad = json.loads((SPEC / "samples" / "valid-stnl.json").read_text(encoding="utf-8"))
+    bad["deal"]["capRate"] = 6.25  # 625%, schema wants a 0-1 fraction
+    payload = tmp_path / "bad.json"
+    payload.write_text(json.dumps(bad), encoding="utf-8")
+    out = tmp_path / "out.pdf"
+    r = runner.invoke(app, ["embed", str(base), "--payload", str(payload), "--out", str(out),
+                            "--asserted-date", "2026-08-15"])
+    assert r.exit_code == 1, r.output
+    assert not out.exists()  # nothing stamped
+    assert "0.0625" in r.output or "OMV-E001" in r.output  # humanized capRate coaching or the code
+    # --no-validate is the explicit escape for a deliberate draft
+    r2 = runner.invoke(app, ["embed", str(base), "--payload", str(payload), "--out", str(out),
+                             "--asserted-date", "2026-08-15", "--no-validate"])
+    assert r2.exit_code == 0, r2.output
+    assert out.exists()
+
+
 def test_embed_batch_embeds_many_and_reports(tmp_path: Path) -> None:
     # Two valid OMs + one item with a missing PDF - the batch embeds the good ones, records the
     # failure, and exits non-zero. Proves the back-catalog seeding path end to end.
