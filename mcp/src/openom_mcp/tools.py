@@ -231,7 +231,7 @@ def _run_core(func: Callable[..., Any], *args: Any, isolate: bool = False, **kwa
             raise PageRangeError(exc.message) from None
         if exc.child_type == "CursorError":
             raise CursorError(exc.message) from None
-        if exc.child_type == "EncryptedPdfError":
+        if exc.child_type in ("EncryptedPdfError", "PasswordError"):
             raise EncryptedPdfError(exc.message) from None
         raise ToolError("OM-IO-010", f"parser failed: {exc.child_type}: {exc.message}") from None
 
@@ -274,7 +274,9 @@ def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
     failure the result is `{error: {code, message}}` with an OM-IO-* code (e.g. OM-IO-008 bad/absent
     reference, OM-IO-002 SSRF-blocked, OM-IO-005 too large) so an agent can branch without prose.
     """
-    result = _run_core(_read, _load_pdf(pdf))
+    # isolate=True: pikepdf.open can NATIVELY crash (stack overflow on a deep /Pages chain),
+    # uncatchable in-process; the subprocess contains it to one OM-IO-010, not the stdio session.
+    result = _run_core(_read, _load_pdf(pdf), isolate=True)
     # A hash-mismatched payload MUST be surfaced as null, never as trusted (OM-MCP-011).
     trusted = result.present and result.hash_valid is not False
     payload = result.payload if trusted else None
@@ -437,7 +439,9 @@ def om_embed(
             details={"errors": [dataclasses.asdict(f) for f in report.errors]},
         )
     asserted_date = str(payload.get("assertedDate", ""))
-    out_bytes = _run_core(_embed, _load_pdf(pdf), payload, asserted_date=asserted_date, badge=badge)
+    out_bytes = _run_core(  # isolate=True: pikepdf can natively crash (deep /Pages) - contain it
+        _embed, _load_pdf(pdf), payload, asserted_date=asserted_date, badge=badge, isolate=True
+    )
 
     resolver = _resolver()
     if resolver.transport == "http" and resolver.blobstore is not None:

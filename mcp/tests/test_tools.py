@@ -152,3 +152,23 @@ def test_password_pdf_returns_encrypted_state_and_envelope(tmp_path: Path) -> No
     assert tools.om_read({"path": str(pdf)})["state"] == "encrypted"
     env = tools.om_inspect({"path": str(pdf)})
     assert env["error"]["code"] == "OM-IO-011"
+
+
+def test_deep_pages_native_crash_is_contained(tmp_path: Path, monkeypatch: Any) -> None:
+    # Round-3: a deeply self-referential /Pages chain makes pikepdf.open stack-overflow NATIVELY
+    # (uncatchable in-process). Isolation must contain it to one OM-IO-010 envelope, never crash the
+    # host / stdio session. Short timeout so the dead child is detected fast.
+    monkeypatch.setattr(tools, "_PARSE_TIMEOUT_S", 4.0)
+    parts = ["%PDF-1.7\n"]
+    parts.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+    n = 2000
+    for i in range(2, n + 2):
+        parts.append(f"{i} 0 obj\n<< /Type /Pages /Kids [{i + 1} 0 R] /Count 1 >>\nendobj\n")
+    leaf = f"<< /Type /Page /Parent {n + 1} 0 R /MediaBox [0 0 612 792] >>"
+    parts.append(f"{n + 2} 0 obj\n{leaf}\nendobj\n")
+    parts.append("trailer\n<< /Root 1 0 R >>\n%%EOF")
+    pdf = tmp_path / "deep.pdf"
+    pdf.write_bytes("".join(parts).encode())
+    r = tools.om_read({"path": str(pdf)})  # must return, not crash the test process
+    assert "error" in r  # a clean envelope (OM-IO-010 from the killed subprocess)
+    assert r["error"]["code"] in ("OM-IO-010", "OM-IO-003")
