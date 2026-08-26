@@ -246,6 +246,12 @@ export async function fetchPdf(
       ? await readCapped(res.body, cap)
       : new Uint8Array(await res.arrayBuffer());
     if (buf.length > cap) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
+    // Sniff the %PDF- header (parity with the Python core's fetch.py) so a fetched non-PDF body is
+    // refused rather than read - otherwise the public endpoint acts as a blind general-GET oracle
+    // (fetch any https URL, learn reachability/size from the response) for anyone who can call it.
+    if (buf.length < 5 || buf[0] !== 0x25 || buf[1] !== 0x50 || buf[2] !== 0x44 || buf[3] !== 0x46 || buf[4] !== 0x2d) {
+      throw new ToolError("OM-IO-005", "fetched body is not a PDF (missing %PDF- header)");
+    }
     budget?.take(buf.length);
     return buf;
   }
@@ -509,16 +515,16 @@ export default {
     }
     if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
+    const ip = req.headers.get("cf-connecting-ip") ?? "anon";
+    const limited = (): Response =>
+      new Response(
+        JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32029, message: "rate limit exceeded" } }),
+        { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60", ...CORS } },
+      );
     // Per-client rate limit for the open public endpoint (guarded: only when the binding is present).
     if (env?.RATE_LIMITER) {
-      const ip = req.headers.get("cf-connecting-ip") ?? "anon";
       const { success } = await env.RATE_LIMITER.limit({ key: ip });
-      if (!success) {
-        return new Response(
-          JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32029, message: "rate limit exceeded" } }),
-          { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60", ...CORS } },
-        );
-      }
+      if (!success) return limited();
     }
 
     let parsed: unknown;
@@ -536,6 +542,16 @@ export default {
         // [M5] bound the batch so one request can't fan out unbounded upstream fetches (abuse/DoS).
         if (parsed.length > MAX_BATCH) {
           return rpcError(null, -32600, `batch too large (max ${MAX_BATCH} requests per call)`);
+        }
+        // The limit is per TOOL CALL, not per HTTP request: a batch of N tools/call messages must
+        // consume N tokens (the pre-parse check charged the first), else one request authorizes a
+        // whole batch of upstream fetches. Charge the remainder up front; refuse the batch if short.
+        if (env?.RATE_LIMITER) {
+          const toolCalls = parsed.filter((m) => (m as RpcMsg)?.method === "tools/call").length;
+          for (let i = 1; i < toolCalls; i++) {
+            const { success } = await env.RATE_LIMITER.limit({ key: ip });
+            if (!success) return limited();
+          }
         }
         // One shared byte budget for the whole batch: all upstream fetches draw from it, so the
         // request's total egress is bounded no matter how the MAX_BATCH reads are composed.

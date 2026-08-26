@@ -190,4 +190,19 @@ describe("worker dispatch + [M5] JSON-RPC batch", () => {
     const ok = await worker.fetch(post({ jsonrpc: "2.0", id: 2, method: "ping" }));
     expect(ok.status).toBe(200);
   });
+
+  test("rate limit is charged per tool call in a batch, not once per HTTP request", async () => {
+    let calls = 0;
+    // Allow the first 2 charges, deny the 3rd - so a 3-tools/call batch is refused.
+    const env = { RATE_LIMITER: { limit: async () => ({ success: ++calls <= 2 }) } };
+    const batch = [1, 2, 3].map((id) => ({
+      jsonrpc: "2.0",
+      id,
+      method: "tools/call",
+      params: { name: "om_validate", arguments: { payload: { specVersion: "0.1" } } },
+    }));
+    const res = await worker.fetch(post(batch), env);
+    expect(res.status).toBe(429); // 3 tool calls needed 3 tokens; only 2 were available
+    expect(calls).toBe(3); // charged pre-parse (1) + 2 of the remaining before the deny
+  });
 });

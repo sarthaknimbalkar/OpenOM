@@ -18,7 +18,7 @@ function scriptedFetch(steps: Array<{ status: number; location?: string; body?: 
     const s = steps[Math.min(i++, steps.length - 1)]!;
     const headers = new Headers();
     if (s.location) headers.set("location", s.location);
-    const body = s.body ?? new Uint8Array([0x25, 0x50, 0x44, 0x46]); // %PDF
+    const body = s.body ?? new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]); // %PDF-
     return {
       status: s.status,
       ok: s.status >= 200 && s.status < 300,
@@ -121,6 +121,18 @@ describe("fetchPdf ([#36] follow bounded, re-pinned redirects)", () => {
     await expect(fetchPdf("https://cdn.example.com/deal.pdf", impl)).rejects.toThrow(/Location/);
   });
 
+  test("refuses a fetched non-PDF body (no general-GET oracle), matching fetch.py", async () => {
+    const html = new TextEncoder().encode("<!doctype html><html>not a pdf</html>");
+    const { impl } = scriptedFetch([{ status: 200, body: html }]);
+    await expect(fetchPdf("https://example.com/", impl)).rejects.toThrow(/not a PDF|%PDF/);
+    // a real PDF body still passes
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]); // %PDF-1
+    const ok = scriptedFetch([{ status: 200, body: pdf }]);
+    expect(Array.from(await fetchPdf("https://cdn.example.com/a.pdf", ok.impl))).toEqual(
+      Array.from(pdf),
+    );
+  });
+
   test("[M4] failures carry a stable machine code, not just prose", async () => {
     const codeOf = async (p: Promise<unknown>): Promise<string | undefined> => {
       try {
@@ -145,6 +157,7 @@ describe("fetchPdf ([#36] follow bounded, re-pinned redirects)", () => {
 describe("ByteBudget bounds total outbound bytes across a request", () => {
   test("charges each fetch and refuses once the shared budget is exhausted", async () => {
     const pdf = new Uint8Array(1000).fill(0x25);
+    pdf.set([0x25, 0x50, 0x44, 0x46, 0x2d], 0); // %PDF- header so the content sniff passes
     const budget = new ByteBudget(2500); // room for two 1000-byte reads, not a third
     const one = scriptedFetch([{ status: 200, body: pdf }]);
     await fetchPdf("https://cdn.example.com/a.pdf", one.impl, budget);
@@ -160,9 +173,10 @@ describe("ByteBudget bounds total outbound bytes across a request", () => {
   });
 
   test("without a budget the per-fetch cap still applies (back-compat)", async () => {
-    const { impl } = scriptedFetch([{ status: 200, body: new Uint8Array([0x25, 0x50]) }]);
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]); // %PDF-1
+    const { impl } = scriptedFetch([{ status: 200, body: pdf }]);
     const out = await fetchPdf("https://cdn.example.com/a.pdf", impl);
-    expect(out.length).toBe(2);
+    expect(out.length).toBe(6);
   });
 });
 
