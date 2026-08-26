@@ -108,6 +108,18 @@ export function validatePayload(
     }
   }
 
+  // Shared normal form (parity with the Python core): drop a generic OMV-E001 whose path is a strict
+  // ancestor of another error's path, so a bubbled-up parent (/deal) or root ("") error doesn't
+  // clutter the list when a specific error already sits deeper. Specific codes are never dropped; the
+  // root "" survives only when it is the sole error.
+  const paths = errors.map((e) => e.path);
+  const isAncestor = (a: string, b: string): boolean =>
+    a !== b && (a === "" || b.startsWith(a + "/"));
+  const deduped = errors.filter(
+    (e) => !(e.code === "OMV-E001" && paths.some((p) => isAncestor(e.path, p))),
+  );
+  errors.length = 0;
+  errors.push(...deduped);
   errors.sort(compareFindings);
 
   const isObject = payload !== null && typeof payload === "object" && !Array.isArray(payload);

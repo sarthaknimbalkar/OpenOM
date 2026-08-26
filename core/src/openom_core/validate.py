@@ -155,6 +155,7 @@ def validate(
     # mirrors the JS validatePayload guard. Prevents an AttributeError / miscoded IO error.
     if not isinstance(payload, Mapping):
         _error_tier(payload, schema, report)
+        report.errors[:] = _dedupe_ancestor_errors(report.errors)
         report.errors.sort(key=lambda f: (f.code, f.path))
         return report
     # Reference date for term checks (OMW-W030): explicit as_of, else the payload's assertedDate,
@@ -165,6 +166,7 @@ def validate(
     as_of_date = processing_date if processing_date else _date(payload.get("assertedDate"))
     _error_tier(payload, schema, report)
     _number_range_tier(payload, report)
+    report.errors[:] = _dedupe_ancestor_errors(report.errors)
     _warning_tier(payload, report, tol, as_of_date, processing_date)
     _info_tier(payload, report)
     # Deterministic ordering (§H.1): stable across runs and implementations.
@@ -249,16 +251,42 @@ def _map_schema_error(err: jsonschema.ValidationError) -> Finding:
     # OM-ERR-008 so a document-level error reports the same path on both cores.
     parts = list(err.absolute_path)
     path = "/" + "/".join(str(p) for p in parts) if parts else ""
+    if err.validator == "required":
+        # Point a missing-required error at the MISSING CHILD (RFC 6901), like ajv - jsonschema
+        # attaches it to the container path, which forks the finding list from the JS core.
+        missing = err.message.split("'")[1] if "'" in err.message else ""
+        child = f"{path}/{missing}" if missing else path
+        if missing in ("noiType", "noiAsOfDate"):
+            return _mk("OMV-E002", child, "noiType/noiAsOfDate required with noi")
+        return _mk("OMV-E001", child, err.message)
     if path.startswith("/meta/signature"):
         # #117: null OR the reserved {alg,keyId,value} shape; anything else is OMV-E003.
         return _mk("OMV-E003", "/meta/signature", _SIG_MSG)
-    if err.validator == "required" and path == "/deal":
-        missing = err.message.split("'")[1] if "'" in err.message else ""
-        if missing in ("noiType", "noiAsOfDate"):
-            return _mk("OMV-E002", f"/deal/{missing}", "noiType/noiAsOfDate required with noi")
     if path == "/meta/supersedes":
         return _mk("OMV-E010", "/meta/supersedes", "meta.supersedes must be sha256:<64hex>/null")
     return _mk("OMV-E001", path, err.message)
+
+
+def _is_ancestor(a: str, b: str) -> bool:
+    """True if path `a` is a STRICT ancestor of path `b` (RFC 6901). Root "" is an ancestor of any
+    non-empty path; otherwise `b` must extend `a` at a segment boundary."""
+    if a == b:
+        return False
+    return a == "" or b.startswith(a + "/")
+
+
+def _dedupe_ancestor_errors(errors: list[Finding]) -> list[Finding]:
+    """Drop a generic OMV-E001 whose path is a strict ancestor of another error's path: when a
+    specific error exists deeper (e.g. /deal/capRate, or /deal/noiType), the bubbled-up parent
+    (/deal) and root ("") OMV-E001 are redundant noise. This shared normal form makes the
+    Python and JS error lists agree - both validators otherwise surface different ancestor subsets.
+    A specific code (E002/E003/E010/E011) is never dropped; the root "" survives iff it is alone."""
+    paths = [f.path for f in errors]
+    return [
+        f
+        for f in errors
+        if not (f.code == "OMV-E001" and any(_is_ancestor(f.path, other) for other in paths))
+    ]
 
 
 def _warning_tier(
