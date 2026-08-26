@@ -22,6 +22,16 @@ def test_num_drops_non_finite() -> None:
     assert _int("1e400") is None
 
 
+def test_derived_rounding_is_half_up_matching_the_js_connector() -> None:
+    # Regression: Python round() is banker's (half-to-even), JS Math.round is half-up; a .5 tie
+    # forked the embedded pricePerUnit/pricePerSF. _round_half_up matches Math.round(x*m)/m.
+    from openom_cli.buildout import _round_half_up
+
+    assert int(_round_half_up(2500001 / 2)) == 1250001  # banker's round() would give 1250000
+    assert int(_round_half_up(2.5)) == 3 and int(_round_half_up(3.5)) == 4  # both up, not to-even
+    assert _pct_to_fraction("0.00005") == 1e-6  # round(5e-7,6)=0.0 under banker's; half-up = 1e-6
+
+
 def test_num_and_pct() -> None:
     assert _num("1,850,000") == 1850000.0
     assert _num("nope") is None

@@ -35,9 +35,18 @@ def _int(v: Any) -> int | None:
     return int(n) if n is not None else None
 
 
+def _round_half_up(x: float, ndigits: int = 0) -> float:
+    # Match JS Math.round(x*m)/m EXACTLY (half-UP), not Python's banker's round(): the derived facts
+    # (pricePerUnit/pricePerSF/pctToFraction) must be byte-identical across the CLI mapper and the
+    # JS connector - a .5 tie is where round()-half-even and Math.round-half-up silently forked. All
+    # mapper inputs are positive, so floor(x*m + 0.5)/m == Math.round(x*m)/m.
+    m: int = 10**ndigits
+    return float(math.floor(x * m + 0.5)) / m
+
+
 def _pct_to_fraction(v: Any) -> float | None:
     n = _num(v)
-    return round(n / 100, 6) if n is not None else None
+    return _round_half_up(n / 100, 6) if n is not None else None
 
 
 def _iso_date(mdy: Any) -> str | None:
@@ -177,8 +186,8 @@ def listing_to_payload(
         "capRate": _pct_to_fraction(fin.get("cap_rate_derived") or fin.get("cap_rate")),
         "noi": _int(fin.get("noi") or cf.get("NOI")),
         # Deterministically derived from mapped values ([M4]); not in Buildout, computed here.
-        "pricePerUnit": round(price / units) if price and units else None,
-        "pricePerSF": round(price / building_sf, 2) if price and building_sf else None,
+        "pricePerUnit": int(_round_half_up(price / units)) if price and units else None,
+        "pricePerSF": _round_half_up(price / building_sf, 2) if price and building_sf else None,
         "noiType": noi_type,
         "noiAsOfDate": noi_as_of or asserted_date,
         "status": "active",

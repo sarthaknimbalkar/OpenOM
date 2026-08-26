@@ -29,6 +29,7 @@ from .buildout import (
     _months_between,
     _num,
     _pct_to_fraction,
+    _round_half_up,
     _state_code,
 )
 
@@ -128,8 +129,8 @@ def row_to_payload(
         "askingPrice": price,
         "capRate": _pct_to_fraction(_cell(row, "capRatePct")),
         "noi": _int(_cell(row, "noi")),
-        "pricePerUnit": round(price / units) if price and units else None,
-        "pricePerSF": round(price / building_sf, 2) if price and building_sf else None,
+        "pricePerUnit": int(_round_half_up(price / units)) if price and units else None,
+        "pricePerSF": _round_half_up(price / building_sf, 2) if price and building_sf else None,
         "noiType": noi_type,
         "noiAsOfDate": noi_as_of or asserted_date,
         "status": _cell(row, "status") or "active",
