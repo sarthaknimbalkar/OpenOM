@@ -114,6 +114,34 @@ def _blank_pdf(path: Path) -> None:
     path.write_bytes(buf.getvalue())
 
 
+def test_csv_manifest_one_bad_row_is_skipped_not_a_batch_abort(tmp_path: Path) -> None:
+    # A single pathological cell (1e400 -> non-finite) must skip that row with a reason, never abort
+    # the whole bulk-seed batch or traceback.
+    pdf_dir = tmp_path / "pdfs"
+    pdf_dir.mkdir()
+    _blank_pdf(pdf_dir / "good.pdf")
+    _blank_pdf(pdf_dir / "bad.pdf")
+    csv_file = tmp_path / "c.csv"
+    csv_file.write_text(
+        "id,askingPrice,noi\ngood,1850000,115625\nbad,1e400,1e400\n", encoding="utf-8"
+    )
+    out = tmp_path / "mapped"
+    r = _runner.invoke(
+        app,
+        ["csv-manifest", "--csv", str(csv_file), "--pdf-dir", str(pdf_dir), "--out-dir", str(out),
+         "--broker", "J", "--brokerage", "A", "--license", "L",
+         "--asserted-date", "2026-08-15", "--noi-type", "in-place"],
+    )
+    assert r.exit_code == 0, r.output
+    summary = json.loads(r.output[r.output.index("{"):])
+    # 'good' maps; 'bad' maps too but with the non-finite cells simply omitted (never a crash).
+    assert summary["mapped"] == 2
+    good = json.loads((out / "good.om.json").read_text(encoding="utf-8"))
+    assert good["deal"]["askingPrice"] == 1850000
+    bad = json.loads((out / "bad.om.json").read_text(encoding="utf-8"))
+    assert "askingPrice" not in bad.get("deal", {})  # the 1e400 cell was dropped, not embedded
+
+
 def test_csv_manifest_template_then_embed_batch_roundtrip(tmp_path: Path) -> None:
     # 1) --template writes a fillable CSV; a broker fills two rows.
     tmpl = tmp_path / "template.csv"

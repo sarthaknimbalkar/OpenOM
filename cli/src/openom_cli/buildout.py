@@ -14,6 +14,7 @@ openOM consistency check (NOI/price vs capRate) expects and what the OM's headli
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 NS = "https://openom.app/ns/0.1"
@@ -21,9 +22,12 @@ NS = "https://openom.app/ns/0.1"
 
 def _num(v: Any) -> float | None:
     try:
-        return float(str(v).replace(",", "").strip())
+        n = float(str(v).replace(",", "").strip())
     except (TypeError, ValueError):
         return None
+    # A non-finite cell (1e400 / inf / nan) is omitted, not propagated - mirrors the JS connector's
+    # Number.isFinite guard and stops _int() raising OverflowError (which aborted the batch).
+    return n if math.isfinite(n) else None
 
 
 def _int(v: Any) -> int | None:

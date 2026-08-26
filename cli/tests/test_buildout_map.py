@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from openom_cli.buildout import (
+    _int,
     _iso_date,
     _lease_type,
     _months_between,
@@ -10,6 +11,15 @@ from openom_cli.buildout import (
     _pct_to_fraction,
     _state_code,
 )
+
+
+def test_num_drops_non_finite() -> None:
+    # A non-finite cell (1e400/inf/nan) must be omitted, not propagated - mirrors the JS connector's
+    # Number.isFinite guard and stops _int() raising OverflowError (which aborted the whole batch).
+    assert _num("1e400") is None
+    assert _num("inf") is None
+    assert _num("nan") is None
+    assert _int("1e400") is None
 
 
 def test_num_and_pct() -> None:

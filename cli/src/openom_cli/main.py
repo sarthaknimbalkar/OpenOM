@@ -658,11 +658,15 @@ def buildout_manifest(
             "brokerage": row.get("brokerage", default_by["brokerage"]),
             "license": row.get("license", default_by["license"]),
         }
-        payload = listing_to_payload(
-            listing, asserted_by=asserted_by, asserted_date=asserted_date,
-            noi_type=row.get("noiType", noi_type),
-            noi_as_of=row.get("noiAsOfDate", noi_as_of),
-        )
+        try:
+            payload = listing_to_payload(
+                listing, asserted_by=asserted_by, asserted_date=asserted_date,
+                noi_type=row.get("noiType", noi_type),
+                noi_as_of=row.get("noiAsOfDate", noi_as_of),
+            )
+        except Exception as e:  # noqa: BLE001 - one malformed listing must not abort the whole batch
+            skipped.append({"id": stem, "reason": f"could not map listing: {e}"})
+            continue
         sidecar = out_dir / f"{stem}.om.json"
         sidecar.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         manifest.append(
@@ -780,10 +784,14 @@ def csv_manifest(  # noqa: C901 - a linear map-each-row-then-report, read top-do
             continue
         ov = override_identity(row)
         asserted_by = {k: ov.get(k, default_by[k]) for k in ("broker", "brokerage", "license")}
-        payload = row_to_payload(
-            row, asserted_by=asserted_by, asserted_date=asserted_date,
-            noi_type=ov.get("noiType", noi_type), noi_as_of=ov.get("noiAsOfDate", noi_as_of),
-        )
+        try:
+            payload = row_to_payload(
+                row, asserted_by=asserted_by, asserted_date=asserted_date,
+                noi_type=ov.get("noiType", noi_type), noi_as_of=ov.get("noiAsOfDate", noi_as_of),
+            )
+        except Exception as e:  # noqa: BLE001 - one malformed row must never abort the whole batch
+            skipped.append({"id": stem, "reason": f"could not map row: {e}"})
+            continue
         sidecar = out_dir / f"{stem}.om.json"
         sidecar.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         manifest.append(
