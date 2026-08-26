@@ -59,6 +59,8 @@ def _off_or_on(rng: random.Random, tol: float, scale: float) -> float:
 
 def m_caprate(p: dict[str, Any], rng: random.Random) -> None:
     deal = p["deal"]
+    if "noi" not in deal or "askingPrice" not in deal:
+        return  # a prior mutator removed an input this one needs
     implied = deal["noi"] / deal["askingPrice"]
     deal["capRate"] = round(max(1e-4, implied + _off_or_on(rng, 0.005, 1.0)), 6)  # W010 / W013
 
@@ -68,6 +70,8 @@ def m_caprate_band(p: dict[str, Any], rng: random.Random) -> None:
 
 
 def m_priceperSF(p: dict[str, Any], rng: random.Random) -> None:
+    if "askingPrice" not in p["deal"]:
+        return
     implied = p["deal"]["askingPrice"] / p["property"]["buildingSF"]
     p["deal"]["pricePerSF"] = round(implied * (1 + _off_or_on(rng, 0.01, 1.0)), 2)  # W011
 
@@ -79,7 +83,21 @@ def m_noi_nonpositive(p: dict[str, Any], rng: random.Random) -> None:
 def m_proforma(p: dict[str, Any], rng: random.Random) -> None:
     p["deal"]["noiType"] = "pro-forma"
     if rng.random() < 0.6:
-        p["deal"].pop("noiAsOfDate", None)  # W012
+        # W012 fires when a pro-forma NOI has no noiAsOfDate. The schema requires noiAsOfDate ONLY
+        # when noi is present, so drop noi too - else it's a schema error and the vector drops.
+        p["deal"].pop("noiAsOfDate", None)
+        p["deal"].pop("noi", None)
+
+
+def m_i003_skipped_crosscheck(p: dict[str, Any], rng: random.Random) -> None:
+    # OMI-I003: a cross-check skipped for absent inputs. capRate present, noi/askingPrice absent
+    # -> the NOI/price cross-check (W010) is skipped and noted as info.
+    p["deal"]["capRate"] = 0.06
+    p["deal"].pop("noi", None)
+    p["deal"].pop("noiType", None)  # noiType/noiAsOfDate are only required alongside noi
+    p["deal"].pop("noiAsOfDate", None)
+    if rng.random() < 0.5:
+        p["deal"].pop("askingPrice", None)
 
 
 def m_currency_nonus(p: dict[str, Any], rng: random.Random) -> None:
@@ -104,6 +122,8 @@ def m_gross_lease(p: dict[str, Any], rng: random.Random) -> None:
 
 
 def m_rent_year1_vs_noi(p: dict[str, Any], rng: random.Random) -> None:
+    if "noi" not in p["deal"]:
+        return
     p["deal"]["noiType"] = "in-place"
     noi = p["deal"]["noi"]
     row = p["lease"]["rentSchedule"][0]
@@ -173,8 +193,9 @@ def m_self_supersede(p: dict[str, Any], rng: random.Random) -> None:
 
 
 _MUTATORS: list[Delta] = [
-    m_caprate, m_caprate_band, m_priceperSF, m_noi_nonpositive, m_proforma, m_currency_nonus,
-    m_net_lease_landlord, m_gross_lease, m_rent_year1_vs_noi, m_rentpsf, m_monthly,
+    m_caprate, m_caprate_band, m_priceperSF, m_noi_nonpositive, m_proforma,
+    m_i003_skipped_crosscheck, m_currency_nonus, m_net_lease_landlord, m_gross_lease,
+    m_rent_year1_vs_noi, m_rentpsf, m_monthly,
     m_source_verified, m_source_absent, m_escalation, m_period_gap_overlap, m_period_outside_term,
     m_term_months, m_remaining_term, m_noiasof_after_asserted, m_expiration_before_commencement,
     m_self_supersede,
