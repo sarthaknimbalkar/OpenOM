@@ -169,20 +169,23 @@ const MAX_REDIRECTS = 3; // most real OM hosting is a presigned/CDN redirect; fo
 // hundreds of MB per call - bandwidth amplification. This caps the sum across the whole request.
 const BATCH_MAX_BYTES = 128 * 1024 * 1024;
 
-/** A shared, mutable outbound-byte budget for one HTTP request. Every upstream fetch draws from it,
- * so no single request can amplify one client call into unbounded egress. */
+/** A shared, mutable outbound-byte budget for one HTTP request. ADMISSION CONTROL, not post-hoc
+ * accounting: a fetch RESERVES its cap up front (before streaming), then refunds the unread remainder.
+ * Because a batch runs fetches concurrently (Promise.all), reserving up front means peak in-flight
+ * buffered bytes can never exceed `remaining` - if it only charged after buffering, N concurrent
+ * fetches would each see the full budget and buffer N*25 MB before any charge landed (an OOM DoS). */
 export class ByteBudget {
   constructor(public remaining: number) {}
-  /** The most a single fetch may read now: the smaller of its own cap and what's left. */
-  cap(perFetchMax: number): number {
-    return Math.max(0, Math.min(perFetchMax, this.remaining));
-  }
-  /** Charge bytes actually read; over-budget is refused with the same size-limit code. */
-  take(n: number): void {
+  /** Reserve up to `perFetchMax` from what's left and return the reserved amount (this fetch's hard
+   * read cap). Subtracts immediately so concurrent fetches see the reduced budget. */
+  reserve(perFetchMax: number): number {
+    const n = Math.max(0, Math.min(perFetchMax, this.remaining));
     this.remaining -= n;
-    if (this.remaining < 0) {
-      throw new ToolError("OM-IO-005", "request outbound size limit exceeded");
-    }
+    return n;
+  }
+  /** Give back bytes reserved but not read (a short body, or an aborted/failed fetch). */
+  refund(n: number): void {
+    this.remaining += n;
   }
 }
 
@@ -236,24 +239,32 @@ export async function fetchPdf(
       continue;
     }
     if (!res.ok) throw new ToolError("OM-IO-001", `fetch failed: ${res.status}`);
-    // A per-fetch cap that also honors the request-wide budget, so the sum across a batch is bounded.
-    const cap = budget ? budget.cap(MAX_BYTES) : MAX_BYTES;
-    const len = Number(res.headers.get("content-length") ?? "0");
-    if (len > cap) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
-    // [Mi5] Stream + abort as soon as we cross the cap, so a missing/lying content-length can't make
-    // us buffer an unbounded body into memory. Falls back to arrayBuffer() if the body isn't a stream.
-    const buf = res.body
-      ? await readCapped(res.body, cap)
-      : new Uint8Array(await res.arrayBuffer());
-    if (buf.length > cap) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
-    // Sniff the %PDF- header (parity with the Python core's fetch.py) so a fetched non-PDF body is
-    // refused rather than read - otherwise the public endpoint acts as a blind general-GET oracle
-    // (fetch any https URL, learn reachability/size from the response) for anyone who can call it.
-    if (buf.length < 5 || buf[0] !== 0x25 || buf[1] !== 0x50 || buf[2] !== 0x44 || buf[3] !== 0x46 || buf[4] !== 0x2d) {
-      throw new ToolError("OM-IO-005", "fetched body is not a PDF (missing %PDF- header)");
+    // RESERVE this fetch's cap up front (admission control), so concurrent batch fetches can't each
+    // buffer 25 MB before any charge lands. The reserved amount is the hard read cap; we refund the
+    // unread remainder (and the whole reservation on any failure) so nothing is permanently lost.
+    const cap = budget ? budget.reserve(MAX_BYTES) : MAX_BYTES;
+    try {
+      if (cap <= 0) throw new ToolError("OM-IO-005", "request outbound size limit exceeded");
+      const len = Number(res.headers.get("content-length") ?? "0");
+      if (len > cap) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
+      // [Mi5] Stream + abort as soon as we cross the cap, so a missing/lying content-length can't make
+      // us buffer an unbounded body into memory. Falls back to arrayBuffer() if the body isn't a stream.
+      const buf = res.body
+        ? await readCapped(res.body, cap)
+        : new Uint8Array(await res.arrayBuffer());
+      if (buf.length > cap) throw new ToolError("OM-IO-005", "PDF exceeds the size limit");
+      // Sniff the %PDF- header (parity with the Python core's fetch.py) so a fetched non-PDF body is
+      // refused rather than read - otherwise the public endpoint acts as a blind general-GET oracle
+      // (fetch any https URL, learn reachability/size from the response) for anyone who can call it.
+      if (buf.length < 5 || buf[0] !== 0x25 || buf[1] !== 0x50 || buf[2] !== 0x44 || buf[3] !== 0x46 || buf[4] !== 0x2d) {
+        throw new ToolError("OM-IO-005", "fetched body is not a PDF (missing %PDF- header)");
+      }
+      budget?.refund(cap - buf.length); // keep only what we actually read
+      return buf;
+    } catch (e) {
+      budget?.refund(cap); // a failed fetch consumes no budget
+      throw e;
     }
-    budget?.take(buf.length);
-    return buf;
   }
   throw new ToolError("OM-IO-009", `redirect limit (${MAX_REDIRECTS}) exceeded`);
 }

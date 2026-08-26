@@ -178,6 +178,25 @@ describe("ByteBudget bounds total outbound bytes across a request", () => {
     const out = await fetchPdf("https://cdn.example.com/a.pdf", impl);
     expect(out.length).toBe(6);
   });
+
+  test("admission control: CONCURRENT fetches can't collectively exceed the shared budget", async () => {
+    // Round-3 DoS: with post-hoc charging, 20 concurrent fetches each saw the full budget and
+    // buffered their body before any charge landed. Reserve-then-refund caps total admitted bytes to
+    // the budget: with a 2500-byte budget and 1000-byte bodies, at most 2 can succeed.
+    const body = new Uint8Array(1000).fill(0x25);
+    body.set([0x25, 0x50, 0x44, 0x46, 0x2d], 0); // %PDF-
+    const budget = new ByteBudget(2500);
+    const results = await Promise.allSettled(
+      Array.from({ length: 20 }, (_, i) => {
+        const { impl } = scriptedFetch([{ status: 200, body }]);
+        return fetchPdf(`https://cdn.example.com/${i}.pdf`, impl, budget);
+      }),
+    );
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    expect(ok).toBeLessThanOrEqual(2); // total admitted bytes (ok * 1000) never exceeds the 2500 budget
+    expect(budget.remaining).toBeLessThanOrEqual(2500); // and the budget is never overdrawn
+    expect(budget.remaining).toBeGreaterThanOrEqual(0);
+  });
 });
 
 describe("[Mi5] readCapped aborts an oversize/unknown-length body", () => {
