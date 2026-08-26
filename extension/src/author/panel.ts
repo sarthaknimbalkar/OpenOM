@@ -438,6 +438,12 @@ async function startReview(
       ); // #97
     }
     const assertBtn = derivedEl.querySelector("#assert");
+    // An incomplete broker profile must DISABLE Assert, not just show a note: the schema now rejects
+    // a whitespace-only identity, but this also blocks the missing-profile case at the UI before the
+    // human clicks - the assertion gate must never let an "asserted by nobody" record through.
+    if (!profileComplete(profile()) && assertBtn instanceof HTMLButtonElement) {
+      assertBtn.disabled = true;
+    }
     // [M1] block Assert until a signed OM's invalidation is acknowledged.
     if (capture.signed && !signedAck && assertBtn instanceof HTMLButtonElement) {
       assertBtn.disabled = true;
@@ -515,6 +521,11 @@ async function startReview(
   const doAssert = async (): Promise<void> => {
     if (capture.signed && !signedAck) {
       status.textContent = "Blocked: acknowledge the signature will be invalidated first.";
+      return;
+    }
+    if (!profileComplete(profile())) {
+      // Defense-in-depth: never embed an unidentified assertion even if the button were reached.
+      status.textContent = "Blocked: complete the broker profile (broker, brokerage, license) first.";
       return;
     }
     try {

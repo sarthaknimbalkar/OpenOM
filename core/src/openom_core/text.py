@@ -126,8 +126,8 @@ def extract_text(
             try:
                 # find_tables() prints a one-time "Consider using pymupdf_layout" advisory to
                 # sys.stdout; swallow it so the CLI/MCP stdout stays pure JSON. (A C-level SIGABRT
-                # inside find_tables is NOT catchable here - the MCP/CLI callers isolate the parse in
-                # a killable subprocess for that; this try/except only covers ordinary exceptions.)
+                # inside find_tables is NOT catchable here - the MCP/CLI callers isolate the
+                # parse in a killable subprocess; this try/except only covers ordinary exceptions.)
                 with contextlib.redirect_stdout(io.StringIO()):
                     found = doc.load_page(page_i).find_tables()
             except Exception:  # noqa: BLE001 - a table extraction error is non-fatal; skip this page

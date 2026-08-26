@@ -88,6 +88,16 @@ def test_whole_document_error_path_is_empty_string() -> None:
     assert all(f.path != "/" for f in report.errors)
 
 
+def test_whitespace_only_asserted_by_is_rejected() -> None:
+    # An "asserted by nobody" identity (whitespace-only broker/brokerage/license) must fail schema
+    # validation across every surface - the assertion gate can't be satisfied by blanks (Rule 6).
+    p = copy.deepcopy(_sample())
+    p["assertedBy"] = {"broker": " ", "brokerage": "  ", "license": "\t"}
+    report = validate(p, schema=_schema())
+    assert report.ok is False
+    assert "OMV-E001" in _codes(report.errors)
+
+
 def test_error_missing_noitype() -> None:
     report = validate(_load_invalid("invalid-missing-noitype"), schema=_schema())
     assert "OMV-E002" in _codes(report.errors)

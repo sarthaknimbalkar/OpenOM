@@ -54,15 +54,18 @@ export const OM_SCHEMA: Record<string, unknown> = Object.freeze({
       "properties": {
         "broker": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "\\S"
         },
         "brokerage": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "\\S"
         },
         "license": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "\\S"
         },
         "website": {
           "type": "string",
