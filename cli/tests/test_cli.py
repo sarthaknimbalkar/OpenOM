@@ -486,6 +486,15 @@ def test_validate_deeply_nested_json_degrades_cleanly(tmp_path: Path) -> None:
     assert "OM-IO-STRUCTURE" in r.output
 
 
+def test_validate_on_a_pdf_gives_a_useful_hint(tmp_path: Path) -> None:
+    # The natural first mistake - validate a PDF - must point at `om read`, not die on a raw
+    # UnicodeDecodeError decoding binary bytes.
+    pdf = _base_pdf(tmp_path / "deal.pdf")
+    r = runner.invoke(app, ["validate", str(pdf)])
+    assert r.exit_code == 3
+    assert "looks like a PDF" in r.output and "om read" in r.output
+
+
 def test_check_payload_json(tmp_path: Path) -> None:
     # Consistency tier only (no schema): the valid sample is internally consistent -> exit 0.
     r = runner.invoke(app, ["check", str(SPEC / "samples" / "valid-stnl.json")])

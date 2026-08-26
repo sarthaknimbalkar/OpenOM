@@ -197,8 +197,17 @@ def _load_json(path: Path) -> dict[str, Any]:
     # parse_hardened enforces the same §J read invariants the embed/MCP paths do - reject duplicate
     # keys and over-deep nesting - degrading a pathological payload to a structured OM-IO error
     # (caught by _guard -> exit 3) instead of a RecursionError traceback.
-    text = sys.stdin.read() if str(path) == "-" else path.read_text(encoding="utf-8")
-    return cast("dict[str, Any]", _parse_hardened(text))
+    raw = sys.stdin.buffer.read() if str(path) == "-" else path.read_bytes()
+    if raw[:5].startswith(b"%PDF"):
+        # The natural first mistake: pointing `validate` (or another JSON verb) at an OM PDF. Give a
+        # plain hint toward the right verb instead of a cryptic UnicodeDecodeError on binary bytes.
+        typer.echo(
+            f"error: {path} looks like a PDF, not a JSON payload. To read the data embedded in an "
+            f"OM PDF use `om read {path}`; `validate` checks a deal.json (see `om init`).",
+            err=True,
+        )
+        raise typer.Exit(3)
+    return cast("dict[str, Any]", _parse_hardened(raw.decode("utf-8")))
 
 
 def _emit(obj: Any) -> None:
