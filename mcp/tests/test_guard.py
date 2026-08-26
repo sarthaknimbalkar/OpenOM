@@ -10,7 +10,7 @@ import time
 
 import pytest
 
-from openom_mcp.guard import _RESOURCE_AVAILABLE, bounded_call
+from openom_mcp.guard import _RESOURCE_AVAILABLE, BoundedChildError, bounded_call
 from openom_mcp.tools import ToolError
 
 
@@ -18,10 +18,13 @@ def test_ok_passthrough() -> None:
     assert bounded_call(abs, (-5,), timeout=30) == 5
 
 
-def test_in_child_exception_maps_to_010() -> None:
-    with pytest.raises(ToolError) as e:
+def test_in_child_exception_surfaces_type_for_caller_mapping() -> None:
+    # An ordinary in-child exception is raised as BoundedChildError carrying the type NAME, so the
+    # caller (_run_core) can re-raise the right typed error (PageRangeError -> OM-IO-012) instead of
+    # flattening everything to a crash. A hard crash / timeout still raises ToolError from here.
+    with pytest.raises(BoundedChildError) as e:
         bounded_call(int, ("not-an-int",), timeout=30)  # raises ValueError in the child
-    assert e.value.code == "OM-IO-010"
+    assert e.value.child_type == "ValueError"
 
 
 def test_hard_crash_maps_to_010() -> None:

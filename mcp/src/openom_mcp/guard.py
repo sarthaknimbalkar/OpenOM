@@ -25,6 +25,18 @@ from typing import Any
 
 from .tools import ToolError
 
+
+class BoundedChildError(Exception):
+    """An ordinary (non-crash) exception raised INSIDE the bounded child. Carries the child
+    exception's type name + message so the caller (which knows the core error types, unlike this
+    generic infra) can re-raise the right typed error - e.g. a PageRangeError must still map to
+    OM-IO-012, not be flattened to a crash. A hard crash / timeout stays a ToolError from here."""
+
+    def __init__(self, child_type: str, message: str) -> None:
+        super().__init__(f"{child_type}: {message}")
+        self.child_type = child_type
+        self.message = message
+
 # Whether an in-process address-space cap (RLIMIT_AS) is even possible on this platform. Off-POSIX
 # (Windows) the `resource` module is absent, so the memory bound MUST come from the deployment
 # (a container/cgroup limit or a Windows Job Object) - see SECURITY.md's threat model (#123/#128).
@@ -58,7 +70,9 @@ def _worker(
             _apply_memory_limit(memory_bytes)  # ValueError/OSError propagate → reported as a crash
         q.put(("ok", func(*args, **kwargs)))
     except BaseException as exc:  # noqa: BLE001 - report MemoryError/parser/limit errors as a crash
-        q.put(("err", f"{type(exc).__name__}: {exc}"))
+        # Send the type NAME + message as strings (always picklable, unlike some custom
+        # exceptions), so the parent maps to the right typed error without pickling it.
+        q.put(("err", type(exc).__name__, str(exc)))
 
 
 def bounded_call(
@@ -87,7 +101,7 @@ def bounded_call(
     # result (om_embed returns whole PDF bytes; om_extract_text returns text+tables) into a false
     # OM-IO-003 timeout. q.get(timeout) is the deadline AND the drain; join() only after we have it.
     try:
-        status, payload = q.get(timeout=timeout)
+        result = q.get(timeout=timeout)
     except _queue.Empty:
         # No result within the deadline: a genuine hang (still alive → 003) or a silent crash that
         # queued nothing (already dead → 010). Distinguish by liveness.
@@ -102,6 +116,7 @@ def bounded_call(
         proc.join()
         raise ToolError("OM-IO-010", f"parser crashed (exit {proc.exitcode})") from exc
     proc.join()  # result received; let the child finish exiting
-    if status == "err":
-        raise ToolError("OM-IO-010", f"parser failed: {payload}")
-    return payload
+    if result[0] == "err":
+        _, child_type, message = result
+        raise BoundedChildError(child_type, message)
+    return result[1]

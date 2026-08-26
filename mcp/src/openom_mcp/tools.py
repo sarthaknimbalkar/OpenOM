@@ -200,17 +200,31 @@ def _enforce_page_limit(pdf_bytes: bytes) -> None:
         raise ToolError("OM-IO-005", f"document has {pages} pages; per-call limit is {_MAX_PAGES}")
 
 
-def _run_core(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """Run a core parse verb. On the hosted transport it runs in a killable, memory-bounded
+def _run_core(func: Callable[..., Any], *args: Any, isolate: bool = False, **kwargs: Any) -> Any:
+    """Run a core parse verb. On the hosted transport it always runs in a killable, memory-bounded
     subprocess so a malicious PDF that hangs/OOMs a C parser cannot take down the host (timeout →
-    OM-IO-003, crash → OM-IO-010). On stdio the input is trusted-local, so it runs inline."""
-    if _resolver().transport != "http":
+    OM-IO-003, crash → OM-IO-010). On stdio the fast pikepdf verbs run inline (trusted-local); a
+    verb marked ``isolate=True`` is ALSO subprocessed there: PyMuPDF can abort the interpreter at
+    the C level (an uncatchable SIGABRT in find_tables on benign OMs), which on the long-lived stdio
+    session would kill the broker's whole Claude Desktop connection - so the pymupdf parse verbs run
+    isolated regardless of transport, failing one call as OM-IO-010 not the process."""
+    if not isolate and _resolver().transport != "http":
         return func(*args, **kwargs)
-    from .guard import bounded_call  # lazy: avoids a tools<->guard import cycle
+    from .guard import BoundedChildError, bounded_call  # lazy: avoids a tools<->guard import cycle
 
-    return bounded_call(
-        func, args, kwargs=kwargs, timeout=_PARSE_TIMEOUT_S, memory_mb=_PARSE_MEMORY_MB
-    )
+    try:
+        return bounded_call(
+            func, args, kwargs=kwargs, timeout=_PARSE_TIMEOUT_S, memory_mb=_PARSE_MEMORY_MB
+        )
+    except BoundedChildError as exc:
+        # Re-raise the input-validation errors as their own type so _guard maps them to their proper
+        # code (OM-IO-012 / OM-IO-013) rather than the OM-IO-010 crash bucket; anything else is a
+        # genuine parser failure and stays OM-IO-010.
+        if exc.child_type == "PageRangeError":
+            raise PageRangeError(exc.message) from None
+        if exc.child_type == "CursorError":
+            raise CursorError(exc.message) from None
+        raise ToolError("OM-IO-010", f"parser failed: {exc.child_type}: {exc.message}") from None
 
 
 
@@ -221,7 +235,7 @@ def om_inspect(pdf: Any, verify_origin: bool = False) -> dict[str, Any]:
     reports is a broker ASSERTION (opinion as of a date), never verified market truth."""
     data = _load_pdf(pdf)
     _enforce_page_limit(data)
-    profile = _run_core(_inspect, data)
+    profile = _run_core(_inspect, data, isolate=True)  # pymupdf: isolate on stdio too
     payload = dict(profile["payload"])
     payload["originVerified"] = None  # §10 layer-3 check is M3; null = not checked
     return {
@@ -302,7 +316,10 @@ def om_extract_text(
     data = _load_pdf(pdf)
     _enforce_page_limit(data)
     return dict(
-        _run_core(_extract_text, data, page_range=page_range, max_chars=max_chars, cursor=cursor)
+        _run_core(
+            _extract_text, data, page_range=page_range, max_chars=max_chars,
+            cursor=cursor, isolate=True,  # pymupdf find_tables can SIGABRT; isolate on stdio too
+        )
     )
 
 
@@ -324,7 +341,9 @@ def om_extract_images(
     _enforce_page_limit(data)
     # include_vector (#16): also rasterize vector-only pages (no raster images) so the manifest
     # still carries a page's visual content. Off by default - rendering is heavier than extraction.
-    result = _run_core(_extract_images, data, out_dir=dest, render_vector_pages=include_vector)
+    result = _run_core(
+        _extract_images, data, out_dir=dest, render_vector_pages=include_vector, isolate=True,
+    )
     # [Ma3] Over the hosted HTTP transport there's no client filesystem, so a server-local `path` is
     # useless to a remote agent. Mirror om_embed: store each image as a TTL blob and return
     # {blobId, presignedGet} the caller can fetch. Stdio keeps the local `path`.

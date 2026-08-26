@@ -6,7 +6,9 @@ best-effort tables; paginate by an opaque, input-scoped cursor. Zero inference, 
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
+import io
 import json
 from typing import Any, TypedDict
 
@@ -122,8 +124,13 @@ def extract_text(
             if not (start <= span_start < end):
                 continue
             try:
-                found = doc.load_page(page_i).find_tables()
-            except Exception:  # noqa: BLE001 - tables are best-effort, never fatal
+                # find_tables() prints a one-time "Consider using pymupdf_layout" advisory to
+                # sys.stdout; swallow it so the CLI/MCP stdout stays pure JSON. (A C-level SIGABRT
+                # inside find_tables is NOT catchable here - the MCP/CLI callers isolate the parse in
+                # a killable subprocess for that; this try/except only covers ordinary exceptions.)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    found = doc.load_page(page_i).find_tables()
+            except Exception:  # noqa: BLE001 - a table extraction error is non-fatal; skip this page
                 continue
             for tbl in found.tables:
                 tables.append({"page": page_i + 1, "rows": tbl.extract()})
