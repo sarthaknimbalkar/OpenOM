@@ -27,7 +27,7 @@ import pikepdf
 from openom_core.canonical import payload_hash
 from openom_core.embed import embed as _embed
 from openom_core.embed import read as _read
-from openom_core.errors import CanonicalizationError, PayloadTooLargeError
+from openom_core.errors import CanonicalizationError, EncryptedPdfError, PayloadTooLargeError
 from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
 from openom_core.schema import load_schema as _load_schema  # cached + wheel-safe (#148/#149)
@@ -92,6 +92,13 @@ def _guard(fn: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
             return _envelope(ToolError("OM-IO-013", str(exc)))
         except CanonicalizationError as exc:
             return _envelope(ToolError(exc.code, str(exc)))
+        except EncryptedPdfError as exc:
+            return _envelope(ToolError(exc.code, str(exc)))
+        except pikepdf.PasswordError:
+            # A password-protected PDF on a verb that opens with pikepdf (never a raw traceback).
+            return _envelope(
+                ToolError("OM-IO-011", "password-protected PDF (a password is required)")
+            )
         except pikepdf.PdfError as exc:
             return _envelope(ToolError("OM-IO-010", f"malformed PDF: {exc}"))
         finally:
@@ -224,6 +231,8 @@ def _run_core(func: Callable[..., Any], *args: Any, isolate: bool = False, **kwa
             raise PageRangeError(exc.message) from None
         if exc.child_type == "CursorError":
             raise CursorError(exc.message) from None
+        if exc.child_type == "EncryptedPdfError":
+            raise EncryptedPdfError(exc.message) from None
         raise ToolError("OM-IO-010", f"parser failed: {exc.child_type}: {exc.message}") from None
 
 
@@ -271,7 +280,9 @@ def om_read(pdf: Any, verify_origin: bool = True) -> dict[str, Any]:
     payload = result.payload if trusted else None
     # [Ma4] `state` + `note` mirror the public Worker's om_read shape so a client written against
     # either server works against the other (state: present | absent | hash-mismatch).
-    if not result.present:
+    if result.encrypted:
+        state = "encrypted"
+    elif not result.present:
         state = "absent"
     elif result.hash_valid is False:
         state = "hash-mismatch"

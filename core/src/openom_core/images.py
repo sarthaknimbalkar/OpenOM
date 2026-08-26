@@ -10,6 +10,8 @@ import hashlib
 from pathlib import Path
 from typing import NotRequired, TypedDict
 
+from .errors import EncryptedPdfError
+
 try:
     import pymupdf
 except ImportError:  # PyMuPDF (AGPL) is an optional [render] extra; extract/inspect/render need it
@@ -103,6 +105,9 @@ def extract_images(
     if pymupdf is None:
         raise ImportError(_RENDER_HINT)
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    if doc.needs_pass:  # password-protected: refuse cleanly, not a "document closed" ValueError
+        doc.close()
+        raise EncryptedPdfError
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
     seen_xref: set[int] = set()

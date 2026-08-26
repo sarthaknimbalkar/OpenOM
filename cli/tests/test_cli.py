@@ -495,6 +495,27 @@ def test_validate_on_a_pdf_gives_a_useful_hint(tmp_path: Path) -> None:
     assert "looks like a PDF" in r.output and "om read" in r.output
 
 
+def _password_pdf(path: Path) -> Path:
+    buf = io.BytesIO()
+    with pikepdf.open(SPEC / "assets" / "openom-sample.pdf") as p:
+        p.save(buf, encryption=pikepdf.Encryption(user="secret", owner="secret", R=6))
+    path.write_bytes(buf.getvalue())
+    return path
+
+
+def test_password_pdf_refuses_cleanly_not_a_traceback(tmp_path: Path) -> None:
+    # Round-3 blocker: a real password-protected PDF must not traceback. read reports encrypted;
+    # the pymupdf verbs exit 3 with OM-IO-011 and no stack trace.
+    pdf = _password_pdf(tmp_path / "pwd.pdf")
+    r = runner.invoke(app, ["read", str(pdf)])
+    assert r.exit_code == 0, r.output
+    assert json.loads(r.output)["encrypted"] is True
+    for verb in ("inspect", "extract-text"):
+        rr = runner.invoke(app, [verb, str(pdf)])
+        assert rr.exit_code == 3
+        assert "OM-IO-011" in rr.output and "Traceback" not in rr.output
+
+
 def test_check_payload_json(tmp_path: Path) -> None:
     # Consistency tier only (no schema): the valid sample is internally consistent -> exit 0.
     r = runner.invoke(app, ["check", str(SPEC / "samples" / "valid-stnl.json")])

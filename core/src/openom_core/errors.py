@@ -43,6 +43,19 @@ class SignedEmbedError(Exception):
         self.code = "OM-EMB-021"
 
 
+IO_ENCRYPTED = "OM-IO-011"  # password-protected PDF: can't be opened to read/inspect/extract
+
+
+class EncryptedPdfError(Exception):
+    """A password-protected PDF (real user password) cannot be opened to read/inspect/extract
+    ([OM-IO-011]). Distinct from the empty-user-password *permission* encryption the author path
+    decrypts: this one needs a password we don't have - a clean typed refusal, not a crash."""
+
+    def __init__(self, message: str = "password-protected PDF (a password is required to open it)"):
+        super().__init__(message)  # code is carried in .code; callers prefix it once
+        self.code = IO_ENCRYPTED
+
+
 @dataclass(frozen=True)
 class Finding:
     """A single validation result (spec §H [OM-ERR-001])."""

@@ -35,7 +35,12 @@ from openom_core.embed import embed as _embed
 from openom_core.embed import input_encrypted as _input_encrypted
 from openom_core.embed import read as _read
 from openom_core.embed import reembed_warnings as _reembed_warnings
-from openom_core.errors import CanonicalizationError, PayloadTooLargeError, SignedEmbedError
+from openom_core.errors import (
+    CanonicalizationError,
+    EncryptedPdfError,
+    PayloadTooLargeError,
+    SignedEmbedError,
+)
 from openom_core.images import extract_images as _extract_images
 from openom_core.inspect import inspect as _inspect
 from openom_core.text import extract_text as _extract_text
@@ -90,7 +95,9 @@ _DATA_ERRORS = (
     CanonicalizationError,
     PayloadTooLargeError,
     SignedEmbedError,
+    EncryptedPdfError,  # password-protected PDF (OM-IO-011): clean refusal, never a traceback
     json.JSONDecodeError,
+    pikepdf.PasswordError,  # a password error also leaks a BytesIO repr; map it cleanly
     pikepdf.PdfError,
     FileNotFoundError,
     UnicodeDecodeError,
@@ -939,6 +946,7 @@ def read(pdf: Annotated[Path, typer.Argument(help="PDF to read")]) -> None:
     _emit(
         {
             "present": result.present,
+            "encrypted": result.encrypted,  # password-protected PDF (couldn't be opened to read)
             "payload": result.payload,
             "payloadHash": result.payload_hash,  # content hash - matches hosted om_read
             "sourceDocHash": result.source_doc_hash,  # #5: provenance of the underlying source PDF

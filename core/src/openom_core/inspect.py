@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 
 from .embed import read
+from .errors import EncryptedPdfError
 
 try:
     import pymupdf
@@ -153,6 +154,9 @@ def inspect(pdf_bytes: bytes) -> Profile:
     if pymupdf is None:
         raise ImportError(_RENDER_HINT)
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    if doc.needs_pass:  # password-protected: refuse cleanly, not a "document closed" ValueError
+        doc.close()
+        raise EncryptedPdfError
     try:
         pages = doc.page_count
         indices = _sample_indices(pages, SAMPLE_PAGES)

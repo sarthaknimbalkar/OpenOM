@@ -42,6 +42,7 @@ class ReadResult:
     signature_valid: None = None  # reserved (§10 layer 4)
     source_doc_hash: str | None = None  # #5: marker sourceDocHash (provenance of the source PDF)
     payload_hash: str | None = None  # hash of the stored payload bytes (the dedupe/audit key)
+    encrypted: bool = False  # the PDF is password-protected and could not be opened to read
 
 
 def _remove_existing(pdf: pikepdf.Pdf) -> None:
@@ -420,8 +421,13 @@ def _bounded_inflate(raw: bytes) -> bytes:
 
 
 def read(pdf_bytes: bytes) -> ReadResult:
-    """Read + integrity-verify the om.json payload (detection order [OM-XMP-003])."""
-    with pikepdf.open(io.BytesIO(pdf_bytes)) as pdf:
+    """Read + integrity-verify the om.json payload (detection order [OM-XMP-003]). A password-
+    protected PDF returns an encrypted ReadResult rather than raising (§I 'encrypted' state)."""
+    try:
+        pdf_ctx = pikepdf.open(io.BytesIO(pdf_bytes))
+    except pikepdf.PasswordError:
+        return ReadResult(present=False, payload=None, hash_valid=None, encrypted=True)
+    with pdf_ctx as pdf:
         marker = read_marker(pdf)
         stream = _find_ef_stream(pdf)
         if stream is None:

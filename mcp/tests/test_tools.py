@@ -139,3 +139,16 @@ def test_embed_valid_then_refuse_invalid(tmp_path: Path) -> None:
     refused = tools.om_embed({"path": str(base)}, {"@type": "RealEstateListing"})
     assert "error" in refused
     assert refused["error"]["details"]["errors"]  # §H findings carried in details
+
+
+def test_password_pdf_returns_encrypted_state_and_envelope(tmp_path: Path) -> None:
+    # Round-3 blocker: a password-protected PDF must never raise out of a tool (OM-MCP-004).
+    # om_read reports the promised encrypted state; a pymupdf verb returns an OM-IO-011 envelope.
+    buf = io.BytesIO()
+    with pikepdf.open(SPEC / "assets" / "openom-sample.pdf") as p:
+        p.save(buf, encryption=pikepdf.Encryption(user="secret", owner="secret", R=6))
+    pdf = tmp_path / "pwd.pdf"
+    pdf.write_bytes(buf.getvalue())
+    assert tools.om_read({"path": str(pdf)})["state"] == "encrypted"
+    env = tools.om_inspect({"path": str(pdf)})
+    assert env["error"]["code"] == "OM-IO-011"

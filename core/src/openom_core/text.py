@@ -12,6 +12,8 @@ import io
 import json
 from typing import Any, TypedDict
 
+from .errors import EncryptedPdfError
+
 try:
     import pymupdf
 except ImportError:  # PyMuPDF (AGPL) is an optional [render] extra
@@ -96,6 +98,9 @@ def extract_text(
     if pymupdf is None:
         raise ImportError(_RENDER_HINT)
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    if doc.needs_pass:  # password-protected: refuse cleanly, not a "document closed" ValueError
+        doc.close()
+        raise EncryptedPdfError
     try:
         pages = _parse_page_range(page_range, doc.page_count)
         tag = _input_tag(pdf_bytes, pages)
