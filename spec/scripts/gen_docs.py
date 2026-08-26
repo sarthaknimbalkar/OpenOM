@@ -40,7 +40,7 @@ SPEC = Path(__file__).resolve().parent.parent
 
 
 SITE = "https://openom.app"
-ORG = {"@type": "Organization", "name": "Vervelio Labs", "url": "https://verveliolabs.com"}
+ORG = {"@type": "Organization", "name": "Vervelio Labs", "url": "https://www.vervelio.com"}
 
 
 def _jsonld(*objs: dict | None) -> str:
@@ -1125,7 +1125,7 @@ def _what_is_om() -> str:
     <li><b>Embed one now (no install):</b> <a href="/embed/">create an openOM PDF in your browser →</a></li>
     <li><b>Verify one now:</b> <a href="/verify/">check an OM PDF in your browser →</a></li>
   </ul>
-  <p><small>openOM is published by <a href="https://verveliolabs.com">Vervelio Labs</a>. The engine is
+  <p><small>openOM is published by <a href="https://www.vervelio.com">Vervelio Labs</a>. The engine is
      deterministic and inference-free; every payload is an assertion, never a fact.</small></p>
 """
     faq = [

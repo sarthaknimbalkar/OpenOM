@@ -368,7 +368,7 @@ __FAQ__
       </div>
     </div>
     <div class="colophon">
-      <span>An open standard published by <a href="https://verveliolabs.com">Vervelio Labs</a> &middot; MIT licensed</span>
+      <span>An open standard published by <a href="https://www.vervelio.com">Vervelio Labs</a> &middot; MIT licensed</span>
       <span>Inspired by Factur-X - the embedded-invoice standard that became European law</span>
       <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
     </div>
@@ -392,7 +392,7 @@ def _landing_html() -> str:
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "Vervelio Labs",
-        "url": "https://verveliolabs.com",
+        "url": "https://www.vervelio.com",
         "brand": {"@type": "Brand", "name": "openOM"},
         # contactPoint + address let an AI agent verify the steward's legitimacy (agent-readiness).
         "contactPoint": {
@@ -1048,7 +1048,7 @@ _TRUST_PAGES = (
             "For anything about the standard itself - the JSON Schema, the vocabulary, the governance "
             "process for evolving it - start with the documentation at /docs/ and the governance "
             "guide in the repository. Vervelio Labs is the neutral steward that publishes the "
-            "standard; its site is verveliolabs.com. There is no account, API key, or sales process "
+            "standard; its site is www.vervelio.com. There is no account, API key, or sales process "
             "required to use the public grounding endpoint, the CLI, or the libraries - everything "
             "deterministic and self-hostable is free.",
             "Building an agent or a portal on openOM? The public MCP endpoint at mcp.openom.app/mcp "
