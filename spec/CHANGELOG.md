@@ -7,6 +7,8 @@ its own `specVersion` (currently `0.1`), independent of tool package versions.
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-26
+
 ## [0.1.3] - 2026-08-26
 
 ## [0.1.2] - 2026-08-26
