@@ -88,6 +88,20 @@ def test_tables_scoped_to_the_paginated_window() -> None:
     assert all(t["page"] != 2 for t in first["tables"])
 
 
+def test_cursor_is_scoped_to_page_range_not_just_bytes() -> None:
+    # A cursor minted for one page selection must be rejected when replayed with a different
+    # page_range (its offset is into the concatenation of the SELECTED pages) - else it silently
+    # returns misaligned text. The same page_range still accepts its own cursor.
+    pdf = _two_page_with_table_on_p2()
+    c = extract_text(pdf, page_range="1", max_chars=20)["nextCursor"]
+    assert c
+    with pytest.raises(CursorError):
+        extract_text(pdf, page_range="2", max_chars=20, cursor=c)
+    # same selection round-trips fine
+    again = extract_text(pdf, page_range="1", max_chars=20, cursor=c)
+    assert "text" in again
+
+
 def test_tables_not_duplicated_across_a_window_boundary() -> None:
     """A page whose text straddles a paginated window boundary must have its tables emitted in
     exactly one window. Walking the whole pagination must yield the same tables as a single call."""

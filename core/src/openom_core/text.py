@@ -57,8 +57,13 @@ def _parse_page_range(spec: str | None, page_count: int) -> list[int]:
     return sorted(indices)
 
 
-def _input_tag(pdf_bytes: bytes) -> str:
-    return hashlib.sha256(pdf_bytes).hexdigest()[:16]
+def _input_tag(pdf_bytes: bytes, pages: list[int]) -> str:
+    # Scope the cursor to BOTH the PDF bytes AND the resolved page selection: the offset is a char
+    # position into the concatenation of the SELECTED pages, so replaying a cursor with a different
+    # page_range must be rejected (OM-IO-013) rather than silently slicing into different text.
+    h = hashlib.sha256(pdf_bytes)
+    h.update(repr(pages).encode("utf-8"))
+    return h.hexdigest()[:16]
 
 
 def _encode_cursor(tag: str, offset: int) -> str:
@@ -91,7 +96,7 @@ def extract_text(
     doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     try:
         pages = _parse_page_range(page_range, doc.page_count)
-        tag = _input_tag(pdf_bytes)
+        tag = _input_tag(pdf_bytes, pages)
         start = _decode_cursor(cursor, tag) if cursor else 0
 
         # Concatenate the selected pages' text with a form-feed page separator (deterministic).

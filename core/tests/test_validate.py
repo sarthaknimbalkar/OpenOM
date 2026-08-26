@@ -69,6 +69,25 @@ def test_error_non_finite_number_agrees_with_embed() -> None:
             pass
 
 
+def test_non_object_nested_field_is_schema_error_not_crash() -> None:
+    # A truthy non-object where an object is expected must degrade to a schema error, never an
+    # AttributeError from the consistency tiers dereferencing it (a Python<->JS fork).
+    for key in ("deal", "lease", "property", "meta"):
+        p = copy.deepcopy(_sample())
+        p[key] = "nope"
+        report = validate(p, schema=_schema())  # must not raise
+        assert report.ok is False
+        assert "OMV-E001" in _codes(report.errors)
+
+
+def test_whole_document_error_path_is_empty_string() -> None:
+    # RFC 6901 / spec OM-ERR-008: a document-level error points at "" (the whole doc), not "/".
+    report = validate([1, 2, 3], schema=_schema())  # type: ignore[arg-type]
+    assert report.ok is False
+    assert any(f.path == "" for f in report.errors)
+    assert all(f.path != "/" for f in report.errors)
+
+
 def test_error_missing_noitype() -> None:
     report = validate(_load_invalid("invalid-missing-noitype"), schema=_schema())
     assert "OMV-E002" in _codes(report.errors)

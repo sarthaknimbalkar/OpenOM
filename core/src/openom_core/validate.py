@@ -102,6 +102,16 @@ def _mk(
     )
 
 
+def _obj(payload: Mapping[str, Any], key: str) -> Mapping[str, Any]:
+    """Return payload[key] iff it is a JSON object, else {}. A truthy NON-object (a str/list/number
+    where an object is expected) is a schema error the error tier already reports; the consistency
+    tiers must not then crash dereferencing it (`.get()` on a str). Mirrors the JS isObject guard so
+    a schema-invalid nested field degrades to a schema error on BOTH cores instead of a Python-only
+    AttributeError - closing a Python<->JS outcome fork."""
+    v = payload.get(key)
+    return v if isinstance(v, Mapping) else {}
+
+
 def _num(value: object) -> float | None:
     # `object` not `Any` (#153): callers must narrow, and the isinstance gate is the only entry.
     # A non-finite (NaN/Infinity) value is treated as absent so the consistency tier never computes
@@ -235,7 +245,10 @@ def _iter_numbers(node: Any, path: str) -> Iterator[tuple[str, int | float]]:
 
 def _map_schema_error(err: jsonschema.ValidationError) -> Finding:
     """Map one jsonschema error to a stable §H code - path-based, matching Track B's mapError."""
-    path = "/" + "/".join(str(p) for p in err.absolute_path)
+    # RFC 6901: the whole document is the empty string "", not "/" - match the JS core + spec
+    # OM-ERR-008 so a document-level error reports the same path on both cores.
+    parts = list(err.absolute_path)
+    path = "/" + "/".join(str(p) for p in parts) if parts else ""
     if path.startswith("/meta/signature"):
         # #117: null OR the reserved {alg,keyId,value} shape; anything else is OMV-E003.
         return _mk("OMV-E003", "/meta/signature", _SIG_MSG)
@@ -252,9 +265,9 @@ def _warning_tier(
     payload: Mapping[str, Any], report: Report, tol: Tolerances,
     as_of_date: dt.date | None = None, processing_date: dt.date | None = None,
 ) -> None:
-    deal = payload.get("deal") or {}
-    prop = payload.get("property") or {}
-    lease = payload.get("lease") or {}
+    deal = _obj(payload, "deal")
+    prop = _obj(payload, "property")
+    lease = _obj(payload, "lease")
     warn = report.warnings.append
     _date_term_checks(lease, as_of_date, tol, warn)
     _date_sanity_checks(payload, deal, lease, processing_date, warn)
@@ -402,7 +415,7 @@ def _self_supersede_check(payload: Mapping[str, Any], warn: Callable[[Finding], 
     the hash of *this* payload with the ``supersedes`` pointer removed - i.e. the payload
     supersedes content byte-identical to itself (a no-op re-embed).
     """
-    meta = payload.get("meta") or {}
+    meta = _obj(payload, "meta")
     supersedes = meta.get("supersedes")
     if not isinstance(supersedes, str):
         return
@@ -486,9 +499,9 @@ def _rent_schedule_checks(
 
 
 def _info_tier(payload: Mapping[str, Any], report: Report) -> None:
-    deal = payload.get("deal") or {}
-    prop = payload.get("property") or {}
-    lease = payload.get("lease") or {}
+    deal = _obj(payload, "deal")
+    prop = _obj(payload, "property")
+    lease = _obj(payload, "lease")
     info = report.info.append
     schedule = lease.get("rentSchedule") or []
     periods = [p for p in schedule if isinstance(p, Mapping)] if isinstance(schedule, list) else []
