@@ -158,6 +158,17 @@ def test_nesting_over_limit_rejected() -> None:
     assert ei.value.code == "OM-IO-STRUCTURE"
 
 
+def test_parse_hardened_deep_nesting_is_structured_not_recursionerror() -> None:
+    # Pathologically deep raw JSON blows json.loads's stack while BUILDING the object, before the
+    # depth check can run - parse_hardened must convert it to OM-IO-STRUCTURE, not a RecursionError.
+    from openom_core.canonical import parse_hardened
+
+    raw = "[" * 5000 + "]" * 5000
+    with pytest.raises(CanonicalizationError) as ei:
+        parse_hardened(raw)
+    assert ei.value.code == "OM-IO-STRUCTURE"
+
+
 # --- Property-based differential invariants (backlog §0 #3, §2) -------------------------
 # Random JSON objects: safe numbers, surrogate-free text, bounded depth.
 

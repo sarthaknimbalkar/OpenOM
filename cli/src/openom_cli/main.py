@@ -30,6 +30,7 @@ import pikepdf
 import typer
 from openom_core import SPEC_VERSION
 from openom_core.canonical import canonicalize, hash_bytes
+from openom_core.canonical import parse_hardened as _parse_hardened
 from openom_core.embed import embed as _embed
 from openom_core.embed import input_encrypted as _input_encrypted
 from openom_core.embed import read as _read
@@ -179,8 +180,11 @@ def _write_bytes(path: Path, data: bytes) -> None:
 
 
 def _load_json(path: Path) -> dict[str, Any]:
+    # parse_hardened enforces the same §J read invariants the embed/MCP paths do - reject duplicate
+    # keys and over-deep nesting - degrading a pathological payload to a structured OM-IO error
+    # (caught by _guard -> exit 3) instead of a RecursionError traceback.
     text = sys.stdin.read() if str(path) == "-" else path.read_text(encoding="utf-8")
-    return cast("dict[str, Any]", json.loads(text))
+    return cast("dict[str, Any]", _parse_hardened(text))
 
 
 def _emit(obj: Any) -> None:

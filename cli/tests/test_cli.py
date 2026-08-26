@@ -434,6 +434,17 @@ def test_validate_non_finite_flags_and_emits_valid_json(tmp_path: Path) -> None:
     assert any(e["code"] == "OMV-E011" for e in obj["errors"])
 
 
+def test_validate_deeply_nested_json_degrades_cleanly(tmp_path: Path) -> None:
+    # A pathologically deep payload must exit 3 with a structured OM-IO error, not a
+    # RecursionError traceback (the CLI now loads JSON through the core's hardened parser).
+    p = tmp_path / "deep.json"
+    p.write_text("[" * 5000 + "]" * 5000, encoding="utf-8")
+    r = runner.invoke(app, ["validate", str(p)])
+    assert r.exit_code == 3
+    assert "RecursionError" not in r.output
+    assert "OM-IO-STRUCTURE" in r.output
+
+
 def test_check_payload_json(tmp_path: Path) -> None:
     # Consistency tier only (no schema): the valid sample is internally consistent -> exit 0.
     r = runner.invoke(app, ["check", str(SPEC / "samples" / "valid-stnl.json")])

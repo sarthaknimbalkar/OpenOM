@@ -114,7 +114,13 @@ def parse_hardened(raw: bytes | str) -> Any:
     """Parse an om.json payload with the §J read-side hardening the write path enforces
     ([OM-CANON-009/010]): reject duplicate member names and over-deep nesting. Used by the reusable
     ``read`` verb so a self-hoster calling core on untrusted PDFs gets the MCP invariants."""
-    obj = json.loads(raw, object_pairs_hook=_reject_duplicate_pairs)
+    try:
+        obj = json.loads(raw, object_pairs_hook=_reject_duplicate_pairs)
+    except RecursionError:
+        # json.loads recurses while BUILDING the object, so pathologically deep nesting blows the
+        # stack before _check_depth can run. Convert it to the same structured OM-IO-STRUCTURE error
+        # a shallower-but-still-too-deep payload gets - never a raw traceback.
+        raise CanonicalizationError(IO_STRUCTURE, "nesting exceeds the safe limit") from None
     _check_depth(obj)
     return obj
 
