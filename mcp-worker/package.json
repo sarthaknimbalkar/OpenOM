@@ -9,6 +9,7 @@
     "predeploy": "node scripts/gen-validator.mjs && vitest run",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
+    "pretest": "node scripts/gen-validator.mjs",
     "test": "vitest run"
   },
   "dependencies": {
