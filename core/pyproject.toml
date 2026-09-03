@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openom-core"
-version = "0.1.5"
+version = "0.1.6"
 description = "openOM deterministic core - embed/read/inspect/validate CRE offering-memorandum payloads. Zero inference, ever."
 readme = "README.md"
 requires-python = ">=3.11"

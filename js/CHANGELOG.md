@@ -7,6 +7,8 @@ may change in a minor. The embedded payload contract is versioned separately by 
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-09-03
+
 ## [0.1.4] - 2026-08-26
 
 ## [0.1.3] - 2026-08-26
