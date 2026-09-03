@@ -154,10 +154,13 @@ def test_password_pdf_returns_encrypted_state_and_envelope(tmp_path: Path) -> No
     assert env["error"]["code"] == "OM-IO-011"
 
 
-def test_deep_pages_native_crash_is_contained(tmp_path: Path, monkeypatch: Any) -> None:
-    # Round-3: a deeply self-referential /Pages chain makes pikepdf.open stack-overflow NATIVELY
-    # (uncatchable in-process). Isolation must contain it to one OM-IO-010 envelope, never crash the
-    # host / stdio session. Short timeout so the dead child is detected fast.
+def test_deep_pages_does_not_take_down_the_host(tmp_path: Path, monkeypatch: Any) -> None:
+    # Round-3: a deeply self-referential /Pages chain makes pikepdf.open stack-overflow NATIVELY on
+    # some platforms (Windows: 0xC00000FD, uncatchable in-process). Isolation must CONTAIN that to a
+    # clean OM-IO-010 envelope, never crash the host/stdio session. The invariant we assert here is
+    # portable: the call SURVIVES and returns a well-formed result - an error envelope where the deep
+    # tree crashes the subprocess, or a normal `absent` state where the platform parses it fine
+    # (Linux/macOS qpdf tolerates the depth). What must NEVER happen is the process dying.
     monkeypatch.setattr(tools, "_PARSE_TIMEOUT_S", 4.0)
     parts = ["%PDF-1.7\n"]
     parts.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
@@ -169,6 +172,8 @@ def test_deep_pages_native_crash_is_contained(tmp_path: Path, monkeypatch: Any) 
     parts.append("trailer\n<< /Root 1 0 R >>\n%%EOF")
     pdf = tmp_path / "deep.pdf"
     pdf.write_bytes("".join(parts).encode())
-    r = tools.om_read({"path": str(pdf)})  # must return, not crash the test process
-    assert "error" in r  # a clean envelope (OM-IO-010 from the killed subprocess)
-    assert r["error"]["code"] in ("OM-IO-010", "OM-IO-003")
+    r = tools.om_read({"path": str(pdf)})  # must RETURN (host survives), never crash the process
+    if "error" in r:
+        assert r["error"]["code"] in ("OM-IO-010", "OM-IO-003")  # subprocess crash was contained
+    else:
+        assert r.get("state") in ("absent", "present", "hash-mismatch")  # parsed fine, well-formed
