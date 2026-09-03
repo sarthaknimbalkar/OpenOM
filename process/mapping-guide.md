@@ -63,7 +63,7 @@ Payload path → where it typically appears in an OM → notes.
 | `assertedBy.website` / `.licenseJurisdiction` / `.licenseAuthority` | Contact block / disclaimer | Optional identity anchors (#118). `website` = the broker/brokerage domain (feeds §10 origin verification); `licenseJurisdiction` = ISO 3166 (e.g. US-CA); `licenseAuthority` = issuing body. Confirmed by the broker, not guessed. |
 | `assertedDate` | - | The assertion date; set at the review gate, not extracted. |
 | `currency` | Financials (assume USD if unstated) | Optional; omit to default USD ([OM-DD-002]). |
-| `property.address.{streetAddress,addressLocality,addressRegion,postalCode,addressCountry}` | Cover / property summary | `addressRegion` 2-letter US; `addressCountry` ISO-2 (default US). |
+| `property.address.{streetAddress,addressLocality,addressRegion,postalCode,addressCountry}` | Cover / property summary | Split the full address into parts: `streetAddress` is the street line ONLY (not "St, City, ST ZIP"); `addressLocality` is the **city** (never the state); `addressRegion` is the **2-letter US state code** (e.g. `MI` - not a full name or a region like "Midwest"); `addressCountry` ISO-2 (default US). Mis-mapping any of these trips the deterministic W062-W064 checks at review. |
 | `property.geo.{latitude,longitude}` | Aerial/map caption, rarely printed | Omit unless stated. |
 | `property.propertyType` | Cover / property summary | Optional (#114). retail\|office\|industrial\|multifamily\|land\|mixed-use\|hospitality\|self-storage\|other (open string). |
 | `property.apn` | Property details | Assessor parcel number, as printed. |

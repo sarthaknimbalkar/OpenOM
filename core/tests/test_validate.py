@@ -378,3 +378,37 @@ def test_non_object_payload_is_a_schema_error_not_a_crash() -> None:
         report = validate(bad)  # type: ignore[arg-type]
         assert not report.ok
         assert any(f.code == "OMV-E001" for f in report.errors)
+
+
+def test_address_shape_checks_catch_a_misextracted_address() -> None:
+    # The real failure that motivated W062-W064: an extractor put the STATE in the city field
+    # ("Michigan"), a census REGION in the state field ("Midwest"), and duplicated the whole address
+    # into the street line - and openOM validated it clean. These deterministic checks now flag it.
+    p = copy.deepcopy(_sample())
+    p["property"]["address"] = {
+        "streetAddress": "8335 NORTH TELEGRAPH ROAD, NEWPORT, MI 48166",  # dup -> W064
+        "addressLocality": "Michigan",  # a state in the city field -> W063
+        "addressRegion": "Midwest",  # a census region, not a state -> W062
+        "postalCode": "48166", "addressCountry": "US",
+    }
+    codes = _codes(validate(p, schema=_schema()).warnings)
+    assert {"OMW-W062", "OMW-W063", "OMW-W064"} <= codes
+    # A correctly-mapped US address is clean.
+    p["property"]["address"] = {
+        "streetAddress": "8335 North Telegraph Road", "addressLocality": "Newport",
+        "addressRegion": "MI", "postalCode": "48166", "addressCountry": "US",
+    }
+    clean = _codes(validate(p, schema=_schema()).warnings)
+    assert not ({"OMW-W062", "OMW-W063", "OMW-W064"} & clean)
+
+
+def test_address_shape_checks_skip_non_us() -> None:
+    # A non-US region/city may legitimately not be a US state - the checks apply to US only.
+    p = copy.deepcopy(_sample())
+    p["currency"] = "CAD"
+    p["property"]["address"] = {
+        "streetAddress": "100 King St W", "addressLocality": "Toronto",
+        "addressRegion": "Ontario", "postalCode": "M5X", "addressCountry": "CA",
+    }
+    codes = _codes(validate(p, schema=_schema()).warnings)
+    assert not ({"OMW-W062", "OMW-W063", "OMW-W064"} & codes)

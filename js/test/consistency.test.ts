@@ -32,6 +32,30 @@ describe("consistency tier", () => {
     expect(codes(stnl())).not.toContain("OMW-W061"); // US base
   });
 
+  test("US address-shape: a mis-extracted address → OMW-W062/W063/W064; a good one is clean", () => {
+    const bad = stnl();
+    (bad.property as Record<string, unknown>).address = {
+      streetAddress: "8335 NORTH TELEGRAPH ROAD, NEWPORT, MI 48166", // dup -> W064
+      addressLocality: "Michigan", // a state in the city field -> W063
+      addressRegion: "Midwest", // a census region, not a state -> W062
+      postalCode: "48166",
+      addressCountry: "US",
+    };
+    const c = codes(bad);
+    expect(c).toContain("OMW-W062");
+    expect(c).toContain("OMW-W063");
+    expect(c).toContain("OMW-W064");
+    const good = stnl();
+    (good.property as Record<string, unknown>).address = {
+      streetAddress: "8335 North Telegraph Road",
+      addressLocality: "Newport",
+      addressRegion: "MI",
+      postalCode: "48166",
+      addressCountry: "US",
+    };
+    expect(codes(good).some((x) => ["OMW-W062", "OMW-W063", "OMW-W064"].includes(x))).toBe(false);
+  });
+
   test("the valid sample is internally consistent (no warnings)", () => {
     const r = consistencyFindings(stnl());
     expect(r.warnings).toEqual([]);

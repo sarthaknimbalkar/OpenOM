@@ -183,6 +183,18 @@ def m_expiration_before_commencement(p: dict[str, Any], rng: random.Random) -> N
     p["lease"]["expiration"] = "2018-01-01"  # W034
 
 
+def m_bad_region(p: dict[str, Any], rng: random.Random) -> None:
+    p["property"]["address"]["addressRegion"] = rng.choice(["Midwest", "Great Lakes"])  # W062
+
+
+def m_state_as_city(p: dict[str, Any], rng: random.Random) -> None:
+    p["property"]["address"]["addressLocality"] = rng.choice(["Michigan", "Texas", "CA"])  # W063
+
+
+def m_street_dup(p: dict[str, Any], rng: random.Random) -> None:  # W064
+    p["property"]["address"]["streetAddress"] = "8335 North Telegraph Road, Newport, MI 48166"
+
+
 def m_self_supersede(p: dict[str, Any], rng: random.Random) -> None:
     from openom_core.canonical import payload_hash
 
@@ -198,6 +210,7 @@ _MUTATORS: list[Delta] = [
     m_rent_year1_vs_noi, m_rentpsf, m_monthly,
     m_source_verified, m_source_absent, m_escalation, m_period_gap_overlap, m_period_outside_term,
     m_term_months, m_remaining_term, m_noiasof_after_asserted, m_expiration_before_commencement,
+    m_bad_region, m_state_as_city, m_street_dup,
     m_self_supersede,
 ]
 

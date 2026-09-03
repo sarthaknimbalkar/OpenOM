@@ -162,6 +162,21 @@ export const OM_CODES: Readonly<Record<string, CodeEntry>> = Object.freeze({
     "requirement": "OM-DD-002",
     "severity": "warning"
   },
+  "OMW-W062": {
+    "message": "addressRegion is not a US state - use the 2-letter code (e.g. MI)",
+    "requirement": "OM-CONS-062",
+    "severity": "warning"
+  },
+  "OMW-W063": {
+    "message": "addressLocality looks like a state, not a city - check the mapping",
+    "requirement": "OM-CONS-063",
+    "severity": "warning"
+  },
+  "OMW-W064": {
+    "message": "streetAddress appears to include the city/state/ZIP - put only the street line",
+    "requirement": "OM-CONS-064",
+    "severity": "warning"
+  },
   "OMW-W051": {
     "message": "a same-domain mirror carries a newer, superseding assertion (stale)",
     "requirement": "OM-TRUST-009",
@@ -206,5 +221,8 @@ export type OmCode =
   | "OMW-W050"
   | "OMW-W060"
   | "OMW-W061"
+  | "OMW-W062"
+  | "OMW-W063"
+  | "OMW-W064"
   | "OMW-W051"
   | "OMW-W052";

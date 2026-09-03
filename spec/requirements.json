@@ -200,6 +200,24 @@
       "keyword": "SHOULD",
       "clause": "A validator SHOULD emit warning OMW-W060 when a rent period's source is 'verified' but the 0.1 payload carries no corroborating verification metadata."
     },
+    "OM-CONS-062": {
+      "title": "Non-state addressRegion",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W062 when a US property's addressRegion is neither a 2-letter US state/territory code nor a full state name (e.g. a census region like 'Midwest') - a common extraction mis-mapping."
+    },
+    "OM-CONS-063": {
+      "title": "State name in the city field",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W063 when addressLocality (the city) is itself a US state name or 2-letter code - the state leaked into the city field."
+    },
+    "OM-CONS-064": {
+      "title": "Duplicated street line",
+      "section": "H.3",
+      "keyword": "SHOULD",
+      "clause": "A validator SHOULD emit warning OMW-W064 when streetAddress includes the trailing city/state/ZIP (', <ST> <ZIP>') rather than only the street line."
+    },
     "OM-DD-001": {
       "title": "Payload conforms to openOM 0.1 JSON Schema",
       "section": "Part II §E / §H.1",

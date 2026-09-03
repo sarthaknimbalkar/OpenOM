@@ -58,6 +58,9 @@ export const REQUIREMENT: Record<string, string> = {
   "OMW-W050": "OM-CONS-050",
   "OMW-W060": "OM-CONS-060",
   "OMW-W061": "OM-DD-002",
+  "OMW-W062": "OM-CONS-062",
+  "OMW-W063": "OM-CONS-063",
+  "OMW-W064": "OM-CONS-064",
   "OMI-I001": "OM-DD-002",
   "OMI-I002": "OM-DD-004",
   "OMI-I003": "OM-ERR-014",
@@ -80,6 +83,71 @@ function warn(
     actual,
   };
 }
+
+// US state/territory codes + full names, for the deterministic address-shape checks (W062-W064) -
+// parity with the Python core. A fixed lookup (no geocoding) so a mis-mapped address is flagged at
+// the review gate rather than asserted; extraction is fallible, this is the deterministic catch.
+const US_STATE_CODES = new Set(
+  (
+    "AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY " +
+    "NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC PR VI GU AS MP"
+  ).split(" "),
+);
+const US_STATE_NAMES = new Set([
+  "alabama",
+  "alaska",
+  "arizona",
+  "arkansas",
+  "california",
+  "colorado",
+  "connecticut",
+  "delaware",
+  "florida",
+  "georgia",
+  "hawaii",
+  "idaho",
+  "illinois",
+  "indiana",
+  "iowa",
+  "kansas",
+  "kentucky",
+  "louisiana",
+  "maine",
+  "maryland",
+  "massachusetts",
+  "michigan",
+  "minnesota",
+  "mississippi",
+  "missouri",
+  "montana",
+  "nebraska",
+  "nevada",
+  "new hampshire",
+  "new jersey",
+  "new mexico",
+  "new york",
+  "north carolina",
+  "north dakota",
+  "ohio",
+  "oklahoma",
+  "oregon",
+  "pennsylvania",
+  "rhode island",
+  "south carolina",
+  "south dakota",
+  "tennessee",
+  "texas",
+  "utah",
+  "vermont",
+  "virginia",
+  "washington",
+  "west virginia",
+  "wisconsin",
+  "wyoming",
+  "district of columbia",
+  "puerto rico",
+]);
+const STREET_HAS_CITY_STATE_ZIP = /,\s*[A-Za-z]{2}\s+\d{5}(-\d{4})?\b/;
 
 function infoFinding(code: OmCode, path: string, message: string): Finding {
   return { code, severity: "info", path, message, requirement: REQUIREMENT[code]! };
@@ -146,6 +214,56 @@ export function consistencyFindings(
           "currency absent on a non-US property; assumed USD - confirm the currency",
         ),
       );
+    }
+  }
+
+  // OMW-W062-064: deterministic US address-shape checks (parity with the Python core). US only
+  // (addressCountry US, or absent which defaults to US). No inference/geocoding.
+  {
+    const address = obj(prop.address);
+    const country = address.addressCountry;
+    const isUS = !(
+      typeof country === "string" &&
+      country.trim().toUpperCase() !== "US" &&
+      country.trim() !== ""
+    );
+    if (isUS) {
+      const region = address.addressRegion;
+      const locality = address.addressLocality;
+      const street = address.streetAddress;
+      if (typeof region === "string" && region.trim()) {
+        const r = region.trim();
+        if (!US_STATE_CODES.has(r.toUpperCase()) && !US_STATE_NAMES.has(r.toLowerCase())) {
+          warnings.push(
+            warn(
+              "OMW-W062",
+              "/property/address/addressRegion",
+              `addressRegion ${JSON.stringify(region)} is not a US state - use the 2-letter code (e.g. MI)`,
+            ),
+          );
+        }
+      }
+      if (typeof locality === "string" && locality.trim()) {
+        const l = locality.trim();
+        if (US_STATE_CODES.has(l.toUpperCase()) || US_STATE_NAMES.has(l.toLowerCase())) {
+          warnings.push(
+            warn(
+              "OMW-W063",
+              "/property/address/addressLocality",
+              `addressLocality ${JSON.stringify(locality)} looks like a state, not a city - check the mapping`,
+            ),
+          );
+        }
+      }
+      if (typeof street === "string" && STREET_HAS_CITY_STATE_ZIP.test(street)) {
+        warnings.push(
+          warn(
+            "OMW-W064",
+            "/property/address/streetAddress",
+            "streetAddress appears to include the city/state/ZIP - put only the street line here",
+          ),
+        );
+      }
     }
   }
 

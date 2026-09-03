@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+import re
 from collections import OrderedDict
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
@@ -55,6 +56,9 @@ _REQUIREMENT = {
     "OMW-W052": "OM-TRUST-010",  # diverged (same-domain mirror shows different, non-superseding)
     "OMW-W060": "OM-CONS-060",
     "OMW-W061": "OM-DD-002",
+    "OMW-W062": "OM-CONS-062",
+    "OMW-W063": "OM-CONS-063",
+    "OMW-W064": "OM-CONS-064",
     "OMI-I001": "OM-DD-002",
     "OMI-I002": "OM-DD-004",
     "OMI-I003": "OM-ERR-014",
@@ -66,6 +70,28 @@ _NET_LEASE_TYPES = {"NN", "NNN", "absolute-net"}
 _GROSS_LEASE_TYPES = {"gross", "modified-gross"}
 _ALL_RESP = ("roof", "structure", "parking", "hvac", "taxes", "insurance", "cam")
 _STRUCTURAL_RESP = ("roof", "structure", "parking", "hvac")
+
+# US state/territory codes + full names, for the deterministic address-shape checks (W062-W064). A
+# fixed lookup - no inference, no geocoding - so a mis-mapped address (a census region in the state
+# field, a state name in the city field, or the whole address duplicated into the street line) is
+# flagged at the review gate rather than silently asserted - the deterministic layer catching what a
+# (fallible) extraction step got wrong before it becomes an assertion.
+_US_STATE_CODES = frozenset(
+    "AL AK AZ AR CA CO CT DE FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM "
+    "NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY DC PR VI GU AS MP".split()
+)
+_US_STATE_NAMES = frozenset({
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware",
+    "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas", "kentucky",
+    "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi",
+    "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey", "new mexico",
+    "new york", "north carolina", "north dakota", "ohio", "oklahoma", "oregon", "pennsylvania",
+    "rhode island", "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont",
+    "virginia", "washington", "west virginia", "wisconsin", "wyoming", "district of columbia",
+    "puerto rico",
+})
+# streetAddress that ends with ", <ST> <ZIP>" is the whole address duplicated into the street line.
+_STREET_HAS_CITY_STATE_ZIP = re.compile(r",\s*[A-Za-z]{2}\s+\d{5}(-\d{4})?\b")
 
 
 @dataclass
@@ -310,6 +336,8 @@ def _warning_tier(
             warn(_mk("OMW-W061", "/currency",
                      "currency absent on a non-US property; assumed USD - confirm the currency"))
 
+    _address_shape_checks(prop, warn)
+
     cap = _num(deal.get("capRate"))
     noi = _num(deal.get("noi"))
     price = _num(deal.get("askingPrice"))
@@ -377,6 +405,39 @@ def _warning_tier(
                          "year-1 annual rent disagrees with stated in-place NOI",
                          expected=noi, actual=first_rent))
         _rent_schedule_checks(schedule, building_sf, lease, tol, warn)
+
+
+def _address_shape_checks(
+    prop: Mapping[str, Any], warn: Callable[[Finding], None]
+) -> None:
+    """Deterministic US address-shape checks (§H.3, W062-W064): flag a mis-mapped address before it
+    is asserted. No inference/geocoding - a fixed state lookup + a shape regex. Applies to US
+    addresses only (addressCountry US, or absent which defaults to US); a non-US region/city may
+    legitimately not be a US state."""
+    address = _obj(prop, "address")
+    country = address.get("addressCountry")
+    if isinstance(country, str) and country.strip().upper() not in ("US", ""):
+        return
+    region = address.get("addressRegion")
+    locality = address.get("addressLocality")
+    street = address.get("streetAddress")
+    # W062: addressRegion is neither a 2-letter US state code nor a full state name (e.g. "Midwest",
+    # a census region). addressRegion for a US property is the state - the code is preferred.
+    if isinstance(region, str) and region.strip():
+        r = region.strip()
+        if r.upper() not in _US_STATE_CODES and r.lower() not in _US_STATE_NAMES:
+            warn(_mk("OMW-W062", "/property/address/addressRegion",
+                     f"addressRegion {region!r} is not a US state - use the 2-letter code (MI)"))
+    # W063: addressLocality (the city) is itself a state name/code - the state leaked into the city.
+    if isinstance(locality, str) and locality.strip():
+        loc = locality.strip()
+        if loc.upper() in _US_STATE_CODES or loc.lower() in _US_STATE_NAMES:
+            warn(_mk("OMW-W063", "/property/address/addressLocality",
+                     f"addressLocality {locality!r} looks like a state, not a city"))
+    # W064: streetAddress duplicates the ", <ST> <ZIP>" tail instead of only the street line.
+    if isinstance(street, str) and _STREET_HAS_CITY_STATE_ZIP.search(street):
+        warn(_mk("OMW-W064", "/property/address/streetAddress",
+                 "streetAddress appears to include the city/state/ZIP - put only the street here"))
 
 
 def _date_term_checks(
