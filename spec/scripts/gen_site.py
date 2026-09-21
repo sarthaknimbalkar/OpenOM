@@ -193,6 +193,10 @@ _LANDING_JS = """
 """
 
 _LANDING_BODY = """<body>
+<!-- Microsoft Clarity (AI-citation + behavior analytics) -->
+<script type="text/javascript">
+(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","ylw2lv7p8m");
+</script>
   <header class="bar"><div class="wrap bar-in">
     <div class="wordmark">open<span class="om">OM</span></div>
     <div class="bar-meta">
@@ -370,7 +374,7 @@ __FAQ__
     <div class="colophon">
       <span>An open standard published by <a href="https://www.vervelio.com">Vervelio Labs</a> &middot; MIT licensed</span>
       <span>Inspired by Factur-X - the embedded-invoice standard that became European law</span>
-      <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
+      <span><a href="/docs/schema-reference">Spec</a> &middot; <a href="/blog">Blog</a> &middot; <a href="https://github.com/sarthaknimbalkar/OpenOM">GitHub</a> &middot; <a href="/spec/webhook-envelope-0.1.schema.json">Webhook</a> &middot; <a href="/ns/0.1">Context</a></span>
     </div>
   </div></section>
 """
