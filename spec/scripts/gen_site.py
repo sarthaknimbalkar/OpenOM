@@ -23,6 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gen_docs import (  # type: ignore[import-not-found]  # noqa: E402  (local sibling module)
+    ATTRIBUTION_PIXEL,
     docs_pages,
     widget_badge_versioned,
 )
@@ -524,7 +525,7 @@ def _landing_html() -> str:
   <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 {jsonld}
   <style>{css}</style>
-</head>
+{ATTRIBUTION_PIXEL}</head>
 """
     body = _LANDING_BODY.replace("__FAQ__", faq_html)
     tail = "  <script>" + _LANDING_JS + "</script>"
@@ -731,7 +732,7 @@ def _not_found_html() -> str:
     a { color: #065f46; }
     h1 { font-size: 2.5rem; margin-bottom: 0.2rem; }
   </style>
-</head>
+""" + ATTRIBUTION_PIXEL + """</head>
 <body>
   <h1>404</h1>
   <p>That page isn't here. Try these, or the site map / agent index below:</p>
@@ -921,8 +922,9 @@ def _security_txt() -> str:
 
 
 def _trust_page(title: str, lede: str, paras: list[str]) -> str:
-    """A minimal, no-JS trust-anchor page (About / Contact) - the pages an agent checks to verify the
-    project is legitimate before recommending it. Content, not chrome, is what agent-readiness scores."""
+    """A minimal trust-anchor page (About / Contact) - the pages an agent checks to verify the
+    project is legitimate before recommending it. Content, not chrome, is what agent-readiness scores.
+    No page JS beyond the async attribution pixel."""
     body = "\n".join(f"    <p>{p}</p>" for p in paras)
     return (
         "<!doctype html>\n<html lang=\"en\">\n<head>\n"
@@ -933,6 +935,7 @@ def _trust_page(title: str, lede: str, paras: list[str]) -> str:
         f"  <link rel=\"canonical\" href=\"{BASE}/{title.lower()}/\" />\n"
         "  <style>body{font:16px/1.7 system-ui,sans-serif;max-width:44rem;margin:3rem auto;"
         "padding:0 1rem;color:#111}a{color:#065f46}h1{font-size:2rem}</style>\n"
+        f"{ATTRIBUTION_PIXEL}"
         "</head>\n<body>\n"
         f"  <h1>{title}</h1>\n"
         f"  <p><strong>{lede}</strong></p>\n"

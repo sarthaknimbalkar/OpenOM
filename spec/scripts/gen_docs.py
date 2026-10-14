@@ -41,6 +41,10 @@ SPEC = Path(__file__).resolve().parent.parent
 
 SITE = "https://openom.app"
 ORG = {"@type": "Organization", "name": "Vervelio Labs", "url": "https://www.vervelio.com"}
+# TWB attribution pixel: traces each visit/signup to its source. It records page views and clicks
+# only, never page content, so it is safe on the in-browser PDF tools too. ONE definition, emitted
+# as the last <head> child of every generated page (docs shell here; landing/404/trust in gen_site).
+ATTRIBUTION_PIXEL = '  <script async src="https://thewoofback.com/px/openom/embed.js"></script>\n'
 
 
 def _jsonld(*objs: dict | None) -> str:
@@ -184,7 +188,7 @@ def _page(
     small {{ color:var(--ink-soft); }}
     input[type=file] {{ font-family:var(--mono); font-size:13px; }}
   </style>
-</head>
+{ATTRIBUTION_PIXEL}</head>
 <body>
   <header class="bar"><div class="bar-in">
     <a class="wordmark" href="/">open<span class="om">OM</span></a>
