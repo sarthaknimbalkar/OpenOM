@@ -15,9 +15,6 @@
   <url><loc>https://openom.app/privacy/</loc></url>
   <url><loc>https://openom.app/v/</loc></url>
   <url><loc>https://openom.app/verify/</loc></url>
-  <url><loc>https://openom.app/ns/0.1</loc></url>
-  <url><loc>https://openom.app/spec/om-0.1.schema.json</loc></url>
-  <url><loc>https://openom.app/spec/webhook-envelope-0.1.schema.json</loc></url>
-  <url><loc>https://openom.app/spec/webhook-subscription-0.1.schema.json</loc></url>
-  <url><loc>https://openom.app/spec/requirements.json</loc></url>
+  <url><loc>https://openom.app/about/</loc></url>
+  <url><loc>https://openom.app/contact/</loc></url>
 </urlset>
